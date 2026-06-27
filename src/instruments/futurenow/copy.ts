@@ -6,7 +6,8 @@ import type { Wave } from '@/contracts';
 export type WaveKey = 'pre' | 'post';
 export const waveKey = (w: Wave): WaveKey => (w === 'post' ? 'post' : 'pre');
 
-// likert 척도 레이블 (공용). 중앙 레이블 '보통'(블록2)은 현 LikertScale 계약에 필드가 없어 보류(렌더러 파생).
+// likert 척도 레이블 (공용). 중앙 레이블 '보통'(블록2)은 LikertScale.centerLabel(ADR-20)로
+// flow.likertScale() 에서 배선됨. 렌더러는 centerLabel 있으면 중앙 표기.
 export const likertLabels = { minLabel: '전혀 아니다', maxLabel: '매우 그렇다' };
 export const likertCenterLabel = '보통';
 
