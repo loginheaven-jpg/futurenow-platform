@@ -5,7 +5,7 @@
 > 작업 중 결정·구현된 결과물의 설계는 반드시 이 문서에 반영한다.
 > 보류·향후 항목은 `plan.md`, 작업 규율은 `CLAUDE.md`에 둔다.
 >
-> 문서 버전: v0.6 (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ 구현 + 문항 원문 반영(copy deck) · AlertSignal(ADR-19) / 디자인 시스템·B③ 리포트 대기)
+> 문서 버전: v0.7 (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ + 문항 원문 · AlertSignal(ADR-19) · 디자인 시스템 v1 구현(색 토큰·공용 UI 9종·응답 위젯 5종·ResponseRunner) / B③ 리포트 시각화 대기)
 
 ---
 
@@ -544,11 +544,18 @@ interface AlertPlugin<S = unknown> {
 
 ---
 
-## 10. 디자인 시스템 — **[지휘부 확정 대기 · 잠금]**
+## 10. 디자인 시스템 — **v1 도착·구현 (응답 위젯) / 리포트 시각화 대기**
 
-UI/UX는 지휘부(설계자+AI)가 시안까지 확정한 뒤 `design_system.md`로 전달한다. **확정 전까지 클로드코드는 UI를 임의로 디자인하지 않는다.** 토큰·컴포넌트·시안이 도착하면 본 절에 요약을 반영하고 상세는 `design_system.md`로 링크한다.
+상세는 [`design_system.md`](design_system.md) (v1). 본 절은 요약·구현 상태.
 
-확정 예정 범위: 색·타이포 토큰(퓨처나우 PDF + SAIL `tokens.ts` 통합) · 공용 컴포넌트(Button·Card·Slider·ProgressBar) · 응답 위젯 시안(양극 슬라이더·5점·10점·주관식·체크) · 리포트 3종 시각화(나침반 게이지·오각 레이더·GROW+F 막대) · 코치 콘솔(초보자 안내형) · 모바일 우선·접근성 · 톤(참여자 존대체 / 리포트 평어체).
+**v1 범위(구현 완료, 2026-06-27)**: 색 3단 토큰 · 타이포(Pretendard) · 응답 위젯 5종.
+
+- **색 3단 토큰**(§1): 원천 hex → 역할(semantic) → 컴포넌트. `src/app/globals.css` 에 §1.1~1.4 구현. **컴포넌트는 2차 역할 토큰만 참조**(hex·`--navy-*`·`--gold-*` 직접 참조 금지). 색값은 **잠정**(첫 화면 확정 후 재평가). 선택색 = `--color-accent`(골드). 다크 토큰은 역할만 재지정.
+- **타이포·간격**(§2·§3): Pretendard, 숫자 tabular-nums, 타이포 7토큰(display~micro), `--tap-min:44px` 등. globals.css.
+- **공용 UI 9종**(§5, 코어 `src/core/ui`, 인스트루먼트 중립): Button·Card·ProgressBar·SegmentBar·DotScale·NumberSlider·TextArea·CheckRow·StickyScaleHeader. 스타일은 `src/core/ui/ui.css`(역할 토큰만).
+- **응답 위젯 5종 + 러너**(§4): 나침반=세그먼트바(중앙 유지)·리커트=행스택+척도 sticky+도트22px(히트44px)·간격=슬라이더+숫자·주관식=텍스트영역·체크=행토글(경고색 금지·골드 선택). `src/core/response/ResponseRunner.tsx`(시각부: 블록 흐름·위젯 렌더·진행·필수 게이팅·제약무작위 배열[`ordering.ts`]·완료 시 `saveResponse`). 참여자 화면 경고색 배제(§0.4). 미리보기 라우트 `/preview`.
+- **보류(design_system v2)**: 리포트(B③) 시각화(나침반 게이지·오각 레이더·GROW+F 막대·사전사후 비교)·코치/운영자 콘솔·`CohortPreview`. **착수 금지.**
+- **후속(러너)**: 진행 저장/재개·subjectProfile 수집 화면·접근성 키보드 정밀화는 미구현(주석).
 
 ---
 
