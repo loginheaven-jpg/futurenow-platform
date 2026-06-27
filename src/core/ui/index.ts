@@ -9,3 +9,6 @@ export { NumberSlider } from './NumberSlider';
 export { TextArea } from './TextArea';
 export { CheckRow } from './CheckRow';
 export { StickyScaleHeader } from './StickyScaleHeader';
+export { OtpInput } from './OtpInput';
+export { Stepper } from './Stepper';
+export { ListRow } from './ListRow';

@@ -279,3 +279,108 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* ── OtpInput (참여 코드 5칸, §7.1) ──────────────────────── */
+.ui-otp {
+  display: flex;
+  gap: var(--space-2);
+}
+.ui-otp__cell {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font: inherit;
+  font-size: 24px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+.ui-otp__cell--filled {
+  border-color: var(--color-accent); /* 채운 칸 골드 */
+}
+.ui-otp__cell:focus-visible {
+  outline: none;
+  border-color: var(--color-accent); /* 입력 중 골드 */
+}
+
+/* ── Stepper (정원 −/+, §8.2) ────────────────────────────── */
+.ui-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.ui-stepper__btn {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-2);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+.ui-stepper__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ui-stepper__val {
+  min-width: 2.5ch;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── ListRow (명단 행, §8) ───────────────────────────────── */
+.ui-listrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-bottom: var(--border-hair) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  font: inherit;
+}
+.ui-listrow--tappable {
+  cursor: pointer;
+}
+.ui-listrow--tappable:active {
+  background: var(--color-surface-1);
+}
+/* 돌봄 톤 — 저채도 코랄(인도자 화면) */
+.ui-listrow--care {
+  background: var(--care-fill);
+  border-bottom: 0;
+  border-radius: var(--radius);
+}
+.ui-listrow__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ui-listrow--care .ui-listrow__title {
+  color: var(--care-text);
+  font-weight: 600;
+}
+.ui-listrow__sub {
+  color: var(--color-text-secondary);
+}
+.ui-listrow--care .ui-listrow__sub {
+  color: var(--care-text);
+  opacity: 0.85;
+}
+.ui-listrow__trail {
+  color: var(--color-text-muted);
+  flex: 0 0 auto;
+}

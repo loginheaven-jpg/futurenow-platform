@@ -515,7 +515,7 @@ interface AlertPlugin<S = unknown> {
 
 ### 9.3 산출규칙 7종 (B②·B③·B④의 사양)
 
-1. **활력 지수 (5~25)**: `A1 + A3 + (6−A2) + (6−A5) + (6−A4)`. 10점 이하 = 시들음(Languishing) 신호 → 1주차 전 가벼운 안부 권장.
+1. **활력 지수 (5~25)**: `A1 + A3 + (6−A2) + (6−A5) + (6−A4)`. 구간(확정 2026-06-28): **시들음 ≤10**(Languishing 신호 → 1주차 전 가벼운 안부 권장) · **중간 11~17** · **번성 18~25**. 구간 명명은 B③ 리포트에서만(§9.4).
 2. **Red Flag (최우선)**: `A2·A5·A4(7·11·17) 모두 4~5점` 또는 `돌봄 체크` → 개별 연락·돌봄 명단. 점수 공개·지목 없이 개인 면담으로 연결. → B④ `severity:'red_flag'|'care'`.
 3. **준비도 GROW+F**: G=`avg(C2,C1)` · R=`avg(C3,C4)` · O=`avg(C6, 6−C5)` · W=`avg(C8,C7)` · F=`C9`(보조 F1·F2). 축별 평균 막대. 그룹 평균 낮은 축 = 보강 포인트.
 4. **함정 유형**: `D1(관성)·D2(준비)·D3(안주)` 중 최고점 = 주 함정. 소그룹 편성 기준.
@@ -544,15 +544,16 @@ interface AlertPlugin<S = unknown> {
 
 ---
 
-## 10. 디자인 시스템 — **v2 도착·구현 (응답 위젯 + 리포트 시각화) / 콘솔·CohortPreview 대기**
+## 10. 디자인 시스템 — **v3 도착·구현 (응답 + 리포트 + 진입 흐름 + 콘솔) / 운영자 화면 대기**
 
-상세는 [`design_system.md`](design_system.md) (v2). 본 절은 요약·구현 상태.
+상세는 [`design_system.md`](design_system.md) (v3). 본 절은 요약·구현 상태.
 
-**v2 범위(구현 완료, 2026-06-27)**: 색 3단 토큰 · 타이포 · 응답 위젯 5종 · **리포트 시각화 5종 + 종합 배치**.
+**v3 범위(구현 완료)**: 색 3단 토큰 · 타이포 · 응답 위젯 5종 · 리포트 시각화 5종 · 종합 배치 · **참여 진입 흐름(§7) · 코치 콘솔(§8)**.
 
 - **색 3단 토큰**(§1): 원천 hex → 역할(semantic) → 컴포넌트. `src/app/globals.css` 에 §1.1~1.4 구현. **컴포넌트는 2차 역할 토큰만 참조**(hex·`--navy-*`·`--gold-*` 직접 참조 금지). 색값은 **잠정**(첫 화면 확정 후 재평가). 선택색 = `--color-accent`(골드). 다크 토큰은 역할만 재지정.
 - **타이포·간격**(§2·§3): Pretendard, 숫자 tabular-nums, 타이포 7토큰(display~micro), `--tap-min:44px` 등. globals.css.
-- **공용 UI 9종**(§5, 코어 `src/core/ui`, 인스트루먼트 중립): Button·Card·ProgressBar·SegmentBar·DotScale·NumberSlider·TextArea·CheckRow·StickyScaleHeader. 스타일은 `src/core/ui/ui.css`(역할 토큰만).
+- **공용 UI 12종**(§9, 코어 `src/core/ui`, 인스트루먼트 중립): Button·Card·ProgressBar·SegmentBar·DotScale·NumberSlider·TextArea·CheckRow·StickyScaleHeader·**OtpInput·Stepper·ListRow**. 스타일은 `src/core/ui/ui.css`(역할 토큰·`--care-*`만). 리포트 차트군은 코어가 아니라 **인스트루먼트 소유**(ADR-21).
+- **진입 흐름(§7) + 코치 콘솔(§8)** — **앱 레이어**(`src/app/_screens/`, 코어 UI·인스트루먼트를 합성). 진입: 코드입력(OtpInput)→차수 미리보기(CohortPreview)→로그인/가입(이름·전화 미요구, ADR-03)→시작 안내(보안 고지·버튼=동의). 콘솔: 홈(먼저 챙길 분 최상단·돌봄 우선)·차수 개설(3스텝)·차수 상세(3숫자+명단 3묶음)·모든 차수. **인도자 화면만 의미색(저채도 `--care-*`), 참여자 진입 화면 경고색 배제.** 미리보기 `/preview/entry`·`/preview/console`. **CohortPreview 메타 타입은 앱 로컬**(`_screens/types.ts`) — 계약 승격은 보류(아래).
 - **응답 위젯 5종 + 러너**(§4): 나침반=세그먼트바(중앙 유지)·리커트=행스택+척도 sticky+도트22px(히트44px)·간격=슬라이더+숫자·주관식=텍스트영역·체크=행토글(경고색 금지·골드 선택). `src/core/response/ResponseRunner.tsx`(시각부: 블록 흐름·위젯 렌더·진행·필수 게이팅·제약무작위 배열[`ordering.ts`]·완료 시 `saveResponse`). 참여자 화면 경고색 배제(§0.4). 미리보기 라우트 `/preview`.
 - **리포트 시각화 5종 + 배치**(§5·§6, B③ 구현 완료): 나침반=덤벨·간격=레이더(사후 네이비13% 면+사전 회색 점선)·GROW+F=충전막대(사후 네이비·사전 회색)·활력=띠 이동(시들음/중간/번성 저채도 구간+상태배지)·돌봄 신호=조건부 배너(저채도 `--care-*`). 배치: 돌봄→헤드라인(활력·나침반)→깊이(간격·GROW)→주관식, 데스크톱 2×2/모바일 1열. **본문 시각물 네이비·회색, 의미색은 돌봄 배너에만.** 명명(시들음·원씽)은 리포트에서만(§9.4). `src/instruments/futurenow/report/*` + `report.tsx`(ReportPlugin: renderScreen·renderGroup·renderPdf[react-pdf, 서버 전용]). 미리보기 `/preview/report`. **InstrumentModule 최종 조립** = `src/instruments/futurenow/index.ts`.
 - **경계 결정(directive 2026-06-28, ADR-21)**: 리포트 차트군(Dumbbell·Radar·ChargeBars·VitalityBand·CareBanner)은 **인스트루먼트 소유** 확정(`report/visuals.tsx`) — 진단별 명명·데이터가 박히므로 코어 중립 부품이 아니다. design_system §7 의 '코어' 기재는 **오기로 정정**. 진단↛코어 경계(CLAUDE §1) 유지, 차트는 공유 디자인 토큰만 참조. **활력 구간 경계 확정**(11~17 중간·18~25 번성). **PDF 생성 라우트(renderToBuffer)는 다음 단위**(renderPdf 구현·타입·빌드는 완료, 서버 전용).
