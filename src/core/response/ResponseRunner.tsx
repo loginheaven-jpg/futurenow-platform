@@ -158,6 +158,7 @@ function BlockView({
           minLabel={likertScale.minLabel}
           maxLabel={likertScale.maxLabel}
           centerLabel={likertScale.centerLabel}
+          points={likertScale.points}
         />
       ) : null}
 

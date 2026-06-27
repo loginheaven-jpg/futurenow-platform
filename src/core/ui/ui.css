@@ -116,22 +116,23 @@
 }
 
 /* ── DotScale (리커트 / likert) ──────────────────────── */
+/* 리커트 2단 구조: 질문 한 줄(위) → 5원 전체 폭(아래). 도트 열이 sticky 헤더 열과 정렬. */
 .ui-dotscale__row {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
   padding: var(--space-3) 0;
   border-bottom: var(--border-hair) solid var(--color-border);
 }
 .ui-dotscale__prompt {
-  flex: 1;
   color: var(--color-text);
 }
 .ui-dotscale__dots {
   display: flex;
-  gap: var(--space-1);
+  width: 100%;
 }
 .ui-dot {
+  flex: 1 1 0; /* 5등분 — 도트 중심이 1/3/5 열에 정렬 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -168,12 +169,16 @@
   top: 0;
   z-index: 5;
   display: flex;
-  justify-content: space-between;
-  gap: var(--space-2);
+  width: 100%;
   padding: var(--space-3) 0;
   background: var(--color-bg);
   color: var(--color-text-secondary);
   border-bottom: var(--border-hair) solid var(--color-border);
+}
+/* 도트와 동일 5등분 열 — minLabel↔1번 원, centerLabel↔3번 원, maxLabel↔5번 원 정렬. */
+.ui-scalehead__col {
+  flex: 1 1 0;
+  text-align: center;
 }
 .ui-scalehead__center {
   color: var(--color-text-muted);
