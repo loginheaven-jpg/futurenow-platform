@@ -45,10 +45,9 @@ describe('B④ AlertPlugin.evaluate', () => {
     expect(out[0].severity).toBe('red_flag');
   });
 
-  it('점수·원문 미적재 — reason 은 구인 명명, responseId/cohortId 는 코어가 주입(빈 문자열)', () => {
+  it('AlertSignal 형상 — severity·reason 만(responseId/cohortId 없음, 코어가 주입)', () => {
     const out = evalFor({ CARE: true });
-    expect(out[0].reason).not.toMatch(/[0-9]/); // 점수 숫자 없음
-    expect(out[0].responseId).toBe('');
-    expect(out[0].cohortId).toBe('');
+    expect(Object.keys(out[0]).sort()).toEqual(['reason', 'severity']);
+    expect(out[0].reason).not.toMatch(/[0-9]/); // 점수·원문 미적재
   });
 });

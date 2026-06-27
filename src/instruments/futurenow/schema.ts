@@ -50,11 +50,13 @@ export const futurenowAnswersSchema = z.object({
 });
 export type FuturenowAnswers = z.infer<typeof futurenowAnswersSchema>;
 
-// subjectProfile: 응답 시점 스냅샷(불변). 실명은 코어 users.name 재사용 → 여기 두지 않는다(ADR-02).
+// subjectProfile: 응답 시점 스냅샷(불변). 실명은 코어 users.name 재사용, 전화는 user_contacts → 여기 두지 않는다(ADR-02·04).
+// wave별 노출 분리(copy.profileFieldsByWave): 사전은 motivation(참여 계기), 종료는 writtenAt(작성일).
+// 두 필드 모두 optional 로 두어 양 wave 를 한 스키마로 검증한다(노출은 copy 가 결정).
 export const futurenowProfileSchema = z.object({
-  ageBand: z.string(), // 연령대
-  faithYears: z.union([z.number().nonnegative(), z.string()]), // 신앙연수(수치 또는 구간)
-  writtenAt: z.string(), // 작성일 (ISO)
-  motivation: z.string().optional(), // 참여계기
+  ageBand: z.string(), // 연령대 (공용)
+  faithYears: z.union([z.number().nonnegative(), z.string()]), // 신앙 연수 (공용, 수치 또는 구간)
+  motivation: z.string().optional(), // 참여 계기 (사전)
+  writtenAt: z.string().optional(), // 작성일 (종료, ISO)
 });
 export type FuturenowProfile = z.infer<typeof futurenowProfileSchema>;

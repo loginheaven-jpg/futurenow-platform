@@ -5,7 +5,7 @@
 > 작업 중 결정·구현된 결과물의 설계는 반드시 이 문서에 반영한다.
 > 보류·향후 항목은 `plan.md`, 작업 규율은 `CLAUDE.md`에 둔다.
 >
-> 문서 버전: v0.5 (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ 구현 / 디자인 시스템·B③ 리포트 대기)
+> 문서 버전: v0.6 (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ 구현 + 문항 원문 반영(copy deck) · AlertSignal(ADR-19) / 디자인 시스템·B③ 리포트 대기)
 
 ---
 
@@ -360,7 +360,7 @@ interface InstrumentModule<A = Answers, P = unknown, S = unknown> {
 // /contracts/instrument.ts (B①)
 type ScaleKind = 'bipolar' | 'likert' | 'numeric' | 'text' | 'check';
 interface BipolarScale { kind: 'bipolar'; points: number; leftLabel: string; rightLabel: string; }
-interface LikertScale  { kind: 'likert';  points: number; minLabel: string; maxLabel: string; }
+interface LikertScale  { kind: 'likert';  points: number; minLabel: string; maxLabel: string; centerLabel?: string; }
 interface NumericScale { kind: 'numeric'; min: number; max: number; input: 'slider' | 'number'; suffix?: string; }
 interface TextScale    { kind: 'text';    multiline: boolean; placeholder?: string; maxLen?: number; }
 interface CheckScale   { kind: 'check';   label: string; }
@@ -427,7 +427,7 @@ interface ResponseRunnerProps {
 - 측정/강의 어휘 분리. 참여자에 닿는 문자열은 `prompt`·`title`·`intro` 뿐. `code`·`polarity`·구인·STEP은 렌더 경로에 없음.
 - wave 분기로 사전·사후 페어링. `getSchema('pre'|'post')`는 같은 코드를 쓰되 `intro` 서사만 바꿈.
 
-### 8.2 B② 채점 계약 (사양 확정·구현 대기)
+### 8.2 B② 채점 계약 (구현 완료 — 2026-06-27)
 
 ```ts
 interface ScoringPlugin<A = Answers, S = unknown> {
@@ -447,14 +447,15 @@ interface ReportPlugin<S = unknown> {
 ```
 측정 어휘의 진단명(시들음·원씽 등)은 **이 단계에서 비로소 등장**한다(예: "활력 지수가 낮게 나왔습니다 — 이를 '시들음'이라 부릅니다"). 디자인 시스템 확정 후 시각 사양을 채운다.
 
-### 8.4 B④ 알림 트리거 계약 (사양 확정·구현 대기)
+### 8.4 B④ 알림 트리거 계약 (구현 완료 — 2026-06-27, ADR-19)
 
 ```ts
+type AlertSignal = Pick<AlertInput, 'severity' | 'reason'>;   // ADR-19 — 진단은 severity·reason 만
 interface AlertPlugin<S = unknown> {
-  evaluate(scores: S, answers: Answers): AlertInput[];
+  evaluate(scores: S, answers: Answers): AlertSignal[];
 }
 ```
-퓨처나우 트리거는 §9.3 규칙 2(Red Flag)·돌봄 체크다. **구현 완료**(2026-06-27, `alerts.ts`): A2·A5·A4 모두 ≥4 → `red_flag`('활력 위기신호') · 돌봄 체크 → `care`('돌봄 요청 신호'), 둘 다면 red_flag 우선. `responseId`·`cohortId` 는 코어가 주입(§9.6 마찰).
+퓨처나우 트리거는 §9.3 규칙 2(Red Flag)·돌봄 체크다. **구현 완료**(2026-06-27, `alerts.ts`): A2·A5·A4 모두 ≥4 → `red_flag`('활력 위기신호') · 돌봄 체크 → `care`('돌봄 요청 신호'), 둘 다면 red_flag 우선. **ADR-19**: evaluate 반환을 `AlertSignal`(severity·reason)로 정직화 — `responseId`·`cohortId` 는 코어가 saveResponse 후 주입해 완전한 `AlertInput` 으로 raiseAlert.
 
 ---
 
@@ -530,15 +531,16 @@ interface AlertPlugin<S = unknown> {
 
 동일 번호·동일 코드·동일 구인에 종료 시점 문장으로 치환(`getSchema('post')`). 비교 뷰: 나침반 바늘 이동·활력 변화·간격 축소를 나란히. `subjectProfile`은 응답마다 박제(불변).
 
-### 9.6 구현 메모 (2026-06-27 · B①·B②·B④ 구현)
+### 9.6 구현 메모 (2026-06-27 · B①·B②·B④ 구현, 문항 원문 반영)
 
-순수 로직(화면 없음)으로 구현. `/instruments/futurenow`: `flow.ts`·`scoring.ts`·`alerts.ts`·`schema.ts`.
+순수 로직(화면 없음). `/instruments/futurenow`: `flow.ts`·`scoring.ts`·`alerts.ts`·`schema.ts`·`copy.ts`.
 
 - **역채점 범위 확정**: `6 − x` 는 **A2·A5·A4(활력)·C5(GROW O)** 에만 적용. 함정 `D1·D2·D3` 은 규칙④에서 **원점수 최고점**(역채점 아님, 동점 시 앞선 코드).
-- **부가 항목 코드 확정**(§9.1 부가에 코드 부여): 들어가며=`INTRO`(text) · 돌봄 체크=`CARE`(check) · 마지막 다짐=`COMMIT`(check). *명칭은 인스트루먼트 내부 — 변경 가능.*
-- **subjectProfile 형상**(진단 소유): `ageBand`·`faithYears`·`writtenAt`·`motivation(선택)`. **실명은 코어 `users.name` 재사용**(ADR-02) — profile 에 두지 않음. *필드명 변경 가능.*
-- **flow 문구는 placeholder**: `prompt`·bipolar 라벨·`intro` 서사·check 라벨은 코드만 드러내는 임시값. **지휘부의 검증된 문항 원문 대기**(구조는 확정). likert min/max 라벨·블록 title(§9.2)·numeric suffix 만 일반값.
-- **B④ 마찰**: `AlertPlugin.evaluate(scores, answers)` 는 `responseId`·`cohortId` 맥락이 없어 빈 문자열로 두고 **코어 오케스트레이션이 saveResponse 후 주입**한다. 계약 무변경(필요 시 별도 논의).
+- **부가 항목 코드 확정**(§9.1 부가에 코드 부여): 들어가며=`INTRO`(text) · 돌봄 체크=`CARE`(check) · 마지막 다짐=`COMMIT`(check). (지휘부 승인 2026-06-27.)
+- **문항 원문 반영 완료**: 검증된 copy deck 을 `copy.ts` 에 verbatim 담고 `flow.ts` 가 참조(구조/문구 분리). 1~28 prompt·양극 레이블은 wave 공용, intro·E1~E3·들어가며·체크 label·간격 intro 는 `getSchema('pre'|'post')`에서 wave 분기. 블록 title 은 copydeck(나의 나침반·다섯 영역의 간격 등). 화면 공용 안내 문구(보안 고지 등)는 `copy.notices`(ResponseSchema 밖, 렌더러용).
+  - *보류*: likert 중앙 레이블 '보통'(블록2)은 현 `LikertScale` 계약에 필드가 없어 미반영(렌더러 파생 또는 추후 계약 보강). 간격 종료의 '5주 전' 값은 B③ 비교뷰 사안 — flow 는 '오늘' 값만 수집.
+- **subjectProfile 형상**(진단 소유): `ageBand`·`faithYears`(공용) · `motivation`(사전, 참여 계기) · `writtenAt`(종료, 작성일) — wave별 노출(`copy.profileFieldsByWave`). **실명은 코어 `users.name`, 전화는 `user_contacts`** 재사용 — profile 에 두지 않음(ADR-02·04).
+- **B④ 정직화(ADR-19)**: `AlertPlugin.evaluate` 반환을 `AlertSignal`(severity·reason)로 변경. `responseId`·`cohortId` 는 코어가 saveResponse 후 주입 → 완전한 `AlertInput` 으로 raiseAlert. 책임 경계와 일치(진단=신호, 코어=식별자).
 
 ---
 
@@ -571,6 +573,8 @@ UI/UX는 지휘부(설계자+AI)가 시안까지 확정한 뒤 `design_system.md
 | ADR-16 | SAIL 전화 로그인(`email_by_phone`)은 `user_contacts` 기반으로 격리 보존 | 퓨처나우는 전화 로그인 미사용. 통합 시 재설계(plan.md) |
 | ADR-17 | 가입-by-코드: `resolve_cohort_by_code` 를 공개 메타(비민감) 반환 정의자로 확장 + `CoreContext.enrollByCode` 계약 추가 | 미가입자도 코드로 차수를 확인·가입해야. 차수·참여는 코어 책임. 민감정보(응답·명단·전화) 미노출 |
 | ADR-18 | `requireRole` 를 `Promise<void>` 로 비동기화 | 숨은 "현재 사용자 선행 해석" 전제를 타입으로 끌어올려 견고화(계약은 견고화 방향으로만 변경) |
+| ADR-19 | `AlertPlugin.evaluate` 반환을 `AlertSignal`(severity·reason)로 정직화 | 진단은 신호만, `responseId`·`cohortId` 는 코어가 saveResponse 후 주입. 책임 경계와 일치 |
+| ADR-20 | `LikertScale.centerLabel?` 추가(척도 레이블 데이터 소유) | 중앙 레이블('보통' 등)을 진단이 데이터로 선언. 렌더러는 있으면 표기, 없으면 생략 |
 
 ---
 

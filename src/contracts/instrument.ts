@@ -38,6 +38,7 @@ export interface LikertScale {
   points: number;
   minLabel: string;
   maxLabel: string;
+  centerLabel?: string; // 있으면 중앙 표기, 없으면 생략(척도 레이블 데이터 소유 — ADR-20)
 }
 export interface NumericScale {
   kind: 'numeric';
@@ -143,6 +144,9 @@ export interface ReportPlugin<S = unknown> {
 //   퓨처나우 트리거는 §9.3 규칙 2(Red Flag)·돌봄 체크.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// 진단은 severity·reason 만 안다. responseId·cohortId 는 코어가 saveResponse 후 주입한다(책임 경계 정직화).
+export type AlertSignal = Pick<AlertInput, 'severity' | 'reason'>;
+
 export interface AlertPlugin<S = unknown> {
-  evaluate(scores: S, answers: Answers): AlertInput[];
+  evaluate(scores: S, answers: Answers): AlertSignal[];
 }

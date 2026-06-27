@@ -45,16 +45,18 @@ describe('futurenowAnswersSchema', () => {
   });
 });
 
-describe('futurenowProfileSchema (실명은 코어 users.name 재사용 — 여기 없음)', () => {
-  it('필수 채우면 통과(faithYears 수치 또는 문자열)', () => {
+describe('futurenowProfileSchema (실명·전화는 코어 — 여기 없음. motivation/writtenAt wave별)', () => {
+  it('사전 프로필(ageBand·faithYears·motivation) 통과', () => {
     expect(
-      futurenowProfileSchema.safeParse({ ageBand: '30대', faithYears: 5, writtenAt: '2026-06-27' }).success,
+      futurenowProfileSchema.safeParse({ ageBand: '30대', faithYears: 5, motivation: '추천' }).success,
     ).toBe(true);
+  });
+  it('종료 프로필(ageBand·faithYears·writtenAt) 통과', () => {
     expect(
       futurenowProfileSchema.safeParse({ ageBand: '30대', faithYears: '5년 이상', writtenAt: '2026-06-27' }).success,
     ).toBe(true);
   });
   it('ageBand 누락 거부', () => {
-    expect(futurenowProfileSchema.safeParse({ faithYears: 5, writtenAt: '2026-06-27' }).success).toBe(false);
+    expect(futurenowProfileSchema.safeParse({ faithYears: 5 }).success).toBe(false);
   });
 });
