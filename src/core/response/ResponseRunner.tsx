@@ -80,7 +80,7 @@ export function ResponseRunner({ schema, context, cohortId, wave, onComplete }: 
   if (doneId) {
     return (
       <main style={page}>
-        <h1 className="t-h1">고맙습니다.</h1>
+        <h1 className="t-h1" style={{ color: 'var(--color-primary)' }}>고맙습니다.</h1>
         <p className="t-body-lg" style={{ color: 'var(--color-text-secondary)' }}>
           응답이 저장되었습니다. 여기 적은 모든 것은 인도자 한 사람만 봅니다.
         </p>
@@ -143,7 +143,7 @@ function BlockView({
 
   return (
     <section>
-      <h2 className="t-h2" style={{ margin: '0 0 var(--space-3)' }}>
+      <h2 className="t-h2" style={{ margin: '0 0 var(--space-3)', color: 'var(--color-primary)' }}>
         {block.kind === 'standard' ? block.title : ''}
       </h2>
       {block.kind === 'standard' && block.intro ? (

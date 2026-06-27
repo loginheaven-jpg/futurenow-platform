@@ -20,8 +20,9 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* 색 역할 모델(§1.5): primary = 네이비(앱의 틀). accent(골드)는 선택·진행 전용. */
 .ui-btn--primary {
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: var(--color-text-on-accent);
 }
 .ui-btn--primary:not(:disabled):active {
@@ -30,7 +31,7 @@
 .ui-btn--ghost {
   background: transparent;
   color: var(--color-primary);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-primary);
 }
 .ui-btn--ghost:not(:disabled):active {
   background: var(--color-surface-1);
@@ -70,6 +71,13 @@
   gap: var(--space-3);
   margin-bottom: var(--space-2);
   color: var(--color-text-secondary);
+}
+/* 좌/우 레이블 각 ~44% 블록, 중앙 여백. 2줄 줄바꿈 허용(한글 어절 단위). 두 문장이 붙어 보이지 않게. */
+.ui-seg__label--left,
+.ui-seg__label--right {
+  flex: 0 0 44%;
+  max-width: 44%;
+  word-break: keep-all;
 }
 .ui-seg__label--left {
   text-align: left;

@@ -32,7 +32,7 @@ function Gallery() {
   return (
     <Card style={{ marginBottom: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       <div>
-        <p className="t-h2" style={{ margin: '0 0 var(--space-3)' }}>팔레트 미리보기</p>
+        <p className="t-h2" style={{ margin: '0 0 var(--space-3)', color: 'var(--color-primary)' }}>팔레트 미리보기</p>
         <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
           <Button>주요 동작</Button>
           <Button variant="ghost">보조 동작</Button>
@@ -60,9 +60,19 @@ function Gallery() {
 export default function PreviewPage() {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <h1 className="t-display" style={{ margin: '0 0 var(--space-2)' }}>퓨처나우</h1>
+      <header
+        style={{
+          background: 'var(--color-primary)',
+          padding: 'var(--space-4)',
+          borderRadius: 'var(--radius-lg)',
+          marginBottom: 'var(--space-4)',
+        }}
+      >
+        <div className="t-h1" style={{ color: 'var(--color-text-on-accent)' }}>퓨처나우</div>
+        <div className="t-caption" style={{ color: 'var(--color-accent)' }}>미래의 나를 만나는 시간</div>
+      </header>
       <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
-        디자인 시스템 v1 미리보기 — 색 토큰·응답 위젯 5종.
+        디자인 시스템 v1 — 색 역할: 네이비=앱의 틀 / 골드=참여자의 흔적.
       </p>
       <Gallery />
       <hr style={{ border: 0, borderTop: 'var(--border-hair) solid var(--color-border)', margin: 'var(--space-6) 0' }} />
