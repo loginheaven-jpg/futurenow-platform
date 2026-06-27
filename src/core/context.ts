@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   AlertInput,
   Cohort,
+  CohortPreviewMeta,
   CoreContext,
   CoreUser,
   Enrollment,
@@ -116,6 +117,21 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // ── 차수·참여 ──────────────────────────────────────────────
+  // 가입 결정용 공개 메타(coachName·memberCount 포함). resolve_cohort_by_code 메타를 버리지 않고 매핑.
+  async previewCohortByCode(code: string): Promise<CohortPreviewMeta | null> {
+    const meta = await this.resolveMeta(code);
+    if (!meta) return null;
+    return {
+      id: meta.id,
+      name: meta.name,
+      coachName: meta.coach_name,
+      instrumentId: meta.instrument_id,
+      memberCount: Number(meta.member_count),
+      status: meta.status as CohortPreviewMeta['status'],
+      expiresAt: meta.expires_at,
+    };
+  }
+
   async resolveCohortByCode(code: string): Promise<Cohort | null> {
     // resolve_cohort_by_code(SECURITY DEFINER)는 활성·미만료 차수의 공개 메타를 반환한다.
     // 미가입자도 코드만 알면 차수 정보를 확인하고 가입을 결정할 수 있다(민감정보 미노출).
@@ -241,13 +257,18 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // ── 알림 ───────────────────────────────────────────────────
+  // 멱등: (response_id, reason) 유니크(20260628120000) + ON CONFLICT DO NOTHING.
+  // 재호출·재시도로 같은 신호가 중복 적재되지 않는다. INSERT-only(불변)와 양립(UPDATE 없음).
   async raiseAlert(input: AlertInput): Promise<void> {
-    const { error } = await this.sb.from('alerts').insert({
-      response_id: input.responseId,
-      cohort_id: input.cohortId,
-      severity: input.severity,
-      reason: input.reason,
-    });
+    const { error } = await this.sb.from('alerts').upsert(
+      {
+        response_id: input.responseId,
+        cohort_id: input.cohortId,
+        severity: input.severity,
+        reason: input.reason,
+      },
+      { onConflict: 'response_id,reason', ignoreDuplicates: true },
+    );
     if (error) throw new CoreError(`raiseAlert 실패: ${error.message}`);
   }
 

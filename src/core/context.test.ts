@@ -204,6 +204,28 @@ describe('resolveCohortByCode (공개 메타, 미가입자도 가능)', () => {
   });
 });
 
+describe('previewCohortByCode (가입 결정용 공개 메타)', () => {
+  it('메타 → CohortPreviewMeta 매핑(coachName·memberCount 포함, 민감정보 없음)', async () => {
+    const { ctx } = ctxWith({
+      authUser: { id: 'u1' },
+      rpcResolver: () => ({ data: [metaRow({ member_count: 3 })], error: null }),
+    });
+    expect(await ctx.previewCohortByCode('rstuv')).toEqual({
+      id: 'co1',
+      name: '1기',
+      coachName: 'CoachA',
+      instrumentId: 'futurenow',
+      memberCount: 3,
+      status: 'active',
+      expiresAt: null,
+    });
+  });
+  it('메타 없음 → null', async () => {
+    const { ctx } = ctxWith({ authUser: { id: 'u1' }, rpcResolver: () => ({ data: [], error: null }) });
+    expect(await ctx.previewCohortByCode('ZZZZZ')).toBeNull();
+  });
+});
+
 describe('enrollByCode (코드로 가입)', () => {
   it('유효하지 않은 코드 → CoreNotFoundError', async () => {
     const { ctx } = ctxWith({
@@ -266,14 +288,14 @@ describe('getCohort / raiseAlert', () => {
     await expect(ctx.getCohort('missing')).rejects.toBeInstanceOf(CoreNotFoundError);
   });
 
-  it('raiseAlert 는 alerts 에 매핑해 insert', async () => {
+  it('raiseAlert 는 alerts 에 멱등 upsert(중복 무시)', async () => {
     const { ctx, calls } = ctxWith({
       authUser: { id: 'u1' },
       tableResolver: () => ({ data: null, error: null }),
     });
     await ctx.raiseAlert({ responseId: 'r1', cohortId: 'co1', severity: 'red_flag', reason: '활력 위기신호' });
-    const insert = calls.find((c) => c.table === 'alerts' && c.op === 'insert');
-    expect(insert?.payload).toEqual({
+    const up = calls.find((c) => c.table === 'alerts' && c.op === 'upsert');
+    expect(up?.payload).toEqual({
       response_id: 'r1',
       cohort_id: 'co1',
       severity: 'red_flag',

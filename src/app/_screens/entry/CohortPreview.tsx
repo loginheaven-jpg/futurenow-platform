@@ -1,8 +1,9 @@
 'use client';
 // §7.2 차수 미리보기 — resolve_cohort_by_code 공개 메타. 민감정보 미노출. 비로그인 표시 가능.
+import type { CohortPreviewMeta } from '@/contracts';
 import { Button } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
-import type { CohortPreviewMeta } from '../types';
+import { instrumentDisplay } from '../types';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -14,6 +15,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export function CohortPreview({ meta, onEnter, onCancel }: { meta: CohortPreviewMeta; onEnter?: () => void; onCancel?: () => void }) {
+  const inst = instrumentDisplay(meta.instrumentId);
   return (
     <div>
       <AppHeader title="이 모임에 들어갑니다" />
@@ -27,10 +29,10 @@ export function CohortPreview({ meta, onEnter, onCancel }: { meta: CohortPreview
         }}
       >
         <div className="t-h1" style={{ color: 'var(--color-primary)', marginBottom: 'var(--space-4)' }}>{meta.name}</div>
-        <Row label="인도자" value={meta.coachName} />
-        <Row label="현재 인원" value={`${meta.memberCount} / ${meta.maxMembers}명`} />
-        <Row label="진단" value={meta.instrumentLabel} />
-        <Row label="예상 시간" value={`약 ${meta.estimatedMinutes}분`} />
+        <Row label="인도자" value={meta.coachName ?? '—'} />
+        <Row label="현재 인원" value={`${meta.memberCount}명`} />
+        <Row label="진단" value={inst.label} />
+        <Row label="예상 시간" value={`약 ${inst.minutes}분`} />
       </div>
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
         <Button variant="ghost" onClick={onCancel} style={{ flex: 1 }}>아니에요</Button>

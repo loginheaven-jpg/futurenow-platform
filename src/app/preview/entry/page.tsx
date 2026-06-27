@@ -5,16 +5,16 @@ import { CodeInput } from '@/app/_screens/entry/CodeInput';
 import { CohortPreview } from '@/app/_screens/entry/CohortPreview';
 import { AuthGate } from '@/app/_screens/entry/AuthGate';
 import { StartGuide } from '@/app/_screens/entry/StartGuide';
-import type { CohortPreviewMeta } from '@/app/_screens/types';
+import type { CohortPreviewMeta } from '@/contracts';
 
 const sampleMeta: CohortPreviewMeta = {
   id: 'co1',
   name: '2026 봄 미래의 나 1기',
   coachName: '김인도',
+  instrumentId: 'futurenow',
   memberCount: 7,
-  maxMembers: 10,
-  instrumentLabel: '퓨처나우 사전 진단',
-  estimatedMinutes: 5,
+  status: 'active',
+  expiresAt: null,
 };
 
 function Frame({ label, children }: { label: string; children: ReactNode }) {

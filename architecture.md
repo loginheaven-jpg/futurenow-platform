@@ -268,6 +268,12 @@ interface Cohort {
 
 interface Enrollment { cohortId: string; userId: string; joinedAt: string; }
 
+// 가입 결정용 차수 공개 메타(Cohort 도메인 밖 — coachName·memberCount 포함, 민감정보 미포함). ADR-22
+interface CohortPreviewMeta {
+  id: string; name: string; coachName: string | null; instrumentId: InstrumentId;
+  memberCount: number; status: 'active' | 'archived'; expiresAt: string | null;
+}
+
 interface ResponseEnvelope<TAnswers = unknown, TProfile = unknown> {
   id: string;
   instrumentId: InstrumentId;
@@ -309,7 +315,8 @@ interface CoreContext {
   setPhone(userId: string, phone: string): Promise<void>;
 
   // 차수·참여
-  resolveCohortByCode(code: string): Promise<Cohort | null>;   // 코드의 차수 공개 메타(미가입자도 가능)
+  previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). ADR-22
+  resolveCohortByCode(code: string): Promise<Cohort | null>;   // 차수 도메인 본체(가입-후/코치 경로)
   enrollByCode(code: string): Promise<Enrollment>;             // 코드로 현재 사용자를 차수에 가입(ADR-17)
   getCohort(cohortId: string): Promise<Cohort>;
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
@@ -586,6 +593,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-19 | `AlertPlugin.evaluate` 반환을 `AlertSignal`(severity·reason)로 정직화 | 진단은 신호만, `responseId`·`cohortId` 는 코어가 saveResponse 후 주입. 책임 경계와 일치 |
 | ADR-20 | `LikertScale.centerLabel?` 추가(척도 레이블 데이터 소유) | 중앙 레이블('보통' 등)을 진단이 데이터로 선언. 렌더러는 있으면 표기, 없으면 생략 |
 | ADR-21 | 리포트 차트군은 **인스트루먼트 소유**(코어 아님) | 진단별 명명·데이터 결속 → 진단↛코어 경계(CLAUDE §1) 유지. design_system §7 '코어' 기재 정정(directive 2026-06-28) |
+| ADR-22 | `CohortPreviewMeta` + `previewCohortByCode` 추가(가입 결정용 공개 메타) | `resolveCohortByCode`(Cohort 본체)와 목적 분리 — 미가입자 가입 결정용 비민감 메타(coachName·memberCount). RPC 메타를 버리지 않고 매핑. DB 무변경(directive 2026-06-28 승인) |
 
 ---
 

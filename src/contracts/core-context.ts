@@ -8,6 +8,7 @@
 import type {
   AlertInput,
   Cohort,
+  CohortPreviewMeta,
   CoreUser,
   Enrollment,
   InstrumentId,
@@ -27,7 +28,8 @@ export interface CoreContext {
   setPhone(userId: string, phone: string): Promise<void>;
 
   // 차수·참여
-  resolveCohortByCode(code: string): Promise<Cohort | null>; // 코드의 차수 공개 메타 조회(미가입자도 가능)
+  previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). 승인 2026-06-28
+  resolveCohortByCode(code: string): Promise<Cohort | null>; // 차수 도메인 본체(가입-후/코치·운영자 경로)
   enrollByCode(code: string): Promise<Enrollment>; // 코드로 현재 사용자를 차수에 가입(코어 소유 — 승인 2026-06-26)
   getCohort(cohortId: string): Promise<Cohort>;
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
