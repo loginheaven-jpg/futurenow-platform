@@ -1,6 +1,6 @@
 // DB 행(snake_case) ↔ 계약 도메인 타입(camelCase) 매핑. 순수 함수 — 단위테스트 대상.
 // 거점 테이블은 public 스키마(SAIL 승격). 컬럼명은 20260626120000_core_platform_upgrade.sql 기준.
-import type { Cohort, CoreUser, Enrollment, ResponseEnvelope, Role, Wave } from '@/contracts';
+import type { Alert, Cohort, CoreUser, Enrollment, ResponseEnvelope, Role, Wave } from '@/contracts';
 
 export interface UserRow {
   id: string;
@@ -49,6 +49,25 @@ export interface EnrollmentRow {
 }
 export function rowToEnrollment(r: EnrollmentRow): Enrollment {
   return { cohortId: r.cohort_id, userId: r.user_id, joinedAt: r.joined_at };
+}
+
+export interface AlertRow {
+  id: string;
+  response_id: string;
+  cohort_id: string | null;
+  severity: string;
+  reason: string;
+  created_at: string;
+}
+export function rowToAlert(r: AlertRow): Alert {
+  return {
+    id: r.id,
+    responseId: r.response_id,
+    cohortId: r.cohort_id,
+    severity: r.severity as Alert['severity'],
+    reason: r.reason,
+    createdAt: r.created_at,
+  };
 }
 
 export interface ResponseRow {

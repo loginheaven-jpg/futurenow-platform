@@ -5,6 +5,7 @@
 // 계약(/contracts) 형상은 바꾸지 않는다. 검증 스키마는 진단이 주입(validators 레지스트리).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
+  Alert,
   AlertInput,
   Cohort,
   CohortPreviewMeta,
@@ -20,10 +21,12 @@ import type {
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
 import {
+  rowToAlert,
   rowToCohort,
   rowToEnrollment,
   rowToEnvelope,
   rowToUser,
+  type AlertRow,
   type CohortRow,
   type EnrollmentRow,
   type ResponseRow,
@@ -195,6 +198,16 @@ class SupabaseCoreContext implements CoreContext {
     return rowToCohort(data as CohortRow);
   }
 
+  // 코치 차수 목록(콘솔 홈). RLS(cohorts_select): 코치는 본인 차수, 운영자는 전체.
+  async listCohortsByCoach(coachId: string): Promise<Cohort[]> {
+    const { data, error } = await this.sb
+      .from('cohorts')
+      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at')
+      .eq('coach_id', coachId);
+    if (error) throw new CoreError(`listCohortsByCoach 실패: ${error.message}`);
+    return (data ?? []).map((r) => rowToCohort(r as CohortRow));
+  }
+
   async listEnrollments(cohortId: string): Promise<Enrollment[]> {
     const { data, error } = await this.sb
       .from('enrollments')
@@ -270,6 +283,16 @@ class SupabaseCoreContext implements CoreContext {
       { onConflict: 'response_id,reason', ignoreDuplicates: true },
     );
     if (error) throw new CoreError(`raiseAlert 실패: ${error.message}`);
+  }
+
+  // 차수 알림 읽기(콘솔 '먼저 챙길 분'의 저장된 출처). RLS(alerts_select): 차수 코치/운영자만.
+  async listAlerts(cohortId: string): Promise<Alert[]> {
+    const { data, error } = await this.sb
+      .from('alerts')
+      .select('id,response_id,cohort_id,severity,reason,created_at')
+      .eq('cohort_id', cohortId);
+    if (error) throw new CoreError(`listAlerts 실패: ${error.message}`);
+    return (data ?? []).map((r) => rowToAlert(r as AlertRow));
   }
 
   // ── 내부 ───────────────────────────────────────────────────

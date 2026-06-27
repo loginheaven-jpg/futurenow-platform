@@ -303,3 +303,37 @@ describe('getCohort / raiseAlert', () => {
     });
   });
 });
+
+describe('listCohortsByCoach / listAlerts (콘솔 실데이터 출처)', () => {
+  it('listCohortsByCoach 는 coach_id 로 필터, Cohort[] 매핑', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'c1' },
+      tableResolver: (c) =>
+        c.table === 'cohorts'
+          ? {
+              data: [
+                { id: 'co1', coach_id: 'c1', instrument_id: 'futurenow', name: '1기', code: 'RSTUV', status: 'active', max_members: 10, expires_at: null },
+              ],
+              error: null,
+            }
+          : { data: null, error: null },
+    });
+    const list = await ctx.listCohortsByCoach('c1');
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ id: 'co1', coachId: 'c1', instrumentId: 'futurenow' });
+    expect(calls.find((c) => c.table === 'cohorts')?.filters).toEqual({ coach_id: 'c1' });
+  });
+
+  it('listAlerts 는 cohort_id 로 필터, 읽기형 Alert[] 매핑(저장된 출처)', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'c1' },
+      tableResolver: (c) =>
+        c.table === 'alerts'
+          ? { data: [{ id: 'a1', response_id: 'r1', cohort_id: 'co1', severity: 'red_flag', reason: '활력 위기신호', created_at: 't0' }], error: null }
+          : { data: null, error: null },
+    });
+    const list = await ctx.listAlerts('co1');
+    expect(list[0]).toEqual({ id: 'a1', responseId: 'r1', cohortId: 'co1', severity: 'red_flag', reason: '활력 위기신호', createdAt: 't0' });
+    expect(calls.find((c) => c.table === 'alerts')?.filters).toEqual({ cohort_id: 'co1' });
+  });
+});

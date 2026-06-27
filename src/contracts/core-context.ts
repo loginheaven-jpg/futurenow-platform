@@ -6,6 +6,7 @@
 // **형상 변경은 지휘부 승인 후에만**(CLAUDE §1).
 
 import type {
+  Alert,
   AlertInput,
   Cohort,
   CohortPreviewMeta,
@@ -32,6 +33,7 @@ export interface CoreContext {
   resolveCohortByCode(code: string): Promise<Cohort | null>; // 차수 도메인 본체(가입-후/코치·운영자 경로)
   enrollByCode(code: string): Promise<Enrollment>; // 코드로 현재 사용자를 차수에 가입(코어 소유 — 승인 2026-06-26)
   getCohort(cohortId: string): Promise<Cohort>;
+  listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체. 승인 2026-06-28
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
   // 응답 봉투 (answers·profile 타입은 진단이 지정)
@@ -46,4 +48,5 @@ export interface CoreContext {
 
   // 알림 (진단이 트리거, 코어가 전달)
   raiseAlert(input: AlertInput): Promise<void>;
+  listAlerts(cohortId: string): Promise<Alert[]>; // 차수 알림 읽기(콘솔 '먼저 챙길 분'의 저장된 출처). RLS: 차수 코치/운영자. 승인 2026-06-28
 }

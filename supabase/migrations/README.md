@@ -15,18 +15,20 @@
 
 ## 이 폴더의 마이그레이션
 
-| 파일 | 상태 | 내용 |
+> **파일명 = 원격 기록 version 정렬됨(2026-06-28).** 과거 `apply_migration` 이 적용 시각으로 version 을
+> 기록해 파일명 timestamp 와 어긋났던 것을, 깨끗한 체크아웃에서 `supabase db push` 가 재적용을 시도하지
+> 않도록 파일명을 원격 version 에 맞춰 정렬했다. **SQL 내용은 불변 — 파일명만 변경.**
+
+| 파일(=원격 version) | 상태 | 내용 |
 |---|---|---|
-| `20260626120000_core_platform_upgrade.sql` | **적용됨**(원격 `20260626064658`) | SAIL→플랫폼 승격: `users` 정비(full_name→name·phone 분리)·`user_contacts`·`cohorts`·`enrollments`·`responses`·`alerts`·코어 RLS 헬퍼·전화헬퍼 재지정 |
-| `20260626130000_fix_handle_new_user_search_path.sql` | **적용됨**(원격 `20260626071856`) | `handle_new_user` 에 `SET search_path = public` 추가(본문 동일). 어드바이저 0011 보정 |
-| `20260626140000_resolve_cohort_meta.sql` | **적용됨**(원격 `20260626082730`) | `resolve_cohort_by_code` 를 UUID→차수 공개 메타(비민감) 반환으로 확장(가입-by-코드, ADR-17) |
+| `20260626064658_core_platform_upgrade.sql` | **적용됨** | SAIL→플랫폼 승격: `users` 정비(full_name→name·phone 분리)·`user_contacts`·`cohorts`·`enrollments`·`responses`·`alerts`·코어 RLS 헬퍼·전화헬퍼 재지정 |
+| `20260626071856_fix_handle_new_user_search_path.sql` | **적용됨** | `handle_new_user` 에 `SET search_path = public` 추가(본문 동일). 어드바이저 0011 보정 |
+| `20260626082730_resolve_cohort_meta.sql` | **적용됨** | `resolve_cohort_by_code` 를 UUID→차수 공개 메타(비민감) 반환으로 확장(가입-by-코드, ADR-17) |
+| `20260627160855_alerts_dedup.sql` | **적용됨** | 알림 멱등성: `alerts(response_id, reason)` 유니크 인덱스. `raiseAlert` 가 `ON CONFLICT DO NOTHING` 으로 중복 신호 무시(리뷰 발견 high, ADR 픽스) |
 
 SAIL 기존 4종(`initial_schema`·`groups`·`fix_rls_recursion`·`phone_profile`)은 SAIL 레포 소관이며
 원격에 이미 적용돼 있다. **이 폴더에 복제하거나 수정하지 않는다.** 본 폴더는 코어 승격 이후의
 플랫폼 마이그레이션만 보관한다.
-
-> 참고: 위 파일명 timestamp(`20260626120000`)와 원격 기록 version(`20260626064658`)이 다르다.
-> MCP `apply_migration` 이 적용 시각으로 version 을 기록하기 때문이다. 재적용 금지(이미 적용됨).
 
 ## 규율
 

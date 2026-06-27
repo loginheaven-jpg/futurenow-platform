@@ -301,6 +301,13 @@ interface AlertInput {
   reason: string;             // 진단이 명명 (예: '활력 위기신호')
   // 점수·원문은 싣지 않는다 — 측정/강의 어휘 분리. 맥락은 코치 콘솔에서만.
 }
+
+// 읽기용 알림(인도자 콘솔의 '먼저 챙길 분'). AlertInput(쓰기)에 id·createdAt 부가. ADR-23
+// 돌봄 신호의 **저장된 출처** — 재채점으로 재유도하지 않는다(drift 방지).
+interface Alert {
+  id: string; responseId: string; cohortId: string | null;
+  severity: 'info' | 'care' | 'red_flag'; reason: string; createdAt: string;
+}
 ```
 
 ```ts
@@ -319,6 +326,7 @@ interface CoreContext {
   resolveCohortByCode(code: string): Promise<Cohort | null>;   // 차수 도메인 본체(가입-후/코치 경로)
   enrollByCode(code: string): Promise<Enrollment>;             // 코드로 현재 사용자를 차수에 가입(ADR-17)
   getCohort(cohortId: string): Promise<Cohort>;
+  listCohortsByCoach(coachId: string): Promise<Cohort[]>;       // 코치 차수 목록(콘솔 홈). RLS: 본인/운영자. ADR-23
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
   // 응답 봉투 (answers·profile 타입은 진단이 지정)
@@ -333,6 +341,7 @@ interface CoreContext {
 
   // 알림 (진단이 트리거, 코어가 전달)
   raiseAlert(input: AlertInput): Promise<void>;
+  listAlerts(cohortId: string): Promise<Alert[]>;              // '먼저 챙길 분'의 저장된 출처. RLS: 차수 코치/운영자. ADR-23
 }
 ```
 
@@ -594,6 +603,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-20 | `LikertScale.centerLabel?` 추가(척도 레이블 데이터 소유) | 중앙 레이블('보통' 등)을 진단이 데이터로 선언. 렌더러는 있으면 표기, 없으면 생략 |
 | ADR-21 | 리포트 차트군은 **인스트루먼트 소유**(코어 아님) | 진단별 명명·데이터 결속 → 진단↛코어 경계(CLAUDE §1) 유지. design_system §7 '코어' 기재 정정(directive 2026-06-28) |
 | ADR-22 | `CohortPreviewMeta` + `previewCohortByCode` 추가(가입 결정용 공개 메타) | `resolveCohortByCode`(Cohort 본체)와 목적 분리 — 미가입자 가입 결정용 비민감 메타(coachName·memberCount). RPC 메타를 버리지 않고 매핑. DB 무변경(directive 2026-06-28 승인) |
+| ADR-23 | `Alert` 읽기 타입 + `listCohortsByCoach`·`listAlerts` 추가(콘솔 실데이터) | 콘솔 홈 = 코치 차수목록 + '먼저 챙길 분'. 돌봄은 안전 신호 → **저장된 알림을 읽는다**(listAlerts), `listResponses`+재채점 금지(채점 로직 변경 시 저장본과 drift). RLS(cohorts_select·alerts_select) 그대로 사용, DB 무변경(directive 2026-06-28 승인) |
 
 ---
 

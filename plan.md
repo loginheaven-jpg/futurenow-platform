@@ -38,8 +38,9 @@
 | ~~Q3~~ | ~~사전·사후 페어링 키~~ → **확정: user_id + cohort_id + instrument_id, wave 구분** | architecture §5.5 |
 | Q4 | 리포트 열람 주체 | 참여자 본인도 자기 리포트를 보는가, 인도자만 보는가? (종료진단 PDF의 "인도자만 열람" 문구와 본인 피드백 욕구의 균형) |
 | Q5 | AI 해석 문구의 검수 | Claude 생성 리포트 문구를 인도자가 검수·수정 후 확정하는 단계를 둘 것인가 |
+| Q6 | 코치의 멤버 이름 가시성 | architecture §6.2 는 "같은 차수 코치 ○"이나, SAIL `users_select` RLS = 본인/운영자뿐. 코치는 멤버 이름 조회 불가 → 콘솔 '먼저 챙길 분'에 이름 표시 불가(현재 '참여자' placeholder). **결정 필요**: (a) `users`에 코치-멤버 SELECT 정책 추가(공유 SAIL 테이블 변경 → 지휘부 확인), 또는 (b) SECURITY DEFINER 멤버명부 RPC(코치 차수 멤버의 id+name만 반환, 새 계약 메서드). 둘 다 stop-and-ask. |
 
-> Q1~Q3 는 **확정**됨(2026-06-26, architecture §5.5 · ADR-17). 남은 미결은 Q4·Q5(리포트 단계에서 결정).
+> Q1~Q3 는 **확정**됨(2026-06-26, architecture §5.5 · ADR-17). 남은 미결은 Q4·Q5·Q6.
 
 ---
 

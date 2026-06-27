@@ -80,3 +80,14 @@ export interface AlertInput {
   reason: string; // 진단이 명명 (예: '활력 위기신호')
   // 점수·원문은 싣지 않는다 — 측정/강의 어휘 분리. 맥락은 코치 콘솔에서만.
 }
+
+// 읽기용 알림(인도자 콘솔). AlertInput(쓰기)에 id·createdAt 부가. ADR-23
+// cohortId 는 읽기에선 null 가능(차수 삭제 시 set null). 돌봄 신호의 **저장된 출처**(재채점 금지).
+export interface Alert {
+  id: string;
+  responseId: string;
+  cohortId: string | null;
+  severity: 'info' | 'care' | 'red_flag';
+  reason: string;
+  createdAt: string;
+}
