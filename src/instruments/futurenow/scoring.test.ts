@@ -127,3 +127,15 @@ describe('어휘 분리: 산출물에 강의 명명이 없다', () => {
     expect(json).not.toMatch(/시들음|원씽|languish/i);
   });
 });
+
+describe('주관식 원문 통과(리포트 표시용 — 계약상 scores 만 renderScreen 에 전달)', () => {
+  it('E1~E3 텍스트를 그대로 싣는다', () => {
+    const s = scoreFuturenow(with_({ E1: '기대문', E2: '정서문', E3: '요청문' }));
+    expect(s.subjective).toEqual({ E1: '기대문', E2: '정서문', E3: '요청문' });
+  });
+  it('무응답은 빈 문자열', () => {
+    const a = base();
+    delete a.E3;
+    expect(scoreFuturenow(a).subjective.E3).toBe('');
+  });
+});

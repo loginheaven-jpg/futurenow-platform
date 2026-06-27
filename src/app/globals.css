@@ -28,10 +28,17 @@
   --gray-600: #6b655c;
   --gray-800: #3a352f;
   --gray-900: #211e1a;
-  /* 의미색 */
+  /* 의미색 — 인도자 화면 전용 */
   --green-600: #2e7d6b;
   --amber-600: #c0852e;
   --red-600: #b23b3b;
+  /* 의미색 — 리포트용 저채도 톤 (절제 표시, §1.1 v2) */
+  --care-fill: #faece7;
+  --care-line: #d85a30;
+  --care-text: #993c1d;
+  --thrive-soft: #9fe1cb;
+  --mid-soft: #e9d8a6;
+  --languish-soft: #f0997b;
 }
 
 /* §1.2 역할 토큰 (2차 — 라이트). 컴포넌트는 이것만 참조 */

@@ -544,17 +544,19 @@ interface AlertPlugin<S = unknown> {
 
 ---
 
-## 10. 디자인 시스템 — **v1 도착·구현 (응답 위젯) / 리포트 시각화 대기**
+## 10. 디자인 시스템 — **v2 도착·구현 (응답 위젯 + 리포트 시각화) / 콘솔·CohortPreview 대기**
 
-상세는 [`design_system.md`](design_system.md) (v1). 본 절은 요약·구현 상태.
+상세는 [`design_system.md`](design_system.md) (v2). 본 절은 요약·구현 상태.
 
-**v1 범위(구현 완료, 2026-06-27)**: 색 3단 토큰 · 타이포(Pretendard) · 응답 위젯 5종.
+**v2 범위(구현 완료, 2026-06-27)**: 색 3단 토큰 · 타이포 · 응답 위젯 5종 · **리포트 시각화 5종 + 종합 배치**.
 
 - **색 3단 토큰**(§1): 원천 hex → 역할(semantic) → 컴포넌트. `src/app/globals.css` 에 §1.1~1.4 구현. **컴포넌트는 2차 역할 토큰만 참조**(hex·`--navy-*`·`--gold-*` 직접 참조 금지). 색값은 **잠정**(첫 화면 확정 후 재평가). 선택색 = `--color-accent`(골드). 다크 토큰은 역할만 재지정.
 - **타이포·간격**(§2·§3): Pretendard, 숫자 tabular-nums, 타이포 7토큰(display~micro), `--tap-min:44px` 등. globals.css.
 - **공용 UI 9종**(§5, 코어 `src/core/ui`, 인스트루먼트 중립): Button·Card·ProgressBar·SegmentBar·DotScale·NumberSlider·TextArea·CheckRow·StickyScaleHeader. 스타일은 `src/core/ui/ui.css`(역할 토큰만).
 - **응답 위젯 5종 + 러너**(§4): 나침반=세그먼트바(중앙 유지)·리커트=행스택+척도 sticky+도트22px(히트44px)·간격=슬라이더+숫자·주관식=텍스트영역·체크=행토글(경고색 금지·골드 선택). `src/core/response/ResponseRunner.tsx`(시각부: 블록 흐름·위젯 렌더·진행·필수 게이팅·제약무작위 배열[`ordering.ts`]·완료 시 `saveResponse`). 참여자 화면 경고색 배제(§0.4). 미리보기 라우트 `/preview`.
-- **보류(design_system v2)**: 리포트(B③) 시각화(나침반 게이지·오각 레이더·GROW+F 막대·사전사후 비교)·코치/운영자 콘솔·`CohortPreview`. **착수 금지.**
+- **리포트 시각화 5종 + 배치**(§5·§6, B③ 구현 완료): 나침반=덤벨·간격=레이더(사후 네이비13% 면+사전 회색 점선)·GROW+F=충전막대(사후 네이비·사전 회색)·활력=띠 이동(시들음/중간/번성 저채도 구간+상태배지)·돌봄 신호=조건부 배너(저채도 `--care-*`). 배치: 돌봄→헤드라인(활력·나침반)→깊이(간격·GROW)→주관식, 데스크톱 2×2/모바일 1열. **본문 시각물 네이비·회색, 의미색은 돌봄 배너에만.** 명명(시들음·원씽)은 리포트에서만(§9.4). `src/instruments/futurenow/report/*` + `report.tsx`(ReportPlugin: renderScreen·renderGroup·renderPdf[react-pdf, 서버 전용]). 미리보기 `/preview/report`. **InstrumentModule 최종 조립** = `src/instruments/futurenow/index.ts`.
+- **⚠ 경계 미결(보고)**: design_system §7 은 리포트 차트군(Dumbbell·Radar·ChargeBars·VitalityBand·CareBanner)을 **코어 `/src/core/ui`** 로 둔다고 하나, CLAUDE §1 경계는 "진단은 코어를 직접 참조하지 않는다"이다. 현재는 경계를 지켜 차트를 **인스트루먼트(`report/visuals.tsx`)** 에 두었다. 코어 공용화는 지휘부 결정 필요.
+- **보류(design_system §9)**: 코치/운영자 콘솔·`CohortPreview`. **착수 금지.**
 - **후속(러너)**: 진행 저장/재개·subjectProfile 수집 화면·접근성 키보드 정밀화는 미구현(주석).
 
 ---

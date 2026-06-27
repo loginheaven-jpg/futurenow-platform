@@ -30,6 +30,8 @@ export interface FuturenowScores {
   gap: { B1: number; B2: number; B3: number; B4: number; B5: number };
   // ⑦ 믿음의 자리 — 점수화하지 않음(목회적 신호로만). 무응답은 null
   faith: { F1: number | null; F2: number | null };
+  // 주관식(서술) — 리포트(B③) 표시용. 채점 대상 아님, 원문 통과(계약상 renderScreen 은 scores 만 받음).
+  subjective: { E1: string; E2: string; E3: string };
 }
 
 const avg = (a: number, b: number) => (a + b) / 2;
@@ -82,7 +84,11 @@ export function scoreFuturenow(answers: Answers): FuturenowScores {
   // ⑦ 믿음의 자리 — 점수화 안 함, 무응답 null
   const faith = { F1: optN('F1'), F2: optN('F2') };
 
-  return { vitality, redFlag, grow, trap, compass, gap, faith };
+  // 주관식 원문 통과(리포트 표시용)
+  const str = (code: string): string => (typeof answers[code] === 'string' ? (answers[code] as string) : '');
+  const subjective = { E1: str('E1'), E2: str('E2'), E3: str('E3') };
+
+  return { vitality, redFlag, grow, trap, compass, gap, faith, subjective };
 }
 
 export const futurenowScoring: ScoringPlugin<Answers, FuturenowScores> = {
