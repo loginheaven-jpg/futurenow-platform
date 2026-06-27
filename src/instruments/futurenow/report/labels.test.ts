@@ -6,7 +6,7 @@ describe('vitalityZone (활력 명명 — 측정→강의는 리포트에서만)
     expect(vitalityZone(5)).toMatchObject({ name: '시들음', tone: 'care' });
     expect(vitalityZone(10)).toMatchObject({ name: '시들음', tone: 'care' });
   });
-  it('11~17 → 중간, 18~25 → 번성 (§5.4, 경계 잠정)', () => {
+  it('11~17 → 중간, 18~25 → 번성 (§5.4, 경계 확정 2026-06-28)', () => {
     expect(vitalityZone(11).name).toBe('중간');
     expect(vitalityZone(17).name).toBe('중간');
     expect(vitalityZone(18).name).toBe('번성');

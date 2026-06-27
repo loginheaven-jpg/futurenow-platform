@@ -203,9 +203,9 @@
 | TextArea | 4.4 주관식 |
 | CheckRow | 4.5 체크 |
 | StickyScaleHeader | 4.2 척도 고정·5등분 정렬 |
-| **리포트 차트군** | Dumbbell · Radar · ChargeBars · VitalityBand · CareBanner (§5). recharts/SVG·역할 토큰 기반 |
 
 - 컴포넌트는 인스트루먼트 중립(코어 소유). 퓨처나우 전용 색·문구 비포함.
+- **정정(2026-06-28)**: 리포트 차트군(Dumbbell·Radar·ChargeBars·VitalityBand·CareBanner, §5)은 **인스트루먼트 소유**다(`/src/instruments/futurenow/report/`). 진단별 명명·데이터가 박히므로 코어 중립 부품이 아니며, 경계(진단↛코어, CLAUDE §1)상 코어에 두지 않는다. 공유 디자인 토큰(`var(--color-*)`·`--care-*`·`--*-soft`)만 참조. *(이전 표의 '코어' 기재는 오기.)*
 
 ---
 
