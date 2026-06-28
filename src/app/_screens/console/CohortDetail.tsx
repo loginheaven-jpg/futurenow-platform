@@ -1,7 +1,8 @@
 'use client';
 // §8.3 차수 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
-import type { ReactNode } from 'react';
-import { ListRow } from '@/core/ui';
+// 덜 쓰는 관리(마감·정원)는 헤더 메뉴. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
+import { useState, type ReactNode } from 'react';
+import { Button, ListRow, Stepper } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 import type { CohortSummary, RosterMember } from '../types';
 
@@ -35,21 +36,86 @@ function Group({ title, color, children }: { title: string; color?: string; chil
 export function CohortDetail({
   cohort,
   roster,
+  status = 'active',
+  maxMembers = 100,
   onBack,
   onOpenMember,
+  onArchive,
+  onSetCap,
 }: {
   cohort: CohortSummary;
   roster: RosterMember[];
+  status?: 'active' | 'archived';
+  maxMembers?: number;
   onBack?: () => void;
   onOpenMember?: (id: string) => void;
+  onArchive?: () => void | Promise<void>;
+  onSetCap?: (n: number) => void | Promise<void>;
 }) {
   const care = roster.filter((m) => m.status === 'care');
   const done = roster.filter((m) => m.status === 'done');
   const pending = roster.filter((m) => m.status === 'pending');
 
+  const [manageOpen, setManageOpen] = useState(false);
+  const [cap, setCap] = useState(maxMembers);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const archived = status === 'archived';
+
+  async function saveCap() {
+    setBusy(true);
+    try {
+      await onSetCap?.(cap);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function doArchive() {
+    setBusy(true);
+    try {
+      await onArchive?.();
+    } finally {
+      setBusy(false);
+      setConfirmArchive(false);
+    }
+  }
+
   return (
     <div>
-      <AppHeader title={cohort.name} subtitle="진행 중" onBack={onBack} />
+      <AppHeader title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} onBack={onBack} />
+
+      {/* 관리(마감·정원) — 헤더 메뉴. 인도자 화면이라 의미색 허용 */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
+        <button
+          type="button"
+          onClick={() => setManageOpen((o) => !o)}
+          className="t-caption"
+          style={{ minHeight: 'var(--tap-min)', padding: '0 var(--space-3)', border: '1px solid var(--color-border-strong)', borderRadius: 'var(--radius)', background: 'transparent', color: 'var(--color-primary)', cursor: 'pointer' }}
+        >
+          관리
+        </button>
+      </div>
+      {manageOpen ? (
+        <section style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="t-body" style={{ color: 'var(--color-text)' }}>정원</span>
+            <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+              <Stepper value={cap} min={1} max={100} onChange={setCap} label="정원" />
+              <Button variant="ghost" onClick={saveCap} disabled={busy || cap === maxMembers}>저장</Button>
+            </div>
+          </div>
+          {archived ? (
+            <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 차수예요.</p>
+          ) : !confirmArchive ? (
+            <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busy} style={{ width: '100%' }}>차수 마감</Button>
+          ) : (
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <Button variant="ghost" onClick={() => setConfirmArchive(false)} style={{ flex: 1 }}>취소</Button>
+              <Button onClick={doArchive} disabled={busy} style={{ flex: 1 }}>마감 확정</Button>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
         <Stat n={done.length} label="응답 완료" color="var(--color-primary)" />

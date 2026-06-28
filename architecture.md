@@ -207,6 +207,15 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 무변경**(G1 보호, ADR-27). 참여자엔 측정·severity·돌봄 신호 0건(코치 경로 전용). 거울 산출 실패 시 ①헤더+④핸드오프만
 보이는 우아한 저하. (남은 미결: plan Q4 리포트 열람 주체 · Q5 AI 문구 검수.)
 
+**라우트 맵**(전부 기존 메서드 위 배선 — 계약 변경 0):
+| 라우트 | 주체 | 데이터 |
+|---|---|---|
+| `/join` | 참여자 | preview→enroll→runner→finalize(거울) |
+| `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag) |
+| `/coach/new` | 코치/운영자 | `createCohort` |
+| `/coach/cohort/[cohortId]` | 코치/운영자 | `getCohort`·`listEnrollments`·`listResponses`·`listAlerts`·`listCohortMembers` → 3숫자·3묶음 + 관리(마감·정원=`updateCohort`) |
+| `/coach/cohort/[cohortId]/report/[responseId]` | 코치/운영자 | `getResponse`→B② `score`→`ReportScreen`(재사용). 접근=responses RLS(차수 코치+운영자+본인). 참여자 UI 경로 없음 |
+
 ---
 
 ## 6. 보안·RLS

@@ -4,7 +4,8 @@
 //   응답/총원 = listResponses · listEnrollments
 //   멤버 이름 = listCohortMembers(cohort_member_directory RPC, 코치/운영자 id+name만 — ADR-24). plan Q6 해소.
 // 먼저 챙길 분 이름 경로: alert.responseId → response.userId → member.name. name null 이면 '참여자' 폴백.
-import { ConsoleHome } from '@/app/_screens/console/ConsoleHome';
+import { ConsoleHomeClient } from './ConsoleHomeClient';
+import { buildCohortRoster } from './rosterModel';
 import { instrumentDisplay, type CohortSummary, type RosterMember } from '@/app/_screens/types';
 import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
@@ -12,8 +13,7 @@ import { createServerSupabase } from '@/core/supabase/server';
 export const dynamic = 'force-dynamic';
 
 export default async function CoachConsolePage() {
-  const sb = await createServerSupabase();
-  const ctx = createCoreContext(sb);
+  const ctx = createCoreContext(await createServerSupabase());
   const me = await ctx.currentUser();
 
   if (!me || me.role === 'user') {
@@ -36,41 +36,24 @@ export default async function CoachConsolePage() {
       ctx.listCohortMembers(c.id),
     ]);
 
-    const respondedUsers = new Set(responses.map((r) => r.userId).filter(Boolean));
-    const careAlerts = alerts.filter((a) => a.severity === 'care' || a.severity === 'red_flag');
-
-    // 이름 경로: responseId → userId → member.name (없으면 '참여자' 폴백).
-    const responseUser = new Map(responses.map((r) => [r.id, r.userId] as const));
-    const memberName = new Map(members.map((m) => [m.userId, m.name] as const));
-    const nameFor = (responseId: string): string => {
-      const uid = responseUser.get(responseId);
-      return (uid ? memberName.get(uid) : null) ?? '참여자';
-    };
-
-    // 먼저 챙길 분: 응답(사람) 단위로 묶고, 더 강한 신호(red_flag)를 우선. note=사유들.
-    const byResponse = new Map<string, { severity: 'care' | 'red_flag'; reasons: string[] }>();
-    for (const a of careAlerts) {
-      const sev = a.severity as 'care' | 'red_flag';
-      const e = byResponse.get(a.responseId) ?? { severity: sev, reasons: [] };
-      e.reasons.push(a.reason);
-      if (sev === 'red_flag') e.severity = 'red_flag';
-      byResponse.set(a.responseId, e);
-    }
+    const { roster, responded, waiting, careCount } = buildCohortRoster({ enrollments, responses, alerts, members });
 
     summaries.push({
       id: c.id,
       name: c.name,
       instrumentLabel: instrumentDisplay(c.instrumentId).label,
-      responded: respondedUsers.size,
-      total: enrollments.length,
-      careCount: byResponse.size,
+      responded,
+      total: responded + waiting,
+      careCount,
       code: c.code,
     });
 
-    for (const [responseId, e] of byResponse) {
-      careMembers.push({ id: responseId, name: nameFor(responseId), status: 'care', note: `${e.reasons.join(' · ')} · ${c.name}` });
+    // 먼저 챙길 분(전 차수 합산). id=`${cohortId}__${responseId}` — 리포트 진입에 cohortId 필요.
+    for (const m of roster) {
+      if (m.status !== 'care') continue;
+      careMembers.push({ id: `${c.id}__${m.id}`, name: m.name, status: 'care', note: `${m.note ?? ''} · ${c.name}` });
     }
   }
 
-  return <ConsoleHome coachName={me.name ?? me.email} careMembers={careMembers} cohorts={summaries} />;
+  return <ConsoleHomeClient coachName={me.name ?? me.email} careMembers={careMembers} cohorts={summaries} />;
 }
