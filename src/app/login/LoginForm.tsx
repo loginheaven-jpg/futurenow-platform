@@ -1,0 +1,102 @@
+'use client';
+// 인도자 로그인 폼(프레젠테이션 — 부수효과 없음). 로그인 전용(가입 폼·탭 없음 — 가입은 /join).
+// 참여자 팔레트(네이비 틀·중립). 의미색 불필요. 보조 링크는 일반 앵커(라우터 컨텍스트 불요 → 렌더 테스트 가능).
+import { type CSSProperties } from 'react';
+import { Button } from '@/core/ui';
+
+const inputStyle: CSSProperties = {
+  width: '100%',
+  minHeight: 'var(--tap-min)',
+  padding: '0 var(--space-3)',
+  borderRadius: 'var(--radius)',
+  border: 'var(--border-hair) solid var(--color-border)',
+  background: 'var(--color-surface-2)',
+  color: 'var(--color-text)',
+  font: 'inherit',
+  fontSize: 15,
+};
+
+export function LoginForm({
+  email,
+  password,
+  show,
+  busy,
+  error,
+  onEmail,
+  onPassword,
+  onToggleShow,
+  onSubmit,
+}: {
+  email: string;
+  password: string;
+  show: boolean;
+  busy: boolean;
+  error: string | null;
+  onEmail: (v: string) => void;
+  onPassword: (v: string) => void;
+  onToggleShow: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <div style={{ maxWidth: 420, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
+      <h1 className="t-h1" style={{ color: 'var(--color-primary)', fontSize: 22, margin: '0 0 var(--space-2)' }}>
+        퓨처나우 · 인도자 로그인
+      </h1>
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
+        코치·운영자 전용 로그인이에요.
+      </p>
+
+      {error ? (
+        <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-4)' }}>{error}</p>
+      ) : null}
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit();
+        }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
+      >
+        <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
+          이메일
+          <input
+            style={{ ...inputStyle, marginTop: 'var(--space-1)' }}
+            type="email"
+            autoComplete="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => onEmail(e.target.value)}
+          />
+        </label>
+        <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
+          비밀번호
+          <input
+            style={{ ...inputStyle, marginTop: 'var(--space-1)' }}
+            type={show ? 'text' : 'password'}
+            autoComplete="current-password"
+            placeholder="비밀번호"
+            value={password}
+            onChange={(e) => onPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={onToggleShow}
+            className="t-caption"
+            style={{ marginTop: 'var(--space-1)', background: 'transparent', border: 0, color: 'var(--color-text-secondary)', cursor: 'pointer', padding: 0 }}
+          >
+            {show ? '비밀번호 숨기기' : '비밀번호 보기'}
+          </button>
+        </label>
+
+        <Button type="submit" disabled={!email || !password || busy} style={{ width: '100%', marginTop: 'var(--space-2)' }}>
+          {busy ? '로그인 중…' : '로그인'}
+        </Button>
+      </form>
+
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
+        참여자는 인도자에게 받은 코드로 입장해 주세요.{' '}
+        <a href="/join" style={{ color: 'var(--color-primary)' }}>입장하기</a>
+      </p>
+    </div>
+  );
+}
