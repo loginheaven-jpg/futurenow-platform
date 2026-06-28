@@ -1,6 +1,6 @@
 // DB 행(snake_case) ↔ 계약 도메인 타입(camelCase) 매핑. 순수 함수 — 단위테스트 대상.
 // 거점 테이블은 public 스키마(SAIL 승격). 컬럼명은 20260626120000_core_platform_upgrade.sql 기준.
-import type { Alert, Cohort, CoreUser, Enrollment, ResponseEnvelope, Role, Wave } from '@/contracts';
+import type { Alert, CoachApplication, Cohort, CoreUser, Enrollment, ResponseEnvelope, Role, Wave } from '@/contracts';
 
 export interface UserRow {
   id: string;
@@ -66,6 +66,32 @@ export function rowToAlert(r: AlertRow): Alert {
     cohortId: r.cohort_id,
     severity: r.severity as Alert['severity'],
     reason: r.reason,
+    createdAt: r.created_at,
+  };
+}
+
+// 코치 신청 행. applicant 는 PostgREST 임베드(users!coach_applications_user_id_fkey) — user_id·reviewed_by 두 FK라 명시 disambiguation.
+export interface CoachApplicationRow {
+  id: string;
+  user_id: string;
+  status: string;
+  motivation: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  created_at: string;
+  applicant?: { name: string | null } | null;
+}
+export function rowToCoachApplication(r: CoachApplicationRow): CoachApplication {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    applicantName: r.applicant?.name ?? null,
+    status: r.status as CoachApplication['status'],
+    motivation: r.motivation,
+    reviewedBy: r.reviewed_by,
+    reviewedAt: r.reviewed_at,
+    reviewNote: r.review_note,
     createdAt: r.created_at,
   };
 }

@@ -2,8 +2,8 @@
 // 집계 출처(전부 계약 메서드, RLS 게이트):
 //   차수 목록 = listCohortsByCoach(me.id)   먼저 챙길 분 = listAlerts(care/red_flag) — **저장된 출처**(재채점 금지)
 //   응답/총원 = listResponses · listEnrollments
-// 참여자 이름은 코어 users.name(ADR-02)에 있으나 users_select RLS = 본인/운영자뿐 → 코치는 멤버 이름 조회 불가.
-// → 먼저 챙길 분의 '이름'은 보류(아래 보고 §5 stop-and-ask: 코치-멤버 이름 RLS 결정 대기). responseId 로 리포트 진입은 가능.
+//   멤버 이름 = listCohortMembers(cohort_member_directory RPC, 코치/운영자 id+name만 — ADR-24). plan Q6 해소.
+// 먼저 챙길 분 이름 경로: alert.responseId → response.userId → member.name. name null 이면 '참여자' 폴백.
 import { ConsoleHome } from '@/app/_screens/console/ConsoleHome';
 import { instrumentDisplay, type CohortSummary, type RosterMember } from '@/app/_screens/types';
 import { createCoreContext } from '@/core/context';
@@ -29,14 +29,23 @@ export default async function CoachConsolePage() {
   const careMembers: RosterMember[] = [];
 
   for (const c of cohorts) {
-    const [enrollments, responses, alerts] = await Promise.all([
+    const [enrollments, responses, alerts, members] = await Promise.all([
       ctx.listEnrollments(c.id),
       ctx.listResponses({ instrumentId: c.instrumentId, cohortId: c.id }),
       ctx.listAlerts(c.id),
+      ctx.listCohortMembers(c.id),
     ]);
 
     const respondedUsers = new Set(responses.map((r) => r.userId).filter(Boolean));
     const careAlerts = alerts.filter((a) => a.severity === 'care' || a.severity === 'red_flag');
+
+    // 이름 경로: responseId → userId → member.name (없으면 '참여자' 폴백).
+    const responseUser = new Map(responses.map((r) => [r.id, r.userId] as const));
+    const memberName = new Map(members.map((m) => [m.userId, m.name] as const));
+    const nameFor = (responseId: string): string => {
+      const uid = responseUser.get(responseId);
+      return (uid ? memberName.get(uid) : null) ?? '참여자';
+    };
 
     // 먼저 챙길 분: 응답(사람) 단위로 묶고, 더 강한 신호(red_flag)를 우선. note=사유들.
     const byResponse = new Map<string, { severity: 'care' | 'red_flag'; reasons: string[] }>();
@@ -59,7 +68,7 @@ export default async function CoachConsolePage() {
     });
 
     for (const [responseId, e] of byResponse) {
-      careMembers.push({ id: responseId, name: '참여자', status: 'care', note: `${e.reasons.join(' · ')} · ${c.name}` });
+      careMembers.push({ id: responseId, name: nameFor(responseId), status: 'care', note: `${e.reasons.join(' · ')} · ${c.name}` });
     }
   }
 

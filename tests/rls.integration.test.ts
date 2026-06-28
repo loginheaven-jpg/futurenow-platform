@@ -38,6 +38,13 @@ const COACH_A = '11111111-1111-1111-1111-111111111111';
 const COACH_B = '33333333-3333-3333-3333-333333333333';
 const ADMIN = '44444444-4444-4444-4444-444444444444';
 const COHORT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const APP = 'dddddddd-dddd-dddd-dddd-dddddddddddd'; // MemberM(user)의 코치 신청(pending)
+
+// MemberM 의 코치 신청(pending). MemberM 은 SETUP 에서 role 'user' 로 생성됨 → 승인 시 'coach' 로 승격되는지 검증.
+const APP_SETUP = `
+insert into public.coach_applications (id,user_id,status,motivation,created_at)
+ values ('${APP}','${MEMBER}','pending','이끌고 싶습니다', now());
+`;
 
 /** 주어진 sub(사용자)로 authenticated 역할을 시뮬레이션해 count 쿼리를 평가한다. */
 async function countAs(client: Client, sub: string, sql: string): Promise<number> {
@@ -48,6 +55,33 @@ async function countAs(client: Client, sub: string, sql: string): Promise<number
   const r = await client.query(sql);
   await client.query(`reset role`);
   return Number(r.rows[0].count);
+}
+
+/** sub 로 authenticated 시뮬레이션해 문장을 실행(void). 실패 시 savepoint 로 트랜잭션 복구 후 throw(이후 검증 계속 가능). */
+async function runAs(client: Client, sub: string, sql: string): Promise<void> {
+  await client.query('savepoint sp');
+  try {
+    await client.query(`set local role authenticated`);
+    await client.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub, role: 'authenticated' })]);
+    await client.query(sql);
+  } catch (e) {
+    await client.query('rollback to savepoint sp');
+    await client.query('release savepoint sp');
+    throw e;
+  }
+  await client.query('reset role');
+  await client.query('release savepoint sp');
+}
+
+/** 주어진 문장이 특정 sqlstate 로 raise 하는지 확인. */
+async function expectRaise(client: Client, sub: string, sql: string, sqlstate: string): Promise<void> {
+  let code: string | undefined;
+  try {
+    await runAs(client, sub, sql);
+  } catch (e) {
+    code = (e as { code?: string }).code;
+  }
+  expect(code).toBe(sqlstate);
 }
 
 describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
@@ -79,6 +113,39 @@ describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
       expect(await countAs(client, MEMBER, ALERT)).toBe(0);
       expect(await countAs(client, COACH_B, ALERT)).toBe(0);
       expect(await countAs(client, ADMIN, ALERT)).toBe(1);
+    } finally {
+      await client.query('rollback');
+      await client.end();
+    }
+  });
+
+  it('멤버명부·코치 승격 RPC 가 권한·멱등을 강제한다', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await client.query(APP_SETUP);
+
+      const DIR = `select count(*)::int as count from public.cohort_member_directory('${COHORT}')`;
+      // 멤버명부: 차수 코치·운영자 ○ / 타코치·참여자 ✕
+      expect(await countAs(client, COACH_A, DIR)).toBe(1);
+      expect(await countAs(client, ADMIN, DIR)).toBe(1);
+      expect(await countAs(client, COACH_B, DIR)).toBe(0);
+      expect(await countAs(client, MEMBER, DIR)).toBe(0);
+
+      // 승격 RPC: 비운영자 거부(42501)
+      await expectRaise(client, COACH_A, `select public.decide_coach_application('${APP}','approved',null)`, '42501');
+
+      // 운영자 승인 → 신청 approved + 사용자 user→coach 원자 승격
+      await runAs(client, ADMIN, `select public.decide_coach_application('${APP}','approved','환영합니다')`);
+      const appStatus = await client.query(`select status from public.coach_applications where id='${APP}'`);
+      const memberRole = await client.query(`select role from public.users where id='${MEMBER}'`);
+      expect(appStatus.rows[0].status).toBe('approved');
+      expect(memberRole.rows[0].role).toBe('coach');
+
+      // 재결정 거부(55000 already decided — 멱등 가드)
+      await expectRaise(client, ADMIN, `select public.decide_coach_application('${APP}','rejected',null)`, '55000');
     } finally {
       await client.query('rollback');
       await client.end();

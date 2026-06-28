@@ -308,6 +308,17 @@ interface Alert {
   id: string; responseId: string; cohortId: string | null;
   severity: 'info' | 'care' | 'red_flag'; reason: string; createdAt: string;
 }
+
+// 차수 멤버 최소 참조(id+name만). cohort_member_directory(DEFINER) RPC — users RLS 미확대, 최소 노출. ADR-24
+interface MemberRef { userId: string; name: string | null; }
+
+// 코치 신청(USER→COACH 승격 대기). 본부 §8.6 [승인 대기]. 읽기=운영자 전용, 결정=decide_coach_application RPC(원자 승격). ADR-24
+interface CoachApplication {
+  id: string; userId: string; applicantName: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  motivation: string | null; reviewedBy: string | null; reviewedAt: string | null;
+  reviewNote: string | null; createdAt: string;
+}
 ```
 
 ```ts
@@ -327,6 +338,7 @@ interface CoreContext {
   enrollByCode(code: string): Promise<Enrollment>;             // 코드로 현재 사용자를 차수에 가입(ADR-17)
   getCohort(cohortId: string): Promise<Cohort>;
   listCohortsByCoach(coachId: string): Promise<Cohort[]>;       // 코치 차수 목록(콘솔 홈). RLS: 본인/운영자. ADR-23
+  listCohortMembers(cohortId: string): Promise<MemberRef[]>;    // 차수 멤버 id+name(코치/운영자). RPC cohort_member_directory. ADR-24
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
   // 응답 봉투 (answers·profile 타입은 진단이 지정)
@@ -342,6 +354,10 @@ interface CoreContext {
   // 알림 (진단이 트리거, 코어가 전달)
   raiseAlert(input: AlertInput): Promise<void>;
   listAlerts(cohortId: string): Promise<Alert[]>;              // '먼저 챙길 분'의 저장된 출처. RLS: 차수 코치/운영자. ADR-23
+
+  // 본부 — 코치 신청 승인/거절(USER→COACH 승격). 운영자 전용.
+  listCoachApplications(status?: 'pending' | 'approved' | 'rejected'): Promise<CoachApplication[]>; // 운영자 전용. ADR-24
+  decideCoachApplication(input: { applicationId: string; decision: 'approved' | 'rejected'; note?: string }): Promise<void>; // RPC decide_coach_application(원자 승격). ADR-24
 }
 ```
 
@@ -604,6 +620,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-21 | 리포트 차트군은 **인스트루먼트 소유**(코어 아님) | 진단별 명명·데이터 결속 → 진단↛코어 경계(CLAUDE §1) 유지. design_system §7 '코어' 기재 정정(directive 2026-06-28) |
 | ADR-22 | `CohortPreviewMeta` + `previewCohortByCode` 추가(가입 결정용 공개 메타) | `resolveCohortByCode`(Cohort 본체)와 목적 분리 — 미가입자 가입 결정용 비민감 메타(coachName·memberCount). RPC 메타를 버리지 않고 매핑. DB 무변경(directive 2026-06-28 승인) |
 | ADR-23 | `Alert` 읽기 타입 + `listCohortsByCoach`·`listAlerts` 추가(콘솔 실데이터) | 콘솔 홈 = 코치 차수목록 + '먼저 챙길 분'. 돌봄은 안전 신호 → **저장된 알림을 읽는다**(listAlerts), `listResponses`+재채점 금지(채점 로직 변경 시 저장본과 drift). RLS(cohorts_select·alerts_select) 그대로 사용, DB 무변경(directive 2026-06-28 승인) |
+| ADR-24 | 본부 데이터 계층: `MemberRef`·`CoachApplication` + `listCohortMembers`·`listCoachApplications`·`decideCoachApplication` | **이름 가시성**(plan Q6): users RLS 확대(전 행 노출) 대신 `cohort_member_directory`(DEFINER, **id+name만**) 채택 — SAIL `users` 보존·ADR-04 최소노출. **코치 승격**: 상태변경+role 승격 원자성 위해 `decide_coach_application`(DEFINER) — 내부 is_admin·FOR UPDATE·status='pending' 가드·`role='user'`만 승격. 읽기(listCoachApplications)는 RPC 불요(coach_apps_select=admin + users 조인). directive 2026-06-28 승인 |
 
 ---
 

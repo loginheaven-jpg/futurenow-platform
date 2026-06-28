@@ -40,6 +40,27 @@ export interface Enrollment {
   joinedAt: string;
 }
 
+// 차수 멤버 최소 참조(id+name만) — 코치/운영자가 명단·돌봄에 이름을 붙일 때. ADR-24
+// 출처: cohort_member_directory(SECURITY DEFINER) RPC. users RLS 를 넓히지 않고 id+name만 노출(ADR-04).
+export interface MemberRef {
+  userId: string;
+  name: string | null;
+}
+
+// 코치 신청(USER→COACH 승격 대기). 본부 §8.6 [승인 대기]의 데이터. ADR-24
+// 읽기는 운영자 전용(coach_apps_select=admin). 결정(승인/거절)은 decide_coach_application RPC(원자 승격).
+export interface CoachApplication {
+  id: string;
+  userId: string;
+  applicantName: string | null; // users.name 조인(운영자만)
+  status: 'pending' | 'approved' | 'rejected';
+  motivation: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+}
+
 // 가입 결정용 차수 **공개 메타** (Cohort 도메인 밖 — coachName·memberCount 포함, 민감정보 미포함).
 // 출처: resolve_cohort_by_code 정의자 RPC. 미가입자·비로그인도 코드만 알면 조회 가능.
 // resolveCohortByCode(Cohort 본체)와 목적이 다르다: 이쪽은 "들어갈지 결정"을 위한 표시용.

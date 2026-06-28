@@ -8,11 +8,13 @@
 import type {
   Alert,
   AlertInput,
+  CoachApplication,
   Cohort,
   CohortPreviewMeta,
   CoreUser,
   Enrollment,
   InstrumentId,
+  MemberRef,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -34,6 +36,7 @@ export interface CoreContext {
   enrollByCode(code: string): Promise<Enrollment>; // 코드로 현재 사용자를 차수에 가입(코어 소유 — 승인 2026-06-26)
   getCohort(cohortId: string): Promise<Cohort>;
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체. 승인 2026-06-28
+  listCohortMembers(cohortId: string): Promise<MemberRef[]>; // 차수 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
   // 응답 봉투 (answers·profile 타입은 진단이 지정)
@@ -49,4 +52,8 @@ export interface CoreContext {
   // 알림 (진단이 트리거, 코어가 전달)
   raiseAlert(input: AlertInput): Promise<void>;
   listAlerts(cohortId: string): Promise<Alert[]>; // 차수 알림 읽기(콘솔 '먼저 챙길 분'의 저장된 출처). RLS: 차수 코치/운영자. 승인 2026-06-28
+
+  // 본부 — 코치 신청 승인/거절(USER→COACH 승격). 운영자 전용.
+  listCoachApplications(status?: 'pending' | 'approved' | 'rejected'): Promise<CoachApplication[]>; // 운영자 전용(coach_apps_select=admin) + users 조인. 승인 2026-06-28
+  decideCoachApplication(input: { applicationId: string; decision: 'approved' | 'rejected'; note?: string }): Promise<void>; // 운영자 전용, RPC decide_coach_application(원자 승격). 승인 2026-06-28
 }

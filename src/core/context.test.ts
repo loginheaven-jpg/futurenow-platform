@@ -337,3 +337,50 @@ describe('listCohortsByCoach / listAlerts (콘솔 실데이터 출처)', () => {
     expect(calls.find((c) => c.table === 'alerts')?.filters).toEqual({ cohort_id: 'co1' });
   });
 });
+
+describe('본부 데이터: 멤버명부 / 코치 신청 (RPC·임베드 매핑)', () => {
+  it('listCohortMembers 는 RPC 결과를 MemberRef[] 로 매핑(null 이름 보존)', async () => {
+    const { ctx, rpcCalls } = ctxWith({
+      authUser: { id: 'c1' },
+      rpcResolver: (name) =>
+        name === 'cohort_member_directory'
+          ? { data: [{ user_id: 'u2', name: '이참여' }, { user_id: 'u3', name: null }], error: null }
+          : { data: null, error: null },
+    });
+    const members = await ctx.listCohortMembers('co1');
+    expect(members).toEqual([{ userId: 'u2', name: '이참여' }, { userId: 'u3', name: null }]);
+    expect(rpcCalls).toContainEqual({ name: 'cohort_member_directory', args: { p_cohort_id: 'co1' } });
+  });
+
+  it('listCoachApplications 는 status 필터 + applicant 이름 매핑(읽기형)', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'a1' },
+      tableResolver: (c) =>
+        c.table === 'coach_applications'
+          ? {
+              data: [
+                { id: 'ap1', user_id: 'u9', status: 'pending', motivation: '이끌고 싶어요', reviewed_by: null, reviewed_at: null, review_note: null, created_at: 't0', applicant: { name: '정신청' } },
+              ],
+              error: null,
+            }
+          : { data: null, error: null },
+    });
+    const apps = await ctx.listCoachApplications('pending');
+    expect(apps[0]).toEqual({
+      id: 'ap1', userId: 'u9', applicantName: '정신청', status: 'pending', motivation: '이끌고 싶어요',
+      reviewedBy: null, reviewedAt: null, reviewNote: null, createdAt: 't0',
+    });
+    expect(calls.find((c) => c.table === 'coach_applications')?.filters).toEqual({ status: 'pending' });
+  });
+
+  it('decideCoachApplication 은 RPC 인자에 매핑 전달(note 미지정 → null)', async () => {
+    const { ctx, rpcCalls } = ctxWith({ authUser: { id: 'a1' }, rpcResolver: () => ({ data: null, error: null }) });
+    await ctx.decideCoachApplication({ applicationId: 'ap1', decision: 'approved' });
+    expect(rpcCalls).toContainEqual({ name: 'decide_coach_application', args: { p_application_id: 'ap1', p_decision: 'approved', p_note: null } });
+  });
+
+  it('decideCoachApplication 은 RPC 오류를 깨끗한 CoreError 로 변환', async () => {
+    const { ctx } = ctxWith({ authUser: { id: 'c1' }, rpcResolver: () => ({ data: null, error: { message: 'not authorized' } }) });
+    await expect(ctx.decideCoachApplication({ applicationId: 'ap1', decision: 'approved' })).rejects.toThrowError(/decideCoachApplication/);
+  });
+});

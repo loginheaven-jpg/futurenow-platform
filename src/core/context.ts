@@ -7,12 +7,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   Alert,
   AlertInput,
+  CoachApplication,
   Cohort,
   CohortPreviewMeta,
   CoreContext,
   CoreUser,
   Enrollment,
   InstrumentId,
+  MemberRef,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -22,11 +24,13 @@ import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
 import {
   rowToAlert,
+  rowToCoachApplication,
   rowToCohort,
   rowToEnrollment,
   rowToEnvelope,
   rowToUser,
   type AlertRow,
+  type CoachApplicationRow,
   type CohortRow,
   type EnrollmentRow,
   type ResponseRow,
@@ -208,6 +212,13 @@ class SupabaseCoreContext implements CoreContext {
     return (data ?? []).map((r) => rowToCohort(r as CohortRow));
   }
 
+  // 차수 멤버 id+name(코치/운영자). 권한·노출은 cohort_member_directory(DEFINER) 내부에서 강제 — 미달 시 빈 결과.
+  async listCohortMembers(cohortId: string): Promise<MemberRef[]> {
+    const { data, error } = await this.sb.rpc('cohort_member_directory', { p_cohort_id: cohortId });
+    if (error) throw new CoreError(`listCohortMembers 실패: ${error.message}`);
+    return ((data ?? []) as { user_id: string; name: string | null }[]).map((r) => ({ userId: r.user_id, name: r.name }));
+  }
+
   async listEnrollments(cohortId: string): Promise<Enrollment[]> {
     const { data, error } = await this.sb
       .from('enrollments')
@@ -293,6 +304,35 @@ class SupabaseCoreContext implements CoreContext {
       .eq('cohort_id', cohortId);
     if (error) throw new CoreError(`listAlerts 실패: ${error.message}`);
     return (data ?? []).map((r) => rowToAlert(r as AlertRow));
+  }
+
+  // ── 본부: 코치 신청 ─────────────────────────────────────────
+  // 읽기는 운영자 전용(coach_apps_select=admin). applicant=users.name 임베드(두 FK라 명시 disambiguation).
+  async listCoachApplications(status?: 'pending' | 'approved' | 'rejected'): Promise<CoachApplication[]> {
+    let q = this.sb
+      .from('coach_applications')
+      .select(
+        'id,user_id,status,motivation,reviewed_by,reviewed_at,review_note,created_at, applicant:users!coach_applications_user_id_fkey(name)',
+      );
+    if (status) q = q.eq('status', status);
+    const { data, error } = await q;
+    if (error) throw new CoreError(`listCoachApplications 실패: ${error.message}`);
+    return ((data ?? []) as unknown as CoachApplicationRow[]).map(rowToCoachApplication);
+  }
+
+  // 결정(승인/거절) — 상태변경 + (승인 시) user→coach 승격을 원자적으로(decide_coach_application RPC).
+  // 권한(is_admin)·이중결정·승격 범위는 모두 RPC 내부에서 강제. rpc 오류는 깨끗한 CoreError 로 변환(원시 누출 방지).
+  async decideCoachApplication(input: {
+    applicationId: string;
+    decision: 'approved' | 'rejected';
+    note?: string;
+  }): Promise<void> {
+    const { error } = await this.sb.rpc('decide_coach_application', {
+      p_application_id: input.applicationId,
+      p_decision: input.decision,
+      p_note: input.note ?? null,
+    });
+    if (error) throw new CoreError(`decideCoachApplication 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────
