@@ -84,6 +84,15 @@ async function expectRaise(client: Client, sub: string, sql: string, sqlstate: s
   expect(code).toBe(sqlstate);
 }
 
+/** sub 로 UPDATE 를 실행하고 영향 행수를 반환(USING 으로 가려진 행은 0). */
+async function updateCountAs(client: Client, sub: string, sql: string): Promise<number> {
+  await client.query(`set local role authenticated`);
+  await client.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub, role: 'authenticated' })]);
+  const r = await client.query(sql);
+  await client.query(`reset role`);
+  return r.rowCount ?? 0;
+}
+
 describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
   it('전화·응답·알림 가시성이 역할별로 의도대로 격리된다', async () => {
     const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
@@ -166,6 +175,25 @@ describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
 
       // 참여자(user) 는 WITH CHECK 위반 → 42501
       await expectRaise(client, MEMBER, `insert into public.cohorts (coach_id,instrument_id,name,code) values ('${MEMBER}','__rlstest__','x','FGHJK')`, '42501');
+    } finally {
+      await client.query('rollback');
+      await client.end();
+    }
+  });
+
+  it('cohorts_update RLS — 소유 코치만 수정, 타코치 차단(0행), coach_id 이전 차단(42501)', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP); // COHORT 는 COACH_A 소유
+
+      // 타코치(COACH_B)는 USING 불충족 → 0행 영향(에러 아님)
+      expect(await updateCountAs(client, COACH_B, `update public.cohorts set name='해킹' where id='${COHORT}'`)).toBe(0);
+      // 소유 코치(COACH_A) → 1행
+      expect(await updateCountAs(client, COACH_A, `update public.cohorts set name='수정됨' where id='${COHORT}'`)).toBe(1);
+      // coach_id 이전(COACH_A→COACH_B) → WITH CHECK 위반 → 42501
+      await expectRaise(client, COACH_A, `update public.cohorts set coach_id='${COACH_B}' where id='${COHORT}'`, '42501');
     } finally {
       await client.query('rollback');
       await client.end();

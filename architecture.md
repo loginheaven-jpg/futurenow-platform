@@ -337,6 +337,7 @@ interface CoreContext {
   resolveCohortByCode(code: string): Promise<Cohort | null>;   // 차수 도메인 본체(가입-후/코치 경로)
   enrollByCode(code: string): Promise<Enrollment>;             // 코드로 현재 사용자를 차수에 가입(ADR-17)
   createCohort(input: { name: string; instrumentId: InstrumentId; maxMembers?: number; description?: string; expiresAt?: string | null }): Promise<Cohort>; // 차수 개설(코치/운영자). 앱측 코드 생성+재시도, DDL 0. ADR-25
+  updateCohort(cohortId: string, patch: { name?: string; description?: string | null; maxMembers?: number; status?: 'active' | 'archived'; expiresAt?: string | null }): Promise<Cohort>; // 차수 부분수정(코치/운영자). coach_id·instrument_id·code·id 불변. ADR-26
   getCohort(cohortId: string): Promise<Cohort>;
   listCohortsByCoach(coachId: string): Promise<Cohort[]>;       // 코치 차수 목록(콘솔 홈). RLS: 본인/운영자. ADR-23
   listCohortMembers(cohortId: string): Promise<MemberRef[]>;    // 차수 멤버 id+name(코치/운영자). RPC cohort_member_directory. ADR-24
@@ -623,6 +624,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-23 | `Alert` 읽기 타입 + `listCohortsByCoach`·`listAlerts` 추가(콘솔 실데이터) | 콘솔 홈 = 코치 차수목록 + '먼저 챙길 분'. 돌봄은 안전 신호 → **저장된 알림을 읽는다**(listAlerts), `listResponses`+재채점 금지(채점 로직 변경 시 저장본과 drift). RLS(cohorts_select·alerts_select) 그대로 사용, DB 무변경(directive 2026-06-28 승인) |
 | ADR-24 | 본부 데이터 계층: `MemberRef`·`CoachApplication` + `listCohortMembers`·`listCoachApplications`·`decideCoachApplication` | **이름 가시성**(plan Q6): users RLS 확대(전 행 노출) 대신 `cohort_member_directory`(DEFINER, **id+name만**) 채택 — SAIL `users` 보존·ADR-04 최소노출. **코치 승격**: 상태변경+role 승격 원자성 위해 `decide_coach_application`(DEFINER) — 내부 is_admin·FOR UPDATE·status='pending' 가드·`role='user'`만 승격. 읽기(listCoachApplications)는 RPC 불요(coach_apps_select=admin + users 조인). directive 2026-06-28 승인 |
 | ADR-25 | `createCohort` = **앱측 코드 생성 + 충돌 재시도**(DEFINER RPC·마이그레이션 0) | `cohorts_insert` RLS(coach_id=auth.uid() AND user_role∈{coach,admin})가 권한을 이미 받음 → 새 RPC 불요. 유일 설계점은 유니크 코드: 앱이 `crypto.getRandomValues`로 5자리(알파벳 `ABCDEFGHJKMNPQRSTUVWXYZ23456789` = DB `cohorts_code_check`와 글자 일치) 생성, 23505 충돌 시 재시도(≤5). `Math.random` 금지(초대 수단=예측불가). directive 2026-06-28 승인 |
+| ADR-26 | `updateCohort` = **앱측 부분수정**(불변필드 제외) + `cohorts_update` WITH CHECK 부기 | 마감(status=archived)·정원 수정은 `cohorts_update` RLS(USING=소유 코치/운영자)가 받음 → 메서드만. patch는 `name·description·maxMembers·status·expiresAt`만 — `coach_id`(소유이전)·`instrument_id`(불일치)·`code`(링크파손)·`id` 불변. 기존 정책에 `WITH CHECK` 부재 → raw UPDATE 소유이전 가능했음 → 부기 픽스(USING+WITH CHECK 둘 다 소유 강제). 행 0=미존재/RLS차단→CoreNotFound. directive 2026-06-28 승인 |
 
 ---
 

@@ -449,3 +449,53 @@ describe('createCohort (차수 개설 — 코드 생성·재시도·권한)', ()
     expect(calls.some((c) => c.table === 'cohorts' && c.op === 'insert')).toBe(false);
   });
 });
+
+describe('updateCohort (차수 수정 — 부분수정·불변필드·권한)', () => {
+  const updatedRow = (over: Record<string, unknown>) => ({
+    id: 'co1', coach_id: 'c1', instrument_id: 'futurenow', name: '1기', code: 'RSTUV', status: 'active', max_members: 10, expires_at: null, ...over,
+  });
+
+  it('status→archived(마감) 반영, payload·filter 정확', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'c1' },
+      tableResolver: (c) =>
+        c.table === 'users' ? { data: userRow('c1', 'coach'), error: null } : { data: updatedRow({ status: 'archived' }), error: null },
+    });
+    const cohort = await ctx.updateCohort('co1', { status: 'archived' });
+    expect(cohort.status).toBe('archived');
+    const up = calls.find((c) => c.table === 'cohorts' && c.op === 'update');
+    expect(up?.payload).toEqual({ status: 'archived' });
+    expect(up?.filters).toEqual({ id: 'co1' });
+  });
+
+  it('maxMembers 수정 → max_members 매핑', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'c1' },
+      tableResolver: (c) =>
+        c.table === 'users' ? { data: userRow('c1', 'coach'), error: null } : { data: updatedRow({ max_members: 25 }), error: null },
+    });
+    const cohort = await ctx.updateCohort('co1', { maxMembers: 25 });
+    expect(cohort.maxMembers).toBe(25);
+    expect(calls.find((c) => c.table === 'cohorts' && c.op === 'update')?.payload).toEqual({ max_members: 25 });
+  });
+
+  it('빈 patch → CoreError, UPDATE 시도 없음', async () => {
+    const { ctx, calls } = ctxWith({ authUser: { id: 'c1' }, tableResolver: () => ({ data: userRow('c1', 'coach'), error: null }) });
+    await expect(ctx.updateCohort('co1', {})).rejects.toThrowError(/수정할 필드 없음/);
+    expect(calls.some((c) => c.table === 'cohorts' && c.op === 'update')).toBe(false);
+  });
+
+  it('비코치는 CoreForbiddenError, UPDATE 시도 없음', async () => {
+    const { ctx, calls } = ctxWith({ authUser: { id: 'u1' }, tableResolver: () => ({ data: userRow('u1', 'user'), error: null }) });
+    await expect(ctx.updateCohort('co1', { status: 'archived' })).rejects.toBeInstanceOf(CoreForbiddenError);
+    expect(calls.some((c) => c.table === 'cohorts' && c.op === 'update')).toBe(false);
+  });
+
+  it('행 0(미존재/RLS 차단) → CoreNotFoundError', async () => {
+    const { ctx } = ctxWith({
+      authUser: { id: 'c1' },
+      tableResolver: (c) => (c.table === 'users' ? { data: userRow('c1', 'coach'), error: null } : { data: null, error: null }),
+    });
+    await expect(ctx.updateCohort('coX', { status: 'archived' })).rejects.toBeInstanceOf(CoreNotFoundError);
+  });
+});

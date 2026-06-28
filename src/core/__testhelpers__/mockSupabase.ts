@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface QueryCall {
   table: string;
-  op: 'select' | 'insert' | 'upsert';
+  op: 'select' | 'insert' | 'upsert' | 'update';
   filters: Record<string, unknown>;
   payload?: unknown;
   selection?: string;
@@ -36,6 +36,11 @@ class Builder {
     // supabase-js 는 upsert(payload, { onConflict }) 로 호출하지만, 두 번째 인자는
     // 모킹에 불필요하므로 받지 않는다(런타임에서 여분 인자는 무시됨).
     this.call.op = 'upsert';
+    this.call.payload = payload;
+    return this;
+  }
+  update(payload: unknown) {
+    this.call.op = 'update';
     this.call.payload = payload;
     return this;
   }

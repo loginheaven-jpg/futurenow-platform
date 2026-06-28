@@ -247,6 +247,42 @@ class SupabaseCoreContext implements CoreContext {
     throw new CoreError('createCohort 실패: 유니크 코드 생성 재시도 초과(5회)');
   }
 
+  // 차수 부분수정(코치/운영자). 불변 필드(coach_id·instrument_id·code·id)는 patch에 없음 —
+  // 소유이전·링크파손·진단 불일치를 계약 표면에서 차단. RLS(cohorts_update: USING+WITH CHECK)가 소유를 강제.
+  async updateCohort(
+    cohortId: string,
+    patch: {
+      name?: string;
+      description?: string | null;
+      maxMembers?: number;
+      status?: 'active' | 'archived';
+      expiresAt?: string | null;
+    },
+  ): Promise<Cohort> {
+    const me = await this.requireUser();
+    if (me.role !== 'coach' && me.role !== 'admin') {
+      throw new CoreForbiddenError('차수 수정은 코치 또는 운영자만 가능합니다');
+    }
+
+    const payload: Record<string, unknown> = {};
+    if (patch.name !== undefined) payload.name = patch.name;
+    if (patch.description !== undefined) payload.description = patch.description;
+    if (patch.maxMembers !== undefined) payload.max_members = patch.maxMembers;
+    if (patch.status !== undefined) payload.status = patch.status;
+    if (patch.expiresAt !== undefined) payload.expires_at = patch.expiresAt;
+    if (Object.keys(payload).length === 0) throw new CoreError('updateCohort 실패: 수정할 필드 없음');
+
+    const { data, error } = await this.sb
+      .from('cohorts')
+      .update(payload)
+      .eq('id', cohortId)
+      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at')
+      .maybeSingle();
+    if (error) throw new CoreError(`updateCohort 실패: ${error.message}`);
+    if (!data) throw new CoreNotFoundError(`차수를 찾을 수 없거나 수정 권한이 없습니다: ${cohortId}`); // 행 0 = 미존재/RLS 차단
+    return rowToCohort(data as CohortRow);
+  }
+
   // 코치 차수 목록(콘솔 홈). RLS(cohorts_select): 코치는 본인 차수, 운영자는 전체.
   async listCohortsByCoach(coachId: string): Promise<Cohort[]> {
     const { data, error } = await this.sb

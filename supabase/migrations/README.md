@@ -27,6 +27,7 @@
 | `20260627160855_alerts_dedup.sql` | **적용됨** | 알림 멱등성: `alerts(response_id, reason)` 유니크 인덱스. `raiseAlert` 가 `ON CONFLICT DO NOTHING` 으로 중복 신호 무시(리뷰 발견 high, ADR 픽스) |
 | `20260628095509_cohort_member_directory.sql` | **적용됨** | 코치/운영자가 자기 차수 멤버의 `id+name`만 조회(SECURITY DEFINER, 권한 미달 시 빈 결과). `users` RLS 미확대 — ADR-24·plan Q6 |
 | `20260628095527_decide_coach_application.sql` | **적용됨** | 코치 신청 결정 RPC: 상태변경 + (승인 시) `user→coach` 원자 승격. 내부 `is_admin`·`FOR UPDATE`·`status='pending'` 가드 — ADR-24 |
+| `20260628124616_cohorts_update_with_check.sql` | **적용됨** | `cohorts_update` 정책에 `WITH CHECK` 부기(소유 이전 차단). USING+WITH CHECK 둘 다 소유 강제 — ADR-26 |
 
 SAIL 기존 4종(`initial_schema`·`groups`·`fix_rls_recursion`·`phone_profile`)은 SAIL 레포 소관이며
 원격에 이미 적용돼 있다. **이 폴더에 복제하거나 수정하지 않는다.** 본 폴더는 코어 승격 이후의
