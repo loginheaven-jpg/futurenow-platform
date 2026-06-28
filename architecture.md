@@ -336,6 +336,7 @@ interface CoreContext {
   previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). ADR-22
   resolveCohortByCode(code: string): Promise<Cohort | null>;   // 차수 도메인 본체(가입-후/코치 경로)
   enrollByCode(code: string): Promise<Enrollment>;             // 코드로 현재 사용자를 차수에 가입(ADR-17)
+  createCohort(input: { name: string; instrumentId: InstrumentId; maxMembers?: number; description?: string; expiresAt?: string | null }): Promise<Cohort>; // 차수 개설(코치/운영자). 앱측 코드 생성+재시도, DDL 0. ADR-25
   getCohort(cohortId: string): Promise<Cohort>;
   listCohortsByCoach(coachId: string): Promise<Cohort[]>;       // 코치 차수 목록(콘솔 홈). RLS: 본인/운영자. ADR-23
   listCohortMembers(cohortId: string): Promise<MemberRef[]>;    // 차수 멤버 id+name(코치/운영자). RPC cohort_member_directory. ADR-24
@@ -621,6 +622,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-22 | `CohortPreviewMeta` + `previewCohortByCode` 추가(가입 결정용 공개 메타) | `resolveCohortByCode`(Cohort 본체)와 목적 분리 — 미가입자 가입 결정용 비민감 메타(coachName·memberCount). RPC 메타를 버리지 않고 매핑. DB 무변경(directive 2026-06-28 승인) |
 | ADR-23 | `Alert` 읽기 타입 + `listCohortsByCoach`·`listAlerts` 추가(콘솔 실데이터) | 콘솔 홈 = 코치 차수목록 + '먼저 챙길 분'. 돌봄은 안전 신호 → **저장된 알림을 읽는다**(listAlerts), `listResponses`+재채점 금지(채점 로직 변경 시 저장본과 drift). RLS(cohorts_select·alerts_select) 그대로 사용, DB 무변경(directive 2026-06-28 승인) |
 | ADR-24 | 본부 데이터 계층: `MemberRef`·`CoachApplication` + `listCohortMembers`·`listCoachApplications`·`decideCoachApplication` | **이름 가시성**(plan Q6): users RLS 확대(전 행 노출) 대신 `cohort_member_directory`(DEFINER, **id+name만**) 채택 — SAIL `users` 보존·ADR-04 최소노출. **코치 승격**: 상태변경+role 승격 원자성 위해 `decide_coach_application`(DEFINER) — 내부 is_admin·FOR UPDATE·status='pending' 가드·`role='user'`만 승격. 읽기(listCoachApplications)는 RPC 불요(coach_apps_select=admin + users 조인). directive 2026-06-28 승인 |
+| ADR-25 | `createCohort` = **앱측 코드 생성 + 충돌 재시도**(DEFINER RPC·마이그레이션 0) | `cohorts_insert` RLS(coach_id=auth.uid() AND user_role∈{coach,admin})가 권한을 이미 받음 → 새 RPC 불요. 유일 설계점은 유니크 코드: 앱이 `crypto.getRandomValues`로 5자리(알파벳 `ABCDEFGHJKMNPQRSTUVWXYZ23456789` = DB `cohorts_code_check`와 글자 일치) 생성, 23505 충돌 시 재시도(≤5). `Math.random` 금지(초대 수단=예측불가). directive 2026-06-28 승인 |
 
 ---
 

@@ -202,6 +202,51 @@ class SupabaseCoreContext implements CoreContext {
     return rowToCohort(data as CohortRow);
   }
 
+  // 차수 개설(코치/운영자). 앱측 코드 생성 + 유니크 충돌(23505) 재시도. RLS(cohorts_insert)가 권한을 강제(이중 방어).
+  async createCohort(input: {
+    name: string;
+    instrumentId: InstrumentId;
+    maxMembers?: number;
+    description?: string;
+    expiresAt?: string | null;
+  }): Promise<Cohort> {
+    const me = await this.requireUser();
+    if (me.role !== 'coach' && me.role !== 'admin') {
+      throw new CoreForbiddenError('차수 개설은 코치 또는 운영자만 가능합니다');
+    }
+
+    // 코드 알파벳 — DB cohorts_code_check(^[…]{5}$)와 글자 그대로 일치(혼동문자 I·L·O·0·1 제외, 31자).
+    const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const newCode = (): string => {
+      const bytes = new Uint32Array(5);
+      crypto.getRandomValues(bytes); // 예측 불가(초대 수단) — Math.random 금지
+      let c = '';
+      for (let i = 0; i < 5; i += 1) c += ALPHABET[bytes[i] % ALPHABET.length];
+      return c;
+    };
+
+    const base: Record<string, unknown> = {
+      coach_id: me.id,
+      instrument_id: input.instrumentId,
+      name: input.name,
+      description: input.description ?? null,
+      expires_at: input.expiresAt ?? null,
+    };
+    if (input.maxMembers !== undefined) base.max_members = input.maxMembers; // 미지정이면 DB 기본 100
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const { data, error } = await this.sb
+        .from('cohorts')
+        .insert({ ...base, code: newCode() })
+        .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at')
+        .single();
+      if (!error) return rowToCohort(data as CohortRow);
+      if ((error as { code?: string }).code !== '23505') throw new CoreError(`createCohort 실패: ${error.message}`);
+      // 23505 = code 유니크 충돌 → 코드 재생성 후 재시도
+    }
+    throw new CoreError('createCohort 실패: 유니크 코드 생성 재시도 초과(5회)');
+  }
+
   // 코치 차수 목록(콘솔 홈). RLS(cohorts_select): 코치는 본인 차수, 운영자는 전체.
   async listCohortsByCoach(coachId: string): Promise<Cohort[]> {
     const { data, error } = await this.sb

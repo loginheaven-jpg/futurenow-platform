@@ -37,11 +37,41 @@ function WaveCard({ active, title, desc, onClick }: { active: boolean; title: st
   );
 }
 
-export function CreateCohort({ code = 'RSTUV', onDone }: { code?: string; onDone?: () => void }) {
+export function CreateCohort({
+  code = 'RSTUV',
+  onCreate,
+  onDone,
+}: {
+  code?: string;
+  onCreate?: (input: { name: string; maxMembers: number }) => Promise<{ code?: string; error?: string }>;
+  onDone?: () => void;
+}) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [wave, setWave] = useState<'pre' | 'post'>('pre');
   const [cap, setCap] = useState(10);
+  const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const shownCode = createdCode ?? code;
+
+  async function handleCreate() {
+    if (!onCreate) {
+      setStep(3); // 미리보기 — 샘플 코드 그대로
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    const res = await onCreate({ name: name.trim(), maxMembers: cap });
+    setSubmitting(false);
+    if (res.error || !res.code) {
+      setError(res.error ?? '차수 생성에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    setCreatedCode(res.code);
+    setStep(3);
+  }
 
   return (
     <div>
@@ -70,7 +100,12 @@ export function CreateCohort({ code = 'RSTUV', onDone }: { code?: string; onDone
             <span className="t-body" style={{ color: 'var(--color-text)' }}>정원</span>
             <Stepper value={cap} min={1} max={100} onChange={setCap} label="정원" />
           </div>
-          <Button onClick={() => setStep(3)} style={{ width: '100%' }}>다음</Button>
+          {error ? (
+            <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>{error}</p>
+          ) : null}
+          <Button onClick={handleCreate} disabled={submitting} style={{ width: '100%' }}>
+            {submitting ? '만드는 중…' : '다음'}
+          </Button>
         </section>
       )}
 
@@ -79,7 +114,7 @@ export function CreateCohort({ code = 'RSTUV', onDone }: { code?: string; onDone
           <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 18, margin: '0 0 var(--space-2)' }}>차수가 만들어졌어요</h2>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>아래 코드를 참여자에게 전해 주세요.</p>
           <div style={{ background: 'var(--color-primary)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', textAlign: 'center', marginBottom: 'var(--space-4)' }}>
-            <div className="t-display tnum" style={{ color: 'var(--color-accent)', letterSpacing: 6 }}>{code}</div>
+            <div className="t-display tnum" style={{ color: 'var(--color-accent)', letterSpacing: 6 }}>{shownCode}</div>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
             <Button variant="ghost" style={{ flex: 1 }}>코드 복사</Button>
@@ -87,7 +122,7 @@ export function CreateCohort({ code = 'RSTUV', onDone }: { code?: string; onDone
           </div>
           <div style={{ background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', padding: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
             <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 0, whiteSpace: 'pre-line' }}>
-              {`이렇게 전해 보세요 ↓\n"미래의 나 진단에 초대합니다. 코드 ${code} 를 입력하고 5분만 시간 내 주세요."`}
+              {`이렇게 전해 보세요 ↓\n"미래의 나 진단에 초대합니다. 코드 ${shownCode} 를 입력하고 5분만 시간 내 주세요."`}
             </p>
           </div>
           <Button onClick={onDone} style={{ width: '100%' }}>완료</Button>

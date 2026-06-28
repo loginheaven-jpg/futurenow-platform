@@ -34,6 +34,13 @@ export interface CoreContext {
   previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). 승인 2026-06-28
   resolveCohortByCode(code: string): Promise<Cohort | null>; // 차수 도메인 본체(가입-후/코치·운영자 경로)
   enrollByCode(code: string): Promise<Enrollment>; // 코드로 현재 사용자를 차수에 가입(코어 소유 — 승인 2026-06-26)
+  createCohort(input: {
+    name: string;
+    instrumentId: InstrumentId;
+    maxMembers?: number; // 미지정 시 생략 → DB 기본 100
+    description?: string;
+    expiresAt?: string | null;
+  }): Promise<Cohort>; // 차수 개설(코치/운영자). 앱측 코드 생성+충돌 재시도, DDL 0. 승인 2026-06-28
   getCohort(cohortId: string): Promise<Cohort>;
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체. 승인 2026-06-28
   listCohortMembers(cohortId: string): Promise<MemberRef[]>; // 차수 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28

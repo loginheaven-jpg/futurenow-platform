@@ -384,3 +384,68 @@ describe('본부 데이터: 멤버명부 / 코치 신청 (RPC·임베드 매핑)
     await expect(ctx.decideCoachApplication({ applicationId: 'ap1', decision: 'approved' })).rejects.toThrowError(/decideCoachApplication/);
   });
 });
+
+describe('createCohort (차수 개설 — 코드 생성·재시도·권한)', () => {
+  const CODE_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{5}$/;
+  const cohortRow = (code: string, max = 100) => ({
+    id: 'co9', coach_id: 'c1', instrument_id: 'futurenow', name: '새 차수', code, status: 'active', max_members: max, expires_at: null,
+  });
+
+  it('코치가 만들면 코드가 DB CHECK 정규식을 충족하고 coach_id 가 본인', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'c1' },
+      tableResolver: (c) =>
+        c.table === 'users'
+          ? { data: userRow('c1', 'coach'), error: null }
+          : { data: cohortRow((c.payload as { code: string }).code), error: null },
+    });
+    const cohort = await ctx.createCohort({ name: '새 차수', instrumentId: 'futurenow' });
+    expect(cohort.code).toMatch(CODE_RE);
+    const ins = calls.find((c) => c.table === 'cohorts' && c.op === 'insert');
+    expect((ins?.payload as Record<string, unknown>).coach_id).toBe('c1');
+  });
+
+  it('maxMembers 미지정 → insert payload 에 max_members 없음(DB 기본 100), 지정 → 포함', async () => {
+    const resolver = (c: { table: string; payload?: unknown }) =>
+      c.table === 'users'
+        ? { data: userRow('c1', 'coach'), error: null }
+        : { data: cohortRow((c.payload as { code: string }).code), error: null };
+    const a = ctxWith({ authUser: { id: 'c1' }, tableResolver: resolver });
+    await a.ctx.createCohort({ name: 'X', instrumentId: 'futurenow' });
+    expect(a.calls.find((c) => c.table === 'cohorts' && c.op === 'insert')?.payload).not.toHaveProperty('max_members');
+
+    const b = ctxWith({ authUser: { id: 'c1' }, tableResolver: resolver });
+    await b.ctx.createCohort({ name: 'X', instrumentId: 'futurenow', maxMembers: 20 });
+    expect((b.calls.find((c) => c.table === 'cohorts' && c.op === 'insert')?.payload as Record<string, unknown>).max_members).toBe(20);
+  });
+
+  it('코드 충돌(23505) 시 다른 코드로 재시도해 성공', async () => {
+    let n = 0;
+    const seen: string[] = [];
+    const { ctx } = ctxWith({
+      authUser: { id: 'c1' },
+      tableResolver: (c) => {
+        if (c.table === 'users') return { data: userRow('c1', 'coach'), error: null };
+        const code = (c.payload as { code: string }).code;
+        seen.push(code);
+        n += 1;
+        return n === 1
+          ? { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } }
+          : { data: cohortRow(code), error: null };
+      },
+    });
+    const cohort = await ctx.createCohort({ name: 'X', instrumentId: 'futurenow' });
+    expect(n).toBe(2);
+    expect(seen[0]).not.toBe(seen[1]);
+    expect(cohort.code).toBe(seen[1]);
+  });
+
+  it('비코치(참여자)는 CoreForbiddenError, cohorts INSERT 시도 없음', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'u1' },
+      tableResolver: () => ({ data: userRow('u1', 'user'), error: null }),
+    });
+    await expect(ctx.createCohort({ name: 'X', instrumentId: 'futurenow' })).rejects.toBeInstanceOf(CoreForbiddenError);
+    expect(calls.some((c) => c.table === 'cohorts' && c.op === 'insert')).toBe(false);
+  });
+});

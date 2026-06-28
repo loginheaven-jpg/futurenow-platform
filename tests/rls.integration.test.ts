@@ -151,4 +151,24 @@ describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
       await client.end();
     }
   });
+
+  it('cohorts_insert RLS — 코치는 자기 차수 생성 ○, 참여자는 차단(42501)', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+
+      // 코치 본인 차수 생성 ○ (coach_id=auth.uid() AND user_role∈{coach,admin})
+      await runAs(client, COACH_A, `insert into public.cohorts (coach_id,instrument_id,name,code) values ('${COACH_A}','__rlstest__','새 차수','ABCDE')`);
+      const made = await client.query(`select count(*)::int as count from public.cohorts where code='ABCDE'`);
+      expect(made.rows[0].count).toBe(1);
+
+      // 참여자(user) 는 WITH CHECK 위반 → 42501
+      await expectRaise(client, MEMBER, `insert into public.cohorts (coach_id,instrument_id,name,code) values ('${MEMBER}','__rlstest__','x','FGHJK')`, '42501');
+    } finally {
+      await client.query('rollback');
+      await client.end();
+    }
+  });
 });
