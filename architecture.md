@@ -210,6 +210,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 **라우트 맵**(전부 기존 메서드 위 배선 — 계약 변경 0):
 | 라우트 | 주체 | 데이터 |
 |---|---|---|
+| `/` | 방문자 | 현관 — 두 갈래(참여하기→/join · 인도자 로그인→/login). 정적, 데이터 없음 |
 | `/login` | 코치/운영자 | `signInWithPassword` → `currentUser().role` → coach·admin=/coach, user=/. 로그인 전용(가입은 /join) |
 | `/join` | 참여자 | preview→enroll→runner→finalize(거울). 가입·코드 진입 |
 | `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag) |
