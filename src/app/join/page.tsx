@@ -12,9 +12,10 @@ import { CodeInput } from '@/app/_screens/entry/CodeInput';
 import { CohortPreview } from '@/app/_screens/entry/CohortPreview';
 import { AuthGate } from '@/app/_screens/entry/AuthGate';
 import { StartGuide } from '@/app/_screens/entry/StartGuide';
+import { Completion, type ParticipantMirrorView } from '@/app/_screens/entry/Completion';
 import { enrollByCode as enrollAction, finalizeResponse, previewCohort } from './actions';
 
-type Step = 'code' | 'preview' | 'auth' | 'start' | 'runner';
+type Step = 'code' | 'preview' | 'auth' | 'start' | 'runner' | 'done';
 
 export default function JoinPage() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -30,6 +31,7 @@ export default function JoinPage() {
   const [code, setCode] = useState('');
   const [meta, setMeta] = useState<CohortPreviewMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mirror, setMirror] = useState<ParticipantMirrorView | null>(null);
 
   async function onCode(c: string) {
     setError(null);
@@ -92,11 +94,15 @@ export default function JoinPage() {
           context={context}
           cohortId={meta.id}
           wave="pre"
-          onComplete={(responseId) => {
-            void finalizeResponse(responseId);
+          onComplete={async (responseId) => {
+            // 즉시 완료 화면으로(러너 기본 done 플래시 회피) → finalize await 후 거울 채움.
+            setStep('done');
+            const res = await finalizeResponse(responseId);
+            setMirror(res.ok ? res.mirror ?? null : null); // 실패 시 null → ①+④만(우아한 저하)
           }}
         />
       )}
+      {step === 'done' && <Completion mirror={mirror} onFinish={() => setStep('code')} />}
     </div>
   );
 }

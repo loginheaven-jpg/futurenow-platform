@@ -5,6 +5,7 @@ import type { Answers, CohortPreviewMeta } from '@/contracts';
 import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
 import { futurenowAlerts } from '@/instruments/futurenow/alerts';
+import { participantMirror, type ParticipantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { futurenowAnswersSchema, futurenowProfileSchema } from '@/instruments/futurenow/schema';
 
@@ -36,7 +37,11 @@ export async function enrollByCode(code: string): Promise<{ ok: boolean; cohortI
 // 응답 저장 후 채점→알림 주입. responseId 로 봉투를 다시 읽어 채점·알림 평가.
 // 응답 가시성·알림 권한은 **RLS 가 강제**한다(본인 응답만 getResponse·raiseAlert 통과). 타인/부재 responseId 면
 // RLS 가 차단해 예외 → 조용히 실패 반환(500 누출 방지). raiseAlert 는 멱등(중복 신호 무시).
-export async function finalizeResponse(responseId: string): Promise<{ ok: boolean; alerts: number }> {
+// 반환값에 참여자 **갈망 거울**(②방향·③갈망·⑤믿음)을 실어 보낸다 — §7.5 완료 화면용(측정·신호 미노출).
+// 앱 액션 시그니처 확장일 뿐 계약(CoreContext/InstrumentModule) 변경 아님(G1 보호).
+export async function finalizeResponse(
+  responseId: string,
+): Promise<{ ok: boolean; alerts: number; mirror?: ParticipantMirror }> {
   try {
     const c = await ctx();
     const resp = await c.getResponse<Answers, unknown>(responseId);
@@ -49,7 +54,7 @@ export async function finalizeResponse(responseId: string): Promise<{ ok: boolea
         raised += 1;
       }
     }
-    return { ok: true, alerts: raised };
+    return { ok: true, alerts: raised, mirror: participantMirror(scores) };
   } catch {
     return { ok: false, alerts: 0 };
   }

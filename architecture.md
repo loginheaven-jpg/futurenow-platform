@@ -198,9 +198,14 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | Q2 | **차수 가입 시 계정 생성** | enrollment·응답이 `auth.uid()` 에 묶임 |
 | Q3 | **페어링 키 = `user_id + cohort_id + instrument_id`**, `wave` 로 사전/사후 구분 | 로그인 기반 자연 키 |
 
-**흐름**: 코드 입력 → `resolveCohortByCode`(차수 공개 메타 확인) → 로그인 또는 신규 가입 →
-`enrollByCode`(정원·만료·중복 검사 후 `enrollments` INSERT) → 응답. 현 RLS 가 이미 이 전제로 짜여
-정책 변경이 없다. (남은 미결: plan Q4 리포트 열람 주체 · Q5 AI 문구 검수.)
+**흐름**(`/join`): 코드 입력 → `previewCohortByCode`(차수 공개 메타) → 로그인/신규 가입 →
+`enrollByCode`(정원·만료·중복 검사 후 `enrollments` INSERT) → `ResponseRunner`(saveResponse) →
+**완료(§7.5)**. 현 RLS 가 이미 이 전제로 짜여 정책 변경이 없다.
+
+완료 화면의 *갈망 거울*(②방향·③갈망·⑤믿음)은 **퓨처나우 인스트루먼트 소유**(`participantMirror(scores)`)이며,
+앱 액션 `finalizeResponse` 가 채점(B②) 후 호출해 반환값에 실어 보낸다 — **CoreContext·InstrumentModule 인터페이스
+무변경**(G1 보호, ADR-27). 참여자엔 측정·severity·돌봄 신호 0건(코치 경로 전용). 거울 산출 실패 시 ①헤더+④핸드오프만
+보이는 우아한 저하. (남은 미결: plan Q4 리포트 열람 주체 · Q5 AI 문구 검수.)
 
 ---
 
@@ -625,6 +630,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-24 | 본부 데이터 계층: `MemberRef`·`CoachApplication` + `listCohortMembers`·`listCoachApplications`·`decideCoachApplication` | **이름 가시성**(plan Q6): users RLS 확대(전 행 노출) 대신 `cohort_member_directory`(DEFINER, **id+name만**) 채택 — SAIL `users` 보존·ADR-04 최소노출. **코치 승격**: 상태변경+role 승격 원자성 위해 `decide_coach_application`(DEFINER) — 내부 is_admin·FOR UPDATE·status='pending' 가드·`role='user'`만 승격. 읽기(listCoachApplications)는 RPC 불요(coach_apps_select=admin + users 조인). directive 2026-06-28 승인 |
 | ADR-25 | `createCohort` = **앱측 코드 생성 + 충돌 재시도**(DEFINER RPC·마이그레이션 0) | `cohorts_insert` RLS(coach_id=auth.uid() AND user_role∈{coach,admin})가 권한을 이미 받음 → 새 RPC 불요. 유일 설계점은 유니크 코드: 앱이 `crypto.getRandomValues`로 5자리(알파벳 `ABCDEFGHJKMNPQRSTUVWXYZ23456789` = DB `cohorts_code_check`와 글자 일치) 생성, 23505 충돌 시 재시도(≤5). `Math.random` 금지(초대 수단=예측불가). directive 2026-06-28 승인 |
 | ADR-26 | `updateCohort` = **앱측 부분수정**(불변필드 제외) + `cohorts_update` WITH CHECK 부기 | 마감(status=archived)·정원 수정은 `cohorts_update` RLS(USING=소유 코치/운영자)가 받음 → 메서드만. patch는 `name·description·maxMembers·status·expiresAt`만 — `coach_id`(소유이전)·`instrument_id`(불일치)·`code`(링크파손)·`id` 불변. 기존 정책에 `WITH CHECK` 부재 → raw UPDATE 소유이전 가능했음 → 부기 픽스(USING+WITH CHECK 둘 다 소유 강제). 행 0=미존재/RLS차단→CoreNotFound. directive 2026-06-28 승인 |
+| ADR-27 | 참여자 완료 §7.5 *갈망 거울* = **퓨처나우 인스트루먼트 소유 + 앱층 조합**(계약 변경 0) | 갈망/지향 언어는 퓨처나우 고유 지식 → `participantMirror(scores)` 인스트루먼트 내부 export(InstrumentModule 인터페이스 미추가). 앱 `finalizeResponse` 가 반환값에 동봉, `Completion`(앱)이 구조 렌더. CoreContext·DB 무변경(G1 보호). 참여자엔 측정·severity·돌봄 0건. 산출 실패 시 ①+④ 우아한 저하. 다인스트루먼트 일반화는 추후. directive 2026-06-28 승인 |
 
 ---
 
