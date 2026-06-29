@@ -1,10 +1,23 @@
 'use client';
 // §8.3 차수 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
 // 덜 쓰는 관리(마감·정원)는 헤더 메뉴. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, ListRow, Stepper } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 import type { CohortSummary, RosterMember } from '../types';
+
+const nameInputStyle: CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  minHeight: 'var(--tap-min)',
+  padding: '0 var(--space-3)',
+  borderRadius: 'var(--radius)',
+  border: 'var(--border-hair) solid var(--color-border)',
+  background: 'var(--color-surface-2)',
+  color: 'var(--color-text)',
+  font: 'inherit',
+  fontSize: 15,
+};
 
 function Stat({ n, label, color }: { n: number; label: string; color: string }) {
   return (
@@ -42,6 +55,8 @@ export function CohortDetail({
   onOpenMember,
   onArchive,
   onSetCap,
+  onRename,
+  onReopen,
   onGroupReport,
   headerActions,
 }: {
@@ -53,6 +68,8 @@ export function CohortDetail({
   onOpenMember?: (id: string) => void;
   onArchive?: () => void | Promise<void>;
   onSetCap?: (n: number) => void | Promise<void>;
+  onRename?: (name: string) => void | Promise<void>; // 이름 수정 → updateCohort({name})
+  onReopen?: () => void | Promise<void>; // 마감 복구 → updateCohort({status:'active'})
   onGroupReport?: () => void; // 차수 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
@@ -62,14 +79,35 @@ export function CohortDetail({
 
   const [manageOpen, setManageOpen] = useState(false);
   const [cap, setCap] = useState(maxMembers);
+  const [name, setName] = useState(cohort.name);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [busy, setBusy] = useState(false);
   const archived = status === 'archived';
+
+  const trimmedName = name.trim();
+  const nameValid = trimmedName.length >= 1 && trimmedName.length <= 40;
+  const nameChanged = trimmedName !== cohort.name;
 
   async function saveCap() {
     setBusy(true);
     try {
       await onSetCap?.(cap);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function saveName() {
+    setBusy(true);
+    try {
+      await onRename?.(trimmedName);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function doReopen() {
+    setBusy(true);
+    try {
+      await onReopen?.();
     } finally {
       setBusy(false);
     }
@@ -101,6 +139,19 @@ export function CohortDetail({
       </div>
       {manageOpen ? (
         <section style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div>
+            <span className="t-body" style={{ color: 'var(--color-text)' }}>이름</span>
+            <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', marginTop: 'var(--space-1)' }}>
+              <input
+                style={nameInputStyle}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={40}
+                aria-label="차수 이름"
+              />
+              <Button variant="ghost" onClick={saveName} disabled={busy || !nameValid || !nameChanged}>저장</Button>
+            </div>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="t-body" style={{ color: 'var(--color-text)' }}>정원</span>
             <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
@@ -109,7 +160,10 @@ export function CohortDetail({
             </div>
           </div>
           {archived ? (
-            <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 차수예요.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 차수예요.</p>
+              <Button variant="ghost" onClick={doReopen} disabled={busy} style={{ width: '100%' }}>다시 열기</Button>
+            </div>
           ) : !confirmArchive ? (
             <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busy} style={{ width: '100%' }}>차수 마감</Button>
           ) : (

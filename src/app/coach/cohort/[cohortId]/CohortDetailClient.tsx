@@ -1,10 +1,12 @@
 'use client';
-// §8.3 차수 상세 클라이언트 래퍼 — 라우팅·관리 액션 배선. 데이터는 서버 컴포넌트가 주입.
+// §8.3 차수 상세 클라이언트 래퍼 — 라우팅·관리 액션 배선 + 결과 토스트(2.4 패턴). 데이터는 서버 컴포넌트가 주입.
 import { useRouter } from 'next/navigation';
 import { CohortDetail } from '@/app/_screens/console/CohortDetail';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
+import { useToast } from '@/app/_toast/ToastProvider';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
-import { archiveCohortAction, setCohortCapAction } from './actions';
+import { archiveCohortAction, renameCohortAction, reopenCohortAction, setCohortCapAction } from './actions';
+import { refineActionError } from './cohortAdmin';
 
 export function CohortDetailClient({
   summary,
@@ -18,6 +20,19 @@ export function CohortDetailClient({
   maxMembers: number;
 }) {
   const router = useRouter();
+  const toast = useToast();
+
+  // 네 관리 액션 공통 처리: 성공 → 토스트 + refresh, 실패 → 정제 토스트(원본 비노출).
+  async function run(action: () => Promise<{ ok: boolean; error?: string }>, successMsg: string) {
+    const res = await action();
+    if (res.ok) {
+      toast.success(successMsg);
+      router.refresh();
+    } else {
+      toast.error(refineActionError(res.error));
+    }
+  }
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <CohortDetail
@@ -29,14 +44,10 @@ export function CohortDetailClient({
         onBack={() => router.push('/coach')}
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
-        onArchive={async () => {
-          await archiveCohortAction(summary.id);
-          router.refresh();
-        }}
-        onSetCap={async (n) => {
-          await setCohortCapAction(summary.id, n);
-          router.refresh();
-        }}
+        onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}
+        onSetCap={(n) => run(() => setCohortCapAction(summary.id, n), '정원을 바꿨어요.')}
+        onRename={(name) => run(() => renameCohortAction(summary.id, name), '이름을 바꿨어요.')}
+        onReopen={() => run(() => reopenCohortAction(summary.id), '차수를 다시 열었어요.')}
       />
     </div>
   );
