@@ -27,6 +27,7 @@ export function CohortDetailClient({
         maxMembers={maxMembers}
         headerActions={<HeaderActions />}
         onBack={() => router.push('/coach')}
+        onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
         onArchive={async () => {
           await archiveCohortAction(summary.id);

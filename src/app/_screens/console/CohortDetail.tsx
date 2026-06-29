@@ -42,6 +42,7 @@ export function CohortDetail({
   onOpenMember,
   onArchive,
   onSetCap,
+  onGroupReport,
   headerActions,
 }: {
   cohort: CohortSummary;
@@ -52,6 +53,7 @@ export function CohortDetail({
   onOpenMember?: (id: string) => void;
   onArchive?: () => void | Promise<void>;
   onSetCap?: (n: number) => void | Promise<void>;
+  onGroupReport?: () => void; // 차수 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   const care = roster.filter((m) => m.status === 'care');
@@ -119,11 +121,18 @@ export function CohortDetail({
         </section>
       ) : null}
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <Stat n={done.length} label="응답 완료" color="var(--color-primary)" />
         <Stat n={pending.length} label="대기" color="var(--color-text-muted)" />
         <Stat n={care.length} label="돌봄" color="var(--care-text)" />
       </div>
+
+      {/* 차수 단위 집계 — 1주차 오프닝 핵심(그룹 평균·분포). 코치 전용 리얼 리포트. */}
+      {onGroupReport ? (
+        <Button onClick={onGroupReport} style={{ width: '100%', marginBottom: 'var(--space-6)' }}>
+          그룹 리포트 보기
+        </Button>
+      ) : null}
 
       {care.length > 0 && (
         <Group title="먼저 챙길 분" color="var(--care-text)">
