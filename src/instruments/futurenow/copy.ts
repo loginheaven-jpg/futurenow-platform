@@ -121,14 +121,14 @@ export const notices = {
   postIntro: '5주 전과 똑같은 질문입니다. 그때의 나와 만나는 시간입니다.',
 };
 
-// subjectProfile 화면 label + wave별 노출 필드 (사전: 참여 계기 / 종료: 작성일 — 작업3 분리).
+// subjectProfile 화면 label + 노출 필드 (지휘부 확정 2026-06-29: 생년·성별 필수, 종교·신앙연수 선택).
 export const profileLabels: Record<string, string> = {
-  ageBand: '연령대',
+  birthYear: '생년',
+  gender: '성별',
+  religion: '종교',
   faithYears: '신앙 연수',
-  motivation: '참여 계기', // 사전 하단
-  writtenAt: '작성일', // 종료 하단
 };
 export const profileFieldsByWave: Record<WaveKey, string[]> = {
-  pre: ['ageBand', 'faithYears', 'motivation'],
-  post: ['ageBand', 'faithYears', 'writtenAt'],
+  pre: ['birthYear', 'gender', 'religion', 'faithYears'],
+  post: ['birthYear', 'gender', 'religion', 'faithYears'],
 };

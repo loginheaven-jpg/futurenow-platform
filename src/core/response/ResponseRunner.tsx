@@ -34,7 +34,7 @@ function orderBlock(b: Block): Block {
   return { ...b, items: applyOrdering(b.items, b.ordering) };
 }
 
-export function ResponseRunner({ schema, context, cohortId, wave, onComplete }: ResponseRunnerProps) {
+export function ResponseRunner({ schema, context, cohortId, wave, onComplete, subjectProfile }: ResponseRunnerProps) {
   // 초기 렌더는 선언 순서(SSR 안전). 마운트 후 제약 무작위 배열 1회 적용(응답마다 새 순서).
   // 의도된 2-pass: 서버/하이드레이션은 고정 순서 → 클라이언트 마운트 후 셔플(하이드레이션 불일치 회피).
   const [blocks, setBlocks] = useState<Block[]>(schema.blocks);
@@ -68,7 +68,7 @@ export function ResponseRunner({ schema, context, cohortId, wave, onComplete }: 
         userId: user?.id ?? null,
         wave,
         answers,
-        subjectProfile: {}, // 진단별 참여 프로필 수집은 별도 화면(후속) — 여기선 빈 스냅샷
+        subjectProfile: subjectProfile ?? {}, // 호출부가 수집한 참여 프로필(미전달 시 빈 스냅샷)
       });
       setDoneId(responseId);
       onComplete(responseId);

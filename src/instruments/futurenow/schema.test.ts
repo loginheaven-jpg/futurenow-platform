@@ -45,18 +45,26 @@ describe('futurenowAnswersSchema', () => {
   });
 });
 
-describe('futurenowProfileSchema (실명·전화는 코어 — 여기 없음. motivation/writtenAt wave별)', () => {
-  it('사전 프로필(ageBand·faithYears·motivation) 통과', () => {
+describe('futurenowProfileSchema (생년·성별 필수, 종교·신앙연수 선택 — 실명·전화는 코어)', () => {
+  it('필수만(생년·성별) 통과 — 종교·신앙연수 생략 가능', () => {
+    expect(futurenowProfileSchema.safeParse({ birthYear: 1985, gender: '여성' }).success).toBe(true);
+  });
+  it('전체(생년·성별·종교·신앙연수) 통과', () => {
     expect(
-      futurenowProfileSchema.safeParse({ ageBand: '30대', faithYears: 5, motivation: '추천' }).success,
+      futurenowProfileSchema.safeParse({ birthYear: 1990, gender: '남성', religion: '기독교', faithYears: 10 }).success,
     ).toBe(true);
   });
-  it('종료 프로필(ageBand·faithYears·writtenAt) 통과', () => {
-    expect(
-      futurenowProfileSchema.safeParse({ ageBand: '30대', faithYears: '5년 이상', writtenAt: '2026-06-27' }).success,
-    ).toBe(true);
+  it('빈 스냅샷({}) 거부 — 생년·성별 필수', () => {
+    expect(futurenowProfileSchema.safeParse({}).success).toBe(false);
   });
-  it('ageBand 누락 거부', () => {
-    expect(futurenowProfileSchema.safeParse({ faithYears: 5 }).success).toBe(false);
+  it('성별 누락 거부', () => {
+    expect(futurenowProfileSchema.safeParse({ birthYear: 1985 }).success).toBe(false);
+  });
+  it('생년 누락 거부', () => {
+    expect(futurenowProfileSchema.safeParse({ gender: '남성' }).success).toBe(false);
+  });
+  it('생년 비정수·범위 밖 거부', () => {
+    expect(futurenowProfileSchema.safeParse({ birthYear: 1985.5, gender: '여성' }).success).toBe(false);
+    expect(futurenowProfileSchema.safeParse({ birthYear: 1800, gender: '여성' }).success).toBe(false);
   });
 });

@@ -13,11 +13,12 @@ import { CodeInput } from '@/app/_screens/entry/CodeInput';
 import { CohortPreview } from '@/app/_screens/entry/CohortPreview';
 import { AuthGate } from '@/app/_screens/entry/AuthGate';
 import { StartGuide } from '@/app/_screens/entry/StartGuide';
+import { ProfileForm, type ParticipantProfileInput } from '@/app/_screens/entry/ProfileForm';
 import { Completion, type ParticipantMirrorView } from '@/app/_screens/entry/Completion';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { enrollByCode as enrollAction, finalizeResponse, getCohortMeta, previewCohort } from './actions';
 
-type Step = 'resolving' | 'code' | 'preview' | 'auth' | 'start' | 'runner' | 'done';
+type Step = 'resolving' | 'code' | 'preview' | 'auth' | 'start' | 'profile' | 'runner' | 'done';
 
 export function JoinClient({ initialCohortId = null }: { initialCohortId?: string | null }) {
   const toast = useToast();
@@ -35,6 +36,7 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
   const [code, setCode] = useState('');
   const [meta, setMeta] = useState<CohortPreviewMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ParticipantProfileInput | null>(null);
   const [mirror, setMirror] = useState<ParticipantMirrorView | null>(null);
 
   useEffect(() => {
@@ -114,13 +116,22 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
       {step === 'code' && <CodeInput onSubmit={onCode} />}
       {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} />}
       {step === 'auth' && <AuthGate onSubmit={onAuth} />}
-      {step === 'start' && meta && <StartGuide cohortName={meta.name} onStart={() => setStep('runner')} />}
+      {step === 'start' && meta && <StartGuide cohortName={meta.name} onStart={() => setStep('profile')} />}
+      {step === 'profile' && (
+        <ProfileForm
+          onSubmit={(p) => {
+            setProfile(p);
+            setStep('runner');
+          }}
+        />
+      )}
       {step === 'runner' && meta && (
         <ResponseRunner
           schema={futurenowFlow.getSchema('pre')}
           context={context}
           cohortId={meta.id}
           wave="pre"
+          subjectProfile={profile ?? undefined}
           onComplete={async (responseId) => {
             // 즉시 완료 화면으로(러너 기본 done 플래시 회피) → finalize await 후 거울 채움.
             setStep('done');

@@ -118,6 +118,9 @@ export interface ResponseRunnerProps {
   cohortId: string | null;
   wave: Wave;
   onComplete: (responseId: string) => void;
+  // 응답 시점 참여 프로필 스냅샷(진단별 — 호출부가 수집해 전달). 미전달 시 빈 스냅샷({}).
+  // 러너는 완료 시 saveResponse 의 subjectProfile 로 그대로 전달(경계 검증은 코어가 진단 스키마로 강제). 승인 2026-06-29
+  subjectProfile?: Record<string, unknown>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
