@@ -23,6 +23,7 @@ export function ConsoleHomeClient({
       cohorts={cohorts}
       headerActions={<HeaderActions />}
       onOpenCohort={(id) => router.push(`/coach/cohort/${id}`)}
+      onAllCohorts={() => router.push('/coach/cohorts')}
       onNewCohort={() => router.push('/coach/new')}
       onOpenMember={(composite) => {
         const [cohortId, responseId] = composite.split('__');
