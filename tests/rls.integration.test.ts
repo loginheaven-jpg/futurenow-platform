@@ -219,6 +219,11 @@ describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
 
       // 자기강등 방지(admin→user) → 42501
       await expectRaise(client, ADMIN, `select public.set_user_role('${ADMIN}','user')`, '42501');
+
+      // 뒷문 차단(Step 2.S2): 멤버 직접 update role → 컬럼 권한 거부(42501). 정문(set_user_role)은 위에서 동작 확인.
+      await expectRaise(client, MEMBER, `update public.users set role='admin' where id='${MEMBER}'`, '42501');
+      // name 직접 수정은 권한 유지(Step 2.5 대비) — 본인 행이라 통과(권한 거부 아님).
+      await runAs(client, MEMBER, `update public.users set name='새이름' where id='${MEMBER}'`);
     } finally {
       await client.query('rollback');
       await client.end();
