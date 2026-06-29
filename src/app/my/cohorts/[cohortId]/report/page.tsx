@@ -5,7 +5,7 @@
 import { redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
-import { LogoutButton } from '@/app/_screens/LogoutButton';
+import { MemberHeaderActions } from '@/app/_screens/MemberHeaderActions';
 import { MirrorView } from '@/app/_screens/MirrorView';
 import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
@@ -33,7 +33,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="내 마음의 거울" action={<LogoutButton />} />
+      <AppHeader title="내 마음의 거울" action={<MemberHeaderActions />} />
       <a
         href="/my/cohorts"
         className="t-caption"

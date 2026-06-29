@@ -118,6 +118,17 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`setPhone 실패: ${error.message}`);
   }
 
+  // 본인 표시 이름 수정(users.name). 본인 행만(id=auth.uid()) — RLS(users_update) + 컬럼권한(name=true, 2.S2)이 이중 보장.
+  // role 은 payload 에 넣지 않는다(2.S2 로 권한 봉쇄·set_user_role 전용). 실패는 정제(raw 비노출·내부 로그).
+  async setName(name: string): Promise<void> {
+    const me = await this.requireUser();
+    const { error } = await this.sb.from('users').update({ name }).eq('id', me.id);
+    if (error) {
+      console.error('[setName] users.name update 실패:', error);
+      throw new CoreError('이름을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+  }
+
   private async assertContactAccess(userId: string): Promise<void> {
     const me = await this.requireUser();
     if (!canAccessContact(me, userId)) {

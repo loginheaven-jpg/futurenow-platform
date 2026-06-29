@@ -218,6 +218,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | `/signup` | 스태프/일반 | `signUp`(트리거가 users role=user 생성) → 세션 시 역할별 랜딩(멤버=/home). 확인 필요 시 안내. /login 상호 링크 |
 | `/reset` | 공개 | 비밀번호 재설정 요청(Step 2.3). `resetPasswordForEmail`(redirectTo=origin/reset/confirm). enumeration 방지(동일 안내). 비번=auth.users |
 | `/reset/confirm` | 공개 | 새 비밀번호 설정(Step 2.3). 복구 세션 게이트(있을 때만 `updateUser`) → 역할별 랜딩. 만료 시 재요청 안내 |
+| `/account` | 로그인(3페르소나) | 내 정보(Step 2.5). 이름=`setName`(users.name)·전화=`setPhone`(user_contacts)·비번=`updateUser`. role 쓰기 경로 없음(2.S2 봉쇄). 게이트 미인증→/login |
 | `/admin` | 운영자 | `listUsers` + 멤버 역할 직접 변경(`setUserRole`→set_user_role RPC). 운영자 게이트(§8.6 첫 조각) |
 | `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속) |
 | `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag) |
@@ -652,6 +653,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-28 | 본부 멤버 역할 관리: `MemberSummary` + `listUsers` + `setUserRole`(set_user_role RPC) | 운영자가 멤버를 **직접 승격/강등**(상시 권한)하는 본부 §8.6 첫 조각. `decide_coach_application`(자가 신청 승인)과 **공존** — 전자는 운영자 권한, 후자는 신청 기반. 역할 변경은 민감 → DEFINER RPC가 가드 강제(내부 is_admin·역할 화이트리스트·자기강등 방지). 읽기(listUsers)는 `users_select`=admin 직접 select. directive 2026-06-29 승인 |
 | ADR-29 | 멤버 본인 차수 읽기: `MyCohortSummary` + `listMyCohorts`(my_cohorts RPC) | 멤버는 cohorts RLS상 자기 차수도 직접 못 읽음 → **DEFINER RPC가 비민감 메타만**(차수명·코치명·status·진행·가입일; coach_id·code·max_members 미반환) `auth.uid()` 기준 반환. cohorts·enrollments·responses **RLS 불변**(옵션 A). 진행=해당 wave responses row 존재(불변·완료컬럼 없음). `previewCohortByCode`(코드·미가입자)와 목적 분리. directive 2026-06-29 승인 |
 | ADR-30 | Q4 확정 — 멤버 리포트 = **순화 뷰**(갈망 거울 재사용), 코치 = **리얼 리포트**(measurement) | 멤버 본인 열람은 `participantMirror`(ADR-27) 산출을 공용 `MirrorView`로 렌더(②방향·③갈망·⑤믿음) — severity·점수·버킷·돌봄 0. 코치 `ReportScreen`(measurement 전체)와 **시각·경로 분리**(/my/cohorts/[id]/report vs /coach/cohort/[id]/report/[responseId]). 멤버 self-read는 `responses_select`(user_id=auth.uid()) 직접 — RPC 불요. scores 미저장(재채점, ADR-09). 계약·DB·RLS 무변경(G1=0). directive 2026-06-29 승인 |
+| ADR-31 | `setName` 추가(본인 표시 이름 수정) | `/account` 프로필의 이름 수정 = `users.name` 본인 행 update. **본인 전용**(requireUser→id=auth.uid()) — userId 인자 없음(타인 수정 불요). **role 미포함**(2.S2로 role 컬럼 권한 봉쇄·set_user_role 전용) — RLS(본인 행) + 컬럼권한(name=true) 이중 보장. 전화는 기존 `setPhone`/`getPhone` 재사용(계약 +0). 실패는 정제(raw 비노출·내부 로그, ADR 흡수). 계약 +1 메서드만. directive 2026-06-29 승인 |
 
 ---
 

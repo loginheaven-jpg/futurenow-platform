@@ -3,7 +3,7 @@
 // 셸 헤더(AppHeader) + 로그아웃(LogoutButton) + MemberHome(인사·참여·내 차수 자리). 계약·DB 무변경.
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
-import { LogoutButton } from '@/app/_screens/LogoutButton';
+import { MemberHeaderActions } from '@/app/_screens/MemberHeaderActions';
 import { MemberHome } from '@/app/_screens/MemberHome';
 import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
@@ -20,7 +20,7 @@ export default async function MemberHomePage() {
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="퓨처나우" subtitle="내 자리" action={<LogoutButton />} />
+      <AppHeader title="퓨처나우" subtitle="내 자리" action={<MemberHeaderActions />} />
       <MemberHome greetingName={greetingName} />
     </div>
   );

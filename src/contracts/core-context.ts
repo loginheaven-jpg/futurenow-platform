@@ -31,6 +31,7 @@ export interface CoreContext {
   // 민감 채널 — 운영자 또는 본인만 성공. 그 외 호출 시 코어가 차단
   getPhone(userId: string): Promise<string | null>;
   setPhone(userId: string, phone: string): Promise<void>;
+  setName(name: string): Promise<void>; // 본인 표시 이름 수정(users.name). 본인 전용(id=auth.uid()). role 미포함(2.S2 봉쇄·set_user_role 전용). 승인 2026-06-29
 
   // 차수·참여
   previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). 승인 2026-06-28

@@ -598,3 +598,33 @@ describe('에러 정제 (raw PG 비노출 — enrollByCode·resolveMeta, 내부 
     spy.mockRestore();
   });
 });
+
+describe('setName (본인 표시 이름 — users.name, role 미포함)', () => {
+  it('users.name 만 update, 본인 행(id=auth.uid()), role 미포함', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'u1' },
+      tableResolver: (c) =>
+        c.table === 'users' && c.op === 'update' ? { data: null, error: null } : { data: userRow('u1', 'user'), error: null },
+    });
+    await ctx.setName('새이름');
+    const up = calls.find((c) => c.table === 'users' && c.op === 'update');
+    expect(up?.payload).toEqual({ name: '새이름' });
+    expect(up?.filters).toEqual({ id: 'u1' });
+    expect(JSON.stringify(up?.payload)).not.toMatch(/role/); // role 미포함(2.S2 봉쇄와 일관)
+  });
+
+  it('실패 → 일반 메시지(raw 비노출)·내부 로그 보존', async () => {
+    const raw = 'permission denied for column "role"';
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { ctx } = ctxWith({
+      authUser: { id: 'u1' },
+      tableResolver: (c) =>
+        c.table === 'users' && c.op === 'update' ? { data: null, error: { message: raw } } : { data: userRow('u1', 'user'), error: null },
+    });
+    const err = (await ctx.setName('x').catch((e) => e)) as Error;
+    expect(err.message).toMatch(/이름을 저장하지 못/);
+    expect(err.message).not.toMatch(/permission denied|column/);
+    expect(JSON.stringify(spy.mock.calls)).toMatch(/permission denied/);
+    spy.mockRestore();
+  });
+});
