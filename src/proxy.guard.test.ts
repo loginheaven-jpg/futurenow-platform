@@ -14,13 +14,15 @@ describe('isProtectedPath (middleware 보호 경로 판정)', () => {
       '/coach/new',
       '/admin',
       '/admin/x',
+      '/account',
+      '/account/x',
     ]) {
       expect(isProtectedPath(p)).toBe(true);
     }
   });
 
-  it('공개(통과): /·/login·/signup·/join', () => {
-    for (const p of ['/', '/login', '/signup', '/join']) {
+  it('공개(통과): /·/login·/signup·/join·/reset', () => {
+    for (const p of ['/', '/login', '/signup', '/join', '/reset', '/reset/confirm']) {
       expect(isProtectedPath(p)).toBe(false);
     }
   });
