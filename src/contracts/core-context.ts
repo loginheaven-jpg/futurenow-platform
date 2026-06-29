@@ -16,6 +16,7 @@ import type {
   InstrumentId,
   MemberRef,
   MemberSummary,
+  MyCohortSummary,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -53,6 +54,7 @@ export interface CoreContext {
     },
   ): Promise<Cohort>; // 차수 부분수정(코치/운영자). coach_id·instrument_id·code·id 는 불변(patch 제외). 승인 2026-06-28
   getCohort(cohortId: string): Promise<Cohort>;
+  listMyCohorts(): Promise<MyCohortSummary[]>; // 멤버 본인 차수+진행(RPC my_cohorts, DEFINER 비민감 메타). 코치 시점 listEnrollments 와 분리. 승인 2026-06-29
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체. 승인 2026-06-28
   listCohortMembers(cohortId: string): Promise<MemberRef[]>; // 차수 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28
   listEnrollments(cohortId: string): Promise<Enrollment[]>;

@@ -531,3 +531,35 @@ describe('본부 멤버 역할 (listUsers / setUserRole)', () => {
     await expect(ctx.setUserRole('u1', 'coach')).rejects.toThrowError(/setUserRole/);
   });
 });
+
+describe('listMyCohorts (멤버 본인 차수 — my_cohorts RPC)', () => {
+  it('RPC 결과를 MyCohortSummary[] 로 매핑(snake→camel)', async () => {
+    const { ctx, rpcCalls } = ctxWith({
+      authUser: { id: 'm1' },
+      rpcResolver: (name) =>
+        name === 'my_cohorts'
+          ? {
+              data: [
+                { cohort_id: 'co1', name: '1기', coach_name: '김코치', status: 'active', pre_done: true, post_done: false, joined_at: '2026-06-01' },
+              ],
+              error: null,
+            }
+          : { data: null, error: null },
+    });
+    const list = await ctx.listMyCohorts();
+    expect(list[0]).toEqual({
+      cohortId: 'co1', name: '1기', coachName: '김코치', status: 'active', preDone: true, postDone: false, joinedAt: '2026-06-01',
+    });
+    expect(rpcCalls.some((c) => c.name === 'my_cohorts')).toBe(true);
+  });
+
+  it('빈 결과 → []', async () => {
+    const { ctx } = ctxWith({ authUser: { id: 'm1' }, rpcResolver: () => ({ data: [], error: null }) });
+    expect(await ctx.listMyCohorts()).toEqual([]);
+  });
+
+  it('RPC 오류 → CoreError', async () => {
+    const { ctx } = ctxWith({ authUser: { id: 'm1' }, rpcResolver: () => ({ data: null, error: { message: 'boom' } }) });
+    await expect(ctx.listMyCohorts()).rejects.toThrowError(/listMyCohorts/);
+  });
+});

@@ -47,6 +47,18 @@ export interface MemberRef {
   name: string | null;
 }
 
+// 멤버 본인 차수 요약(비민감 메타). my_cohorts(DEFINER) RPC — cohorts RLS 멤버 미개방. ADR-29
+// 진행: 해당 wave의 responses row 존재 = 완료(responses 불변). 코치 시점 listEnrollments 와 목적 분리.
+export interface MyCohortSummary {
+  cohortId: string;
+  name: string;
+  coachName: string | null;
+  status: 'active' | 'archived';
+  preDone: boolean;
+  postDone: boolean;
+  joinedAt: string;
+}
+
 // 본부 멤버 관리(운영자 화면)용 사용자 요약. 운영자만 전체 조회(users_select=admin). ADR-28
 export interface MemberSummary {
   id: string;

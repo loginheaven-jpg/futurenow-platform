@@ -11,11 +11,9 @@ describe('MemberHome (멤버 홈 본문)', () => {
     expect(html).toContain('href="/join"');
   });
 
-  it('[내 차수]는 준비 중·비활성, 죽은 링크 없음(/my/cohorts 미연결)', () => {
+  it('[내 차수] → /my/cohorts 활성 링크(Step 1.2)', () => {
     expect(html).toContain('내 차수');
-    expect(html).toContain('준비 중');
-    expect(html).toContain('disabled');
-    expect(html).not.toContain('/my/cohorts'); // 고아 라우트 금지
+    expect(html).toContain('href="/my/cohorts"');
   });
 
   it('참여자 화면 — 의미색 토큰 0', () => {

@@ -16,6 +16,7 @@ import type {
   InstrumentId,
   MemberRef,
   MemberSummary,
+  MyCohortSummary,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -282,6 +283,29 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`updateCohort 실패: ${error.message}`);
     if (!data) throw new CoreNotFoundError(`차수를 찾을 수 없거나 수정 권한이 없습니다: ${cohortId}`); // 행 0 = 미존재/RLS 차단
     return rowToCohort(data as CohortRow);
+  }
+
+  // 멤버 본인 차수+진행(비민감 메타). my_cohorts(DEFINER)가 auth.uid() 기준 격리 — 앱은 cohorts·responses 직접 select 안 함.
+  async listMyCohorts(): Promise<MyCohortSummary[]> {
+    const { data, error } = await this.sb.rpc('my_cohorts');
+    if (error) throw new CoreError(`listMyCohorts 실패: ${error.message}`);
+    return ((data ?? []) as {
+      cohort_id: string;
+      name: string;
+      coach_name: string | null;
+      status: string;
+      pre_done: boolean;
+      post_done: boolean;
+      joined_at: string;
+    }[]).map((r) => ({
+      cohortId: r.cohort_id,
+      name: r.name,
+      coachName: r.coach_name,
+      status: r.status as MyCohortSummary['status'],
+      preDone: r.pre_done,
+      postDone: r.post_done,
+      joinedAt: r.joined_at,
+    }));
   }
 
   // 코치 차수 목록(콘솔 홈). RLS(cohorts_select): 코치는 본인 차수, 운영자는 전체.
