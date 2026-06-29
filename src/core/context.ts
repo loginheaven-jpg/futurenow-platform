@@ -182,13 +182,21 @@ class SupabaseCoreContext implements CoreContext {
       .insert({ cohort_id: meta.id, user_id: me.id })
       .select('cohort_id,user_id,joined_at')
       .single();
-    if (error) throw new CoreError(`enrollByCode 실패: ${error.message}`);
+    if (error) {
+      // 내부 진단은 보존, 사용자 경로엔 일반 메시지만(raw PG·제약·RLS 힌트가 반환 페이로드에 실리지 않게).
+      console.error('[enrollByCode] enrollments insert 실패:', error);
+      throw new CoreError('가입 처리 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
+    }
     return rowToEnrollment(data as EnrollmentRow);
   }
 
   private async resolveMeta(code: string): Promise<CohortMeta | null> {
     const { data, error } = await this.sb.rpc('resolve_cohort_by_code', { p_code: code });
-    if (error) throw new CoreError(`resolveCohortByCode 실패: ${error.message}`);
+    if (error) {
+      // 내부 진단은 보존(운영 가시성), 사용자 경로엔 일반 메시지만(raw PG·RLS 힌트 비노출).
+      console.error('[resolveMeta] resolve_cohort_by_code 실패:', error);
+      throw new CoreError('차수 정보를 불러오지 못했어요.');
+    }
     const rows = (Array.isArray(data) ? data : data ? [data] : []) as CohortMeta[];
     return rows[0] ?? null;
   }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { z } from 'zod';
 import { createCoreContext, type CreateCoreContextOptions } from './context';
 import { CoreAuthError, CoreForbiddenError, CoreNotFoundError, CoreValidationError } from './errors';
@@ -561,5 +561,40 @@ describe('listMyCohorts (멤버 본인 차수 — my_cohorts RPC)', () => {
   it('RPC 오류 → CoreError', async () => {
     const { ctx } = ctxWith({ authUser: { id: 'm1' }, rpcResolver: () => ({ data: null, error: { message: 'boom' } }) });
     await expect(ctx.listMyCohorts()).rejects.toThrowError(/listMyCohorts/);
+  });
+});
+
+describe('에러 정제 (raw PG 비노출 — enrollByCode·resolveMeta, 내부 로그 보존)', () => {
+  it('resolveCohortByCode RPC 실패 → 일반 메시지(raw·RLS 힌트 비노출), 내부 로그 보존', async () => {
+    const raw = 'permission denied for relation cohorts (RLS hint)';
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { ctx } = ctxWith({ authUser: { id: 'u1' }, rpcResolver: () => ({ data: null, error: { message: raw } }) });
+    const err = (await ctx.resolveCohortByCode('RSTUV').catch((e) => e)) as Error;
+    expect(err.message).toMatch(/차수 정보/); // 사용자 경로: 일반
+    expect(err.message).not.toMatch(/permission denied|RLS|relation/); // raw 비노출
+    expect(JSON.stringify(spy.mock.calls)).toMatch(/permission denied/); // 내부 로그엔 보존
+    spy.mockRestore();
+  });
+
+  it('enrollByCode insert 실패 → 일반 메시지(raw·제약 비노출), 내부 로그 보존', async () => {
+    const raw = 'duplicate key value violates unique constraint "enrollments_pkey"';
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { ctx } = ctxWith({
+      authUser: { id: 'u1' },
+      rpcResolver: (name) =>
+        name === 'resolve_cohort_by_code'
+          ? { data: [metaRow({ member_count: 0, max_members: 10 })], error: null }
+          : { data: null, error: null },
+      tableResolver: (c) => {
+        if (c.table === 'users') return { data: userRow('u1', 'user'), error: null };
+        if (c.table === 'enrollments' && c.op === 'insert') return { data: null, error: { message: raw } };
+        return { data: null, error: null }; // enrollments select(maybeSingle) → 미가입
+      },
+    });
+    const err = (await ctx.enrollByCode('RSTUV').catch((e) => e)) as Error;
+    expect(err.message).toMatch(/가입 처리 중 문제/);
+    expect(err.message).not.toMatch(/duplicate key|constraint|enrollments_pkey/);
+    expect(JSON.stringify(spy.mock.calls)).toMatch(/duplicate key/);
+    spy.mockRestore();
   });
 });

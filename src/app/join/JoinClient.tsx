@@ -14,11 +14,13 @@ import { CohortPreview } from '@/app/_screens/entry/CohortPreview';
 import { AuthGate } from '@/app/_screens/entry/AuthGate';
 import { StartGuide } from '@/app/_screens/entry/StartGuide';
 import { Completion, type ParticipantMirrorView } from '@/app/_screens/entry/Completion';
+import { useToast } from '@/app/_toast/ToastProvider';
 import { enrollByCode as enrollAction, finalizeResponse, previewCohort } from './actions';
 
 type Step = 'code' | 'preview' | 'auth' | 'start' | 'runner' | 'done';
 
 export function JoinClient() {
+  const toast = useToast();
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const context = useMemo(
     () =>
@@ -49,7 +51,9 @@ export function JoinClient() {
   async function enrollThenStart() {
     const r = await enrollAction(code);
     if (!r.ok) {
-      setError(r.error === 'auth_required' ? '로그인이 필요해요.' : '가입에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      const msg = r.error === 'auth_required' ? '로그인이 필요해요.' : '가입에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      setError(msg); // 인라인(맥락 유지)
+      toast.error(msg); // 토스트 피드백(작업 결과가 조용히 사라지지 않게)
       return;
     }
     setStep('start');
