@@ -3,12 +3,15 @@
 // loginheaven 이메일은 트리거가 admin 자동(기존). 비밀번호·토큰을 로그·URL에 싣지 않는다.
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
+import { loginOutcome } from '@/app/login/loginOutcome';
 import { SignupForm } from './SignupForm';
 import { signupOutcome } from './signupOutcome';
 
 export function SignupClient() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  const ctx = useMemo(() => createCoreContext(supabase), [supabase]);
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -39,7 +42,11 @@ export function SignupClient() {
       setNotice(outcome.notice);
       return;
     }
-    if (outcome.redirect) router.push(outcome.redirect);
+    // 세션 있음 → 역할별 랜딩. signupOutcome 계약은 불변; 앱층에서 role 분기(멤버→/home, 코치·운영자→/coach).
+    if (outcome.redirect) {
+      const role = (await ctx.currentUser())?.role ?? null;
+      router.push(loginOutcome({ error: null, hasSession: true, role }).redirect ?? outcome.redirect);
+    }
   }
 
   return (

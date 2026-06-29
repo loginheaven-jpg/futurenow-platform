@@ -7,9 +7,9 @@ describe('loginOutcome (로그인 결과 → 행로)', () => {
     expect(loginOutcome({ error: null, hasSession: true, role: 'admin' }).redirect).toBe('/coach');
   });
 
-  it('참여자(user) → /', () => {
+  it('멤버(user) → /home (자기 홈)', () => {
     const o = loginOutcome({ error: null, hasSession: true, role: 'user' });
-    expect(o.redirect).toBe('/');
+    expect(o.redirect).toBe('/home');
     expect(o.error).toBeUndefined();
   });
 
