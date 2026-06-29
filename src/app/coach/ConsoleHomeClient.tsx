@@ -10,10 +10,12 @@ export function ConsoleHomeClient({
   coachName,
   careMembers,
   cohorts,
+  isAdmin = false,
 }: {
   coachName: string;
   careMembers: RosterMember[];
   cohorts: CohortSummary[];
+  isAdmin?: boolean; // 운영자만 [본부]→/admin 노출
 }) {
   const router = useRouter();
   return (
@@ -21,7 +23,7 @@ export function ConsoleHomeClient({
       coachName={coachName}
       careMembers={careMembers}
       cohorts={cohorts}
-      headerActions={<HeaderActions />}
+      headerActions={<HeaderActions navHref={isAdmin ? '/admin' : undefined} navLabel={isAdmin ? '본부' : undefined} />}
       onOpenCohort={(id) => router.push(`/coach/cohort/${id}`)}
       onAllCohorts={() => router.push('/coach/cohorts')}
       onNewCohort={() => router.push('/coach/new')}

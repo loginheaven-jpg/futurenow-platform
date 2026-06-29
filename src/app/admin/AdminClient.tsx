@@ -34,7 +34,7 @@ export function AdminClient({ members, currentUserId }: { members: MemberSummary
       members={members}
       currentUserId={currentUserId}
       busyId={busyId}
-      headerActions={<HeaderActions />}
+      headerActions={<HeaderActions navHref="/coach" navLabel="코치 콘솔" />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
     />

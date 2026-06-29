@@ -21,6 +21,29 @@ export async function previewCohort(code: string): Promise<CohortPreviewMeta | n
   return (await ctx()).previewCohortByCode(code);
 }
 
+// cohortId 로 차수 메타(러너 재진입 — Step 3.정비). 코드 재입력 없이 가입자가 진단을 이어서 풀게.
+// 권한은 RLS 가 강제: getCohort 의 cohorts_select = 본인(coach)·가입자(is_cohort_member)·운영자만 읽힘 →
+// 타 차수 cohortId 주입/비로그인 시 NotFound/예외 → null 반환 → JoinClient 가 코드 흐름으로 안전 폴백.
+export async function getCohortMeta(cohortId: string): Promise<CohortPreviewMeta | null> {
+  try {
+    const c = await ctx();
+    const me = await c.currentUser();
+    if (!me) return null; // 비로그인 → 폴백
+    const cohort = await c.getCohort(cohortId); // RLS 미달이면 NotFound → catch
+    return {
+      id: cohort.id,
+      name: cohort.name,
+      coachName: null, // 미리보기 단계를 건너뛰므로 미표시(start/runner 는 id·name 만 사용)
+      instrumentId: cohort.instrumentId,
+      memberCount: 0,
+      status: cohort.status,
+      expiresAt: cohort.expiresAt,
+    };
+  } catch {
+    return null; // 미가입·부재 → 폴백
+  }
+}
+
 // 코드로 현재 사용자를 가입(인증 필요 — auth.uid()).
 export async function enrollByCode(code: string): Promise<{ ok: boolean; cohortId?: string; error?: string }> {
   try {

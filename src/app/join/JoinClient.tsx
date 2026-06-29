@@ -2,7 +2,7 @@
 // 참여 진입 오케스트레이션 — 코드 → 미리보기(실데이터) → 로그인/가입 → 가입 → 시작 → 응답 → 저장+채점+알림.
 // 실 라우트. CohortPreview 는 previewCohort 서버 액션(실 DB) 으로 채운다. 참여자 화면 경고색 배제.
 // (라우트 세그먼트 설정 force-dynamic 은 서버 컴포넌트 page.tsx 가 보유 — 클라이언트 페이지는 미반영되므로 분리.)
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CohortPreviewMeta } from '@/contracts';
 import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
@@ -15,11 +15,11 @@ import { AuthGate } from '@/app/_screens/entry/AuthGate';
 import { StartGuide } from '@/app/_screens/entry/StartGuide';
 import { Completion, type ParticipantMirrorView } from '@/app/_screens/entry/Completion';
 import { useToast } from '@/app/_toast/ToastProvider';
-import { enrollByCode as enrollAction, finalizeResponse, previewCohort } from './actions';
+import { enrollByCode as enrollAction, finalizeResponse, getCohortMeta, previewCohort } from './actions';
 
-type Step = 'code' | 'preview' | 'auth' | 'start' | 'runner' | 'done';
+type Step = 'resolving' | 'code' | 'preview' | 'auth' | 'start' | 'runner' | 'done';
 
-export function JoinClient() {
+export function JoinClient({ initialCohortId = null }: { initialCohortId?: string | null }) {
   const toast = useToast();
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const context = useMemo(
@@ -30,11 +30,30 @@ export function JoinClient() {
     [supabase],
   );
 
-  const [step, setStep] = useState<Step>('code');
+  // ?cohort= 진입(가입자 러너 재진입): 코드·미리보기 건너뛰고 메타 확인 후 start 로. 실패 시 code 폴백.
+  const [step, setStep] = useState<Step>(initialCohortId ? 'resolving' : 'code');
   const [code, setCode] = useState('');
   const [meta, setMeta] = useState<CohortPreviewMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mirror, setMirror] = useState<ParticipantMirrorView | null>(null);
+
+  useEffect(() => {
+    if (!initialCohortId) return;
+    let cancelled = false;
+    (async () => {
+      const m = await getCohortMeta(initialCohortId); // RLS 미달/비로그인 → null
+      if (cancelled) return;
+      if (m) {
+        setMeta(m);
+        setStep('start'); // 이미 가입자 — 코드·미리보기 생략, 바로 시작
+      } else {
+        setStep('code'); // 안전 폴백(미가입·비로그인·부재) → 기존 코드 흐름
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialCohortId]);
 
   async function onCode(c: string) {
     setError(null);
@@ -89,6 +108,9 @@ export function JoinClient() {
           {error}
         </p>
       ) : null}
+      {step === 'resolving' && (
+        <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>불러오는 중…</p>
+      )}
       {step === 'code' && <CodeInput onSubmit={onCode} />}
       {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} />}
       {step === 'auth' && <AuthGate onSubmit={onAuth} />}

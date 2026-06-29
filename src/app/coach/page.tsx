@@ -55,5 +55,12 @@ export default async function CoachConsolePage() {
     }
   }
 
-  return <ConsoleHomeClient coachName={me.name ?? me.email} careMembers={careMembers} cohorts={summaries} />;
+  return (
+    <ConsoleHomeClient
+      coachName={me.name ?? me.email}
+      careMembers={careMembers}
+      cohorts={summaries}
+      isAdmin={me.role === 'admin'}
+    />
+  );
 }

@@ -30,10 +30,10 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('사후 진단');
   });
 
-  it('사전 미완 → [받은 코드로 참여]→/join', () => {
-    const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ preDone: false })]} />);
-    expect(html).toContain('받은 코드로 참여');
-    expect(html).toContain('href="/join"');
+  it('사전 미완(가입자) → [진단 시작하기]→/join?cohort=… (코드 재입력 없이 러너 재진입)', () => {
+    const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: false })]} />);
+    expect(html).toContain('진단 시작하기');
+    expect(html).toContain('href="/join?cohort=co1"');
   });
 
   it('사전 완료 → [내 리포트] → /my/cohorts/[id]/report 활성 링크', () => {

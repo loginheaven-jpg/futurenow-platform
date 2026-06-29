@@ -34,6 +34,9 @@ export default function Home() {
       <a className="ui-btn ui-btn--ghost" href="/login" style={cta}>
         인도자 로그인
       </a>
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0', textAlign: 'center' }}>
+        처음이세요? <a href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</a>
+      </p>
     </main>
   );
 }
