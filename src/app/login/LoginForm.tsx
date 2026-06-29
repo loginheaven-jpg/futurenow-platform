@@ -94,6 +94,9 @@ export function LoginForm({
       </form>
 
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
+        <a href="/reset" style={{ color: 'var(--color-primary)' }}>비밀번호를 잊으셨나요?</a>
+      </p>
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
         코치·스태프 계정이 없으신가요? <a href="/signup" style={{ color: 'var(--color-primary)' }}>회원가입</a>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>

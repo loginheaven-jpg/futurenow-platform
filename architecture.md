@@ -216,6 +216,8 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | `/my/cohorts/[cohortId]/report` | 멤버(user) | 내 리포트 **순화 뷰**(Step 1.3, ADR-27/30). `listResponses`(본인 pre, responses_select self-read)→score→`participantMirror`→`MirrorView`. 측정·severity 0. 계약·DB 무변경(기존 조합) |
 | `/login` | 코치/운영자 | `signInWithPassword` → `currentUser().role` → coach·admin=/coach, **user=/home**. 로그인 전용(가입은 /signup·/join) |
 | `/signup` | 스태프/일반 | `signUp`(트리거가 users role=user 생성) → 세션 시 역할별 랜딩(멤버=/home). 확인 필요 시 안내. /login 상호 링크 |
+| `/reset` | 공개 | 비밀번호 재설정 요청(Step 2.3). `resetPasswordForEmail`(redirectTo=origin/reset/confirm). enumeration 방지(동일 안내). 비번=auth.users |
+| `/reset/confirm` | 공개 | 새 비밀번호 설정(Step 2.3). 복구 세션 게이트(있을 때만 `updateUser`) → 역할별 랜딩. 만료 시 재요청 안내 |
 | `/admin` | 운영자 | `listUsers` + 멤버 역할 직접 변경(`setUserRole`→set_user_role RPC). 운영자 게이트(§8.6 첫 조각) |
 | `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속) |
 | `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag) |
