@@ -212,7 +212,8 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 |---|---|---|
 | `/` | 방문자 | 현관 — 두 갈래(참여하기→/join · 인도자 로그인→/login). 정적, 데이터 없음 |
 | `/home` | 멤버(user) | 멤버 랜딩(Step 1.1). 게이트: 미인증→/login·코치·운영자→/coach. 인사 + [코드로 세미나 참여]→/join + [내 차수]→/my/cohorts. 셸 헤더+로그아웃 |
-| `/my/cohorts` | 멤버(user) | 내 차수 목록(Step 1.2). `listMyCohorts`(my_cohorts DEFINER RPC) — 차수명·코치명·status·사전/사후 진행. 미완→/join·완료→[내 리포트](1.3 자리). 게이트=/home 동일 |
+| `/my/cohorts` | 멤버(user) | 내 차수 목록(Step 1.2). `listMyCohorts`(my_cohorts DEFINER RPC) — 차수명·코치명·status·사전/사후 진행. 미완→/join·완료→[내 리포트]. 게이트=/home 동일 |
+| `/my/cohorts/[cohortId]/report` | 멤버(user) | 내 리포트 **순화 뷰**(Step 1.3, ADR-27/30). `listResponses`(본인 pre, responses_select self-read)→score→`participantMirror`→`MirrorView`. 측정·severity 0. 계약·DB 무변경(기존 조합) |
 | `/login` | 코치/운영자 | `signInWithPassword` → `currentUser().role` → coach·admin=/coach, **user=/home**. 로그인 전용(가입은 /signup·/join) |
 | `/signup` | 스태프/일반 | `signUp`(트리거가 users role=user 생성) → 세션 시 역할별 랜딩(멤버=/home). 확인 필요 시 안내. /login 상호 링크 |
 | `/admin` | 운영자 | `listUsers` + 멤버 역할 직접 변경(`setUserRole`→set_user_role RPC). 운영자 게이트(§8.6 첫 조각) |
@@ -648,6 +649,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-27 | 참여자 완료 §7.5 *갈망 거울* = **퓨처나우 인스트루먼트 소유 + 앱층 조합**(계약 변경 0) | 갈망/지향 언어는 퓨처나우 고유 지식 → `participantMirror(scores)` 인스트루먼트 내부 export(InstrumentModule 인터페이스 미추가). 앱 `finalizeResponse` 가 반환값에 동봉, `Completion`(앱)이 구조 렌더. CoreContext·DB 무변경(G1 보호). 참여자엔 측정·severity·돌봄 0건. 산출 실패 시 ①+④ 우아한 저하. 다인스트루먼트 일반화는 추후. directive 2026-06-28 승인 |
 | ADR-28 | 본부 멤버 역할 관리: `MemberSummary` + `listUsers` + `setUserRole`(set_user_role RPC) | 운영자가 멤버를 **직접 승격/강등**(상시 권한)하는 본부 §8.6 첫 조각. `decide_coach_application`(자가 신청 승인)과 **공존** — 전자는 운영자 권한, 후자는 신청 기반. 역할 변경은 민감 → DEFINER RPC가 가드 강제(내부 is_admin·역할 화이트리스트·자기강등 방지). 읽기(listUsers)는 `users_select`=admin 직접 select. directive 2026-06-29 승인 |
 | ADR-29 | 멤버 본인 차수 읽기: `MyCohortSummary` + `listMyCohorts`(my_cohorts RPC) | 멤버는 cohorts RLS상 자기 차수도 직접 못 읽음 → **DEFINER RPC가 비민감 메타만**(차수명·코치명·status·진행·가입일; coach_id·code·max_members 미반환) `auth.uid()` 기준 반환. cohorts·enrollments·responses **RLS 불변**(옵션 A). 진행=해당 wave responses row 존재(불변·완료컬럼 없음). `previewCohortByCode`(코드·미가입자)와 목적 분리. directive 2026-06-29 승인 |
+| ADR-30 | Q4 확정 — 멤버 리포트 = **순화 뷰**(갈망 거울 재사용), 코치 = **리얼 리포트**(measurement) | 멤버 본인 열람은 `participantMirror`(ADR-27) 산출을 공용 `MirrorView`로 렌더(②방향·③갈망·⑤믿음) — severity·점수·버킷·돌봄 0. 코치 `ReportScreen`(measurement 전체)와 **시각·경로 분리**(/my/cohorts/[id]/report vs /coach/cohort/[id]/report/[responseId]). 멤버 self-read는 `responses_select`(user_id=auth.uid()) 직접 — RPC 불요. scores 미저장(재채점, ADR-09). 계약·DB·RLS 무변경(G1=0). directive 2026-06-29 승인 |
 
 ---
 

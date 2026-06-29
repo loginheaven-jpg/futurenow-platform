@@ -53,13 +53,11 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
             <ProgressBadge label="사후 진단" done={c.postDone} pendingText="대기" />
           </div>
 
-          {/* 다음 행동: 사전 미완 → 참여, 사전 완료 → 내 리포트(1.3 자리·비활성) */}
+          {/* 다음 행동: 사전 미완 → 참여, 사전 완료 → 내 리포트(순화 뷰, Step 1.3) */}
           {!c.preDone ? (
             <a className="ui-btn ui-btn--primary" href="/join" style={full}>받은 코드로 참여</a>
           ) : (
-            <button type="button" disabled aria-disabled="true" className="ui-btn ui-btn--ghost" style={full}>
-              내 리포트 (준비 중)
-            </button>
+            <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}/report`} style={full}>내 리포트</a>
           )}
         </div>
       ))}

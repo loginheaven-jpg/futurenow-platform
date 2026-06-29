@@ -36,12 +36,10 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('href="/join"');
   });
 
-  it('사전 완료 → [내 리포트] 비활성(준비 중), 죽은 링크 없음', () => {
-    const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ preDone: true })]} />);
+  it('사전 완료 → [내 리포트] → /my/cohorts/[id]/report 활성 링크', () => {
+    const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: true })]} />);
     expect(html).toContain('내 리포트');
-    expect(html).toContain('준비 중');
-    expect(html).toContain('disabled');
-    expect(html).not.toMatch(/href="\/my\/report|href="\/report/);
+    expect(html).toContain('href="/my/cohorts/co1/report"');
   });
 
   it('참여자 화면 — 의미색 토큰 0', () => {

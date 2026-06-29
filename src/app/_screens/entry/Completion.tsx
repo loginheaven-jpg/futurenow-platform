@@ -3,13 +3,10 @@
 // 참여자 팔레트만(네이비 틀 + 골드 흔적 + 중립). danger/warning/care 의미색·severity·점수·등급 0건.
 // mirror 없으면 ①마무리 헤더 + ④인도자 핸드오프만(우아한 저하) — 빈/깨진 화면 금지.
 import { Button } from '@/core/ui';
+import { MirrorView, type ParticipantMirrorView } from '../MirrorView';
 
-// 인스트루먼트 ParticipantMirror 와 구조적으로 동일한 뷰 형(앱은 인스트루먼트 타입에 의존하지 않는다).
-export interface ParticipantMirrorView {
-  direction: string;
-  longing: string;
-  faith?: string;
-}
+// 갈망 거울 시각은 MirrorView(공용)로 단일화. 형은 거기서 정의하고 여기선 재노출(기존 importer 호환).
+export type { ParticipantMirrorView };
 
 // ①·④ 는 점수에 의존하지 않는 고정 카피 → 항상 렌더(저하 시에도). ②③⑤ 는 mirror 가 있을 때만.
 const HEADER = '수고하셨어요. 스스로를 가만히 들여다보는 건 쉽지 않은 일이에요. 끝까지 함께해 주셔서 고마워요.';
@@ -23,15 +20,11 @@ export function Completion({ mirror, onFinish }: { mirror?: ParticipantMirrorVie
       {/* ① 마무리 헤더(고정) */}
       <p className="t-body-lg" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>{HEADER}</p>
 
+      {/* ②③ 갈망 거울(공용 MirrorView) */}
       {mirror ? (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
-          {/* ② 나침반 거울(골드 톤 방향 — 측정 아님) */}
-          <div style={{ borderLeft: '3px solid var(--color-accent)', paddingLeft: 'var(--space-4)' }}>
-            <p className="t-body-lg" style={{ color: 'var(--color-primary)', margin: 0 }}>{mirror.direction}</p>
-          </div>
-          {/* ③ 갈망의 한 문장 */}
-          <p className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 19, lineHeight: 1.6, margin: 0 }}>{mirror.longing}</p>
-        </section>
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <MirrorView mirror={mirror} />
+        </div>
       ) : null}
 
       {/* ④ 인도자 핸드오프(고정, 항상) */}
