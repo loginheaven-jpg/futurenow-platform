@@ -199,4 +199,29 @@ describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
       await client.end();
     }
   });
+
+  it('set_user_role — 운영자 승격 · 비운영자 거부 · 화이트리스트 · 자기강등 가드', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+
+      // 운영자 승격: MemberM(user) → coach
+      await runAs(client, ADMIN, `select public.set_user_role('${MEMBER}','coach')`);
+      expect((await client.query(`select role from public.users where id='${MEMBER}'`)).rows[0].role).toBe('coach');
+
+      // 비운영자(coach)는 거부 → 42501
+      await expectRaise(client, COACH_A, `select public.set_user_role('${MEMBER}','user')`, '42501');
+
+      // 역할 화이트리스트 위반 → 22023
+      await expectRaise(client, ADMIN, `select public.set_user_role('${MEMBER}','superuser')`, '22023');
+
+      // 자기강등 방지(admin→user) → 42501
+      await expectRaise(client, ADMIN, `select public.set_user_role('${ADMIN}','user')`, '42501');
+    } finally {
+      await client.query('rollback');
+      await client.end();
+    }
+  });
 });

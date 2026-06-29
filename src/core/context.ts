@@ -15,6 +15,7 @@ import type {
   Enrollment,
   InstrumentId,
   MemberRef,
+  MemberSummary,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -414,6 +415,24 @@ class SupabaseCoreContext implements CoreContext {
       p_note: input.note ?? null,
     });
     if (error) throw new CoreError(`decideCoachApplication 실패: ${error.message}`);
+  }
+
+  // 본부 멤버 목록(운영자 전용). users_select RLS 가 admin 전체 읽기 허용(직접 select).
+  async listUsers(): Promise<MemberSummary[]> {
+    const { data, error } = await this.sb.from('users').select('id,email,name,role');
+    if (error) throw new CoreError(`listUsers 실패: ${error.message}`);
+    return ((data ?? []) as { id: string; email: string | null; name: string | null; role: string }[]).map((r) => ({
+      id: r.id,
+      email: r.email ?? '',
+      name: r.name,
+      role: r.role as Role,
+    }));
+  }
+
+  // 멤버 역할 직접 변경(승격/강등). 권한·화이트리스트·자기강등은 set_user_role(DEFINER) 내부에서 강제.
+  async setUserRole(userId: string, role: Role): Promise<void> {
+    const { error } = await this.sb.rpc('set_user_role', { p_user_id: userId, p_role: role });
+    if (error) throw new CoreError(`setUserRole 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────

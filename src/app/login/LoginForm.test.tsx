@@ -28,15 +28,17 @@ describe('LoginForm (로그인 전용 — 가입 폼 없음)', () => {
     expect(html).toContain('type="submit"');
   });
 
-  it('가입 폼/탭이 없다(로그인 전용)', () => {
+  it('가입 폼/탭이 없다(로그인 전용 — 가입은 /signup 링크로만)', () => {
     const html = render();
-    expect(html).not.toMatch(/처음이에요|가입하고|회원가입|구글로 계속/);
+    // 가입 FORM/탭 지표 부재(이름·비밀번호 입력 묶음·탭). '가입하기' 버튼·구버전 탭 없음.
+    expect(html).not.toMatch(/처음이에요|가입하고 들어가기|구글로 계속|가입하기/);
   });
 
-  it('참여자 안내 + /join 링크', () => {
+  it('참여자 안내 + /join 링크, /signup 상호 링크', () => {
     const html = render();
     expect(html).toContain('받은 코드');
     expect(html).toContain('href="/join"');
+    expect(html).toContain('href="/signup"'); // 로그인 ↔ 가입 상호 링크
   });
 
   it('에러는 담담한 카피로 표시(의미색 토큰 없음)', () => {

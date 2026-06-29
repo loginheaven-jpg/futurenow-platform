@@ -15,6 +15,7 @@ import type {
   Enrollment,
   InstrumentId,
   MemberRef,
+  MemberSummary,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -73,4 +74,8 @@ export interface CoreContext {
   // 본부 — 코치 신청 승인/거절(USER→COACH 승격). 운영자 전용.
   listCoachApplications(status?: 'pending' | 'approved' | 'rejected'): Promise<CoachApplication[]>; // 운영자 전용(coach_apps_select=admin) + users 조인. 승인 2026-06-28
   decideCoachApplication(input: { applicationId: string; decision: 'approved' | 'rejected'; note?: string }): Promise<void>; // 운영자 전용, RPC decide_coach_application(원자 승격). 승인 2026-06-28
+
+  // 본부 — 멤버 역할 관리(직접 승격/강등). 운영자 전용. ADR-28
+  listUsers(): Promise<MemberSummary[]>; // 운영자 전용(users_select=admin 전체). 비admin은 RLS로 본인 행만.
+  setUserRole(userId: string, role: Role): Promise<void>; // 운영자 전용, RPC set_user_role(가드: admin·화이트리스트·자기강등 방지).
 }

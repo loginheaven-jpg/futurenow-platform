@@ -47,6 +47,14 @@ export interface MemberRef {
   name: string | null;
 }
 
+// 본부 멤버 관리(운영자 화면)용 사용자 요약. 운영자만 전체 조회(users_select=admin). ADR-28
+export interface MemberSummary {
+  id: string;
+  email: string;
+  name: string | null;
+  role: Role;
+}
+
 // 코치 신청(USER→COACH 승격 대기). 본부 §8.6 [승인 대기]의 데이터. ADR-24
 // 읽기는 운영자 전용(coach_apps_select=admin). 결정(승인/거절)은 decide_coach_application RPC(원자 승격).
 export interface CoachApplication {

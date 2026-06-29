@@ -499,3 +499,35 @@ describe('updateCohort (차수 수정 — 부분수정·불변필드·권한)', 
     await expect(ctx.updateCohort('coX', { status: 'archived' })).rejects.toBeInstanceOf(CoreNotFoundError);
   });
 });
+
+describe('본부 멤버 역할 (listUsers / setUserRole)', () => {
+  it('listUsers 는 users 전체를 MemberSummary[] 로 매핑(이름 null 보존)', async () => {
+    const { ctx } = ctxWith({
+      authUser: { id: 'a1' },
+      tableResolver: (c) =>
+        c.table === 'users'
+          ? {
+              data: [
+                { id: 'a1', email: 'a@t.test', name: '운영', role: 'admin' },
+                { id: 'u1', email: 'u@t.test', name: null, role: 'user' },
+              ],
+              error: null,
+            }
+          : { data: null, error: null },
+    });
+    const list = await ctx.listUsers();
+    expect(list).toHaveLength(2);
+    expect(list[1]).toEqual({ id: 'u1', email: 'u@t.test', name: null, role: 'user' });
+  });
+
+  it('setUserRole 은 RPC set_user_role 에 매핑 전달', async () => {
+    const { ctx, rpcCalls } = ctxWith({ authUser: { id: 'a1' }, rpcResolver: () => ({ data: null, error: null }) });
+    await ctx.setUserRole('u1', 'coach');
+    expect(rpcCalls).toContainEqual({ name: 'set_user_role', args: { p_user_id: 'u1', p_role: 'coach' } });
+  });
+
+  it('setUserRole 은 RPC 오류(권한 등)를 CoreError 로 변환', async () => {
+    const { ctx } = ctxWith({ authUser: { id: 'c1' }, rpcResolver: () => ({ data: null, error: { message: '권한이 없습니다' } }) });
+    await expect(ctx.setUserRole('u1', 'coach')).rejects.toThrowError(/setUserRole/);
+  });
+});

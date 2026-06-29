@@ -94,6 +94,9 @@ export function LoginForm({
       </form>
 
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
+        코치·스태프 계정이 없으신가요? <a href="/signup" style={{ color: 'var(--color-primary)' }}>회원가입</a>
+      </p>
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
         참여자는 인도자에게 받은 코드로 입장해 주세요.{' '}
         <a href="/join" style={{ color: 'var(--color-primary)' }}>입장하기</a>
       </p>
