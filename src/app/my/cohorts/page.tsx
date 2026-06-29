@@ -3,7 +3,7 @@
 // 데이터: listMyCohorts(my_cohorts DEFINER RPC). 앱은 cohorts·responses 직접 select 안 함.
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
-import { MemberHeaderActions } from '@/app/_screens/MemberHeaderActions';
+import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { MyCohorts } from '@/app/_screens/MyCohorts';
 import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
@@ -20,7 +20,7 @@ export default async function MyCohortsPage() {
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="내 차수" action={<MemberHeaderActions />} />
+      <AppHeader title="내 차수" action={<HeaderActions />} />
       <a
         href="/home"
         className="t-caption"

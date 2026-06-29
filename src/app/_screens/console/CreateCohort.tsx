@@ -1,6 +1,6 @@
 'use client';
 // §8.2 차수 개설 — 3스텝(정보 → 진단·정원 → 완료·코드 공유). 한 화면 한 질문, 진행바.
-import { useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, ProgressBar, Stepper } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 
@@ -41,10 +41,12 @@ export function CreateCohort({
   code = 'RSTUV',
   onCreate,
   onDone,
+  headerActions,
 }: {
   code?: string;
   onCreate?: (input: { name: string; maxMembers: number }) => Promise<{ code?: string; error?: string }>;
   onDone?: () => void;
+  headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
@@ -75,7 +77,7 @@ export function CreateCohort({
 
   return (
     <div>
-      <AppHeader title="새 차수 만들기" subtitle={`${step} / 3 단계`} onBack={step > 1 ? () => setStep(step - 1) : undefined} />
+      <AppHeader title="새 차수 만들기" subtitle={`${step} / 3 단계`} onBack={step > 1 ? () => setStep(step - 1) : undefined} action={headerActions} />
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <ProgressBar value={step} max={3} />
       </div>

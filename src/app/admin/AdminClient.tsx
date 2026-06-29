@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MemberSummary } from '@/contracts';
 import { useToast } from '@/app/_toast/ToastProvider';
+import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { AdminMembers } from './AdminMembers';
 import { setUserRoleAction } from './actions';
 
@@ -33,6 +34,7 @@ export function AdminClient({ members, currentUserId }: { members: MemberSummary
       members={members}
       currentUserId={currentUserId}
       busyId={busyId}
+      headerActions={<HeaderActions />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
     />

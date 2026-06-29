@@ -1,5 +1,6 @@
 'use client';
 // §8.1 콘솔 홈 — 돌봄·할 일 중심. 먼저 챙길 분(최상단) → 진행 차수 → 모든 차수/새 차수.
+import type { ReactNode } from 'react';
 import { Button, ListRow } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 import { CohortCard } from './CohortCard';
@@ -13,6 +14,7 @@ export function ConsoleHome({
   onAllCohorts,
   onNewCohort,
   onOpenMember,
+  headerActions,
 }: {
   coachName: string;
   careMembers: RosterMember[];
@@ -21,10 +23,11 @@ export function ConsoleHome({
   onAllCohorts?: () => void;
   onNewCohort?: () => void;
   onOpenMember?: (id: string) => void;
+  headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   return (
     <div>
-      <AppHeader title="코치 콘솔" subtitle={coachName} />
+      <AppHeader title="코치 콘솔" subtitle={coachName} action={headerActions} />
 
       {careMembers.length > 0 && (
         <section style={{ marginBottom: 'var(--space-6)' }}>

@@ -2,6 +2,7 @@
 // §8.3 차수 상세 클라이언트 래퍼 — 라우팅·관리 액션 배선. 데이터는 서버 컴포넌트가 주입.
 import { useRouter } from 'next/navigation';
 import { CohortDetail } from '@/app/_screens/console/CohortDetail';
+import { HeaderActions } from '@/app/_screens/HeaderActions';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
 import { archiveCohortAction, setCohortCapAction } from './actions';
 
@@ -24,6 +25,7 @@ export function CohortDetailClient({
         roster={roster}
         status={status}
         maxMembers={maxMembers}
+        headerActions={<HeaderActions />}
         onBack={() => router.push('/coach')}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
         onArchive={async () => {

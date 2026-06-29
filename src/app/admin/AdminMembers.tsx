@@ -1,8 +1,11 @@
 'use client';
 // 본부 멤버 관리(프레젠테이션 — 부수효과 없음). 운영자 화면(§8.6 첫 조각). 의미색 허용(참여자 화면 아님).
 // user→[코치로 승격], coach→[멤버로 강등]. 본인(운영자) 행은 강등 미제공(자기강등 가드의 UI 반영).
+// 셸 통일(Step 3.1): AppHeader + headerActions(로그아웃·내 정보). 미전달 시 액션 렌더 0.
+import type { ReactNode } from 'react';
 import { Button } from '@/core/ui';
 import type { MemberSummary } from '@/contracts';
+import { AppHeader } from '@/app/_screens/AppHeader';
 
 const ROLE_LABEL: Record<string, string> = { admin: '운영자', coach: '코치', user: '멤버' };
 
@@ -12,16 +15,18 @@ export function AdminMembers({
   busyId,
   onPromote,
   onDemote,
+  headerActions,
 }: {
   members: MemberSummary[];
   currentUserId: string;
   busyId?: string | null;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
+  headerActions?: ReactNode;
 }) {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <h1 className="t-h1" style={{ color: 'var(--color-primary)', fontSize: 22, margin: '0 0 var(--space-2)' }}>본부 · 멤버 관리</h1>
+      <AppHeader title="본부" subtitle="멤버 관리" action={headerActions} />
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
         멤버를 코치로 승격하거나 되돌릴 수 있어요. 운영자 전용입니다.
       </p>

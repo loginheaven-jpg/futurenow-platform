@@ -2,7 +2,7 @@
 // 이름(users.name)·전화(user_contacts)·비밀번호(auth.users) 수정. role 쓰기 경로 없음(2.S2 봉쇄).
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
-import { MemberHeaderActions } from '@/app/_screens/MemberHeaderActions';
+import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
 import { AccountClient } from './AccountClient';
@@ -19,7 +19,7 @@ export default async function AccountPage() {
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="내 정보" action={<MemberHeaderActions />} />
+      <AppHeader title="내 정보" action={<HeaderActions />} />
       <a
         href={backHref}
         className="t-caption"

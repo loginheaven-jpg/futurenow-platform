@@ -42,6 +42,7 @@ export function CohortDetail({
   onOpenMember,
   onArchive,
   onSetCap,
+  headerActions,
 }: {
   cohort: CohortSummary;
   roster: RosterMember[];
@@ -51,6 +52,7 @@ export function CohortDetail({
   onOpenMember?: (id: string) => void;
   onArchive?: () => void | Promise<void>;
   onSetCap?: (n: number) => void | Promise<void>;
+  headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   const care = roster.filter((m) => m.status === 'care');
   const done = roster.filter((m) => m.status === 'done');
@@ -82,7 +84,7 @@ export function CohortDetail({
 
   return (
     <div>
-      <AppHeader title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} onBack={onBack} />
+      <AppHeader title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} onBack={onBack} action={headerActions} />
 
       {/* 관리(마감·정원) — 헤더 메뉴. 인도자 화면이라 의미색 허용 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>

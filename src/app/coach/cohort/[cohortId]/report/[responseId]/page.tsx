@@ -4,6 +4,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Answers } from '@/contracts';
+import { AppHeader } from '@/app/_screens/AppHeader';
+import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
 import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
@@ -35,6 +37,7 @@ export default async function CoachReportPage({
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
+      <AppHeader title="개인 리포트" action={<HeaderActions />} />
       <Link href={backTo} className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
         ← 차수로 돌아가기
       </Link>

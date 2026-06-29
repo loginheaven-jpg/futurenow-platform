@@ -31,4 +31,12 @@ describe('AdminMembers (본부 멤버 관리)', () => {
     const demoteCount = (html.match(/멤버로 강등/g) ?? []).length;
     expect(demoteCount).toBe(1); // coach(c1) 한 줄만
   });
+
+  it('셸 헤더(본부) + headerActions 슬롯 전달(로그아웃·내 정보) — Step 3.1', () => {
+    const withAction = renderToStaticMarkup(
+      <AdminMembers members={members} currentUserId="a1" onPromote={noop} onDemote={noop} headerActions={<span>ADMIN_HDR</span>} />,
+    );
+    expect(withAction).toContain('본부'); // AppHeader title
+    expect(withAction).toContain('ADMIN_HDR'); // action 슬롯 전달
+  });
 });
