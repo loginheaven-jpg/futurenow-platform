@@ -29,14 +29,17 @@ export function CohortPreview({ meta, onEnter, onCancel }: { meta: CohortPreview
           marginBottom: 'var(--space-6)',
         }}
       >
-        <div className="t-h1" style={{ color: 'var(--color-primary)', marginBottom: 'var(--space-4)' }}>{meta.name}</div>
+        <div className="t-h1" style={{ color: 'var(--color-primary)', marginBottom: meta.description ? 'var(--space-2)' : 'var(--space-4)' }}>{meta.name}</div>
+        {meta.description ? (
+          <p className="t-body" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-line', margin: '0 0 var(--space-4)' }}>{meta.description}</p>
+        ) : null}
         <Row label="인도자" value={meta.coachName ?? '—'} />
         <Row label="현재 인원" value={`${meta.memberCount}명`} />
         <Row label="진단" value={inst.label} />
         <Row label="예상 시간" value={`약 ${inst.minutes}분`} />
       </div>
 
-      {/* 공통 소개(SeminarIntro 단일 출처 — 랜딩과 공유). 차수별 소개(description)는 후속(RPC 마이그 필요). */}
+      {/* 공통 소개(SeminarIntro 단일 출처 — 랜딩과 공유). 차수별 소개(description)는 위 카드 이름 아래. */}
       <SeminarIntro />
 
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>

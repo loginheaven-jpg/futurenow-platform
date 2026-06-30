@@ -87,6 +87,7 @@ export interface CoachApplication {
 export interface CohortPreviewMeta {
   id: string;
   name: string;
+  description: string | null; // 코치 작성 차수 소개(비민감 공개 메타 — resolve_cohort_by_code). 진입-2
   coachName: string | null;
   instrumentId: InstrumentId;
   memberCount: number;

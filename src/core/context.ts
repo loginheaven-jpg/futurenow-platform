@@ -59,6 +59,7 @@ interface CohortMeta {
   coach_name: string | null;
   instrument_id: string;
   name: string;
+  description: string | null;
   code: string;
   status: string;
   max_members: number;
@@ -144,6 +145,7 @@ class SupabaseCoreContext implements CoreContext {
     return {
       id: meta.id,
       name: meta.name,
+      description: meta.description,
       coachName: meta.coach_name,
       instrumentId: meta.instrument_id,
       memberCount: Number(meta.member_count),

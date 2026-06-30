@@ -33,6 +33,7 @@ export async function getCohortMeta(cohortId: string): Promise<CohortPreviewMeta
     return {
       id: cohort.id,
       name: cohort.name,
+      description: null, // 재진입은 미리보기를 건너뛰므로 미표시(getCohort 는 description 미반환)
       coachName: null, // 미리보기 단계를 건너뛰므로 미표시(start/runner 는 id·name 만 사용)
       instrumentId: cohort.instrumentId,
       memberCount: 0,

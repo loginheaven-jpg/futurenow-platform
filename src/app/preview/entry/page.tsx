@@ -10,6 +10,7 @@ import type { CohortPreviewMeta } from '@/contracts';
 const sampleMeta: CohortPreviewMeta = {
   id: 'co1',
   name: '2026 봄 미래의 나 1기',
+  description: '청년부와 함께하는 8주 여정이에요. 매주 목요일 저녁, 서로의 이야기를 나눕니다.',
   coachName: '김인도',
   instrumentId: 'futurenow',
   memberCount: 7,
