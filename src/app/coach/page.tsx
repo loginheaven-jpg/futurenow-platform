@@ -4,6 +4,7 @@
 //   응답/총원 = listResponses · listEnrollments
 //   멤버 이름 = listCohortMembers(cohort_member_directory RPC, 코치/운영자 id+name만 — ADR-24). plan Q6 해소.
 // 먼저 챙길 분 이름 경로: alert.responseId → response.userId → member.name. name null 이면 '참여자' 폴백.
+import { redirect } from 'next/navigation';
 import { ConsoleHomeClient } from './ConsoleHomeClient';
 import { buildCohortRoster } from './rosterModel';
 import { instrumentDisplay, type CohortSummary, type RosterMember } from '@/app/_screens/types';
@@ -16,13 +17,8 @@ export default async function CoachConsolePage() {
   const ctx = createCoreContext(await createServerSupabase());
   const me = await ctx.currentUser();
 
-  if (!me || me.role === 'user') {
-    return (
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-        <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>코치 전용 화면입니다.</p>
-      </div>
-    );
-  }
+  if (!me) redirect('/login');
+  if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로
 
   const cohorts = await ctx.listCohortsByCoach(me.id);
   const summaries: CohortSummary[] = [];

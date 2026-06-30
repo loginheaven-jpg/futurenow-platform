@@ -1,5 +1,5 @@
 // 차수 상세(§8.3) — 코치/운영자 전용 서버 컴포넌트. 데이터는 기존 메서드 배선(계약 변경 0).
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { instrumentDisplay, type CohortSummary } from '@/app/_screens/types';
 import { buildCohortRoster } from '@/app/coach/rosterModel';
 import { createCoreContext } from '@/core/context';
@@ -12,13 +12,8 @@ export default async function CohortDetailPage({ params }: { params: Promise<{ c
   const { cohortId } = await params;
   const ctx = createCoreContext(await createServerSupabase());
   const me = await ctx.currentUser();
-  if (!me || me.role === 'user') {
-    return (
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-        <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>코치 전용 화면입니다.</p>
-      </div>
-    );
-  }
+  if (!me) redirect('/login');
+  if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로
 
   const cohort = await ctx.getCohort(cohortId).catch(() => null);
   if (!cohort) notFound(); // 미존재/RLS 차단 → 404

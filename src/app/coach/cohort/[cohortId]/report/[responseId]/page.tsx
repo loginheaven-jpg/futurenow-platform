@@ -2,7 +2,7 @@
 // 접근 제어: responses RLS(차수 코치+운영자+본인만 SELECT). 차단/부재 → 404. 참여자는 이 임상 리포트 UI 경로 없음(§7.5 거울만).
 // wave 비교(prev)는 후속 — MVP 는 단일 wave 로 충분(ReportScreen 이 prev optional 처리).
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
@@ -21,13 +21,8 @@ export default async function CoachReportPage({
   const { cohortId, responseId } = await params;
   const ctx = createCoreContext(await createServerSupabase());
   const me = await ctx.currentUser();
-  if (!me || me.role === 'user') {
-    return (
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-        <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>코치 전용 화면입니다.</p>
-      </div>
-    );
-  }
+  if (!me) redirect('/login');
+  if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로
 
   const resp = await ctx.getResponse<Answers, unknown>(responseId).catch(() => null);
   if (!resp) notFound(); // RLS 차단(비소유 코치)·부재 → 404
