@@ -5,7 +5,9 @@
 > 작업 중 결정·구현된 결과물의 설계는 반드시 이 문서에 반영한다.
 > 보류·향후 항목은 `plan.md`, 작업 규율은 `CLAUDE.md`에 둔다.
 >
-> 문서 버전: v0.7 (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ + 문항 원문 · AlertSignal(ADR-19) · 디자인 시스템 v1 구현(색 토큰·공용 UI 9종·응답 위젯 5종·ResponseRunner) / B③ 리포트 시각화 대기)
+> 문서 버전: **v1.0** (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ + 문항 원문 · AlertSignal(ADR-19) · 디자인 시스템 v3 구현(색 토큰·공용 UI 12종·응답 위젯 5종·리포트 시각화 5종·ResponseRunner) · 코치 콘솔·본부(코치 승인·역할관리) · 참여 프로필(ADR-32))
+> **v1.0 도달(2026-06-30~07-01)**: X1 색 팔레트 확정 · X2 공통 셸 모드(AppHeader root/sub/flow) · 진입 1~3(공개 소개 현관·플로우 헤더·참여자 홈) · 차수 소개(description) · 진단-1(재진단 허용+dedup ADR-33 · 중간저장 `response_drafts` ADR-34) · 완료 후 착지(A-2, Completion→홈) · 마감 a11y(오류 텍스트 대비). 프로덕션 라이브(Vercel, futurenow-platform.vercel.app).
+> **남은 미결(plan.md)**: B③ 리포트 **자동 해석 문구(AI 생성)** 구현 대기 — 시각화 5종은 구현 완료, AI 게이트웨이 위치(plan §1)·Q5(문구 검수) 결정 선결. 그 외 다크 모드 색·접근성 키보드 정밀화는 후속.
 
 ---
 
@@ -170,7 +172,7 @@ SAIL의 검증된 스키마를 토대로 한다. 컬럼·정책의 출처는 SAI
 
 > **거점 확정·적용 완료 (directive 2026-06-26 · ADR-13~16)**: 거점 = **SAIL 프로젝트** `zdoytzmvcafcebytttrm` 를 승격(신규 프로젝트 미신설, 같은 `auth.users` 공유). 코어 테이블은 SAIL 의 기존 **`public` 스키마**에 둔다(구 "core 스키마 분리" ADR-11 **폐기**). `public.users` 를 **재사용**해 코어 신원으로 삼되 `full_name`→`name` 표준화·`phone` 분리(`user_contacts`)로 정비한다. 확정 실명: `users`·`user_contacts`·`cohorts`(`instrument_id` 보유)·`enrollments`·`responses`·`alerts`. SAIL 잔존 테이블 `groups`/`group_members`/`results` 는 유지(점진 통합 — 클로드3 조율). **마이그레이션 `20260626120000_core_platform_upgrade.sql` 은 거점에 적용 완료**(원격 version `20260626064658`).
 >
-> **참여 식별자 — `instrument_id` 규약**: 퓨처나우 = `'futurenow'`, SAIL = `'sail'`. 진단 간 격리는 `instrument_id` + 차수(코치) RLS 로 성립(ADR-14). 코어 신원 모델에는 `coach_applications` 가 포함되나, 본 승격 마이그레이션은 아직 만들지 않았다(코치 승인 흐름 구현 시 별도 마이그레이션).
+> **참여 식별자 — `instrument_id` 규약**: 퓨처나우 = `'futurenow'`, SAIL = `'sail'`. 진단 간 격리는 `instrument_id` + 차수(코치) RLS 로 성립(ADR-14). 코어 신원 모델에는 `coach_applications` 가 포함되며, 코치 승인 흐름은 **구현·적용 완료**다: `decide_coach_application`(원자 승격 DEFINER, 마이그 `20260628095527`·ADR-24)·`set_user_role`(운영자 직접 승강, `20260629000321`·ADR-28)·자기강등/자가승격 방지(`20260629100002`).
 
 ```
 users              -- auth.users 1:1. id·email·name·nickname·role(user/coach/admin)
@@ -182,9 +184,11 @@ coach_applications -- 코치 자기등록 승인. status(pending/approved/reject
 responses          -- 응답 봉투. id·instrument_id·cohort_id·user_id·wave
                    --   ·answers(JSONB)·subject_profile(JSONB)·created_at. immutable
 alerts             -- Red Flag·돌봄. response_id·cohort_id·severity·reason. 점수·원문 미적재
+response_drafts    -- 제출 전 작성본(중간저장). PK(user_id,cohort_id,wave)·instrument_id·answers(JSONB)·updated_at
+                   --   가변(upsert 덮어쓰기). RLS 본인 한정. 제출 성공 시 정리. responses 와 분리(ADR-34, 진단-1B)
 ```
 
-**불변 원칙**: `responses`·`alerts`는 INSERT/SELECT만, UPDATE/DELETE 정책 없음(차단). SAIL의 immutable `results` 철학 계승.
+**불변 원칙**: `responses`·`alerts`는 INSERT/SELECT만, UPDATE/DELETE 정책 없음(차단). SAIL의 immutable `results` 철학 계승. **예외**: `response_drafts`는 작성 중 보존이라 가변(본인 upsert/delete만, ADR-34) — 정식 응답(`responses`)의 불변성과 무관.
 
 **가입코드 형식**: 5자리 영숫자, 혼동 글자(0/O/1/I/L) 제외 (SAIL 계승).
 
@@ -611,12 +615,12 @@ interface AlertPlugin<S = unknown> {
 - **색 3단 토큰**(§1): 원천 hex → 역할(semantic) → 컴포넌트. `src/app/globals.css` 에 §1.1~1.4 구현. **컴포넌트는 2차 역할 토큰만 참조**(hex·`--navy-*`·`--gold-*` 직접 참조 금지). 색값은 **잠정**(첫 화면 확정 후 재평가). 선택색 = `--color-accent`(골드). 다크 토큰은 역할만 재지정.
 - **타이포·간격**(§2·§3): Pretendard, 숫자 tabular-nums, 타이포 7토큰(display~micro), `--tap-min:44px` 등. globals.css.
 - **공용 UI 12종**(§9, 코어 `src/core/ui`, 인스트루먼트 중립): Button·Card·ProgressBar·SegmentBar·DotScale·NumberSlider·TextArea·CheckRow·StickyScaleHeader·**OtpInput·Stepper·ListRow**. 스타일은 `src/core/ui/ui.css`(역할 토큰·`--care-*`만). 리포트 차트군은 코어가 아니라 **인스트루먼트 소유**(ADR-21).
-- **진입 흐름(§7) + 코치 콘솔(§8)** — **앱 레이어**(`src/app/_screens/`, 코어 UI·인스트루먼트를 합성). 진입: 코드입력(OtpInput)→차수 미리보기(CohortPreview)→로그인/가입(이름·전화 미요구, ADR-03)→시작 안내(보안 고지·버튼=동의). 콘솔: 홈(먼저 챙길 분 최상단·돌봄 우선)·차수 개설(3스텝)·차수 상세(3숫자+명단 3묶음)·모든 차수. **인도자 화면만 의미색(저채도 `--care-*`), 참여자 진입 화면 경고색 배제.** 미리보기 `/preview/entry`·`/preview/console`. **CohortPreview 메타 타입은 앱 로컬**(`_screens/types.ts`) — 계약 승격은 보류(아래).
+- **진입 흐름(§7) + 코치 콘솔(§8)** — **앱 레이어**(`src/app/_screens/`, 코어 UI·인스트루먼트를 합성). 진입(갱신 2026-07-01): **공개 소개 현관(`/`)** → `/join`: 코드입력(CodeInput)→차수 미리보기(CohortPreview + 세미나 소개)→로그인/가입(AuthGate, 이름·전화 미요구 ADR-03)→시작 안내(StartGuide, 보안 고지·버튼=동의)→**참여 프로필(ProfileForm, ADR-32)**→러너→**완료(Completion 갈망 거울, ADR-27)→자기 홈(A-2)**. 콘솔: 홈(먼저 챙길 분 최상단·돌봄 우선)·차수 개설(3스텝)·차수 상세(3숫자+명단 3묶음)·모든 차수. **인도자 화면만 의미색(저채도 `--care-*`), 참여자 진입 화면 경고색 배제.** 미리보기 `/preview/entry`·`/preview/console`. **CohortPreview 메타 타입은 앱 로컬**(`_screens/types.ts`) — 계약 승격은 보류(아래).
 - **응답 위젯 5종 + 러너**(§4): 나침반=세그먼트바(중앙 유지)·리커트=행스택+척도 sticky+도트22px(히트44px)·간격=슬라이더+숫자·주관식=텍스트영역·체크=행토글(경고색 금지·골드 선택). `src/core/response/ResponseRunner.tsx`(시각부: 블록 흐름·위젯 렌더·진행·필수 게이팅·제약무작위 배열[`ordering.ts`]·완료 시 `saveResponse`). 참여자 화면 경고색 배제(§0.4). 미리보기 라우트 `/preview`.
 - **리포트 시각화 5종 + 배치**(§5·§6, B③ 구현 완료): 나침반=덤벨·간격=레이더(사후 네이비13% 면+사전 회색 점선)·GROW+F=충전막대(사후 네이비·사전 회색)·활력=띠 이동(시들음/중간/번성 저채도 구간+상태배지)·돌봄 신호=조건부 배너(저채도 `--care-*`). 배치: 돌봄→헤드라인(활력·나침반)→깊이(간격·GROW)→주관식, 데스크톱 2×2/모바일 1열. **본문 시각물 네이비·회색, 의미색은 돌봄 배너에만.** 명명(시들음·원씽)은 리포트에서만(§9.4). `src/instruments/futurenow/report/*` + `report.tsx`(ReportPlugin: renderScreen·renderGroup·renderPdf[react-pdf, 서버 전용]). 미리보기 `/preview/report`. **InstrumentModule 최종 조립** = `src/instruments/futurenow/index.ts`.
 - **경계 결정(directive 2026-06-28, ADR-21)**: 리포트 차트군(Dumbbell·Radar·ChargeBars·VitalityBand·CareBanner)은 **인스트루먼트 소유** 확정(`report/visuals.tsx`) — 진단별 명명·데이터가 박히므로 코어 중립 부품이 아니다. design_system §7 의 '코어' 기재는 **오기로 정정**. 진단↛코어 경계(CLAUDE §1) 유지, 차트는 공유 디자인 토큰만 참조. **활력 구간 경계 확정**(11~17 중간·18~25 번성). **PDF 생성 라우트(renderToBuffer)는 다음 단위**(renderPdf 구현·타입·빌드는 완료, 서버 전용).
 - **보류(design_system §9)**: 코치/운영자 콘솔·`CohortPreview`. **착수 금지.**
-- **후속(러너)**: 진행 저장/재개·subjectProfile 수집 화면·접근성 키보드 정밀화는 미구현(주석).
+- **러너 후속(갱신 2026-07-01)**: **진행 저장/재개 — 구현 완료**(진단-1B·ADR-34: `response_drafts` 서버 draft + localStorage 자동 + `draftLocation` 안 푼 첫 필수 문항 재계산, step 미저장으로 셔플 안전). **subjectProfile 수집 화면 — 구현 완료**(`ProfileForm`·ADR-32, `/join` 흐름 `start→profile→runner`). **접근성 키보드 정밀화는 미구현 유지**(plan §2 — 후속).
 
 ---
 
@@ -654,6 +658,8 @@ interface AlertPlugin<S = unknown> {
 | ADR-29 | 멤버 본인 차수 읽기: `MyCohortSummary` + `listMyCohorts`(my_cohorts RPC) | 멤버는 cohorts RLS상 자기 차수도 직접 못 읽음 → **DEFINER RPC가 비민감 메타만**(차수명·코치명·status·진행·가입일; coach_id·code·max_members 미반환) `auth.uid()` 기준 반환. cohorts·enrollments·responses **RLS 불변**(옵션 A). 진행=해당 wave responses row 존재(불변·완료컬럼 없음). `previewCohortByCode`(코드·미가입자)와 목적 분리. directive 2026-06-29 승인 |
 | ADR-30 | Q4 확정 — 멤버 리포트 = **순화 뷰**(갈망 거울 재사용), 코치 = **리얼 리포트**(measurement) | 멤버 본인 열람은 `participantMirror`(ADR-27) 산출을 공용 `MirrorView`로 렌더(②방향·③갈망·⑤믿음) — severity·점수·버킷·돌봄 0. 코치 `ReportScreen`(measurement 전체)와 **시각·경로 분리**(/my/cohorts/[id]/report vs /coach/cohort/[id]/report/[responseId]). 멤버 self-read는 `responses_select`(user_id=auth.uid()) 직접 — RPC 불요. scores 미저장(재채점, ADR-09). 계약·DB·RLS 무변경(G1=0). directive 2026-06-29 승인 |
 | ADR-31 | `setName` 추가(본인 표시 이름 수정) | `/account` 프로필의 이름 수정 = `users.name` 본인 행 update. **본인 전용**(requireUser→id=auth.uid()) — userId 인자 없음(타인 수정 불요). **role 미포함**(2.S2로 role 컬럼 권한 봉쇄·set_user_role 전용) — RLS(본인 행) + 컬럼권한(name=true) 이중 보장. 전화는 기존 `setPhone`/`getPhone` 재사용(계약 +0). 실패는 정제(raw 비노출·내부 로그, ADR 흡수). 계약 +1 메서드만. directive 2026-06-29 승인 |
+| ADR-33 | 재진단 **허용**(최신 유효) + 집계·열람 경로 dedup(`latestPerUser`) | 같은 user·차수·wave 에 응답이 다중 행 쌓일 수 있음(`responses` 유니크 제약 없음 — 재진단과 양립). 무결성 취약 경로 둘을 앱층에서 user별 `created_at` 최신 1건으로 접음: 그룹 평균(`/coach/cohort/[id]/group` — 평균 오염 방지)·개인 리포트 재방문(`/my/cohorts/[id]/report` — 무순서 `[0]` staleness 방지). 코치 콘솔 카운트(`buildCohortRoster`)는 이미 user별 최신 — 무변경. `listResponses` 시그니처·DB·계약 무변경(G1=0, 진단-1A). directive 2026-06-30 승인 |
+| ADR-34 | 중간저장 = 별도 테이블 `response_drafts` + `CoreContext.saveDraft/getDraft/clearDraft` | 진단을 도중 잃지 않게 2층 보존: localStorage 자동(투명·디바운스) + [중간 저장] 버튼 서버 보존. **answers만 저장·step 미저장**(블록 내 셔플과 무관 — 재개 시 `draftLocation`으로 안 푼 첫 필수 문항 블록 재계산). `responses`(불변·정식 제출)와 **분리** — 회귀면 0, 제출 성공 시 draft 정리. PK(user,cohort,wave) upsert=최신 1개. **RPC 대신 RLS 직접 I/O**(self-scoped CRUD라 `user_id=auth.uid()` USING+WITH CHECK로 완전 표현, `saveResponse` 선례 동형 — 함수 DDL 0). INSERT/UPDATE는 `is_cohort_member` 부기(`responses_insert` 선례). 마이그 `20260630134334`(테이블+RLS) + 계약 +3. 러너(코어, §10 "진행 저장/재개")는 토스트 대신 인라인 확인(코어→앱 의존 회피). directive 2026-06-30 승인 |
 | ADR-32 | 참여 프로필 수집(생년·성별 필수, 종교·신앙연수 선택) + 러너 프로필 운반 | 제출 실패 수정: 러너가 `subjectProfile:{}` 를 보내는데 `futurenowProfileSchema` 가 필수 필드를 요구해 전 제출 실패(러너 빈스냅샷 의도 ↔ 스키마 필수 충돌, stub validators 라 단위테스트 미포착). 지휘부 확정 — 프로필 **실수집**: `futurenowProfileSchema` = `birthYear`(int 1900~2100·필수)·`gender`(필수)·`religion`(선택)·`faithYears`(선택). 수집 UI = `ProfileForm`(참여자 — 의미색·구인 어휘 0, §0.4·§7), `/join` 흐름에 `start→profile→runner` 삽입. **계약 +1(선택 필드)**: `ResponseRunnerProps.subjectProfile?`(미전달 시 `{}`) — 러너가 `saveResponse` 로 운반(견고화: 러너가 스냅샷 운반). 채점·리포트·거울은 `answers`만 사용 → 프로필 다운스트림 영향 0. 마이그레이션 0. directive 2026-06-29 승인 |
 
 ---

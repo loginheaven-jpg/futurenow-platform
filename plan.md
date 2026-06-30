@@ -36,11 +36,11 @@
 | ~~Q1~~ | ~~비로그인 허용?~~ → **확정: 로그인 기반(비로그인 미허용)** | architecture §5.5 로 승격(2026-06-26) |
 | ~~Q2~~ | ~~참여자 계정 생성 시점~~ → **확정: 차수 가입 시 계정 생성** | architecture §5.5 |
 | ~~Q3~~ | ~~사전·사후 페어링 키~~ → **확정: user_id + cohort_id + instrument_id, wave 구분** | architecture §5.5 |
-| Q4 | 리포트 열람 주체 | 참여자 본인도 자기 리포트를 보는가, 인도자만 보는가? (종료진단 PDF의 "인도자만 열람" 문구와 본인 피드백 욕구의 균형) |
-| Q5 | AI 해석 문구의 검수 | Claude 생성 리포트 문구를 인도자가 검수·수정 후 확정하는 단계를 둘 것인가 |
+| ~~Q4~~ | ~~리포트 열람 주체~~ → **확정: 참여자=순화 거울 / 코치=리얼 리포트** | 참여자 본인은 `participantMirror` 순화 뷰(`/my/cohorts/[id]/report`, severity·점수·돌봄 0), 코치는 measurement 임상 리포트(`/coach/cohort/[id]/report/[responseId]`) — 시각·경로 분리. architecture ADR-27·ADR-30 으로 승격(2026-06-29). 본인 피드백 욕구는 거울이, 임상 판단은 인도자 전용이 충족 |
+| Q5 | AI 해석 문구의 검수 | Claude 생성 리포트 문구를 인도자가 검수·수정 후 확정하는 단계를 둘 것인가 (B③ 자동 해석 문구·AI 게이트웨이 결정과 묶임 — 미결 유지) |
 | ~~Q6~~ | ~~코치의 멤버 이름 가시성~~ → **확정: (b) SECURITY DEFINER 멤버명부 RPC** | `cohort_member_directory`(id+name만, users RLS 미확대). architecture ADR-24·§7 로 승격(2026-06-28). (a) users RLS 확대안은 불채택 |
 
-> Q1~Q3·Q6 **확정**. 남은 미결은 Q4·Q5(리포트 단계).
+> Q1~Q4·Q6 **확정**. 남은 미결은 **Q5**(AI 해석 문구 검수 — B③·AI 게이트웨이 결정과 묶임).
 
 ---
 
