@@ -18,7 +18,7 @@ export function CohortPreview({ meta, onEnter, onCancel }: { meta: CohortPreview
   const inst = instrumentDisplay(meta.instrumentId);
   return (
     <div>
-      <AppHeader title="이 모임에 들어갑니다" />
+      <AppHeader variant="flow" title="이 모임에 들어갑니다" />
       <div
         style={{
           background: 'var(--color-surface-2)',

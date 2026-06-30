@@ -6,7 +6,7 @@ import { AppHeader } from '../AppHeader';
 export function StartGuide({ cohortName, onStart }: { cohortName: string; onStart?: () => void }) {
   return (
     <div>
-      <AppHeader title="잠깐, 호흡 한 번" subtitle={cohortName} />
+      <AppHeader variant="flow" title="잠깐, 호흡 한 번" subtitle={cohortName} />
       <p
         className="t-body-lg"
         style={{ color: 'var(--color-text)', lineHeight: 1.8, whiteSpace: 'pre-line', margin: '0 0 var(--space-6)' }}

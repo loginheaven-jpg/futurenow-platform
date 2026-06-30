@@ -53,7 +53,7 @@ export function ProfileForm({ onSubmit }: { onSubmit: (p: ParticipantProfileInpu
 
   return (
     <div>
-      <AppHeader title="잠깐, 몇 가지만" subtitle="응답을 더 깊이 읽기 위한 기본 정보예요" />
+      <AppHeader variant="flow" title="잠깐, 몇 가지만" subtitle="응답을 더 깊이 읽기 위한 기본 정보예요" />
 
       <div style={fieldGap}>
         {/* 생년 (필수) */}

@@ -8,7 +8,7 @@ export function CodeInput({ onSubmit }: { onSubmit?: (code: string) => void }) {
   const [code, setCode] = useState('');
   return (
     <div>
-      <AppHeader title="참여 코드" />
+      <AppHeader variant="flow" title="참여 코드" />
       <p className="t-body-lg" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
         인도자에게 받으신 5자리 코드를 입력해 주세요.
       </p>

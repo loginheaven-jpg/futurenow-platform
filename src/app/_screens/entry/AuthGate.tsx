@@ -50,7 +50,7 @@ export function AuthGate({
   const [password, setPassword] = useState('');
   return (
     <div>
-      <AppHeader title="들어가기" />
+      <AppHeader variant="flow" title="들어가기" />
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
         <TabBtn active={mode === 'signup'} onClick={() => setMode('signup')}>처음이에요</TabBtn>
         <TabBtn active={mode === 'login'} onClick={() => setMode('login')}>계정이 있어요</TabBtn>

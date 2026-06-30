@@ -27,10 +27,12 @@ describe('AppHeader 모드 셸 (X2a — 동선 규칙 강제)', () => {
     expect(html).toContain('<button'); // 콜백 뒤로(위저드 단계 등)
   });
 
-  it('레거시(variant 미지정): 기존 렌더 호환 — onBack 버튼 + 부제 골드 유지', () => {
-    const html = renderToStaticMarkup(<AppHeader title="제목" subtitle="부제" onBack={noop} />);
-    expect(html).toContain('제목');
-    expect(html).toContain('aria-label="뒤로"');
-    expect(html).toContain('--color-accent'); // X2b 전까지 부제 골드 유지(무변경)
+  it("variant='flow': 제목+부제만, 출구(뒤로·홈·로고) 없음", () => {
+    const html = renderToStaticMarkup(<AppHeader variant="flow" title="참여 코드" subtitle="안내" />);
+    expect(html).toContain('참여 코드');
+    expect(html).toContain('--navy-300'); // 부제 옅은 네이비(골드 아님)
+    expect(html).not.toContain('aria-label="뒤로"'); // 출구 없음
+    expect(html).not.toContain('aria-label="홈"');
+    expect(html).not.toContain('--color-accent'); // 레거시 골드 부제 제거됨
   });
 });
