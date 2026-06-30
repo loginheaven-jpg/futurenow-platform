@@ -107,7 +107,7 @@
 }
 .ui-seg__cell--selected {
   background: var(--color-accent);
-  color: var(--color-text-on-accent);
+  color: var(--color-text-on-gold); /* 골드 면 — 네이비 글자(대비) */
   box-shadow: inset 0 0 0 2px var(--color-accent);
 }
 .ui-seg__cell:focus-visible {

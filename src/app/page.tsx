@@ -23,7 +23,7 @@ export default function Home() {
       </p>
 
       {/* 참여자 = 골드 흔적(주요 진입) */}
-      <a className="ui-btn" href="/join" style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-accent)' }}>
+      <a className="ui-btn" href="/join" style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
         참여하기
       </a>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 var(--space-6)', textAlign: 'center' }}>

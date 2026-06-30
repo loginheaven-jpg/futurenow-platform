@@ -14,7 +14,7 @@ function ProgressBadge({ label, done, pendingText }: { label: string; done: bool
         padding: '2px var(--space-2)',
         borderRadius: 'var(--radius)',
         border: '1px solid var(--color-border)',
-        color: done ? 'var(--color-text-on-accent)' : 'var(--color-text-secondary)',
+        color: done ? 'var(--color-text-on-gold)' : 'var(--color-text-secondary)',
         background: done ? 'var(--color-accent)' : 'transparent',
         whiteSpace: 'nowrap',
       }}

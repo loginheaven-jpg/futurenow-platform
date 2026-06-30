@@ -57,6 +57,7 @@
   --color-text-secondary: var(--gray-600);
   --color-text-muted: var(--gray-400);
   --color-text-on-accent: var(--gray-0);
+  --color-text-on-gold: var(--navy-700); /* 골드 면 위 글자 — 대비 확보(흰 글자는 골드 위 2.79:1 미달). 네이비 바 글자는 on-accent(흰색) 유지 */
   /* 의미색 — 인도자 화면 전용. 참여자 응답 화면에서 사용 금지 */
   --color-success: var(--green-600);
   --color-care: var(--amber-600);
