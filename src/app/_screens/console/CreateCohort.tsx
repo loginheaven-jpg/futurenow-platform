@@ -44,12 +44,13 @@ export function CreateCohort({
   headerActions,
 }: {
   code?: string;
-  onCreate?: (input: { name: string; maxMembers: number }) => Promise<{ code?: string; error?: string }>;
+  onCreate?: (input: { name: string; maxMembers: number; description?: string }) => Promise<{ code?: string; error?: string }>;
   onDone?: () => void;
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [wave, setWave] = useState<'pre' | 'post'>('pre');
   const [cap, setCap] = useState(10);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
@@ -65,7 +66,7 @@ export function CreateCohort({
     }
     setSubmitting(true);
     setError(null);
-    const res = await onCreate({ name: name.trim(), maxMembers: cap });
+    const res = await onCreate({ name: name.trim(), maxMembers: cap, description: description.trim() || undefined });
     setSubmitting(false);
     if (res.error || !res.code) {
       setError(res.error ?? '차수 생성에 실패했어요. 잠시 후 다시 시도해 주세요.');
@@ -101,6 +102,20 @@ export function CreateCohort({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
             <span className="t-body" style={{ color: 'var(--color-text)' }}>정원</span>
             <Stepper value={cap} min={1} max={100} onChange={setCap} label="정원" />
+          </div>
+          <div style={{ marginBottom: 'var(--space-6)' }}>
+            <span className="t-body" style={{ color: 'var(--color-text)' }}>
+              소개 <span className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>(선택)</span>
+            </span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="이 차수를 소개하는 글 (선택) — 참여자 미리보기에 보여요."
+              aria-label="차수 소개"
+              style={{ ...inputStyle, minHeight: 80, padding: 'var(--space-3)', resize: 'vertical', marginTop: 'var(--space-1)', display: 'block' }}
+            />
           </div>
           {error ? (
             <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>{error}</p>

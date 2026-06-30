@@ -6,10 +6,16 @@ import { createServerSupabase } from '@/core/supabase/server';
 export async function createCohortAction(input: {
   name: string;
   maxMembers: number;
+  description?: string;
 }): Promise<{ code?: string; error?: string }> {
   try {
     const ctx = createCoreContext(await createServerSupabase());
-    const cohort = await ctx.createCohort({ name: input.name, instrumentId: 'futurenow', maxMembers: input.maxMembers });
+    const cohort = await ctx.createCohort({
+      name: input.name,
+      instrumentId: 'futurenow',
+      maxMembers: input.maxMembers,
+      description: input.description,
+    });
     return { code: cohort.code };
   } catch (e) {
     return { error: e instanceof Error ? e.message : '차수 생성에 실패했습니다.' };
