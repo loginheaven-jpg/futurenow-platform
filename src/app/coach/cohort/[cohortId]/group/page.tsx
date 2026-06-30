@@ -1,7 +1,7 @@
 // 그룹 리포트(/coach/cohort/[id]/group, §B③ 1주차 오프닝 · Step 3.3) — 차수 집계(축 평균·분포). 코치 전용 리얼.
 // 게이트: 미인증→/login(미들웨어+여기) · 멤버→/home · getCohort 소유 게이트(차수 상세와 동일) — 비소유·미존재 → 404.
 // 멤버 순화(participantMirror)와 분리(ADR-30) — 멤버 진입 경로 0.
-// 데이터: listResponses(pre) → futurenowScoring.score → FuturenowScores[] → 기존 GroupView. 계약·DB 변경 0.
+// 데이터: listResponses(pre) → latestPerUser(재진단 dedup) → futurenowScoring.score → 기존 GroupView. 계약·DB 변경 0.
 // 권한: getCohort(cohorts_select RLS)로 읽을 수 없으면 404, responses_select RLS(is_cohort_coach)가 추가로 자기 차수만 — 누출 0.
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -12,6 +12,7 @@ import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
 import { GroupView } from '@/instruments/futurenow/report/GroupView';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
+import { latestPerUser } from '@/app/_lib/latestPerUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,8 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
     cohortId,
     wave: 'pre',
   });
-  const scores = responses.map((r) => futurenowScoring.score(r.answers, { wave: r.wave }));
+  // 재진단 dedup — user별 최신 1건만 평균에(같은 사람 N번 제출 시 평균 오염 방지, 진단-1A).
+  const scores = latestPerUser(responses).map((r) => futurenowScoring.score(r.answers, { wave: r.wave }));
   const backTo = `/coach/cohort/${cohortId}`;
 
   return (

@@ -1,6 +1,6 @@
 // 멤버 내 리포트(/my/cohorts/[cohortId]/report, Step 1.3) — 순화 뷰(갈망 거울 재사용, ADR-27).
 // 멤버 본인 결과를 "나중에 다시" 본다. 계약·DB·RLS 변경 0 — 전부 기존 부품 조합(finalizeResponse 와 동형):
-//   listResponses(본인 wave='pre', responses_select RLS user_id=auth.uid() self-read) → score → participantMirror.
+//   listResponses(본인 wave='pre', responses_select RLS user_id=auth.uid() self-read) → latestPerUser(재진단 최신) → score → participantMirror.
 // 하드룰: severity·점수·활력 버킷·돌봄 0건. 측정은 코치 리얼 리포트(별도)의 몫. scores 저장 안 함(재채점).
 import { redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
@@ -11,6 +11,7 @@ import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
 import { participantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
+import { latestPerUser } from '@/app/_lib/latestPerUser';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,8 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
     userId: me.id,
     wave: 'pre',
   });
-  const resp = responses[0] ?? null;
+  // 재진단 시 pre 응답이 여러 건일 수 있고 listResponses는 무순서 → 최신 1건으로(옛 거울 노출 방지, 진단-1A).
+  const resp = latestPerUser(responses)[0] ?? null;
   const mirror = resp ? participantMirror(futurenowScoring.score(resp.answers, { wave: resp.wave })) : null;
 
   return (
