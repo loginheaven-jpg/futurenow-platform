@@ -1,9 +1,10 @@
 // 그룹 리포트(/coach/cohort/[id]/group, §B③ 1주차 오프닝 · Step 3.3) — 차수 집계(축 평균·분포). 코치 전용 리얼.
-// 게이트: 미인증→/login(미들웨어+여기) · 멤버→/home. 멤버 순화(participantMirror)와 분리(ADR-30) — 멤버 진입 경로 0.
+// 게이트: 미인증→/login(미들웨어+여기) · 멤버→/home · getCohort 소유 게이트(차수 상세와 동일) — 비소유·미존재 → 404.
+// 멤버 순화(participantMirror)와 분리(ADR-30) — 멤버 진입 경로 0.
 // 데이터: listResponses(pre) → futurenowScoring.score → FuturenowScores[] → 기존 GroupView. 계약·DB 변경 0.
-// 권한: responses_select RLS(is_cohort_coach)가 자기 차수만 반환 → 타 차수 cohortId 주입 시 빈 결과(누출 0).
+// 권한: getCohort(cohorts_select RLS)로 읽을 수 없으면 404, responses_select RLS(is_cohort_coach)가 추가로 자기 차수만 — 누출 0.
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
@@ -20,6 +21,9 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버 차단(리얼 비노출)
+
+  const cohort = await ctx.getCohort(cohortId).catch(() => null);
+  if (!cohort) notFound(); // 미존재/RLS 차단(비소유·비멤버) → 404 (차수 상세와 동일 게이트)
 
   const responses = await ctx.listResponses<Answers, unknown>({
     instrumentId: 'futurenow',
