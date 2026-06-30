@@ -47,7 +47,7 @@ export function LoginForm({
       </p>
 
       {error ? (
-        <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-4)' }}>{error}</p>
+        <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>{error}</p>
       ) : null}
 
       <form

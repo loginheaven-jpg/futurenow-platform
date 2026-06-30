@@ -121,7 +121,7 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {error ? (
-        <p className="t-caption" style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
+        <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)' }}>
           {error}
         </p>
       ) : null}

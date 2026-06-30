@@ -59,7 +59,7 @@ export function ResetConfirmForm({
 
       {phase === 'ready' ? (
         <>
-          {error ? <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-4)' }}>{error}</p> : null}
+          {error ? <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>{error}</p> : null}
           <form
             onSubmit={(e) => {
               e.preventDefault();

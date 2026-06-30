@@ -50,7 +50,7 @@ export function SignupForm({
         코치·스태프 계정을 만들어요.
       </p>
 
-      {error ? <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-4)' }}>{error}</p> : null}
+      {error ? <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>{error}</p> : null}
       {notice ? <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>{notice}</p> : null}
 
       <form

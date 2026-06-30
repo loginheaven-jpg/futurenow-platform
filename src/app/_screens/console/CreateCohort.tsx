@@ -118,7 +118,7 @@ export function CreateCohort({
             />
           </div>
           {error ? (
-            <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>{error}</p>
+            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>{error}</p>
           ) : null}
           <Button onClick={handleCreate} disabled={submitting} style={{ width: '100%' }}>
             {submitting ? '만드는 중…' : '다음'}
