@@ -16,11 +16,11 @@ describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
     expect(html).toContain('코드로 입장');
   });
 
-  it('소개 세 단락(개요·효과·진행방식)', () => {
-    expect(html).toContain('개요');
-    expect(html).toContain('효과');
-    expect(html).toContain('진행방식');
-    expect(html).toContain('사전 진단'); // 진행방식 본문
+  it('소개 세 단락(의문형 소제목)', () => {
+    expect(html).toContain('어떤 시간인가요');
+    expect(html).toContain('무엇이 달라지나요');
+    expect(html).toContain('어떻게 진행되나요');
+    expect(html).toContain('사전 진단'); // 진행 본문
   });
 
   it('인도자 진입(보조) → /login·/signup', () => {
