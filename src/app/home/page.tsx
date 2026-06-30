@@ -17,11 +17,12 @@ export default async function MemberHomePage() {
   if (me.role !== 'user') redirect('/coach'); // 코치·운영자는 콘솔로
 
   const greetingName = me.name?.trim() || me.email.split('@')[0] || '회원';
+  const cohorts = await ctx.listMyCohorts(); // my_cohorts DEFINER RPC(본인 차수+진행). 앱은 cohorts·responses 직접 select 안 함.
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="퓨처나우" subtitle="내 자리" homeHref="/home" action={<HeaderActions />} />
-      <MemberHome greetingName={greetingName} />
+      <MemberHome greetingName={greetingName} cohorts={cohorts} />
     </div>
   );
 }
