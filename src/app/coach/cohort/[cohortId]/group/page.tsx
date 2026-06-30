@@ -3,7 +3,6 @@
 // 멤버 순화(participantMirror)와 분리(ADR-30) — 멤버 진입 경로 0.
 // 데이터: listResponses(pre) → latestPerUser(재진단 dedup) → futurenowScoring.score → 기존 GroupView. 계약·DB 변경 0.
 // 권한: getCohort(cohorts_select RLS)로 읽을 수 없으면 404, responses_select RLS(is_cohort_coach)가 추가로 자기 차수만 — 누출 0.
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
@@ -38,9 +37,6 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="그룹 리포트" subtitle="사전 진단 · 차수 평균" backHref={backTo} homeHref="/coach" action={<HeaderActions />} />
-      <Link href={backTo} className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
-        ← 차수로 돌아가기
-      </Link>
       <div style={{ marginTop: 'var(--space-4)' }}>
         {scores.length === 0 ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>

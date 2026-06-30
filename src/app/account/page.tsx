@@ -15,20 +15,12 @@ export default async function AccountPage() {
   if (!me) redirect('/login');
 
   const phone = await ctx.getPhone(me.id).catch(() => null); // 본인 — assertContactAccess 통과
-  const backHref = me.role === 'user' ? '/home' : '/coach';
   // root 홈 복귀 — 역할 거점(서버 신뢰값, 클라 위조 불가): 참여자/home·운영자/admin·코치/coach
   const homeHref = me.role === 'user' ? '/home' : me.role === 'admin' ? '/admin' : '/coach';
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="내 정보" homeHref={homeHref} action={<HeaderActions />} />
-      <a
-        href={backHref}
-        className="t-caption"
-        style={{ color: 'var(--color-text-secondary)', display: 'inline-block', marginBottom: 'var(--space-4)' }}
-      >
-        ← 뒤로
-      </a>
       <AccountClient initialName={me.name ?? ''} initialPhone={phone ?? ''} />
     </div>
   );

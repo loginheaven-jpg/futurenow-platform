@@ -21,13 +21,6 @@ export default async function MyCohortsPage() {
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="내 차수" homeHref="/home" action={<HeaderActions />} />
-      <a
-        href="/home"
-        className="t-caption"
-        style={{ color: 'var(--color-text-secondary)', display: 'inline-block', marginBottom: 'var(--space-4)' }}
-      >
-        ← 홈으로
-      </a>
       <MyCohorts cohorts={cohorts} />
     </div>
   );

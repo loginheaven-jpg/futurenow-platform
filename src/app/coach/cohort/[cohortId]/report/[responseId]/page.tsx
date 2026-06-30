@@ -1,7 +1,6 @@
 // 개인 리포트(코치/운영자 전용). getResponse→B② score→기존 ReportScreen 재사용(신규 리포트 0).
 // 접근 제어: responses RLS(차수 코치+운영자+본인만 SELECT). 차단/부재 → 404. 참여자는 이 임상 리포트 UI 경로 없음(§7.5 거울만).
 // wave 비교(prev)는 후속 — MVP 는 단일 wave 로 충분(ReportScreen 이 prev optional 처리).
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
@@ -33,9 +32,6 @@ export default async function CoachReportPage({
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/coach" action={<HeaderActions />} />
-      <Link href={backTo} className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
-        ← 차수로 돌아가기
-      </Link>
       <div style={{ marginTop: 'var(--space-4)' }}>
         <ReportScreen scores={scores} />
       </div>
