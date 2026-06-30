@@ -21,7 +21,10 @@ import type {
   Role,
   SaveResponseInput,
   Wave,
+  ChatRequest,
+  ChatResponse,
 } from '@/contracts';
+import { gatewayChat } from './ai/gateway';
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
 import {
@@ -447,6 +450,12 @@ class SupabaseCoreContext implements CoreContext {
     const { data, error } = await q;
     if (error) throw new CoreError(`listResponses 실패: ${error.message}`);
     return (data ?? []).map((r) => rowToEnvelope<A, P>(r as ResponseRow));
+  }
+
+  // ── AI 게이트웨이 ──────────────────────────────────────────
+  // 범용 호출 통로(서버 전용). 프롬프트·진단 어휘는 인스트루먼트가 소유하고 이 메서드로 호출만 한다(ADR-35).
+  async aiChat(req: ChatRequest): Promise<ChatResponse> {
+    return gatewayChat(req);
   }
 
   // ── 알림 ───────────────────────────────────────────────────

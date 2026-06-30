@@ -5,3 +5,4 @@
 export type * from './domain';
 export type * from './core-context';
 export type * from './instrument';
+export type * from './ai';

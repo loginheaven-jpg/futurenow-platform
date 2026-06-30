@@ -22,6 +22,7 @@ import type {
   SaveResponseInput,
   Wave,
 } from './domain';
+import type { ChatRequest, ChatResponse } from './ai';
 
 export interface CoreContext {
   // 인증·신원
@@ -76,6 +77,9 @@ export interface CoreContext {
     userId?: string;
     wave?: Wave;
   }): Promise<ResponseEnvelope<A, P>[]>;
+
+  // AI 게이트웨이 호출 통로 (범용·서버 전용) — 프롬프트·진단 어휘는 인스트루먼트 소유(context 경유 호출만). ADR-35
+  aiChat(req: ChatRequest): Promise<ChatResponse>;
 
   // 알림 (진단이 트리거, 코어가 전달)
   raiseAlert(input: AlertInput): Promise<void>;
