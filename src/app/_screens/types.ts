@@ -18,6 +18,7 @@ export interface RosterMember {
 export interface CohortSummary {
   id: string;
   name: string;
+  description?: string | null; // 코치 차수 소개(편집용 — 차수 상세에서만 채움)
   instrumentLabel: string;
   responded: number;
   total: number;

@@ -164,6 +164,7 @@ class SupabaseCoreContext implements CoreContext {
       coachId: meta.coach_id,
       instrumentId: meta.instrument_id,
       name: meta.name,
+      description: meta.description,
       code: meta.code,
       status: meta.status as Cohort['status'],
       maxMembers: meta.max_members,
@@ -217,7 +218,7 @@ class SupabaseCoreContext implements CoreContext {
   async getCohort(cohortId: string): Promise<Cohort> {
     const { data, error } = await this.sb
       .from('cohorts')
-      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at')
+      .select('id,coach_id,instrument_id,name,description,code,status,max_members,expires_at')
       .eq('id', cohortId)
       .maybeSingle();
     if (error) throw new CoreError(`getCohort 실패: ${error.message}`);

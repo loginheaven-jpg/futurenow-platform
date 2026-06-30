@@ -24,6 +24,7 @@ export interface CohortRow {
   coach_id: string;
   instrument_id: string;
   name: string;
+  description?: string | null; // getCohort select 만 채움(그 외 select 미포함 → null)
   code: string;
   status: string;
   max_members: number;
@@ -35,6 +36,7 @@ export function rowToCohort(r: CohortRow): Cohort {
     coachId: r.coach_id,
     instrumentId: r.instrument_id,
     name: r.name,
+    description: r.description ?? null,
     code: r.code,
     status: r.status as Cohort['status'],
     maxMembers: r.max_members,

@@ -28,6 +28,7 @@ export interface Cohort {
   coachId: string;
   instrumentId: InstrumentId;
   name: string;
+  description: string | null; // 코치 작성 차수 소개(컬럼 기존). getCohort 가 채움 — 그 외 select 는 null. 승인 2026-06-30
   code: string;
   status: 'active' | 'archived';
   maxMembers: number;

@@ -56,6 +56,7 @@ export function CohortDetail({
   onArchive,
   onSetCap,
   onRename,
+  onSetDescription,
   onReopen,
   onGroupReport,
   headerActions,
@@ -69,6 +70,7 @@ export function CohortDetail({
   onArchive?: () => void | Promise<void>;
   onSetCap?: (n: number) => void | Promise<void>;
   onRename?: (name: string) => void | Promise<void>; // 이름 수정 → updateCohort({name})
+  onSetDescription?: (description: string | null) => void | Promise<void>; // 소개 수정 → updateCohort({description}). 빈 값=null
   onReopen?: () => void | Promise<void>; // 마감 복구 → updateCohort({status:'active'})
   onGroupReport?: () => void; // 차수 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
@@ -80,6 +82,7 @@ export function CohortDetail({
   const [manageOpen, setManageOpen] = useState(false);
   const [cap, setCap] = useState(maxMembers);
   const [name, setName] = useState(cohort.name);
+  const [description, setDescription] = useState(cohort.description ?? '');
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [busy, setBusy] = useState(false);
   const archived = status === 'archived';
@@ -87,6 +90,9 @@ export function CohortDetail({
   const trimmedName = name.trim();
   const nameValid = trimmedName.length >= 1 && trimmedName.length <= 40;
   const nameChanged = trimmedName !== cohort.name;
+
+  const normDesc = description.trim() === '' ? null : description.trim();
+  const descChanged = normDesc !== (cohort.description ?? null);
 
   async function saveCap() {
     setBusy(true);
@@ -100,6 +106,14 @@ export function CohortDetail({
     setBusy(true);
     try {
       await onRename?.(trimmedName);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function saveDescription() {
+    setBusy(true);
+    try {
+      await onSetDescription?.(normDesc);
     } finally {
       setBusy(false);
     }
@@ -151,6 +165,21 @@ export function CohortDetail({
               />
               <Button variant="ghost" onClick={saveName} disabled={busy || !nameValid || !nameChanged}>저장</Button>
             </div>
+          </div>
+          <div>
+            <span className="t-body" style={{ color: 'var(--color-text)' }}>
+              소개 <span className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>(선택 · 미리보기에 보여요)</span>
+            </span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="이 차수를 소개하는 글 (선택)"
+              aria-label="차수 소개"
+              style={{ ...nameInputStyle, minHeight: 72, padding: 'var(--space-3)', resize: 'vertical', marginTop: 'var(--space-1)', display: 'block', width: '100%' }}
+            />
+            <Button variant="ghost" onClick={saveDescription} disabled={busy || !descChanged} style={{ marginTop: 'var(--space-2)' }}>소개 저장</Button>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="t-body" style={{ color: 'var(--color-text)' }}>정원</span>

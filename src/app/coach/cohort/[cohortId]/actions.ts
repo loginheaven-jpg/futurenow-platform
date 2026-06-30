@@ -37,6 +37,16 @@ export async function renameCohortAction(cohortId: string, name: string): Promis
   }
 }
 
+// 소개 수정 — updateCohort({ description }) 경유. 빈 값=null(소개 지움). 권한은 앱 게이트 + cohorts_update RLS(소유) 이중.
+export async function setCohortDescriptionAction(cohortId: string, description: string | null): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await (await ctx()).updateCohort(cohortId, { description });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '소개 저장에 실패했습니다.' };
+  }
+}
+
 // 마감 복구(비파괴) — updateCohort({ status: 'active' }) 경유. 2단계 확인 불필요(즉시).
 export async function reopenCohortAction(cohortId: string): Promise<{ ok: boolean; error?: string }> {
   try {

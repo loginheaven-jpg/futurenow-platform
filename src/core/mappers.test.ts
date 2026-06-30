@@ -14,13 +14,14 @@ describe('rowToUser', () => {
 });
 
 describe('rowToCohort', () => {
-  it('snake_case → camelCase 매핑', () => {
+  it('snake_case → camelCase 매핑(description 포함)', () => {
     expect(
       rowToCohort({
         id: 'co1',
         coach_id: 'c1',
         instrument_id: 'futurenow',
         name: '1기',
+        description: '소개글',
         code: 'ABC23',
         status: 'active',
         max_members: 10,
@@ -31,11 +32,18 @@ describe('rowToCohort', () => {
       coachId: 'c1',
       instrumentId: 'futurenow',
       name: '1기',
+      description: '소개글',
       code: 'ABC23',
       status: 'active',
       maxMembers: 10,
       expiresAt: null,
     });
+  });
+
+  it('description 미포함 select → null', () => {
+    expect(
+      rowToCohort({ id: 'x', coach_id: 'c', instrument_id: 'futurenow', name: 'n', code: 'C', status: 'active', max_members: 1, expires_at: null }).description,
+    ).toBe(null);
   });
 });
 

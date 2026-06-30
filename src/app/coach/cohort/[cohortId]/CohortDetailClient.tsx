@@ -5,7 +5,7 @@ import { CohortDetail } from '@/app/_screens/console/CohortDetail';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { useToast } from '@/app/_toast/ToastProvider';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
-import { archiveCohortAction, renameCohortAction, reopenCohortAction, setCohortCapAction } from './actions';
+import { archiveCohortAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
 import { refineActionError } from './cohortAdmin';
 
 export function CohortDetailClient({
@@ -47,6 +47,7 @@ export function CohortDetailClient({
         onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}
         onSetCap={(n) => run(() => setCohortCapAction(summary.id, n), '정원을 바꿨어요.')}
         onRename={(name) => run(() => renameCohortAction(summary.id, name), '이름을 바꿨어요.')}
+        onSetDescription={(description) => run(() => setCohortDescriptionAction(summary.id, description), '소개를 저장했어요.')}
         onReopen={() => run(() => reopenCohortAction(summary.id), '차수를 다시 열었어요.')}
       />
     </div>

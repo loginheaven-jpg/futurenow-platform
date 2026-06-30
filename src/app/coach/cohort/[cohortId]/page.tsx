@@ -29,6 +29,7 @@ export default async function CohortDetailPage({ params }: { params: Promise<{ c
   const summary: CohortSummary = {
     id: cohort.id,
     name: cohort.name,
+    description: cohort.description,
     instrumentLabel: instrumentDisplay(cohort.instrumentId).label,
     responded,
     total: responded + waiting,
