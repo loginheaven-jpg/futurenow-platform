@@ -41,9 +41,11 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 export function AuthGate({
   onSubmit,
   onSocial,
+  busy,
 }: {
   onSubmit?: (mode: 'signup' | 'login', email: string, password: string) => void;
   onSocial?: () => void;
+  busy?: boolean;
 }) {
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
   const [email, setEmail] = useState('');
@@ -77,8 +79,8 @@ export function AuthGate({
           />
         </label>
       </div>
-      <Button onClick={() => onSubmit?.(mode, email, password)} disabled={!email || !password} style={{ width: '100%', marginBottom: 'var(--space-3)' }}>
-        {mode === 'signup' ? '가입하고 들어가기' : '로그인'}
+      <Button onClick={() => onSubmit?.(mode, email, password)} disabled={busy || !email || !password} style={{ width: '100%', marginBottom: 'var(--space-3)' }}>
+        {busy ? '처리 중…' : mode === 'signup' ? '가입하고 들어가기' : '로그인'}
       </Button>
       <Button variant="ghost" onClick={onSocial} style={{ width: '100%' }}>구글로 계속</Button>
       <p className="t-caption" style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-4)', textAlign: 'center' }}>

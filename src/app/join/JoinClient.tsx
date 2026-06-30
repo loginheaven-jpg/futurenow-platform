@@ -38,6 +38,7 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<ParticipantProfileInput | null>(null);
   const [mirror, setMirror] = useState<ParticipantMirrorView | null>(null);
+  const [busy, setBusy] = useState(false); // 이중 제출 가드(입장·인증·완료). try/finally 로 해제 — 실패 후 재시도 가능.
 
   useEffect(() => {
     if (!initialCohortId) return;
@@ -81,26 +82,38 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
   }
 
   async function onEnter() {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) await enrollThenStart();
-    else setStep('auth');
+    if (busy) return; // 이중 제출 가드
+    setBusy(true);
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) await enrollThenStart();
+      else setStep('auth');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onAuth(mode: 'signup' | 'login', email: string, password: string) {
+    if (busy) return; // 이중 제출 가드(signUp/signIn 중복 호출 차단)
+    setBusy(true);
     setError(null);
-    const res =
-      mode === 'signup'
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-    if (res.error) {
-      setError(res.error.message);
-      return;
+    try {
+      const res =
+        mode === 'signup'
+          ? await supabase.auth.signUp({ email, password })
+          : await supabase.auth.signInWithPassword({ email, password });
+      if (res.error) {
+        setError(res.error.message);
+        return;
+      }
+      if (!res.data.session) {
+        setError('이메일 확인이 필요할 수 있어요. 받은 메일의 링크를 누른 뒤 다시 시도해 주세요.');
+        return;
+      }
+      await enrollThenStart();
+    } finally {
+      setBusy(false);
     }
-    if (!res.data.session) {
-      setError('이메일 확인이 필요할 수 있어요. 받은 메일의 링크를 누른 뒤 다시 시도해 주세요.');
-      return;
-    }
-    await enrollThenStart();
   }
 
   return (
@@ -114,8 +127,8 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
         <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>불러오는 중…</p>
       )}
       {step === 'code' && <CodeInput onSubmit={onCode} />}
-      {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} />}
-      {step === 'auth' && <AuthGate onSubmit={onAuth} />}
+      {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} busy={busy} />}
+      {step === 'auth' && <AuthGate onSubmit={onAuth} busy={busy} />}
       {step === 'start' && meta && <StartGuide cohortName={meta.name} onStart={() => setStep('profile')} />}
       {step === 'profile' && (
         <ProfileForm
@@ -133,10 +146,16 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
           wave="pre"
           subjectProfile={profile ?? undefined}
           onComplete={async (responseId) => {
+            if (busy) return; // 이중 finalize 가드
+            setBusy(true);
             // 즉시 완료 화면으로(러너 기본 done 플래시 회피) → finalize await 후 거울 채움.
             setStep('done');
-            const res = await finalizeResponse(responseId);
-            setMirror(res.ok ? res.mirror ?? null : null); // 실패 시 null → ①+④만(우아한 저하)
+            try {
+              const res = await finalizeResponse(responseId);
+              setMirror(res.ok ? res.mirror ?? null : null); // 실패 시 null → ①+④만(우아한 저하)
+            } finally {
+              setBusy(false);
+            }
           }}
         />
       )}

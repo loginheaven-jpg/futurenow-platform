@@ -15,7 +15,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function CohortPreview({ meta, onEnter, onCancel }: { meta: CohortPreviewMeta; onEnter?: () => void; onCancel?: () => void }) {
+export function CohortPreview({ meta, onEnter, onCancel, busy }: { meta: CohortPreviewMeta; onEnter?: () => void; onCancel?: () => void; busy?: boolean }) {
   const inst = instrumentDisplay(meta.instrumentId);
   return (
     <div>
@@ -43,8 +43,8 @@ export function CohortPreview({ meta, onEnter, onCancel }: { meta: CohortPreview
       <SeminarIntro />
 
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-        <Button variant="ghost" onClick={onCancel} style={{ flex: 1 }}>아니에요</Button>
-        <Button onClick={onEnter} style={{ flex: 2 }}>들어가기</Button>
+        <Button variant="ghost" onClick={onCancel} disabled={busy} style={{ flex: 1 }}>아니에요</Button>
+        <Button onClick={onEnter} disabled={busy} style={{ flex: 2 }}>{busy ? '들어가는 중…' : '들어가기'}</Button>
       </div>
     </div>
   );
