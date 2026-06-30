@@ -20,7 +20,7 @@ export default async function MemberHomePage() {
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="퓨처나우" subtitle="내 자리" action={<HeaderActions />} />
+      <AppHeader variant="root" title="퓨처나우" subtitle="내 자리" homeHref="/home" action={<HeaderActions />} />
       <MemberHome greetingName={greetingName} />
     </div>
   );

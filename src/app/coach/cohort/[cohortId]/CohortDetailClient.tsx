@@ -41,7 +41,7 @@ export function CohortDetailClient({
         status={status}
         maxMembers={maxMembers}
         headerActions={<HeaderActions />}
-        onBack={() => router.push('/coach')}
+        backHref="/coach"
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
         onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}

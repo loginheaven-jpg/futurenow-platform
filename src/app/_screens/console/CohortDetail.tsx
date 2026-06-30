@@ -51,7 +51,7 @@ export function CohortDetail({
   roster,
   status = 'active',
   maxMembers = 100,
-  onBack,
+  backHref,
   onOpenMember,
   onArchive,
   onSetCap,
@@ -64,7 +64,7 @@ export function CohortDetail({
   roster: RosterMember[];
   status?: 'active' | 'archived';
   maxMembers?: number;
-  onBack?: () => void;
+  backHref?: string; // 셸 sub 뒤로 경로(→/coach). X2a 모드 셸 전환
   onOpenMember?: (id: string) => void;
   onArchive?: () => void | Promise<void>;
   onSetCap?: (n: number) => void | Promise<void>;
@@ -124,7 +124,7 @@ export function CohortDetail({
 
   return (
     <div>
-      <AppHeader title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} onBack={onBack} action={headerActions} />
+      <AppHeader variant="sub" title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} backHref={backHref} homeHref="/coach" action={headerActions} />
 
       {/* 관리(마감·정원) — 헤더 메뉴. 인도자 화면이라 의미색 허용 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
