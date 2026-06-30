@@ -3,6 +3,7 @@
 // 실 라우트. CohortPreview 는 previewCohort 서버 액션(실 DB) 으로 채운다. 참여자 화면 경고색 배제.
 // (라우트 세그먼트 설정 force-dynamic 은 서버 컴포넌트 page.tsx 가 보유 — 클라이언트 페이지는 미반영되므로 분리.)
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { CohortPreviewMeta } from '@/contracts';
 import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
@@ -22,6 +23,7 @@ type Step = 'resolving' | 'code' | 'preview' | 'auth' | 'start' | 'profile' | 'r
 
 export function JoinClient({ initialCohortId = null }: { initialCohortId?: string | null }) {
   const toast = useToast();
+  const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const context = useMemo(
     () =>
@@ -159,7 +161,8 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
           }}
         />
       )}
-      {step === 'done' && <Completion mirror={mirror} onFinish={() => setStep('code')} />}
+      {/* 완료 후 착지 — 코드 입력 복귀(재제출 유발) 대신 자기 홈으로(진입-3 완료 반영). A-2 */}
+      {step === 'done' && <Completion mirror={mirror} onFinish={() => router.push('/home')} />}
     </div>
   );
 }
