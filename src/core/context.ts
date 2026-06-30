@@ -356,6 +356,47 @@ class SupabaseCoreContext implements CoreContext {
     return (data ?? []).map((r) => rowToEnrollment(r as EnrollmentRow));
   }
 
+  // ── 진행 중 응답(중간저장) ─────────────────────────────────
+  // response_drafts 직접 I/O — RLS(user_id=auth.uid()) 가 본인 행만 허용(saveResponse 와 동형, RPC 불요).
+  // answers 만 저장(step 미저장 — 셔플 안전). PK(user,cohort,wave) upsert = 최신 덮어쓰기.
+  async saveDraft<A>(input: { instrumentId: InstrumentId; cohortId: string; wave: Wave; answers: A }): Promise<void> {
+    const me = await this.currentUser();
+    if (!me) throw new CoreError('saveDraft: 로그인이 필요합니다.');
+    const { error } = await this.sb.from('response_drafts').upsert(
+      {
+        user_id: me.id,
+        cohort_id: input.cohortId,
+        instrument_id: input.instrumentId,
+        wave: input.wave,
+        answers: input.answers,
+        updated_at: new Date().toISOString(), // upsert UPDATE 경로는 DEFAULT now() 미발화 → 명시 갱신
+      },
+      { onConflict: 'user_id,cohort_id,wave' },
+    );
+    if (error) throw new CoreError(`saveDraft 실패: ${error.message}`);
+  }
+
+  async getDraft<A>(query: { instrumentId: InstrumentId; cohortId: string; wave: Wave }): Promise<A | null> {
+    const { data, error } = await this.sb
+      .from('response_drafts')
+      .select('answers')
+      .eq('cohort_id', query.cohortId)
+      .eq('wave', query.wave)
+      .eq('instrument_id', query.instrumentId) // 차수 instrument 짝 검증
+      .maybeSingle(); // RLS 가 본인 행만 → 최대 1
+    if (error) throw new CoreError(`getDraft 실패: ${error.message}`);
+    return (data?.answers ?? null) as A | null;
+  }
+
+  async clearDraft(query: { cohortId: string; wave: Wave }): Promise<void> {
+    const { error } = await this.sb
+      .from('response_drafts')
+      .delete()
+      .eq('cohort_id', query.cohortId)
+      .eq('wave', query.wave); // RLS(user_id=auth.uid()) 가 본인 행만 삭제
+    if (error) throw new CoreError(`clearDraft 실패: ${error.message}`);
+  }
+
   // ── 응답 봉투 ──────────────────────────────────────────────
   async saveResponse<A, P>(input: SaveResponseInput<A, P>): Promise<string> {
     const v = this.validators[input.instrumentId];
