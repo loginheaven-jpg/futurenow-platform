@@ -3,6 +3,7 @@
 import type { CohortPreviewMeta } from '@/contracts';
 import { Button } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
+import { SeminarIntro } from '../SeminarIntro';
 import { instrumentDisplay } from '../types';
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -34,6 +35,10 @@ export function CohortPreview({ meta, onEnter, onCancel }: { meta: CohortPreview
         <Row label="진단" value={inst.label} />
         <Row label="예상 시간" value={`약 ${inst.minutes}분`} />
       </div>
+
+      {/* 공통 소개(SeminarIntro 단일 출처 — 랜딩과 공유). 차수별 소개(description)는 후속(RPC 마이그 필요). */}
+      <SeminarIntro />
+
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
         <Button variant="ghost" onClick={onCancel} style={{ flex: 1 }}>아니에요</Button>
         <Button onClick={onEnter} style={{ flex: 2 }}>들어가기</Button>
