@@ -9,20 +9,20 @@ import type { CohortSummary } from '../types';
 
 export function AllCohorts({
   cohorts,
-  onBack,
+  backHref,
   onOpenCohort,
   onNewCohort,
   headerActions,
 }: {
   cohorts: CohortSummary[];
-  onBack?: () => void;
+  backHref?: string; // 셸 sub 뒤로 경로(→/coach). X2b 모드 셸 전환
   onOpenCohort?: (id: string) => void;
   onNewCohort?: () => void;
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   return (
     <div>
-      <AppHeader title="모든 차수" onBack={onBack} action={headerActions} />
+      <AppHeader variant="sub" title="모든 차수" backHref={backHref} homeHref="/coach" action={headerActions} />
       {cohorts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 'var(--space-8) var(--space-4)' }}>
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>

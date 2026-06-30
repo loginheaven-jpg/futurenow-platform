@@ -27,7 +27,7 @@ export function ConsoleHome({
 }) {
   return (
     <div>
-      <AppHeader title="코치 콘솔" subtitle={coachName} action={headerActions} />
+      <AppHeader variant="root" title="코치 콘솔" subtitle={coachName} homeHref="/coach" action={headerActions} />
 
       {careMembers.length > 0 && (
         <section style={{ marginBottom: 'var(--space-6)' }}>

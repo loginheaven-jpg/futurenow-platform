@@ -33,7 +33,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="내 마음의 거울" action={<HeaderActions />} />
+      <AppHeader variant="sub" title="내 마음의 거울" backHref="/my/cohorts" homeHref="/home" action={<HeaderActions />} />
       <a
         href="/my/cohorts"
         className="t-caption"

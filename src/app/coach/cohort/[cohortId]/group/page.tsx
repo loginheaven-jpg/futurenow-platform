@@ -35,7 +35,7 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="그룹 리포트" subtitle="사전 진단 · 차수 평균" action={<HeaderActions />} />
+      <AppHeader variant="sub" title="그룹 리포트" subtitle="사전 진단 · 차수 평균" backHref={backTo} homeHref="/coach" action={<HeaderActions />} />
       <Link href={backTo} className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
         ← 차수로 돌아가기
       </Link>

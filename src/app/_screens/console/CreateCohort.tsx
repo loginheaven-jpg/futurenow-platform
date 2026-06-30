@@ -77,7 +77,7 @@ export function CreateCohort({
 
   return (
     <div>
-      <AppHeader title="새 차수 만들기" subtitle={`${step} / 3 단계`} onBack={step > 1 ? () => setStep(step - 1) : undefined} action={headerActions} />
+      <AppHeader variant="sub" title="새 차수 만들기" subtitle={`${step} / 3 단계`} onBack={step > 1 ? () => setStep(step - 1) : undefined} homeHref="/coach" action={headerActions} />
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <ProgressBar value={step} max={3} />
       </div>

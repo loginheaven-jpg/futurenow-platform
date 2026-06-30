@@ -37,7 +37,7 @@ export default async function CoachReportPage({
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="개인 리포트" action={<HeaderActions />} />
+      <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/coach" action={<HeaderActions />} />
       <Link href={backTo} className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
         ← 차수로 돌아가기
       </Link>

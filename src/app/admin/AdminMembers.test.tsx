@@ -38,5 +38,8 @@ describe('AdminMembers (본부 멤버 관리)', () => {
     );
     expect(withAction).toContain('본부'); // AppHeader title
     expect(withAction).toContain('ADMIN_HDR'); // action 슬롯 전달
+    // X2b: root 모드 — 로고=홈 링크(/admin), 뒤로 없음
+    expect(withAction).toContain('href="/admin"');
+    expect(withAction).not.toContain('aria-label="뒤로"');
   });
 });

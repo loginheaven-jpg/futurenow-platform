@@ -26,7 +26,7 @@ export function AdminMembers({
 }) {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader title="본부" subtitle="멤버 관리" action={headerActions} />
+      <AppHeader variant="root" title="본부" subtitle="멤버 관리" homeHref="/admin" action={headerActions} />
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
         멤버를 코치로 승격하거나 되돌릴 수 있어요. 운영자 전용입니다.
       </p>

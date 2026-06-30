@@ -19,6 +19,8 @@ describe('AllCohorts (모든 차수 — Step 3.2)', () => {
     expect(html).toContain('청년부 2기');
     expect(html).toContain('HDR_ACT'); // AppHeader action 슬롯
     expect(html).not.toContain('아직 만든 차수가 없어요');
+    // X2b: sub 모드 — 우측 홈 아이콘(항상 홈 복귀) 노출
+    expect(html).toContain('aria-label="홈"');
   });
 
   it('빈 상태: 차수 0 → 안내 + 새 차수 버튼', () => {
