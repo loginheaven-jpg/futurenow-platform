@@ -134,3 +134,17 @@ export interface Alert {
   reason: string;
   createdAt: string;
 }
+
+// 코치 리포트 해석 문구 읽기 뷰(B③·ADR-36). 코치·운영자만(RLS). 참여자 비노출.
+//   aiContent = 게이트웨이 생성 원문(불변·감사). coachContent = 코치 수정본(null=미수정).
+//   effective = coachContent ?? aiContent (유효 문구 — 읽기에서 coalesce).
+//   구조화 형상(headline·axes…)은 진단 소유 → 계약은 unknown, 경계 검증은 인스트루먼트(B③-2 zod).
+export interface InterpretationView {
+  responseId: string;
+  aiContent: unknown;
+  aiModel: string | null;
+  coachContent: unknown | null;
+  editedBy: string | null;
+  editedAt: string | null;
+  effective: unknown;
+}

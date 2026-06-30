@@ -14,6 +14,7 @@ import type {
   CoreUser,
   Enrollment,
   InstrumentId,
+  InterpretationView,
   MemberRef,
   MemberSummary,
   MyCohortSummary,
@@ -80,6 +81,13 @@ export interface CoreContext {
 
   // AI 게이트웨이 호출 통로 (범용·서버 전용) — 프롬프트·진단 어휘는 인스트루먼트 소유(context 경유 호출만). ADR-35
   aiChat(req: ChatRequest): Promise<ChatResponse>;
+
+  // 코치 리포트 해석 문구 영속 (B③·ADR-36) — 코치·운영자만(RLS). 생성 오케스트레이션(scores→프롬프트→aiChat→파싱)은
+  //   인스트루먼트 소유(B③-2) — 코어는 영속 원시연산만(채점·진단어휘 0). 유효 문구 = coachContent ?? aiContent.
+  getInterpretation(responseId: string): Promise<InterpretationView | null>;
+  saveInterpretation(input: { responseId: string; cohortId: string | null; aiContent: unknown; aiModel?: string | null }): Promise<InterpretationView>; // AI 원문 저장(없을 때만 — 지연 생성; 있으면 기존 반환)
+  setCoachInterpretation(responseId: string, content: unknown): Promise<void>; // 코치 수정본 확정(edited_by=본인·edited_at=now)
+  clearCoachInterpretation(responseId: string): Promise<void>; // AI 원문으로 되돌리기(coach_content=null)
 
   // 알림 (진단이 트리거, 코어가 전달)
   raiseAlert(input: AlertInput): Promise<void>;

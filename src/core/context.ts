@@ -14,6 +14,7 @@ import type {
   CoreUser,
   Enrollment,
   InstrumentId,
+  InterpretationView,
   MemberRef,
   MemberSummary,
   MyCohortSummary,
@@ -42,6 +43,28 @@ import {
   type UserRow,
 } from './mappers';
 import { validateWith, type InstrumentValidators } from './response/validation';
+
+// 해석 문구 row → 읽기 뷰. effective = coach_content ?? ai_content(유효 문구). 구조화 형상은 진단 소유라 unknown.
+interface InterpretationRow {
+  response_id: string;
+  ai_content: unknown;
+  ai_model: string | null;
+  coach_content: unknown;
+  edited_by: string | null;
+  edited_at: string | null;
+}
+function rowToInterpretation(r: InterpretationRow): InterpretationView {
+  const coach = r.coach_content ?? null;
+  return {
+    responseId: r.response_id,
+    aiContent: r.ai_content,
+    aiModel: r.ai_model ?? null,
+    coachContent: coach,
+    editedBy: r.edited_by ?? null,
+    editedAt: r.edited_at ?? null,
+    effective: coach ?? r.ai_content,
+  };
+}
 
 export interface CreateCoreContextOptions {
   /** 진단별 경계 검증 스키마(zod). saveResponse 시 instrumentId 로 조회해 강제. */
@@ -456,6 +479,54 @@ class SupabaseCoreContext implements CoreContext {
   // 범용 호출 통로(서버 전용). 프롬프트·진단 어휘는 인스트루먼트가 소유하고 이 메서드로 호출만 한다(ADR-35).
   async aiChat(req: ChatRequest): Promise<ChatResponse> {
     return gatewayChat(req);
+  }
+
+  // ── 코치 리포트 해석 문구 (B③·ADR-36) ─────────────────────
+  // report_interpretations 직접 I/O — RLS(코치·운영자, is_cohort_coach/is_admin)가 가시성 보장(responses_select 패턴, 본인 분기 제외).
+  // ai_content(원문)는 앱 규약상 불변 — 코치 수정은 coach_content·edited_by·edited_at 만 갱신. 유효=coach_content ?? ai_content.
+  async getInterpretation(responseId: string): Promise<InterpretationView | null> {
+    const { data, error } = await this.sb
+      .from('report_interpretations')
+      .select('response_id,ai_content,ai_model,coach_content,edited_by,edited_at')
+      .eq('response_id', responseId)
+      .maybeSingle(); // UNIQUE(response_id) + RLS(코치·운영자) → 최대 1
+    if (error) throw new CoreError(`getInterpretation 실패: ${error.message}`);
+    return data ? rowToInterpretation(data as InterpretationRow) : null;
+  }
+
+  async saveInterpretation(input: {
+    responseId: string;
+    cohortId: string | null;
+    aiContent: unknown;
+    aiModel?: string | null;
+  }): Promise<InterpretationView> {
+    // 지연 생성: 없을 때만 INSERT(ignoreDuplicates) — 기존 원문/수정본을 덮어쓰지 않음.
+    const { error } = await this.sb.from('report_interpretations').upsert(
+      { response_id: input.responseId, cohort_id: input.cohortId, ai_content: input.aiContent, ai_model: input.aiModel ?? null },
+      { onConflict: 'response_id', ignoreDuplicates: true },
+    );
+    if (error) throw new CoreError(`saveInterpretation 실패: ${error.message}`);
+    const view = await this.getInterpretation(input.responseId);
+    if (!view) throw new CoreError('saveInterpretation: 저장 후 조회 실패(권한/응답 확인).');
+    return view;
+  }
+
+  async setCoachInterpretation(responseId: string, content: unknown): Promise<void> {
+    const me = await this.currentUser();
+    if (!me) throw new CoreError('setCoachInterpretation: 로그인이 필요합니다.');
+    const { error } = await this.sb
+      .from('report_interpretations')
+      .update({ coach_content: content, edited_by: me.id, edited_at: new Date().toISOString() })
+      .eq('response_id', responseId); // RLS(코치·운영자, 자기 차수)만 갱신
+    if (error) throw new CoreError(`setCoachInterpretation 실패: ${error.message}`);
+  }
+
+  async clearCoachInterpretation(responseId: string): Promise<void> {
+    const { error } = await this.sb
+      .from('report_interpretations')
+      .update({ coach_content: null, edited_by: null, edited_at: null }) // AI 원문으로 되돌리기
+      .eq('response_id', responseId);
+    if (error) throw new CoreError(`clearCoachInterpretation 실패: ${error.message}`);
   }
 
   // ── 알림 ───────────────────────────────────────────────────
