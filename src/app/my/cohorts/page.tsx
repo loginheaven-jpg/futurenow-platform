@@ -20,7 +20,7 @@ export default async function MyCohortsPage() {
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="root" title="내 차수" homeHref="/home" action={<HeaderActions />} />
+      <AppHeader variant="root" title="내 차수" homeHref="/home" action={<HeaderActions homeHref="/home" />} />
       <MyCohorts cohorts={cohorts} />
     </div>
   );

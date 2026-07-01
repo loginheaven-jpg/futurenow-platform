@@ -23,7 +23,7 @@ export function ConsoleHomeClient({
       coachName={coachName}
       careMembers={careMembers}
       cohorts={cohorts}
-      headerActions={<HeaderActions navHref={isAdmin ? '/admin' : undefined} navLabel={isAdmin ? '본부' : undefined} />}
+      headerActions={<HeaderActions homeHref="/coach" navHref={isAdmin ? '/admin' : undefined} navLabel={isAdmin ? '본부' : undefined} />}
       onOpenCohort={(id) => router.push(`/coach/cohort/${id}`)}
       onAllCohorts={() => router.push('/coach/cohorts')}
       onNewCohort={() => router.push('/coach/new')}

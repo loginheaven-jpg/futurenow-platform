@@ -20,7 +20,7 @@ export default async function AccountPage() {
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="root" title="내 정보" homeHref={homeHref} action={<HeaderActions />} />
+      <AppHeader variant="root" title="내 정보" homeHref={homeHref} action={<HeaderActions homeHref={homeHref} />} />
       <AccountClient initialName={me.name ?? ''} initialPhone={phone ?? ''} />
     </div>
   );
