@@ -26,6 +26,7 @@
 - **다국어·접근성 강화**: 스크린리더·키보드 내비게이션 정밀화.
 - **사후 진단 리마인드**: 5주 후 종료진단 응답 유도 알림 메커니즘.
 - **코치 온보딩 가이드**: 온라인 초보 코치를 위한 단계별 안내·튜토리얼.
+- **KPC 인증번호 실검증(한국코치협회 조회 연동)**: v1.0 은 **형식검증만**(`^KPC[0-9]{5}$` — DB CHECK + `set_my_coach_kpc`/`create_coach_application` RPC + 폼 이중). 향후 한국코치협회 자격 조회 API 로 실제 유효성·본인 일치를 확인. 그 전까지 KPC 는 자기신고 형식값으로만 취급(운영자 육안 확인).
 
 ---
 
@@ -49,3 +50,11 @@
 - **lifegraph Firebase 노선**: 백엔드 분산·전면 개방 보안 룰. Supabase 단일 노선으로 통일.
 - **SAIL 익명 URL 공유 모델**: 퓨처나우 실명제·인도자 전용 전제와 충돌. 익명 SELECT 절 제거(ADR-06).
 - **공통 채점 엔진**: 진단 간 채점 로직 공유는 질 하향평준화. 채점은 인스트루먼트 전용(ADR-01).
+
+---
+
+## 5. 해소·이력 (Resolved / 백로그 — 기록용)
+
+- **coach_applications 마이그 드리프트 해소 (2026-07-01)**: 라이브 DB(거점 `zdoytzmvcafcebytttrm`)에만 있고 repo 마이그레이션엔 `CREATE`가 없던 드리프트를 backfill 마이그 `20260701061038_coach_applications_backfill.sql` 로 라이브 실측 정확 복원해 repo 편입(멱등 — 라이브 no-op·클린 재적용 시 생성). KPC·UNIQUE 는 `20260701061054` 로 별도 추가. CLAUDE §5(적용된 마이그 미수정·변경은 새 마이그로) 준수.
+- **[백로그] /coach 하위 라우트 코치 정보 게이트 미적용 (심각도 낮음)**: 코치 정보 게이트(CoachInfoGate·ADR-43)는 `/coach/page.tsx` 콘솔 홈 한 곳에만 적용. 하위 라우트(`/coach/cohort/[id]`·`/coach/cohorts`·`/coach/new`)는 role 게이트 + RLS 소유(`listCohortsByCoach(me.id)`·`getCohort`→notFound)만 거쳐, 정보 미완 코치가 딥링크로 게이트를 우회할 수 있음. **누출 없음**(RLS 로 본인 소유 차수만)·심각도 낮음. 해결안 `/coach/layout.tsx` 로 하위 전체를 덮는 방식은 **별건**(S5 이후 검토).
+- **KPC 실검증** → §2 향후 기능 참조(v1.0 형식검증만).
