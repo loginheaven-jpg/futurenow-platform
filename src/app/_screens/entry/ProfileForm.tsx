@@ -5,6 +5,8 @@
 // 참여자 화면: 경고색 0(§0.4), 측정·구인 어휘 0(§7). 실명·전화는 여기 없음(코어 소관).
 import { useState, type CSSProperties } from 'react';
 import type { UserProfile } from '@/contracts';
+import { GENDERS } from '@/contracts/vocab';
+import { RELIGIONS, CURRENT_YEAR } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 
@@ -13,10 +15,6 @@ export type ProfileStepResult = {
   // 계정이 비어 이 단계에서 수집한 경우에만 — 호출부가 setProfile 로 계정 반영.
   profile?: { birthYear: number; gender: string; religion?: string; faithYears?: number };
 };
-
-const GENDERS = ['남성', '여성', '기타'];
-const RELIGIONS = ['기독교', '천주교', '불교', '무교', '기타'];
-const CURRENT_YEAR = 2026;
 
 const inputStyle: CSSProperties = {
   width: '100%',

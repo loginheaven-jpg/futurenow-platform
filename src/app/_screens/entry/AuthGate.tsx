@@ -3,6 +3,8 @@
 // 가입 탭: 이름·성별·생년(필수·폼 강제) + 종교·신앙연수(선택). 인도자 체크 ON(allowCoachApply)이면 실명 안내 승격 + 전화 + KPC.
 // 로그인 탭 유지(/join 재참여 기존 회원). metadata 는 프로필 필드만 전송(코치 신청은 세션 후 RPC·§3.4). 참여자 화면 경고색 배제(§0.4).
 import { useState, type CSSProperties, type ReactNode } from 'react';
+import { GENDERS } from '@/contracts/vocab';
+import { RELIGIONS, KPC_RE, CURRENT_YEAR } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 
@@ -18,11 +20,6 @@ export type SignupPayload = {
   phone?: string;
   kpc?: string;
 };
-
-const GENDERS = ['남성', '여성', '기타'];
-const RELIGIONS = ['기독교', '천주교', '불교', '무교', '기타'];
-const CURRENT_YEAR = 2026;
-const KPC_RE = /^KPC\d{5}$/;
 
 const inputStyle: CSSProperties = {
   width: '100%',

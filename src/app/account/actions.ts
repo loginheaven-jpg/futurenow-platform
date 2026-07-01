@@ -28,3 +28,28 @@ export async function setPhoneAction(phone: string): Promise<{ ok: boolean; erro
     return { ok: false, error: e instanceof Error ? e.message : '전화번호 저장에 실패했습니다.' };
   }
 }
+
+// 참여 프로필(user_profiles) — 본인 upsert(RLS user_id=auth.uid). role·kpc 미포함(자기수정 봉쇄 유지).
+export async function setProfileAction(input: {
+  gender: string | null;
+  birthYear: number | null;
+  religion: string | null;
+  faithYears: number | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await (await ctx()).setProfile(input);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '프로필 저장에 실패했습니다.' };
+  }
+}
+
+// 코치 본인 KPC 저장/갱신 — set_my_coach_kpc DEFINER RPC(role=coach 게이트·형식검증·status/role 무오염).
+export async function setKpcAction(kpc: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await (await ctx()).setMyCoachKpc(kpc);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'KPC 저장에 실패했습니다.' };
+  }
+}

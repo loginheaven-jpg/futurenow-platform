@@ -15,13 +15,22 @@ export default async function AccountPage() {
   if (!me) redirect('/login');
 
   const phone = await ctx.getPhone(me.id).catch(() => null); // 본인 — assertContactAccess 통과
+  const profile = await ctx.getProfile(me.id).catch(() => null); // 본인 프로필(RLS 본인/운영자). 없으면 null → 빈 폼
+  // KPC 는 코치만(set_my_coach_kpc RPC 가 role=coach 게이트). 비코치는 조회·섹션 생략.
+  const kpc = me.role === 'coach' ? await ctx.getMyCoachKpc().catch(() => null) : null;
   // root 홈 복귀 — 역할 거점(서버 신뢰값, 클라 위조 불가): 참여자/home·운영자/admin·코치/coach
   const homeHref = me.role === 'user' ? '/home' : me.role === 'admin' ? '/admin' : '/coach';
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="내 정보" homeHref={homeHref} action={<HeaderActions homeHref={homeHref} />} />
-      <AccountClient initialName={me.name ?? ''} initialPhone={phone ?? ''} />
+      <AccountClient
+        initialName={me.name ?? ''}
+        initialPhone={phone ?? ''}
+        initialProfile={profile}
+        initialKpc={kpc ?? ''}
+        allowKpc={me.role === 'coach'}
+      />
     </div>
   );
 }
