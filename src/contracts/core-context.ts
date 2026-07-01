@@ -40,6 +40,8 @@ export interface CoreContext {
   getProfile(userId: string): Promise<UserProfile | null>; // 본인·운영자 직접 조회(RLS). 코치의 조원 열람은 cohort_member_profiles RPC(별도)
   setProfile(input: { gender?: string | null; birthYear?: number | null; religion?: string | null; faithYears?: number | null }): Promise<void>; // 본인 프로필 upsert(role·kpc 미포함)
   createCoachApplication(input: { motivation?: string | null; kpcNumber?: string | null }): Promise<void>; // 자가 코치 신청(self-scoped DEFINER RPC, status='pending' 고정, 재신청=upsert)
+  getMyCoachKpc(): Promise<string | null>; // 본인 coach_applications.kpc_number(코치 정보 게이트 판정·보완 프리필). 행 없으면 null
+  setMyCoachKpc(kpcNumber: string): Promise<void>; // 코치 본인 KPC 저장/갱신(S4 보완 — self-scoped DEFINER, role=coach·형식검증·status 무오염)
 
   // 차수·참여
   previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). 승인 2026-06-28

@@ -517,6 +517,25 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`createCoachApplication 실패: ${error.message}`);
   }
 
+  async getMyCoachKpc(): Promise<string | null> {
+    // 본인 coach_applications.kpc_number(coach_apps_select RLS = 본인+운영자, 본인 자기 행 읽기). 행 없으면 null.
+    const me = await this.currentUser();
+    if (!me) return null;
+    const { data, error } = await this.sb
+      .from('coach_applications')
+      .select('kpc_number')
+      .eq('user_id', me.id)
+      .maybeSingle();
+    if (error) throw new CoreError(`getMyCoachKpc 실패: ${error.message}`);
+    return (data?.kpc_number as string | null) ?? null;
+  }
+
+  async setMyCoachKpc(kpcNumber: string): Promise<void> {
+    // 코치 본인 KPC upsert(S4 보완). self-scoped DEFINER RPC — role=coach 게이트·형식검증·status/role 무오염.
+    const { error } = await this.sb.rpc('set_my_coach_kpc', { p_kpc: kpcNumber });
+    if (error) throw new CoreError(`setMyCoachKpc 실패: ${error.message}`);
+  }
+
   // ── AI 게이트웨이 ──────────────────────────────────────────
   // 범용 호출 통로(서버 전용). 프롬프트·진단 어휘는 인스트루먼트가 소유하고 이 메서드로 호출만 한다(ADR-35).
   async aiChat(req: ChatRequest): Promise<ChatResponse> {

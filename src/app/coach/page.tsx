@@ -5,6 +5,7 @@
 //   멤버 이름 = listCohortMembers(cohort_member_directory RPC, 코치/운영자 id+name만 — ADR-24). plan Q6 해소.
 // 먼저 챙길 분 이름 경로: alert.responseId → response.userId → member.name. name null 이면 '참여자' 폴백.
 import { redirect } from 'next/navigation';
+import { CoachInfoGate } from './CoachInfoGate';
 import { ConsoleHomeClient } from './ConsoleHomeClient';
 import { buildCohortRoster } from './rosterModel';
 import { instrumentDisplay, type CohortSummary, type RosterMember } from '@/app/_screens/types';
@@ -19,6 +20,15 @@ export default async function CoachConsolePage() {
 
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로
+
+  // 코치 정보 게이트(S4): 코치가 전화·KPC 미완이면 콘솔 대신 보완 화면. 운영자(admin)는 면제(정보 요건 없음).
+  // 강등 아님 — role=coach 유지. 완비 판정을 이 한 곳에 집중(loginOutcome 무변경).
+  if (me.role === 'coach') {
+    const [phone, kpc] = await Promise.all([ctx.getPhone(me.id).catch(() => null), ctx.getMyCoachKpc().catch(() => null)]);
+    if (!phone || !kpc) {
+      return <CoachInfoGate userId={me.id} initialPhone={phone ?? ''} initialKpc={kpc ?? ''} />;
+    }
+  }
 
   const cohorts = await ctx.listCohortsByCoach(me.id);
   const summaries: CohortSummary[] = [];
