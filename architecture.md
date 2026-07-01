@@ -7,6 +7,7 @@
 >
 > 문서 버전: **v1.0** (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ + 문항 원문 · AlertSignal(ADR-19) · 디자인 시스템 v3 구현(색 토큰·공용 UI 12종·응답 위젯 5종·리포트 시각화 5종·ResponseRunner) · 코치 콘솔·본부(코치 승인·역할관리) · 참여 프로필(ADR-32))
 > **v1.0 도달(2026-06-30~07-01)**: X1 색 팔레트 확정 · X2 공통 셸 모드(AppHeader root/sub/flow) · 진입 1~3(공개 소개 현관·플로우 헤더·참여자 홈) · 차수 소개(description) · 진단-1(재진단 허용+dedup ADR-33 · 중간저장 `response_drafts` ADR-34) · 완료 후 착지(A-2, Completion→홈) · 마감 a11y(오류 텍스트 대비). 프로덕션 라이브(Vercel, futurenow-platform.vercel.app).
+> **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46). 이후 A3(본부 신청 구분·알림)·A4(성별 남/여 2값)·A5(코드 전달)·A6(에러/빈/로딩) 예정.
 > **남은 미결(plan.md)**: B③ 리포트 **자동 해석 문구(AI 생성)** 구현 대기 — 시각화 5종은 구현 완료, AI 게이트웨이 위치(plan §1)·Q5(문구 검수) 결정 선결. 그 외 다크 모드 색·접근성 키보드 정밀화는 후속.
 
 ---
@@ -116,6 +117,7 @@ lifegraph의 Firebase는 **미채택**. 통합 시 Supabase로 이관(plan.md).
     core-context.ts    A: CoreContext (코어 → 진단)
     instrument.ts      B: InstrumentModule 및 4종 플러그인 인터페이스
     domain.ts          공용 도메인 타입 (Role·Wave·CoreUser·ResponseEnvelope …)
+    vocab.ts           전 서비스 공통 규약 **값**(런타임 상수 — 성별). domain.ts(타입 전용)와 분리·직접 import(ADR-46)
   /instruments
     /futurenow         ← 퓨처나우 전용 엔진+UX (계약 구현체)
       flow.ts          B① 응답 스키마
@@ -123,6 +125,7 @@ lifegraph의 Firebase는 **미채택**. 통합 시 Supabase로 이관(plan.md).
       report.tsx       B③ 화면·PDF·그룹 리포트
       alerts.ts        B④ Red Flag·돌봄 트리거
       schema.ts        answers·profile zod 스키마
+      profileVocab.ts  퓨처나우 프로필 도메인 값(종교·KPC형식·생년상한 — 성별 제외, ADR-46)
       copy.ts          참여자 노출 문구(존대체)·리포트 명명(어휘 분리)
     (/sail)            ← 추후 이관 (plan.md)
 /supabase
@@ -148,6 +151,8 @@ lifegraph의 Firebase는 **미채택**. 통합 시 Supabase로 이관(plan.md).
 | 문항 응답 | 진단 | `responses.answers` | 코어 불가시 |
 
 **저장처 분리(S1~S4 확정)**: 이름=`users.name` · 전화=`user_contacts`(민감 게이트) · 신원 부가(성별·생년·종교·신앙연수)=`user_profiles` · 코치 인증번호(KPC)=`coach_applications.kpc_number`. 각 값의 소유·민감도가 다르므로 물리 분리한다 — `CoreUser`엔 phone·profile·KPC를 싣지 않고 게터(`getPhone`·`getProfile`·`getMyCoachKpc`)로만 접근(ADR-04 최소노출 계승·ADR-37).
+
+**허용값 소유 계층(A2·ADR-46)**: 성별 허용값은 **전 서비스 공통 상수**(`src/contracts/vocab.ts`의 `GENDERS` — 형제 인스트루먼트도 공유), 종교 목록·KPC 형식·생년 상한은 **퓨처나우 소유**(`src/instruments/futurenow/profileVocab.ts`). 성별 상수는 `user_profiles.gender`의 **SQL CHECK 와 값이 일치해야 하며**(TS·SQL 이원 원천 — SQL은 상수 미참조), 값 변경 시 마이그(CHECK+`handle_new_user` sanitize)를 반드시 동반한다.
 
 ### 5.2 신원 필수성 정책 (ADR-03)
 
@@ -230,7 +235,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | `/signup` | 스태프/일반 | `signUp`(트리거가 users role=user 생성) → 세션 시 역할별 랜딩(멤버=/home). 확인 필요 시 안내. /login 상호 링크 |
 | `/reset` | 공개 | 비밀번호 재설정 요청(Step 2.3). `resetPasswordForEmail`(redirectTo=origin/reset/confirm). enumeration 방지(동일 안내). 비번=auth.users |
 | `/reset/confirm` | 공개 | 새 비밀번호 설정(Step 2.3). 복구 세션 게이트(있을 때만 `updateUser`) → 역할별 랜딩. 만료 시 재요청 안내 |
-| `/account` | 로그인(3페르소나) | 내 정보(Step 2.5). 이름=`setName`(users.name)·전화=`setPhone`(user_contacts)·비번=`updateUser`. role 쓰기 경로 없음(2.S2 봉쇄). 게이트 미인증→/login |
+| `/account` | 로그인(3페르소나) | 내 정보(Step 2.5·**A2 완결**). 이름=`setName`(users.name)·전화=`setPhone`(user_contacts)·**프로필(성별·생년·종교·신앙연수)=`setProfile`**·**(코치)KPC=`setMyCoachKpc`**·비번=`updateUser`. 프리필=`getProfile`/`getMyCoachKpc`. role 쓰기 경로 없음(2.S2 봉쇄). 게이트 미인증→/login |
 | `/admin` | 운영자 | `listUsers` + 멤버 역할 직접 변경(`setUserRole`→set_user_role RPC). 운영자 게이트(§8.6 첫 조각) |
 | `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속) |
 | `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag) |
@@ -628,6 +633,7 @@ interface AlertPlugin<S = unknown> {
 - **리포트 시각화 5종 + 배치**(§5·§6, B③ 구현 완료): 나침반=덤벨·간격=레이더(사후 네이비13% 면+사전 회색 점선)·GROW+F=충전막대(사후 네이비·사전 회색)·활력=띠 이동(시들음/중간/번성 저채도 구간+상태배지)·돌봄 신호=조건부 배너(저채도 `--care-*`). 배치: 돌봄→헤드라인(활력·나침반)→깊이(간격·GROW)→주관식, 데스크톱 2×2/모바일 1열. **본문 시각물 네이비·회색, 의미색은 돌봄 배너에만.** 명명(시들음·원씽)은 리포트에서만(§9.4). `src/instruments/futurenow/report/*` + `report.tsx`(ReportPlugin: renderScreen·renderGroup·renderPdf[react-pdf, 서버 전용]). 미리보기 `/preview/report`. **InstrumentModule 최종 조립** = `src/instruments/futurenow/index.ts`.
 - **경계 결정(directive 2026-06-28, ADR-21)**: 리포트 차트군(Dumbbell·Radar·ChargeBars·VitalityBand·CareBanner)은 **인스트루먼트 소유** 확정(`report/visuals.tsx`) — 진단별 명명·데이터가 박히므로 코어 중립 부품이 아니다. design_system §7 의 '코어' 기재는 **오기로 정정**. 진단↛코어 경계(CLAUDE §1) 유지, 차트는 공유 디자인 토큰만 참조. **활력 구간 경계 확정**(11~17 중간·18~25 번성). **PDF 생성 라우트(renderToBuffer)는 다음 단위**(renderPdf 구현·타입·빌드는 완료, 서버 전용).
 - **보류(design_system §9)**: 코치/운영자 콘솔·`CohortPreview`. **착수 금지.**
+- **셸 홈 복귀(트랙 A1·ADR-45, 2026-07-02)**: root 화면 우측 액션(`HeaderActions`)에 홈 아이콘 링크(`homeHref`) — `usePathname`으로 **현재=홈이면 생략**(자기참조 방지). sub 화면은 `AppHeader`(variant='sub')가 이미 홈 아이콘을 렌더하므로 액션엔 미전달(중복 회피). 역할 거점(참여자/home·코치/coach·운영자/admin). 실노출=`/account`·`/my/cohorts`.
 - **러너 후속(갱신 2026-07-01)**: **진행 저장/재개 — 구현 완료**(진단-1B·ADR-34: `response_drafts` 서버 draft + localStorage 자동 + `draftLocation` 안 푼 첫 필수 문항 재계산, step 미저장으로 셔플 안전). **subjectProfile 수집 화면 — 구현 완료**(`ProfileForm`·ADR-32, `/join` 흐름 `start→profile→runner`). **접근성 키보드 정밀화는 미구현 유지**(plan §2 — 후속).
 
 ---
@@ -679,6 +685,8 @@ interface AlertPlugin<S = unknown> {
 | ADR-42 | futurenow IdentityPolicy 강화 — 참여자 `user.name='required'`(코어 ADR-03 반전 아님) | 코치 명단 식별. **ADR-03 불변** — CoreUser.name nullable·DB NOT NULL 미검. 필수성은 정책 데이터(`identityPolicy.byRole.user.name='required'`)+폼 게이트로만. 진단 소유 정책이라 futurenow 한정(SAIL 미영향). 성별·생년 필수도 폼 게이트(DB nullable) |
 | ADR-43 | 코치 정보 게이트 — role=coach·전화/KPC 미완 시 `/coach`가 콘솔 대신 보완 화면(강등 아님·참여자 폴백) | S4. 판정 `/coach/page.tsx`(role='coach' && (!phone‖!kpc)→CoachInfoGate). **강등 아님**(role 변경 0·loginOutcome 무변경). 운영자 면제. [나중에]→/home(코치 권한 유지·콘솔 접근만 유예·완비 시 refresh 개방). 저장=setPhone(ADR-04)+setMyCoachKpc(ADR-40) 재사용 — 새 권한 경로 0. 부분저장 허용·KPC 형식 클라+CHECK 이중 |
 | ADR-44 | `motivation`(참여 계기) = 응답 전용 선택 필드(계정 아님) 부활 | ADR-32는 계정 복사 4필드만 확정 — motivation 미포함. 참여 계기는 시점 종속이라 계정(`user_profiles`) 아닌 응답 스냅샷 소유. 사전 wave `subjectProfile` 선택 필드(`futurenowProfileSchema.motivation?`)·`ProfileForm`이 프리필/스킵과 무관하게 수집. `profileFieldsByWave`(계정 4필드)엔 미포함. 채점·리포트·거울은 answers만 → 다운스트림 0. 계약·DB 무변경(G1=0) |
+| ADR-45 | 셸 홈 복귀 어포던스 = `HeaderActions.homeHref`(root 노출·자기참조 생략, sub 는 AppHeader 홈 아이콘 재사용) | 트랙 A1(항목5). root 화면(내 정보·내 차수 등)에서 홈 복귀가 로고 링크뿐이라 비발견적 → 우측 액션에 홈 아이콘 링크. `usePathname`으로 **현재=홈이면 생략**(자기참조 방지 — /home·/coach·/admin). sub 는 `AppHeader`(variant='sub')가 이미 홈 아이콘 → homeHref 미전달(중복 회피). 역할 거점(참여자/home·코치/coach·운영자/admin). `HomeIcon` export 재사용. 계약·DB·마이그 0. directive 2026-07-02 승인 |
+| ADR-46 | 프로필 허용값 소유 계층 — 성별=전 서비스 공통 상수(`contracts/vocab.ts`) / 종교·KPC형식·생년상한=퓨처나우(`instruments/futurenow/profileVocab.ts`) + /account 프로필·KPC 편집 완결 | 트랙 A2(항목6). 성별 표기는 전 서비스 일관(지휘부 확정) → 계약 인접 런타임 상수로 원천화. 배럴은 `export type *`(타입 전용)이라 사용처는 `@/contracts/vocab` **직접 import**(척추 성격 보존). 종교 목록은 진단 고유라 인스트루먼트 소유(둘의 소유 계층 분리). **TS 상수 ↔ SQL CHECK 이원**(SQL은 상수 미참조) — 값 변경 시 마이그(CHECK+`handle_new_user` sanitize) 동반 의무(A4). /account 는 `getProfile`/`setProfile`·(코치)`getMyCoachKpc`/`setMyCoachKpc` 재사용(계약 +0). AuthGate·ProfileForm 로컬 상수 → 공유 import(중복 제거·렌더 무변경). 마이그 0. directive 2026-07-02 승인 |
 
 ---
 
