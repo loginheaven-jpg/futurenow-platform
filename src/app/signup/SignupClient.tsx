@@ -1,68 +1,84 @@
 'use client';
-// 회원가입 오케스트레이션 — supabase.auth.signUp(트리거가 public.users role='user' 생성).
-// loginheaven 이메일은 트리거가 admin 자동(기존). 비밀번호·토큰을 로그·URL에 싣지 않는다.
+// 회원가입 오케스트레이션(통합 폼 공유·allowCoachApply=true). UX통합가입 S3.
+// 프로필은 metadata 로 트리거 저장(세션 무관). 코치 신청은 세션 확보 후 createCoachApplication RPC(+ setPhone) — client metadata 신뢰 폐기(§3.4).
+// 착지는 loginOutcome 재사용(역할별). 비밀번호·토큰을 로그·URL 에 싣지 않는다.
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { loginOutcome } from '@/app/login/loginOutcome';
-import { SignupForm } from './SignupForm';
-import { signupOutcome } from './signupOutcome';
+import { AuthGate, type SignupPayload } from '@/app/_screens/entry/AuthGate';
 
 export function SignupClient() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const ctx = useMemo(() => createCoreContext(supabase), [supabase]);
   const router = useRouter();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function onSubmit() {
-    if (!email || !password || busy) return;
+  async function land() {
+    const role = (await ctx.currentUser())?.role ?? null;
+    router.push(loginOutcome({ error: null, hasSession: true, role }).redirect ?? '/home');
+  }
+
+  async function onSignup(p: SignupPayload) {
+    if (busy) return;
     setBusy(true);
     setError(null);
     setNotice(null);
-    const res = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: name ? { name } : {} },
-    });
-    const outcome = signupOutcome({ error: res.error, hasSession: !!res.data.session });
-    setBusy(false);
-    if (outcome.error) {
-      setError(outcome.error);
-      return;
+    try {
+      const data: Record<string, unknown> = { name: p.name, gender: p.gender, birth_year: p.birthYear };
+      if (p.religion) data.religion = p.religion;
+      if (p.faithYears != null) data.faith_years = p.faithYears;
+      const res = await supabase.auth.signUp({ email: p.email, password: p.password, options: { data } });
+      if (res.error) {
+        setError(res.error.message);
+        return;
+      }
+      if (!res.data.session) {
+        // 이메일 확인 대기 — 세션이 없어 코치 신청(RPC)은 로그인 후로 미룸(§3.4 metadata 신뢰 폐기의 한계 — 보고).
+        setNotice('가입 확인 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인해 주세요.' + (p.coachApply ? ' 인도자 신청은 로그인 후 이어집니다.' : ''));
+        return;
+      }
+      // 세션 있음 → 코치 신청(선택). 프로필은 트리거가 metadata 로 저장.
+      if (p.coachApply) {
+        const me = await ctx.currentUser();
+        if (me && p.phone) await ctx.setPhone(me.id, p.phone).catch(() => {});
+        try {
+          await ctx.createCoachApplication({ kpcNumber: p.kpc ?? null });
+        } catch {
+          setError('인도자 신청 저장에 실패했어요. 로그인 후 다시 시도해 주세요.');
+        }
+      }
+      await land();
+    } finally {
+      setBusy(false);
     }
-    if (outcome.notice) {
-      setNotice(outcome.notice);
-      return;
-    }
-    // 세션 있음 → 역할별 랜딩. signupOutcome 계약은 불변; 앱층에서 role 분기(멤버→/home, 코치·운영자→/coach).
-    if (outcome.redirect) {
-      const role = (await ctx.currentUser())?.role ?? null;
-      router.push(loginOutcome({ error: null, hasSession: true, role }).redirect ?? outcome.redirect);
+  }
+
+  async function onLogin(email: string, password: string) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await supabase.auth.signInWithPassword({ email, password });
+      if (res.error) {
+        setError(res.error.message);
+        return;
+      }
+      await land();
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <SignupForm
-      email={email}
-      password={password}
-      name={name}
-      show={show}
-      busy={busy}
-      error={error}
-      notice={notice}
-      onEmail={setEmail}
-      onPassword={setPassword}
-      onName={setName}
-      onToggleShow={() => setShow((s) => !s)}
-      onSubmit={onSubmit}
-    />
+    <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
+      {error ? <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)' }}>{error}</p> : null}
+      {notice ? <p className="t-body" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)' }}>{notice}</p> : null}
+      <AuthGate allowCoachApply title="회원가입" busy={busy} onSignup={onSignup} onLogin={onLogin} />
+    </div>
   );
 }

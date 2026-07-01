@@ -1,10 +1,10 @@
 'use client';
-// 참여 진입 오케스트레이션 — 코드 → 미리보기(실데이터) → 로그인/가입 → 가입 → 시작 → 응답 → 저장+채점+알림.
-// 실 라우트. CohortPreview 는 previewCohort 서버 액션(실 DB) 으로 채운다. 참여자 화면 경고색 배제.
-// (라우트 세그먼트 설정 force-dynamic 은 서버 컴포넌트 page.tsx 가 보유 — 클라이언트 페이지는 미반영되므로 분리.)
+// 참여 진입 오케스트레이션 — 코드 → 미리보기(실데이터) → 가입/로그인(통합 폼) → 시작 → 프로필/계기 → 응답 → 저장+채점+알림.
+// UX통합가입 S3: 가입 시 프로필(성별·생년…)을 metadata 로 트리거 저장. 프로필 단계는 계정값 프리필 후 motivation(계기)만.
+//   subjectProfile 박제 = saveResponse 직전 계정(getProfile) 값 복사 + motivation(사전). 참여자 화면 경고색 배제.
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { CohortPreviewMeta } from '@/contracts';
+import type { CohortPreviewMeta, UserProfile } from '@/contracts';
 import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { ResponseRunner } from '@/core/response/ResponseRunner';
@@ -12,9 +12,9 @@ import { futurenowFlow } from '@/instruments/futurenow/flow';
 import { futurenowAnswersSchema, futurenowProfileSchema } from '@/instruments/futurenow/schema';
 import { CodeInput } from '@/app/_screens/entry/CodeInput';
 import { CohortPreview } from '@/app/_screens/entry/CohortPreview';
-import { AuthGate } from '@/app/_screens/entry/AuthGate';
+import { AuthGate, type SignupPayload } from '@/app/_screens/entry/AuthGate';
 import { StartGuide } from '@/app/_screens/entry/StartGuide';
-import { ProfileForm, type ParticipantProfileInput } from '@/app/_screens/entry/ProfileForm';
+import { ProfileForm, type ProfileStepResult } from '@/app/_screens/entry/ProfileForm';
 import { Completion, type ParticipantMirrorView } from '@/app/_screens/entry/Completion';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { enrollByCode as enrollAction, finalizeResponse, getCohortMeta, previewCohort } from './actions';
@@ -33,14 +33,14 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
     [supabase],
   );
 
-  // ?cohort= 진입(가입자 러너 재진입): 코드·미리보기 건너뛰고 메타 확인 후 start 로. 실패 시 code 폴백.
   const [step, setStep] = useState<Step>(initialCohortId ? 'resolving' : 'code');
   const [code, setCode] = useState('');
   const [meta, setMeta] = useState<CohortPreviewMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [profile, setProfile] = useState<ParticipantProfileInput | null>(null);
+  const [accountProfile, setAccountProfile] = useState<UserProfile | null>(null);
+  const [subjectProfile, setSubjectProfile] = useState<Record<string, unknown> | null>(null);
   const [mirror, setMirror] = useState<ParticipantMirrorView | null>(null);
-  const [busy, setBusy] = useState(false); // 이중 제출 가드(입장·인증·완료). try/finally 로 해제 — 실패 후 재시도 가능.
+  const [busy, setBusy] = useState(false); // 이중 제출 가드. try/finally 로 해제 — 실패 후 재시도 가능.
 
   useEffect(() => {
     if (!initialCohortId) return;
@@ -50,9 +50,9 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
       if (cancelled) return;
       if (m) {
         setMeta(m);
-        setStep('start'); // 이미 가입자 — 코드·미리보기 생략, 바로 시작
+        setStep('start'); // 이미 가입자 — 코드·미리보기 생략
       } else {
-        setStep('code'); // 안전 폴백(미가입·비로그인·부재) → 기존 코드 흐름
+        setStep('code'); // 안전 폴백
       }
     })();
     return () => {
@@ -76,15 +76,15 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
     const r = await enrollAction(code);
     if (!r.ok) {
       const msg = r.error === 'auth_required' ? '로그인이 필요해요.' : '가입에 실패했어요. 잠시 후 다시 시도해 주세요.';
-      setError(msg); // 인라인(맥락 유지)
-      toast.error(msg); // 토스트 피드백(작업 결과가 조용히 사라지지 않게)
+      setError(msg);
+      toast.error(msg);
       return;
     }
     setStep('start');
   }
 
   async function onEnter() {
-    if (busy) return; // 이중 제출 가드
+    if (busy) return;
     setBusy(true);
     try {
       const { data } = await supabase.auth.getUser();
@@ -95,15 +95,16 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
     }
   }
 
-  async function onAuth(mode: 'signup' | 'login', email: string, password: string) {
-    if (busy) return; // 이중 제출 가드(signUp/signIn 중복 호출 차단)
+  // 가입: 프로필 필드만 metadata 로(트리거가 users.name·user_profiles 저장). 코치 신청은 /join 비노출(allowCoachApply=false).
+  async function onSignup(p: SignupPayload) {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
-      const res =
-        mode === 'signup'
-          ? await supabase.auth.signUp({ email, password })
-          : await supabase.auth.signInWithPassword({ email, password });
+      const data: Record<string, unknown> = { name: p.name, gender: p.gender, birth_year: p.birthYear };
+      if (p.religion) data.religion = p.religion;
+      if (p.faithYears != null) data.faith_years = p.faithYears;
+      const res = await supabase.auth.signUp({ email: p.email, password: p.password, options: { data } });
       if (res.error) {
         setError(res.error.message);
         return;
@@ -113,6 +114,63 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
         return;
       }
       await enrollThenStart();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onLogin(email: string, password: string) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await supabase.auth.signInWithPassword({ email, password });
+      if (res.error) {
+        setError(res.error.message);
+        return;
+      }
+      if (!res.data.session) {
+        setError('이메일 확인이 필요할 수 있어요.');
+        return;
+      }
+      await enrollThenStart();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // 시작 → 계정 프로필 조회(프리필 판단) 후 프로필 단계.
+  async function onStart() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { data } = await supabase.auth.getUser();
+      const prof = data.user ? await context.getProfile(data.user.id).catch(() => null) : null;
+      setAccountProfile(prof);
+      setStep('profile');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // 프로필 단계 제출 → (구계정이면) 계정 반영 + subjectProfile 박제(계정값 복사 + motivation).
+  async function onProfileSubmit(r: ProfileStepResult) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      let acct = accountProfile;
+      if (r.profile) {
+        await context.setProfile(r.profile).catch(() => {}); // 계정 반영(실패해도 스냅샷은 진행 — 우아한 저하)
+        acct = { gender: r.profile.gender, birthYear: r.profile.birthYear, religion: r.profile.religion ?? null, faithYears: r.profile.faithYears ?? null };
+      }
+      const sp: Record<string, unknown> = {}; // NULL 계정값은 담지 않음(zod optional — 관찰 하나)
+      if (acct?.gender != null) sp.gender = acct.gender;
+      if (acct?.birthYear != null) sp.birthYear = acct.birthYear;
+      if (acct?.religion != null) sp.religion = acct.religion;
+      if (acct?.faithYears != null) sp.faithYears = acct.faithYears;
+      if (r.motivation) sp.motivation = r.motivation;
+      setSubjectProfile(sp);
+      setStep('runner');
     } finally {
       setBusy(false);
     }
@@ -130,28 +188,20 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
       )}
       {step === 'code' && <CodeInput onSubmit={onCode} />}
       {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} busy={busy} />}
-      {step === 'auth' && <AuthGate onSubmit={onAuth} busy={busy} />}
-      {step === 'start' && meta && <StartGuide cohortName={meta.name} onStart={() => setStep('profile')} />}
-      {step === 'profile' && (
-        <ProfileForm
-          onSubmit={(p) => {
-            setProfile(p);
-            setStep('runner');
-          }}
-        />
-      )}
+      {step === 'auth' && <AuthGate onSignup={onSignup} onLogin={onLogin} busy={busy} />}
+      {step === 'start' && meta && <StartGuide cohortName={meta.name} onStart={onStart} />}
+      {step === 'profile' && <ProfileForm accountProfile={accountProfile} onSubmit={onProfileSubmit} busy={busy} />}
       {step === 'runner' && meta && (
         <ResponseRunner
           schema={futurenowFlow.getSchema('pre')}
           context={context}
           cohortId={meta.id}
           wave="pre"
-          subjectProfile={profile ?? undefined}
+          subjectProfile={subjectProfile ?? undefined}
           onComplete={async (responseId) => {
             if (busy) return; // 이중 finalize 가드
             setBusy(true);
-            // 즉시 완료 화면으로(러너 기본 done 플래시 회피) → finalize await 후 거울 채움.
-            setStep('done');
+            setStep('done'); // 즉시 완료 화면(러너 기본 done 플래시 회피)
             try {
               const res = await finalizeResponse(responseId);
               setMirror(res.ok ? res.mirror ?? null : null); // 실패 시 null → ①+④만(우아한 저하)
