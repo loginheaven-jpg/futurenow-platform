@@ -21,6 +21,7 @@ import type {
   ResponseEnvelope,
   Role,
   SaveResponseInput,
+  UserProfile,
   Wave,
   ChatRequest,
   ChatResponse,
@@ -473,6 +474,47 @@ class SupabaseCoreContext implements CoreContext {
     const { data, error } = await q;
     if (error) throw new CoreError(`listResponses 실패: ${error.message}`);
     return (data ?? []).map((r) => rowToEnvelope<A, P>(r as ResponseRow));
+  }
+
+  // ── 참여 프로필 (user_profiles) ─────────────────────────────
+  // 본인·운영자 직접 I/O(RLS: user_id=auth.uid OR is_admin). 코치의 조원 열람은 cohort_member_profiles RPC(별도) — RLS 미확대.
+  async getProfile(userId: string): Promise<UserProfile | null> {
+    const { data, error } = await this.sb
+      .from('user_profiles')
+      .select('gender,birth_year,religion,faith_years')
+      .eq('user_id', userId)
+      .maybeSingle(); // RLS 가 본인/운영자만 → 그 외엔 0행(null)
+    if (error) throw new CoreError(`getProfile 실패: ${error.message}`);
+    if (!data) return null;
+    const r = data as { gender: string | null; birth_year: number | null; religion: string | null; faith_years: number | null };
+    return { gender: r.gender ?? null, birthYear: r.birth_year ?? null, religion: r.religion ?? null, faithYears: r.faith_years ?? null };
+  }
+
+  async setProfile(input: { gender?: string | null; birthYear?: number | null; religion?: string | null; faithYears?: number | null }): Promise<void> {
+    const me = await this.currentUser();
+    if (!me) throw new CoreError('setProfile: 로그인이 필요합니다.');
+    // 본인 행 upsert(RLS insert/update 모두 user_id=auth.uid). role·kpc 는 경로에 없음(자기수정 봉쇄 유지).
+    const { error } = await this.sb.from('user_profiles').upsert(
+      {
+        user_id: me.id,
+        gender: input.gender ?? null,
+        birth_year: input.birthYear ?? null,
+        religion: input.religion ?? null,
+        faith_years: input.faithYears ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    );
+    if (error) throw new CoreError(`setProfile 실패: ${error.message}`);
+  }
+
+  async createCoachApplication(input: { motivation?: string | null; kpcNumber?: string | null }): Promise<void> {
+    // self-scoped DEFINER RPC(status='pending' 고정·재신청 upsert). 클라이언트 metadata 신뢰 폐기 경로.
+    const { error } = await this.sb.rpc('create_coach_application', {
+      p_motivation: input.motivation ?? null,
+      p_kpc_number: input.kpcNumber ?? null,
+    });
+    if (error) throw new CoreError(`createCoachApplication 실패: ${error.message}`);
   }
 
   // ── AI 게이트웨이 ──────────────────────────────────────────

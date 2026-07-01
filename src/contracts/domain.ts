@@ -135,6 +135,16 @@ export interface Alert {
   createdAt: string;
 }
 
+// 참여 프로필(신원 부가 — 성별·생년·종교·신앙연수). 코어 별도 테이블 user_profiles 소유(users 본체 미오염, ADR-04 격리 선례).
+//   CoreUser 무변경 — getProfile 게터로만 조회(getPhone 패턴 정합). 전부 nullable(DB 불변식 아님 — 필수성은 폼/IdentityPolicy).
+//   KPC 는 코치 도메인(coach_applications) 소유라 여기 두지 않는다(S4 완비 판정이 별도로 읽음).
+export interface UserProfile {
+  gender: string | null;
+  birthYear: number | null;
+  religion: string | null;
+  faithYears: number | null;
+}
+
 // 코치 리포트 해석 문구 읽기 뷰(B③·ADR-36). 코치·운영자만(RLS). 참여자 비노출.
 //   aiContent = 게이트웨이 생성 원문(불변·감사). coachContent = 코치 수정본(null=미수정).
 //   effective = coachContent ?? aiContent (유효 문구 — 읽기에서 coalesce).

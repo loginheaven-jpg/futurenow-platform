@@ -15,6 +15,7 @@ import type {
   Enrollment,
   InstrumentId,
   InterpretationView,
+  UserProfile,
   MemberRef,
   MemberSummary,
   MyCohortSummary,
@@ -34,6 +35,11 @@ export interface CoreContext {
   getPhone(userId: string): Promise<string | null>;
   setPhone(userId: string, phone: string): Promise<void>;
   setName(name: string): Promise<void>; // 본인 표시 이름 수정(users.name). 본인 전용(id=auth.uid()). role 미포함(2.S2 봉쇄·set_user_role 전용). 승인 2026-06-29
+
+  // 참여 프로필(user_profiles) — 신원 부가. CoreUser 무변경(getPhone 패턴 정합). UX통합가입 S2, 승인 2026-07-01
+  getProfile(userId: string): Promise<UserProfile | null>; // 본인·운영자 직접 조회(RLS). 코치의 조원 열람은 cohort_member_profiles RPC(별도)
+  setProfile(input: { gender?: string | null; birthYear?: number | null; religion?: string | null; faithYears?: number | null }): Promise<void>; // 본인 프로필 upsert(role·kpc 미포함)
+  createCoachApplication(input: { motivation?: string | null; kpcNumber?: string | null }): Promise<void>; // 자가 코치 신청(self-scoped DEFINER RPC, status='pending' 고정, 재신청=upsert)
 
   // 차수·참여
   previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). 승인 2026-06-28
