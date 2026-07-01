@@ -5,7 +5,7 @@
 >
 > 범위: **색 토큰 · 타이포 · 응답 위젯 5종 · 리포트 시각화 5종 · 종합 배치 · 참여 진입 흐름 · 코치 콘솔 · 본부 콘솔.**
 > 참조: architecture.md §10·§8·§5.2·§1. ADR-04·11·12·20.
-> 버전: **v4** (응답·리포트 + 진입 + 코치 콘솔 + 본부 콘솔 확정)
+> 버전: **v5** (v1.0 구현 정합 — X1 색 확정·라이트 고정·AppHeader variant·토큰 보충·격차 정정. 2026-07-01)
 >
 > **갱신 규약**: 이 파일을 받으면 기존 design_system.md를 **덮어쓴다**(새 파일 생성 금지 — 동명 충돌 방지).
 
@@ -15,7 +15,7 @@
 
 1. **색은 3단으로만 흐른다**(ADR-11). 원천 hex → 역할 → 컴포넌트. 컴포넌트는 hex·원천 토큰 직접 참조 금지.
 2. **브랜드 토큰은 진단이 주입, 중립·의미 토큰은 코어 소유**(ADR-12). 퓨처나우 = 네이비+골드.
-3. **색값은 잠정**이다. 첫 화면 확정 후 재평가(§1.1 hex 몇 줄).
+3. **색값은 X1 확정(2026-06-30)**이다(§1.1). 화면은 **라이트 고정** — 다크 모드 미지원(§1.3). 색이 구인·척도·활력 구간을 전달하므로 PC/모바일 색 일관성이 정보 정확성보다 앞선다.
 4. **참여자 화면엔 경고색을 쓰지 않는다.** danger/warning/care 의미색은 **인도자 리포트·콘솔에서만**.
 5. **명명은 리포트·콘솔에서만.** 측정값('활력 8')이 강의 어휘('시들음')로 명명되는 것은 인도자 화면뿐.
 6. **돌봄 우선.** 인도자 화면(리포트·코치 콘솔·본부 콘솔)은 "먼저 챙길 분"·"승인 대기"처럼 할 일·사람을 늘 위에 둔다. 관리 도구가 아니라 돌봄 도우미.
@@ -28,10 +28,10 @@
 
 ```css
 :root {
-  /* 브랜드 — 네이비 (잠정) */
-  --navy-900:#0F1B2D; --navy-700:#1B2A41; --navy-500:#34466A; --navy-300:#5B6B8C;
-  /* 브랜드 — 골드 (잠정) */
-  --gold-700:#B8923D; --gold-500:#C9A24B; --gold-300:#D9B96E; --gold-100:#EFE2C2;
+  /* 브랜드 — 네이비 (X1 확정 2026-06-30: 따뜻한 톤, 구조 전용) */
+  --navy-900:#102338; --navy-700:#1A3A5C; --navy-500:#3A5475; --navy-300:#7F94AE;
+  /* 브랜드 — 골드 (X1 확정 2026-06-30: 점 강조 전용) */
+  --gold-700:#A8791A; --gold-500:#C8911F; --gold-300:#DBB05A; --gold-100:#F2E6CC;
   /* 중립 (warm gray) */
   --gray-0:#FFFFFF; --gray-50:#F7F6F4; --gray-100:#EEECE8; --gray-200:#DEDAD3;
   --gray-400:#A8A29A; --gray-600:#6B655C; --gray-800:#3A352F; --gray-900:#211E1A;
@@ -40,15 +40,15 @@
   /* 의미색 — 리포트·콘솔용 저채도 톤 (절제 표시) */
   --care-fill:#FAECE7;  --care-line:#D85A30;  --care-text:#993C1D;
   --thrive-soft:#9FE1CB; --mid-soft:#E9D8A6;  --languish-soft:#F0997B;
-  /* 본부 톤 — 운영자 헤더(코치보다 한 단 깊게) */
-  --hq-header:var(--navy-900); --hq-surface:#F4F7FB; --hq-border:#DDE3EC;
 }
 ```
+> **PDF 팔레트 미러**: `report/pdf.tsx`(react-pdf)는 CSS var 미지원이라 위 원천 hex를 **하드코딩 미러**로 둔다. **원천값(특히 navy-700·gold-500)을 X1과 반드시 일치**시킨다 — 현재 드리프트(navy #1B2A41·gold #C9A24B)는 PDF 라이브(3.6) 착수 시 동기화한다. 화면↔PDF 색이 달라지지 않게.
 
 ### 1.2 역할 토큰 (2차 — 라이트). 컴포넌트는 이것만 참조
 
 ```css
 :root {
+  color-scheme: only light;             /* 라이트 고정(§1.3) — 브라우저 강제 다크 반전 차단 */
   --color-primary:var(--navy-700);      --color-primary-strong:var(--navy-900);
   --color-accent:var(--gold-500);       --color-accent-soft:var(--gold-100);
   --color-bg:var(--gray-0);             --color-surface-1:var(--gray-50);
@@ -56,33 +56,36 @@
   --color-border:var(--gray-200);       --color-border-strong:var(--gray-400);
   --color-text:var(--gray-900);         --color-text-secondary:var(--gray-600);
   --color-text-muted:var(--gray-400);   --color-text-on-accent:var(--gray-0);
+  --color-text-on-gold:var(--navy-700); /* 골드 면 위 글자 — 대비 확보(흰 글자는 골드 위 2.79:1 미달) */
   --color-success:var(--green-600); --color-care:var(--amber-600); --color-danger:var(--red-600);
 }
 ```
+> **`--color-text-on-gold`(navy-700)**: 골드 배경 위 글자 전용 — 랜딩 CTA·척도 선택 셀·완료 배지 등. 네이비 바 위 글자는 `--color-text-on-accent`(흰색) 유지. 흰 글자를 골드 위에 쓰면 2.79:1로 §10 대비 미달이라 분리(X2a 보완).
 
-### 1.3 다크 토큰 (2차 — 다크). 역할만 재지정, 컴포넌트 무변경
+### 1.3 라이트 고정 (2026-07-01 확정) — 다크 모드 미지원
 
 ```css
-@media (prefers-color-scheme:dark){:root{
-  --color-primary:var(--gold-500);      --color-primary-strong:var(--gold-300);
-  --color-accent:var(--gold-500);       --color-accent-soft:var(--navy-700);
-  --color-bg:var(--gray-900);           --color-surface-1:var(--gray-800);
-  --color-surface-2:#2A2722;            --color-surface-sunken:var(--gray-900);
-  --color-border:#3D3833;               --color-border-strong:var(--gray-600);
-  --color-text:var(--gray-50);          --color-text-secondary:var(--gray-400);
-  --color-text-muted:var(--gray-600);   --color-text-on-accent:var(--navy-900);
-}}
+:root { color-scheme: only light; }   /* §1.2 에 포함 */
 ```
+```tsx
+// app/layout.tsx — <meta name="color-scheme" content="only light"> 방출
+export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3A5C' };
+```
+- **결정(지휘부 2026-07-01)**: 진단·리포트는 색으로 구인·척도·활력 구간을 전달 → **PC·모바일 색 일관성이 정보 정확성**이다. 자동 다크 반전에 맡기면 브랜드가 통째로 뒤집혀(네이비↔골드) 같은 앱이 기기마다 달라 보인다.
+- `color-scheme: only light` + viewport meta로 **OS 다크·브라우저 강제 다크(Chrome Auto Dark Theme·삼성 인터넷)의 반전을 모두 차단**한다. `@media (prefers-color-scheme: dark)` 블록은 **폐기**.
+- 다크 팔레트가 필요해지면 자동 반전이 아니라 **X1 기준으로 직접 큐레이션**한다(향후·별도, 수동 토글 포함 검토).
 
 ### 1.4 규약
 - 컴포넌트 CSS·className은 **2차 역할 토큰만**. `#`hex·`--navy-*`·`--gold-*` 직접 참조 금지.
 - 선택(selected) = `--color-accent`(골드). 색 교체는 §1.1 원천만 수정.
+- **색 렌더링**: 색은 전부 sRGB hex. 이미지·로고는 sRGB 프로파일 임베드(untagged 금지 — P3 화면 과채도 방지). True Tone·Night Shift·OLED 채도 등 기기 요인은 코드로 제어 불가 → §10 색-비의존 단서(라벨 병기)·명암비로 견고화(픽셀 일치를 목표로 삼지 않음).
 
 ### 1.5 색 역할 모델
 > **네이비 = 앱의 틀 / 골드 = 참여자의 흔적.**
 - **네이비**(`--color-primary`): 헤더·화면 제목·블록 헤딩·주요/보조 버튼.
-- **골드**(`--color-accent`): 선택(도트·세그먼트·체크)·진행바·슬라이더 값·OTP 입력 중 칸·차수명 부제.
-- **본부 헤더**는 `--hq-header`(navy-900)로 코치보다 한 단 깊게 — 계층을 색의 무게로 구분.
+- **골드**(`--color-accent`): 선택(도트·세그먼트·체크)·진행바·슬라이더 값·OTP 입력 중 칸.
+- **헤더 부제**(차수명 등)는 **옅은 네이비**(`--navy-300`) — 골드 아님. 진입 흐름 일관화(진입-1b).
+- **본부·코치·참여자 홈 헤더는 동일 셸**(AppHeader `variant='root'`, 배경 `--color-primary`=navy-700). 본부 전용 색 깊이 구분(옛 `--hq-*` 토큰)은 **미채택·폐기** — 계층은 색이 아니라 진입 게이트(운영자 전용 라우트)로 구분.
 
 ---
 
@@ -108,8 +111,10 @@
 
 ```css
 :root{ --radius:10px; --radius-lg:12px; --radius-pill:999px; --tap-min:44px;
-  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --border-hair:0.5px; }
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:20px; --space-6:24px; --space-7:28px; --space-8:32px; --border-hair:0.5px; }
 ```
+- 사다리 +4 일관: 4·8·12·16·20·24·28·32. (5/7/8은 핫픽스로 보충 — 랜딩·리포트·폼 여백.)
 - **모든 탭 가능 요소 ≥44px**(`--tap-min`).
 
 ---
@@ -192,7 +197,7 @@
 - 가입 최소화: 이메일+비밀번호 또는 소셜. **이름·전화 강요 금지**(ADR-03). 이후 enrollByCode.
 
 ### 7.4 시작 안내
-- 호흡 고르기("정답 없음·떠오르는 대로·중간에 멈춰도 됨", 존대체) + **보안 고지**("여기 적는 모든 것은 인도자 한 사람만 봅니다") 회색 박스. 헤더 부제 차수명 골드.
+- 호흡 고르기("정답 없음·떠오르는 대로·중간에 멈춰도 됨", 존대체) + **보안 고지**("여기 적는 모든 것은 인도자 한 사람만 봅니다") 회색 박스. 헤더 부제(차수명)는 옅은 네이비(`--navy-300`, §1.5).
 - **동의는 버튼=동의** + 보안 고지로 갈음. 명시 체크박스 없음. 개인정보 수집 확대 시 명시 동의 추가(plan.md).
 
 ### 7.5 참여자 완료 — 부드러운 자기 반영
@@ -244,9 +249,9 @@
 ### 8.6 본부 콘솔 (운영자 전용) — 코치 콘솔 확장형
 운영자는 3계층 꼭대기(architecture §1). 코치 콘솔과 **같은 레이아웃·부품**에 본부 전용 섹션만 더한다(운영자=코치 겸임 잦음). 돌봄 우선을 본부에도 일관.
 
-- **헤더**: `--hq-header`(navy-900, 코치보다 깊게) + "퓨처나우 · 본부" + 부제 "운영자".
+- **헤더**: 코치와 **동일 셸**(AppHeader `variant='root'`, navy-700) + "퓨처나우 · 본부" + 부제 "운영자". (본부 전용 색 깊이 `--hq-*`는 미채택 — §1.5. 계층은 색이 아니라 운영자 전용 라우트 게이트로 구분.)
 - **위계** (홈):
-  1. **[승인 대기]** — 코치 등록 신청자(이름·신청 시점), **행 안에 [승인]·[거절]** 버튼으로 즉시 처리. 본부의 가장 잦은 일. `--hq-surface`/`--hq-border` 저채도 블루 카드.
+  1. **[승인 대기]** — 코치 등록 신청자(이름·신청 시점), **행 안에 [승인]·[거절]** 버튼으로 즉시 처리. 본부의 가장 잦은 일. 표준 surface 카드(`--color-surface-1`/`--color-border`).
   2. **[전체 현황 3숫자]** — 활성 차수·참여자·**돌봄 신호**(코랄). 돌봄만 의미색.
   3. **[코치별 현황]** — 코치명·담당 차수·인원·돌봄 수. 돌봄 많은 코치 = 지원 우선순위.
   4. **[연락처 열람] (운영자 전용)** — 평소 **잠금 버튼**(자물쇠). 필요 시에만 연다. 전화는 운영자+본인만(ADR-04, user_contacts). 민감정보 상시 노출 금지.
@@ -276,6 +281,19 @@
 - 단 저채도 의미색 토큰(`--care-*`·`--*-soft`)은 globals.css 공용(토큰은 코어, 차트는 인스트루먼트).
 - (v2 §7의 "리포트 차트군 → 코어"는 오기였음. 본 절로 정정.)
 
+### 9.2 앱 레이어 공용 컴포넌트 (/src/app/_screens) — 코어/인스트루먼트 합성
+
+코어 UI가 아니라 **앱 합성 레이어**의 공용 화면·셸. 동선 규칙을 셸이 강제한다.
+
+| 컴포넌트 | 비고 |
+|---|---|
+| **AppHeader** | 동선 셸. `variant` **필수** 3종: **root**(로고=홈 링크 + 우측 액션, 뒤로 없음) / **sub**(‹뒤로 backHref + 제목 + 홈 아이콘 + 액션) / **flow**(제목 + 부제만, 로고·뒤로·홈·액션 **없음** — 진단 선형성 강제). 부제는 옅은 네이비(`--navy-300`). |
+| **HeaderActions · LogoutButton** | 셸 우측 액션(내 정보·로그아웃). 역할 기반 홈 링크. |
+| **SeminarIntro** | 공통 소개(어떤 시간인가요·무엇이 달라지나요·어떻게 진행되나요) **단일 출처** — 랜딩 `/`·CohortPreview 공유. |
+| **MirrorView** | 참여자 **갈망 거울**(§7.5 ②③④) — 완료 화면(Completion)·멤버 내 리포트(`/my/cohorts/[id]/report`) 공용. severity·점수·돌봄 0. |
+
+> 진입 5화면(CodeInput·CohortPreview·AuthGate·StartGuide·ProfileForm)은 전부 `variant='flow'` — 출구 없는 선형 흐름. 코치/본부/홈은 `root`, 상세·리포트는 `sub`.
+
 ---
 
 ## 10. 접근성
@@ -288,6 +306,14 @@
 
 ## 11. 미확정 (다음 세션)
 
-- 색 1차 팔레트 첫 화면 확정 후 재평가(네이비·골드 색조).
-- CohortPreview 타입을 계약에 추가할지(§7.2) — 추가 시 지휘부 협의.
-- 코치 등록 신청(coach_applications) 화면·플로우(신청자 측)·승인 후 알림.
+- **코치 등록 신청(신청자 측)** 화면·승인 후 알림 — 미정(운영자 측 승인/거절 `decide_coach_application`·AdminMembers는 구현).
+- **반응형 브레이크포인트 수치**(타블렛 중간폭·가로모드) — 미규정. 현재 모바일 우선 단일 렌더 + 리포트 데스크톱 2×2/모바일 1열(§6)만 확정.
+- **다크 팔레트** — 라이트 고정(§1.3)이 현 정책. 필요해지면 X1 기준 직접 큐레이션 + 수동 토글 검토.
+- **B③ 코치 리포트 해석 문구** — AI 초안 생성·저장(구현) + 코치 수정 UI(B③-3) + 첫 열람 비차단 로딩 + PDF 반영(B③-4).
+- **PDF 라이브**(renderToBuffer 라우트) + 팔레트 X1 동기화(§1.1 노트) — 3.6 단위.
+
+> 해소됨(기록): 색 1차 팔레트(X1 확정 §1.1)·CohortPreview 계약(ADR-22 `CohortPreviewMeta` 추가)·다크 방향(라이트 고정 §1.3).
+
+---
+
+> **정합 갱신(2026-07-01)**: 본 문서를 v1.0 구현 현실에 맞췄다 — X1 색 확정·라이트 고정(다크 폐기)·`--color-text-on-gold`·`--space-5/7/8`·AppHeader `variant`·부제 navy-300·본부=root 셸(`--hq-*` 폐기)·PDF 팔레트 동기화 의무. 감사 근거는 지휘부 요청 감사(design-system-audit).

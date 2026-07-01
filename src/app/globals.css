@@ -4,7 +4,8 @@
 /* ============================================================
    퓨처나우 디자인 시스템 — 색 3단 토큰 (design_system.md §1)
    1차 원천 → 2차 역할(컴포넌트는 이것만) → (3차) 컴포넌트.
-   색 교체 시 §1.1 원천만 수정. 잠정값(첫 화면 확정 후 재평가).
+   색 교체 시 §1.1 원천만 수정. 색값 = X1 확정(2026-06-30).
+   화면은 라이트 고정(§1.3) — 다크 모드 미지원.
    ============================================================ */
 
 /* §1.1 원천 팔레트 (1차 — 색 교체 시 여기만) */
@@ -43,6 +44,9 @@
 
 /* §1.2 역할 토큰 (2차 — 라이트). 컴포넌트는 이것만 참조 */
 :root {
+  /* 라이트 고정 — OS 다크·브라우저 강제 다크(Chrome Auto Dark Theme·삼성 인터넷) 색 반전 차단.
+     진단·리포트는 색으로 구인·척도·활력 구간을 전달하므로 PC/모바일 색 일관성이 정보 정확성이다(§1.3). */
+  color-scheme: only light;
   --color-primary: var(--navy-700);
   --color-primary-strong: var(--navy-900);
   --color-accent: var(--gold-500);
@@ -64,25 +68,12 @@
   --color-danger: var(--red-600);
 }
 
-/* §1.3 다크 토큰 (2차 — 다크). 역할만 재지정, 컴포넌트 무변경 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-primary: var(--gold-500);
-    --color-primary-strong: var(--gold-300);
-    --color-accent: var(--gold-500);
-    --color-accent-soft: var(--navy-700);
-    --color-bg: var(--gray-900);
-    --color-surface-1: var(--gray-800);
-    --color-surface-2: #2a2722;
-    --color-surface-sunken: var(--gray-900);
-    --color-border: #3d3833;
-    --color-border-strong: var(--gray-600);
-    --color-text: var(--gray-50);
-    --color-text-secondary: var(--gray-400);
-    --color-text-muted: var(--gray-600);
-    --color-text-on-accent: var(--navy-900);
-  }
-}
+/* §1.3 라이트 고정 (2026-07-01 확정) — 다크 모드 미지원.
+   지휘부 결정: 진단/리포트는 색으로 정보를 전달 → PC·모바일 색 일관성이 정보 정확성보다 앞선다.
+   자동 다크 반전(prefers-color-scheme)에 맡기면 브랜드가 통째로 뒤집혀(네이비↔골드) 같은 앱이 기기마다 달라 보인다.
+   → color-scheme: only light(§1.2) + layout.tsx viewport.colorScheme('only light') 로
+     OS 다크·브라우저 강제 다크(Chrome Auto Dark Theme·삼성 인터넷)의 반전을 모두 차단한다.
+   다크 팔레트가 필요해지면 자동 반전이 아니라 X1 기준으로 직접 큐레이션한다(향후·별도). */
 
 /* §3 간격·형태 토큰 */
 :root {
