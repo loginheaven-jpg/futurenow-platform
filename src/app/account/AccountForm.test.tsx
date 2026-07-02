@@ -4,7 +4,7 @@ import { AccountForm } from './AccountForm';
 
 const noop = () => {};
 const profile = {
-  gender: '남성',
+  gender: '남',
   birthYear: '1998',
   religion: '기독교',
   faithYears: '10',
@@ -50,7 +50,7 @@ describe('AccountForm (내 정보)', () => {
     expect(html).toContain('프로필 저장');
     expect(html).toContain('value="1998"'); // 생년 prefill
     expect(html).toContain('value="10"'); // 신앙연수 prefill
-    expect(html).toContain('남성'); // 성별 선택지
+    expect(html).toContain('남'); // 성별 선택지(남/여)
     expect(html).toContain('기독교'); // 종교 선택지
   });
 

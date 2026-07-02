@@ -48,7 +48,7 @@ describe('futurenowAnswersSchema', () => {
 describe('futurenowProfileSchema (계정 복사 스냅샷 — birthYear·gender NULL 가능, 관찰 하나)', () => {
   it('전체(생년·성별·종교·신앙연수) 통과', () => {
     expect(
-      futurenowProfileSchema.safeParse({ birthYear: 1990, gender: '남성', religion: '기독교', faithYears: 10 }).success,
+      futurenowProfileSchema.safeParse({ birthYear: 1990, gender: '남', religion: '기독교', faithYears: 10 }).success,
     ).toBe(true);
   });
   it('빈 스냅샷({}) 허용 — 계정값 NULL 가능(필수성은 폼/IdentityPolicy)', () => {
@@ -58,10 +58,10 @@ describe('futurenowProfileSchema (계정 복사 스냅샷 — birthYear·gender 
     expect(futurenowProfileSchema.safeParse({ birthYear: null, gender: null }).success).toBe(true);
   });
   it('생년 있으면 범위·정수 검증(비정수·범위 밖 거부)', () => {
-    expect(futurenowProfileSchema.safeParse({ birthYear: 1985.5, gender: '여성' }).success).toBe(false);
-    expect(futurenowProfileSchema.safeParse({ birthYear: 1800, gender: '여성' }).success).toBe(false);
+    expect(futurenowProfileSchema.safeParse({ birthYear: 1985.5, gender: '여' }).success).toBe(false);
+    expect(futurenowProfileSchema.safeParse({ birthYear: 1800, gender: '여' }).success).toBe(false);
   });
   it('motivation(참여계기) 선택 필드 통과', () => {
-    expect(futurenowProfileSchema.safeParse({ birthYear: 1990, gender: '남성', motivation: '더 단단해지고 싶어서' }).success).toBe(true);
+    expect(futurenowProfileSchema.safeParse({ birthYear: 1990, gender: '남', motivation: '더 단단해지고 싶어서' }).success).toBe(true);
   });
 });

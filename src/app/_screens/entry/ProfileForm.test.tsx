@@ -4,7 +4,7 @@ import type { UserProfile } from '@/contracts';
 import { ProfileForm } from './ProfileForm';
 
 const noop = () => {};
-const complete: UserProfile = { gender: '남성', birthYear: 1998, religion: null, faithYears: null };
+const complete: UserProfile = { gender: '남', birthYear: 1998, religion: null, faithYears: null };
 
 describe('ProfileForm — 계정 프리필/스킵 + 참여계기(S3)', () => {
   it('계정 비었으면(null): 전체 프로필 + 계기 렌더, [다음] 비활성', () => {

@@ -8,4 +8,4 @@
 //
 // ⚠ user_profiles.gender 의 **SQL CHECK 와 값이 일치해야 한다**. TS 상수와 SQL CHECK 는 원천이 둘로 나뉘므로
 //   (SQL 은 이 상수를 못 읽음), 값을 바꿀 때는 반드시 마이그레이션(CHECK + handle_new_user sanitize)을 함께 바꾼다.
-export const GENDERS = ['남성', '여성', '기타'];
+export const GENDERS = ['남', '여'];
