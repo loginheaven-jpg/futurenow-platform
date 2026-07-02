@@ -9,11 +9,12 @@ import { createCoreContext } from '@/core/context';
 import { createServerSupabase } from '@/core/supabase/server';
 import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
-import { generateInterpretation, type InterpretationContent } from '@/instruments/futurenow/report/interpretation';
+import type { InterpretationContent } from '@/instruments/futurenow/report/interpretation';
+import { InterpretationPanel } from './InterpretationPanel';
 
 export const dynamic = 'force-dynamic';
-// 해석 지연 생성(B③-2)은 게이트웨이 호출(~수십초 가능)을 서버에서 블로킹 → Vercel 함수 타임아웃 여유 확보.
-// (B③-3에서 비차단/클라이언트 트리거 로딩으로 개선 권고 — 첫 열람 26s 블랭크 회피.)
+// 비차단(B③-A): 서버 렌더는 existing 해석(getInterpretation·빠름)만 조회 — aiChat 동기 await 제거(첫 열람 26s 블랭크 회피).
+// 생성(게이트웨이 ~수십초)은 InterpretationPanel 이 마운트 후 ensureInterpretationAction 으로 돌린다. maxDuration=60 은 그 액션 예산.
 export const maxDuration = 60;
 
 export default async function CoachReportPage({
@@ -33,48 +34,15 @@ export default async function CoachReportPage({
   const scores = futurenowScoring.score(resp.answers, { wave: resp.wave });
   const backTo = `/coach/cohort/${resp.cohortId ?? cohortId}`;
 
-  // 지연 생성(B③-2): 처음 열 때 해석 문구 생성·저장, 이후 캐시. 게이트웨이/파싱 실패는 우아한 저하(문구만 빈자리, 시각화 정상).
-  // 표시는 최소(읽기 전용) — 코치 수정 UI(다듬기·확정·되돌리기)·출처 배지는 B③-3.
-  let interpretation: InterpretationContent | null = null;
-  try {
-    const view = await generateInterpretation(ctx, responseId, scores, resp.cohortId ?? cohortId);
-    interpretation = (view.effective ?? null) as InterpretationContent | null;
-  } catch {
-    interpretation = null; // 해석 준비 실패 — 리포트 시각화는 영향 없음
-  }
+  // 비차단(B③-A): existing 해석만 즉시 조회(빠름). 없으면 null → 패널이 마운트 후 생성 트리거.
+  //   게이트웨이 동기 블로킹 제거 → 리포트 시각화가 첫 열람부터 즉시 렌더. 해석 실패는 패널이 재시도 안내(시각화 무관).
+  const existing = await ctx.getInterpretation(responseId).catch(() => null);
+  const initialInterpretation = (existing?.effective ?? null) as InterpretationContent | null;
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
-      {interpretation ? (
-        <section
-          style={{
-            marginTop: 'var(--space-4)',
-            padding: 'var(--space-5)',
-            borderRadius: 'var(--radius-lg)',
-            background: 'var(--color-surface-2)',
-            border: 'var(--border-hair) solid var(--color-border)',
-          }}
-        >
-          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-            AI 초안 · 참고용입니다. 코치가 다듬어 확정할 수 있어요.
-          </p>
-          <h2 className="t-h2" style={{ color: 'var(--color-primary)', margin: '0 0 var(--space-3)' }}>{interpretation.headline}</h2>
-          {interpretation.axes.length > 0 ? (
-            <ul style={{ margin: '0 0 var(--space-3)', paddingLeft: '1.1em', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {interpretation.axes.map((a, i) => (
-                <li key={i} className="t-body" style={{ color: 'var(--color-text)' }}>
-                  <strong>{a.name}</strong> — {a.reading}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {interpretation.caution ? (
-            <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>{interpretation.caution}</p>
-          ) : null}
-          <p className="t-body" style={{ color: 'var(--color-text)', margin: 0 }}>{interpretation.growth}</p>
-        </section>
-      ) : null}
+      <InterpretationPanel responseId={responseId} initial={initialInterpretation} />
       <div style={{ marginTop: 'var(--space-4)' }}>
         <ReportScreen scores={scores} />
       </div>
