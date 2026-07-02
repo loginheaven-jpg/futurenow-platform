@@ -1,5 +1,6 @@
 'use client';
-// §8.2 차수 개설 — 3스텝(정보 → 진단·정원 → 완료·코드 공유). 한 화면 한 질문, 진행바.
+// §8.2 차수 개설 — 3스텝(이름 → 정원·소개 → 완료·코드 공유). 한 화면 한 질문, 진행바.
+// 차수는 wave 중립(B-4): 사전/사후 선택 없음 — 사후는 개설이 아니라 코치가 차수 상세에서 개시(open_post_wave·ADR-55).
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, ProgressBar, Stepper } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
@@ -16,27 +17,6 @@ const inputStyle: CSSProperties = {
   fontSize: 15,
 };
 
-function WaveCard({ active, title, desc, onClick }: { active: boolean; title: string; desc: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        all: 'unset',
-        flex: 1,
-        cursor: 'pointer',
-        padding: 'var(--space-4)',
-        borderRadius: 'var(--radius)',
-        border: `1.5px solid ${active ? 'var(--color-accent)' : 'var(--color-border)'}`,
-        background: active ? 'var(--color-accent-soft)' : 'var(--color-surface-2)',
-      }}
-    >
-      <div className="t-body" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{title}</div>
-      <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 2 }}>{desc}</div>
-    </button>
-  );
-}
-
 export function CreateCohort({
   code = 'RSTUV',
   onCreate,
@@ -51,7 +31,6 @@ export function CreateCohort({
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [wave, setWave] = useState<'pre' | 'post'>('pre');
   const [cap, setCap] = useState(10);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -125,11 +104,7 @@ export function CreateCohort({
 
       {step === 2 && (
         <section>
-          <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 18, margin: '0 0 var(--space-4)' }}>진단 종류와 정원</h2>
-          <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
-            <WaveCard active={wave === 'pre'} title="사전 진단" desc="세미나 시작 전" onClick={() => setWave('pre')} />
-            <WaveCard active={wave === 'post'} title="종료 진단" desc="세미나 마친 뒤" onClick={() => setWave('post')} />
-          </div>
+          <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 18, margin: '0 0 var(--space-4)' }}>정원과 소개</h2>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
             <span className="t-body" style={{ color: 'var(--color-text)' }}>정원</span>
             <Stepper value={cap} min={1} max={100} onChange={setCap} label="정원" />
