@@ -36,7 +36,7 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title="그룹 리포트" subtitle="사전 진단 · 차수 평균" backHref={backTo} homeHref="/coach" action={<HeaderActions />} />
+      <AppHeader variant="sub" title="그룹 리포트" subtitle="사전 진단 · 차수 평균" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
       <div style={{ marginTop: 'var(--space-4)' }}>
         {scores.length === 0 ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>

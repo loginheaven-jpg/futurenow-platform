@@ -58,8 +58,8 @@ describe('AdminMembers (본부 — 승인 대기 + 멤버 관리)', () => {
     const withAction = render({ headerActions: <span>ADMIN_HDR</span> });
     expect(withAction).toContain('본부'); // AppHeader title
     expect(withAction).toContain('ADMIN_HDR'); // action 슬롯 전달
-    // X2b: root 모드 — 로고=홈 링크(/admin), 뒤로 없음
-    expect(withAction).toContain('href="/admin"');
+    // A′-2: root 로고=통합 홈 링크(/home), 뒤로 없음
+    expect(withAction).toContain('href="/home"');
     expect(withAction).not.toContain('aria-label="뒤로"');
   });
 });

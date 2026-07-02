@@ -16,8 +16,8 @@ describe('ConsoleHome (코치 콘솔 셸 — Step 3.1)', () => {
     expect(html).toContain('코치 콘솔');
     expect(html).toContain('김코치');
     expect(html).toContain('HDR_ACT'); // AppHeader action 슬롯으로 전달됨
-    // X2b: root 모드 — 로고=홈 링크(/coach), 뒤로 없음
-    expect(html).toContain('href="/coach"');
+    // A′-2: root 로고=통합 홈 링크(/home), 뒤로 없음
+    expect(html).toContain('href="/home"');
     expect(html).not.toContain('aria-label="뒤로"');
   });
 

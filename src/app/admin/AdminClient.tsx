@@ -60,7 +60,7 @@ export function AdminClient({
       currentUserId={currentUserId}
       busyId={busyId}
       appBusyId={appBusyId}
-      headerActions={<HeaderActions homeHref="/admin" navHref="/coach" navLabel="코치 콘솔" />}
+      headerActions={<HeaderActions homeHref="/home" navHref="/coach" navLabel="코치 콘솔" />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
       onApprove={(id) => decide(id, 'approved')}

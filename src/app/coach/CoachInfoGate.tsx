@@ -54,7 +54,7 @@ export function CoachInfoGate({ userId, initialPhone, initialKpc }: { userId: st
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="flow" title="인도자 정보 확인" subtitle="인도자 콘솔을 열기 전에 몇 가지만 확인할게요" />
+      <AppHeader variant="sub" title="인도자 정보 확인" subtitle="인도자 콘솔을 열기 전에 몇 가지만 확인할게요" homeHref="/home" />
 
       {error ? <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>{error}</p> : null}
 

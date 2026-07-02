@@ -45,7 +45,7 @@ export default async function CoachReportPage({
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/coach" action={<HeaderActions />} />
+      <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
       {interpretation ? (
         <section
           style={{

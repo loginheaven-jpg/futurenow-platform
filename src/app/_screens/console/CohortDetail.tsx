@@ -138,7 +138,7 @@ export function CohortDetail({
 
   return (
     <div>
-      <AppHeader variant="sub" title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} backHref={backHref} homeHref="/coach" action={headerActions} />
+      <AppHeader variant="sub" title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} backHref={backHref} homeHref="/home" action={headerActions} />
 
       {/* 관리(마감·정원) — 헤더 메뉴. 인도자 화면이라 의미색 허용 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>

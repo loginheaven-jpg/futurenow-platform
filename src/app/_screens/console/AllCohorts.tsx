@@ -22,7 +22,7 @@ export function AllCohorts({
 }) {
   return (
     <div>
-      <AppHeader variant="sub" title="모든 차수" backHref={backHref} homeHref="/coach" action={headerActions} />
+      <AppHeader variant="sub" title="모든 차수" backHref={backHref} homeHref="/home" action={headerActions} />
       {cohorts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 'var(--space-8) var(--space-4)' }}>
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>

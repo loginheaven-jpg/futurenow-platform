@@ -44,7 +44,7 @@ export function AdminMembers({
 }) {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="root" title="본부" subtitle="코치 신청·멤버 관리" homeHref="/admin" action={headerActions} />
+      <AppHeader variant="root" title="본부" subtitle="코치 신청·멤버 관리" homeHref="/home" action={headerActions} />
 
       {/* ① 승인 대기 — 코치 신청 큐(멤버 역할 관리와 구분) */}
       <section style={{ marginBottom: 'var(--space-6)' }}>

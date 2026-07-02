@@ -8,7 +8,7 @@
 > 문서 버전: **v1.0** (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ + 문항 원문 · AlertSignal(ADR-19) · 디자인 시스템 v3 구현(색 토큰·공용 UI 12종·응답 위젯 5종·리포트 시각화 5종·ResponseRunner) · 코치 콘솔·본부(코치 승인·역할관리) · 참여 프로필(ADR-32))
 > **v1.0 도달(2026-06-30~07-01)**: X1 색 팔레트 확정 · X2 공통 셸 모드(AppHeader root/sub/flow) · 진입 1~3(공개 소개 현관·플로우 헤더·참여자 홈) · 차수 소개(description) · 진단-1(재진단 허용+dedup ADR-33 · 중간저장 `response_drafts` ADR-34) · 완료 후 착지(A-2, Completion→홈) · 마감 a11y(오류 텍스트 대비). 프로덕션 라이브(Vercel, futurenow-platform.vercel.app).
 > **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46) · A3 본부 코치 신청 큐(승인 대기 구분)+운영자 로그인 알림(ADR-47) · A4 성별 남/여 2값(마이그 `20260702002311`·ADR-48) · A5 코드 전달(복사·공유·`?code=` deep-link·ADR-49) · A6 빈/로딩/에러 상태 감사+ConsoleHome 빈 상태(ADR-50). **트랙 A(화면 완결성) 완료.**
-> **트랙 A′(네비게이션 통합 홈, 진행 중, 2026-07-02)**: A′-1 역할 감금 해제(통합 홈·비대칭 개방 — /home·/my/cohorts 개방·loginOutcome 전원 /home·MemberHome 운영 카드·ADR-51, ADR-45 부분 대체). 이후 A′-2(홈 복귀 homeHref 정합)·A′-3(인증 현관 복귀)·A′-4(뒤로가기 출처 기반)·A′-5(홈 인지성·ADR 최종 정합) 예정.
+> **트랙 A′(네비게이션 통합 홈, 진행 중, 2026-07-02)**: A′-1 역할 감금 해제(통합 홈·비대칭 개방 — /home·/my/cohorts 개방·loginOutcome 전원 /home·MemberHome 운영 카드·ADR-51, ADR-45 부분 대체) · A′-2 홈 복귀 homeHref 통일(콘솔·본부·차수·리포트·내정보 전부 /home · CoachInfoGate flow→sub). 이후 A′-3(인증 현관 복귀)·A′-4(뒤로가기 출처 기반)·A′-5(홈 인지성·ADR 최종 정합) 예정.
 > **남은 미결(plan.md)**: B③ 리포트 **자동 해석 문구(AI 생성)** 구현 대기 — 시각화 5종은 구현 완료, AI 게이트웨이 위치(plan §1)·Q5(문구 검수) 결정 선결. 그 외 다크 모드 색·접근성 키보드 정밀화는 후속.
 
 ---
@@ -634,7 +634,7 @@ interface AlertPlugin<S = unknown> {
 - **리포트 시각화 5종 + 배치**(§5·§6, B③ 구현 완료): 나침반=덤벨·간격=레이더(사후 네이비13% 면+사전 회색 점선)·GROW+F=충전막대(사후 네이비·사전 회색)·활력=띠 이동(시들음/중간/번성 저채도 구간+상태배지)·돌봄 신호=조건부 배너(저채도 `--care-*`). 배치: 돌봄→헤드라인(활력·나침반)→깊이(간격·GROW)→주관식, 데스크톱 2×2/모바일 1열. **본문 시각물 네이비·회색, 의미색은 돌봄 배너에만.** 명명(시들음·원씽)은 리포트에서만(§9.4). `src/instruments/futurenow/report/*` + `report.tsx`(ReportPlugin: renderScreen·renderGroup·renderPdf[react-pdf, 서버 전용]). 미리보기 `/preview/report`. **InstrumentModule 최종 조립** = `src/instruments/futurenow/index.ts`.
 - **경계 결정(directive 2026-06-28, ADR-21)**: 리포트 차트군(Dumbbell·Radar·ChargeBars·VitalityBand·CareBanner)은 **인스트루먼트 소유** 확정(`report/visuals.tsx`) — 진단별 명명·데이터가 박히므로 코어 중립 부품이 아니다. design_system §7 의 '코어' 기재는 **오기로 정정**. 진단↛코어 경계(CLAUDE §1) 유지, 차트는 공유 디자인 토큰만 참조. **활력 구간 경계 확정**(11~17 중간·18~25 번성). **PDF 생성 라우트(renderToBuffer)는 다음 단위**(renderPdf 구현·타입·빌드는 완료, 서버 전용).
 - **보류(design_system §9)**: 코치/운영자 콘솔·`CohortPreview`. **착수 금지.**
-- **셸 홈 복귀(트랙 A1·ADR-45, 2026-07-02)**: root 화면 우측 액션(`HeaderActions`)에 홈 아이콘 링크(`homeHref`) — `usePathname`으로 **현재=홈이면 생략**(자기참조 방지). sub 화면은 `AppHeader`(variant='sub')가 이미 홈 아이콘을 렌더하므로 액션엔 미전달(중복 회피). 역할 거점(참여자/home·코치/coach·운영자/admin). 실노출=`/account`·`/my/cohorts`.
+- **셸 홈 복귀(트랙 A1·ADR-45, 2026-07-02)**: root 화면 우측 액션(`HeaderActions`)에 홈 아이콘 링크(`homeHref`) — `usePathname`으로 **현재=홈이면 생략**(자기참조 방지). sub 화면은 `AppHeader`(variant='sub')가 이미 홈 아이콘을 렌더하므로 액션엔 미전달(중복 회피). **(A′-2·ADR-51)** 전 화면 homeHref 를 **통합 홈 `/home`**으로 통일(역할별 거점 폐지) — 콘솔·본부·차수·리포트·내 정보 어디서든 홈 아이콘·로고가 `/home`으로 복귀. `CoachInfoGate` flow→sub(홈 복귀 어포던스 부여).
 - **러너 후속(갱신 2026-07-01)**: **진행 저장/재개 — 구현 완료**(진단-1B·ADR-34: `response_drafts` 서버 draft + localStorage 자동 + `draftLocation` 안 푼 첫 필수 문항 재계산, step 미저장으로 셔플 안전). **subjectProfile 수집 화면 — 구현 완료**(`ProfileForm`·ADR-32, `/join` 흐름 `start→profile→runner`). **접근성 키보드 정밀화는 미구현 유지**(plan §2 — 후속).
 
 ---
