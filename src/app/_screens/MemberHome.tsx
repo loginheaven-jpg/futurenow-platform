@@ -1,7 +1,8 @@
-// 멤버 홈 본문(프레젠테이션 — 부수효과 없음). 진입-3: 진행 중 진단(조건부 골드 틴트 카드) + 내 활동 리스트 + 코드 참여.
+// 통합 홈 본문(프레젠테이션 — 부수효과 없음). 진입-3: (코치·운영자)운영 진입 카드 + 진행 중 진단(골드 틴트) + 내 활동 + 코드 참여.
 // 데이터 = listMyCohorts(my_cohorts RPC). pre_done=false = 진행 중 진단(가입했으나 사전 미완). 참여자 팔레트·의미색 0(§0.4).
+// role: 코치·운영자에게만 '운영' 카드(→/coach·/admin) 노출(A′-1 역할 감금 해제 — 홈은 전원 개방·카드는 자격자만).
 import type { CSSProperties } from 'react';
-import type { MyCohortSummary } from '@/contracts';
+import type { MyCohortSummary, Role } from '@/contracts';
 
 const cta: CSSProperties = { width: '100%', textDecoration: 'none' };
 const rowBase: CSSProperties = {
@@ -30,7 +31,8 @@ function ActivityRow({ href, title, subtitle, disabled }: { href?: string; title
   return disabled || !href ? <div style={style}>{body}</div> : <a href={href} style={style}>{body}</a>;
 }
 
-export function MemberHome({ greetingName, cohorts }: { greetingName: string; cohorts: MyCohortSummary[] }) {
+export function MemberHome({ greetingName, cohorts, role = 'user' }: { greetingName: string; cohorts: MyCohortSummary[]; role?: Role }) {
+  const isStaff = role === 'coach' || role === 'admin'; // 콘솔 접근 자격(운영자는 코치 콘솔도 열람 가능)
   // 진행 중 진단: pre_done=false 중 가장 최근 가입(joinedAt desc) 1건
   const inProgress = [...cohorts].filter((c) => !c.preDone).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))[0] ?? null;
   const total = cohorts.length;
@@ -42,6 +44,17 @@ export function MemberHome({ greetingName, cohorts }: { greetingName: string; co
       <p className="t-body-lg" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-6)' }}>
         {greetingName}님, 반가워요.
       </p>
+
+      {/* 운영 — 코치·운영자만(인사말 아래·활동 위). 중립 팔레트(참여자 미노출·§0.4). 콘솔/본부는 자격 게이트가 별도 방어. */}
+      {isStaff ? (
+        <section style={{ marginBottom: 'var(--space-6)' }}>
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', fontWeight: 600, margin: '0 0 var(--space-2)' }}>운영</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <ActivityRow href="/coach" title="인도자 콘솔" subtitle="내 차수·돌봄 관리" />
+            {role === 'admin' ? <ActivityRow href="/admin" title="본부" subtitle="코치 신청·멤버 관리" /> : null}
+          </div>
+        </section>
+      ) : null}
 
       {/* 진행 중 진단 — 조건부 최상단(골드 틴트 블록) */}
       {inProgress ? (

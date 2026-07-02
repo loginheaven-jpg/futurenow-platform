@@ -53,4 +53,24 @@ describe('MemberHome (멤버 홈 본문 — 진입-3)', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort()]} />);
     expect(html).not.toMatch(/--care|--danger|--warning/);
   });
+
+  it('참여자(기본) — 운영 카드 미노출(A′-1 자격자만)', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[]} />);
+    expect(html).not.toContain('인도자 콘솔');
+    expect(html).not.toContain('본부');
+  });
+
+  it('코치 — 인도자 콘솔 카드(→/coach), 본부 미노출', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="김코치" cohorts={[]} role="coach" />);
+    expect(html).toContain('인도자 콘솔');
+    expect(html).toContain('href="/coach"');
+    expect(html).not.toContain('본부');
+  });
+
+  it('운영자 — 인도자 콘솔 + 본부 카드(→/admin)', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="관리자" cohorts={[]} role="admin" />);
+    expect(html).toContain('인도자 콘솔');
+    expect(html).toContain('본부');
+    expect(html).toContain('href="/admin"');
+  });
 });

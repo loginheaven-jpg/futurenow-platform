@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { loginOutcome } from './loginOutcome';
 
 describe('loginOutcome (로그인 결과 → 행로)', () => {
-  it('코치·운영자 → /coach', () => {
-    expect(loginOutcome({ error: null, hasSession: true, role: 'coach' }).redirect).toBe('/coach');
-    expect(loginOutcome({ error: null, hasSession: true, role: 'admin' }).redirect).toBe('/coach');
+  it('전원 → /home (A′-1 통합 홈 — 역할 감금 해제)', () => {
+    expect(loginOutcome({ error: null, hasSession: true, role: 'coach' }).redirect).toBe('/home');
+    expect(loginOutcome({ error: null, hasSession: true, role: 'admin' }).redirect).toBe('/home');
   });
 
-  it('멤버(user) → /home (자기 홈)', () => {
+  it('멤버(user) → /home', () => {
     const o = loginOutcome({ error: null, hasSession: true, role: 'user' });
     expect(o.redirect).toBe('/home');
     expect(o.error).toBeUndefined();

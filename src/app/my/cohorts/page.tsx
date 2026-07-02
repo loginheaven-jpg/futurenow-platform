@@ -1,6 +1,6 @@
-// 내 차수 목록(/my/cohorts, Step 1.2) — 멤버 시점. 서버 컴포넌트(세션 의존 → force-dynamic).
-// 게이트: 미인증→/login·코치·운영자→/coach(/home 패턴 재사용). 셸 헤더+로그아웃+뒤로(→/home).
-// 데이터: listMyCohorts(my_cohorts DEFINER RPC). 앱은 cohorts·responses 직접 select 안 함.
+// 내 차수 목록(/my/cohorts, Step 1.2) — 본인 참여 차수. 서버 컴포넌트(세션 의존 → force-dynamic).
+// 게이트: 미인증→/login 만(A′-1 역할 감금 해제 — 코치·운영자도 본인 참여 차수를 본다). 셸 헤더+로그아웃+홈(→/home).
+// 데이터: listMyCohorts(my_cohorts DEFINER RPC, auth.uid() 스코프). 앱은 cohorts·responses 직접 select 안 함.
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
@@ -14,7 +14,6 @@ export default async function MyCohortsPage() {
   const ctx = createCoreContext(await createServerSupabase());
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
-  if (me.role !== 'user') redirect('/coach');
 
   const cohorts = await ctx.listMyCohorts();
 
