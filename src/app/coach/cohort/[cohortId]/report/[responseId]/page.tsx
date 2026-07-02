@@ -36,13 +36,21 @@ export default async function CoachReportPage({
 
   // 비차단(B③-A): existing 해석만 즉시 조회(빠름). 없으면 null → 패널이 마운트 후 생성 트리거.
   //   게이트웨이 동기 블로킹 제거 → 리포트 시각화가 첫 열람부터 즉시 렌더. 해석 실패는 패널이 재시도 안내(시각화 무관).
+  // 초기 VM(B③-B): effective(coach본 우선) + AI 원문(되돌리기 대상) + 코치 수정 여부(출처·되돌리기 노출).
   const existing = await ctx.getInterpretation(responseId).catch(() => null);
-  const initialInterpretation = (existing?.effective ?? null) as InterpretationContent | null;
+  const initialVm =
+    existing && existing.effective && existing.aiContent
+      ? {
+          effective: existing.effective as InterpretationContent,
+          ai: existing.aiContent as InterpretationContent,
+          coachEdited: existing.coachContent != null,
+        }
+      : null;
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
-      <InterpretationPanel responseId={responseId} initial={initialInterpretation} />
+      <InterpretationPanel responseId={responseId} initial={initialVm} />
       <div style={{ marginTop: 'var(--space-4)' }}>
         <ReportScreen scores={scores} />
       </div>
