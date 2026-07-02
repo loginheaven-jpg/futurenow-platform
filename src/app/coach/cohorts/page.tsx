@@ -3,15 +3,14 @@
 // 카드 요약(응답·총원·돌봄) = /coach 와 동일 집계(공용 buildCohortRoster). 계약·DB 변경 0 — 기존 부품 조합.
 import { redirect } from 'next/navigation';
 import { instrumentDisplay, type CohortSummary } from '@/app/_screens/types';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 import { buildCohortRoster } from '../rosterModel';
 import { AllCohortsClient } from './AllCohortsClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AllCohortsPage() {
-  const ctx = createCoreContext(await createServerSupabase());
+  const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용

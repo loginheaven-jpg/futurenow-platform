@@ -5,8 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import type { InterpretationContent } from '@/instruments/futurenow/report/interpretation';
@@ -23,7 +22,7 @@ export default async function CoachReportPage({
   params: Promise<{ cohortId: string; responseId: string }>;
 }) {
   const { cohortId, responseId } = await params;
-  const ctx = createCoreContext(await createServerSupabase());
+  const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로

@@ -9,13 +9,12 @@ import { CoachInfoGate } from './CoachInfoGate';
 import { ConsoleHomeClient } from './ConsoleHomeClient';
 import { buildCohortRoster } from './rosterModel';
 import { instrumentDisplay, type CohortSummary, type RosterMember } from '@/app/_screens/types';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function CoachConsolePage() {
-  const ctx = createCoreContext(await createServerSupabase());
+  const ctx = await createServerContext();
   const me = await ctx.currentUser();
 
   if (!me) redirect('/login');

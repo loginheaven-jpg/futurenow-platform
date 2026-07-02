@@ -1,7 +1,6 @@
 'use server';
 // 차수 개설 서버 액션 — 코어 createCohort(코드 생성·재시도). instrumentId 는 현재 futurenow 단일.
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 
 export async function createCohortAction(input: {
   name: string;
@@ -9,7 +8,7 @@ export async function createCohortAction(input: {
   description?: string;
 }): Promise<{ code?: string; error?: string }> {
   try {
-    const ctx = createCoreContext(await createServerSupabase());
+    const ctx = await createServerContext();
     const cohort = await ctx.createCohort({
       name: input.name,
       instrumentId: 'futurenow',

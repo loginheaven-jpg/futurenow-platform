@@ -6,13 +6,12 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { MemberHome } from '@/app/_screens/MemberHome';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MemberHomePage() {
-  const ctx = createCoreContext(await createServerSupabase());
+  const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
 

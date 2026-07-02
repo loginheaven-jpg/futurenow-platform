@@ -2,8 +2,7 @@
 // 코치 리포트 해석 — 비차단 생성 트리거(B③-A) + 코치 검수(B③-B). 서버 렌더 경로에서 aiChat 동기 await 를 제거(§1)하고,
 // 클라이언트가 마운트 후 생성 트리거·검수(수정/되돌리기)를 호출한다. 권한은 전부 RLS 이중(코치/운영자, 참여자 비노출).
 import type { Answers } from '@/contracts';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { generateInterpretation, type InterpretationContent } from '@/instruments/futurenow/report/interpretation';
 
@@ -20,7 +19,7 @@ export async function ensureInterpretationAction(
   responseId: string,
 ): Promise<{ ok: true; vm: InterpretationVM } | { ok: false; error: string }> {
   try {
-    const ctx = createCoreContext(await createServerSupabase());
+    const ctx = await createServerContext();
     const me = await ctx.currentUser();
     if (!me || me.role === 'user') return { ok: false, error: 'forbidden' }; // 코치/운영자 전용
     const resp = await ctx.getResponse<Answers, unknown>(responseId); // RLS 미달 → throw → catch
@@ -42,7 +41,7 @@ export async function saveCoachInterpretationAction(
   content: InterpretationContent,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const ctx = createCoreContext(await createServerSupabase());
+    const ctx = await createServerContext();
     await ctx.setCoachInterpretation(responseId, content);
     return { ok: true };
   } catch {
@@ -55,7 +54,7 @@ export async function clearCoachInterpretationAction(
   responseId: string,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const ctx = createCoreContext(await createServerSupabase());
+    const ctx = await createServerContext();
     await ctx.clearCoachInterpretation(responseId);
     return { ok: true };
   } catch {

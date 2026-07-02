@@ -2,16 +2,15 @@
 // 참여 진입 서버 액션 — 코어 CoreContext(서버 supabase) 경유. 진단 채점·알림은 인스트루먼트.
 // 응답 저장(B①) 후 채점(B②)→알림(B④) 주입은 **코어 오케스트레이션**이 책임(ADR-19).
 import type { Answers, CohortPreviewMeta } from '@/contracts';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 import { futurenowAlerts } from '@/instruments/futurenow/alerts';
 import { participantMirror, type ParticipantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { futurenowAnswersSchema, futurenowProfileSchema } from '@/instruments/futurenow/schema';
 
 async function ctx() {
-  const sb = await createServerSupabase();
-  return createCoreContext(sb, {
+  // 서버 CoreContext(S-1: proxy 검증 신원 주입) + 진단 validators.
+  return createServerContext({
     validators: { futurenow: { answersSchema: futurenowAnswersSchema, profileSchema: futurenowProfileSchema } },
   });
 }

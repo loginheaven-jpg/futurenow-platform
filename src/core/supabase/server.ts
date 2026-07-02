@@ -2,7 +2,10 @@
 // Next 16: cookies() 는 async (await 필수). getAll/setAll 쿠키 규약(@supabase/ssr 0.12).
 // 매 요청마다 새 클라이언트를 만든다(요청 간 공유 금지).
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import type { CoreContext } from '@/contracts';
+import { createCoreContext, type CreateCoreContextOptions } from '@/core/context';
+import { VERIFIED_UID_HEADER } from '@/core/auth/verifiedIdentity';
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -34,4 +37,23 @@ export async function createServerSupabase() {
       },
     },
   );
+}
+
+// proxy(S-1)가 세팅한 검증된 신원 헤더를 읽는다(서버 전용). 없으면 null → CoreContext 가 getUser fallback.
+//   요청 스코프 밖(빌드 등)에서 headers() 가 throw 하면 null(안전 폴백).
+export async function readVerifiedUserId(): Promise<string | null> {
+  try {
+    const h = await headers();
+    return h.get(VERIFIED_UID_HEADER);
+  } catch {
+    return null;
+  }
+}
+
+// 서버 CoreContext 합성(S-1) — createServerSupabase + proxy 검증 신원(verifiedUserId) 주입.
+//   서버 컴포넌트·서버 액션 공용. 이 경로의 currentUser 는 getUser(Auth 왕복) 생략(헤더 있을 때) → 요청당 Auth 왕복 2→1.
+export async function createServerContext(options: CreateCoreContextOptions = {}): Promise<CoreContext> {
+  const sb = await createServerSupabase();
+  const verifiedUserId = await readVerifiedUserId();
+  return createCoreContext(sb, { ...options, verifiedUserId });
 }

@@ -7,8 +7,7 @@ import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { MirrorView } from '@/app/_screens/MirrorView';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 import { participantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { latestPerUser } from '@/app/_lib/latestPerUser';
@@ -17,7 +16,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function MyReportPage({ params }: { params: Promise<{ cohortId: string }> }) {
   const { cohortId } = await params;
-  const ctx = createCoreContext(await createServerSupabase());
+  const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login'); // 전 역할 개방(A′-1 정합) — 본인 참여분만 순화 뷰. RLS(responses_select user_id=auth.uid())가 본인 스코프. 코치/운영자도 자기 참여 리포트 열람.
 

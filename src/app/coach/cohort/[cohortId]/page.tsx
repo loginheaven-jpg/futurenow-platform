@@ -2,8 +2,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { instrumentDisplay, type CohortSummary } from '@/app/_screens/types';
 import { buildCohortRoster } from '@/app/coach/rosterModel';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 import { CohortDetailClient } from './CohortDetailClient';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +19,7 @@ export default async function CohortDetailPage({
   const sp = await searchParams;
   const from = typeof sp.from === 'string' ? sp.from : null;
   const backHref = from === 'console' ? '/coach' : '/coach/cohorts';
-  const ctx = createCoreContext(await createServerSupabase());
+  const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로

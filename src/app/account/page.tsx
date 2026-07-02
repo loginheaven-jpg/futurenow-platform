@@ -3,14 +3,13 @@
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
-import { createCoreContext } from '@/core/context';
-import { createServerSupabase } from '@/core/supabase/server';
+import { createServerContext } from '@/core/supabase/server';
 import { AccountClient } from './AccountClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AccountPage() {
-  const ctx = createCoreContext(await createServerSupabase());
+  const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
 

@@ -70,13 +70,19 @@ function rowToInterpretation(r: InterpretationRow): InterpretationView {
 export interface CreateCoreContextOptions {
   /** 진단별 경계 검증 스키마(zod). saveResponse 시 instrumentId 로 조회해 강제. */
   validators?: Record<InstrumentId, InstrumentValidators>;
+  /**
+   * proxy(S-1)가 getUser 로 서명·만료를 검증해 헤더로 전달한 user.id. 있으면 loadCurrentUser 가 getUser(Auth 왕복)를 생략하고
+   * 이 id 로 users SELECT 만 한다(요청당 Auth 왕복 2→1). **검증 우회 아님** — proxy 가 매 요청 검증하고, 신뢰 경계(인입 헤더 strip)로 위조 불가.
+   * 서버 전용(createServerContext 가 주입). 클라이언트/헤더 부재 시 null → 기존 getUser fallback.
+   */
+  verifiedUserId?: string | null;
 }
 
 export function createCoreContext(
   supabase: SupabaseClient,
   options: CreateCoreContextOptions = {},
 ): CoreContext {
-  return new SupabaseCoreContext(supabase, options.validators ?? {});
+  return new SupabaseCoreContext(supabase, options.validators ?? {}, options.verifiedUserId ?? null);
 }
 
 // resolve_cohort_by_code(SECURITY DEFINER) 가 반환하는 차수 공개 메타(비민감).
@@ -96,13 +102,14 @@ interface CohortMeta {
 
 class SupabaseCoreContext implements CoreContext {
   // 요청 단위 currentUser 캐시(C-2·ADR-60). CoreContext 는 요청마다 새로 생성(createCoreContext) → 인스턴스 캐시 = 요청 단위.
-  //   getPhone/setProfile/requireRole/requireUser 등이 내부적으로 currentUser 를 재호출해도 getUser(Auth 검증)+users SELECT 는 1회.
-  //   **검증 우회 아님** — 최초 1회 getUser(Auth 서버 JWT 검증)는 그대로 수행하고, 그 검증된 Promise 를 요청 내에서 공유할 뿐(재검증만 생략).
+  //   getPhone/setProfile/requireRole/requireUser 등이 내부적으로 currentUser 를 재호출해도 신원 해석+users SELECT 는 1회.
+  //   **검증 우회 아님** — verifiedUserId(S-1) 있으면 proxy 가 이미 검증(서명·만료)한 신원을 재사용, 없으면 getUser 로 직접 검증. 재검증만 생략.
   private currentUserPromise?: Promise<CoreUser | null>;
 
   constructor(
     private readonly sb: SupabaseClient,
     private readonly validators: Record<string, InstrumentValidators>,
+    private readonly verifiedUserId: string | null = null,
   ) {}
 
   // ── 인증·신원 ──────────────────────────────────────────────
@@ -111,19 +118,28 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   private async loadCurrentUser(): Promise<CoreUser | null> {
-    const { data, error } = await this.sb.auth.getUser();
-    if (error || !data?.user) return null;
-    const authUser = data.user;
+    let userId: string;
+    let fallbackEmail: string | undefined;
+    if (this.verifiedUserId) {
+      // proxy(S-1)가 getUser 로 서명·만료를 이미 검증한 신원(신뢰 경계 헤더) → Auth 왕복 생략. 재검증만 생략(우회 아님).
+      userId = this.verifiedUserId;
+    } else {
+      // fallback: 검증 헤더 없음(클라이언트 컨텍스트·proxy 미실행 경계·공개 경로) → getUser 로 직접 검증.
+      const { data, error } = await this.sb.auth.getUser();
+      if (error || !data?.user) return null;
+      userId = data.user.id;
+      fallbackEmail = data.user.email;
+    }
     const { data: profile } = await this.sb
       .from('users')
       .select('id,email,name,nickname,role')
-      .eq('id', authUser.id)
+      .eq('id', userId)
       .maybeSingle();
 
-    // 프로필 행이 아직 없으면(가입 트리거 직후 등) auth 정보로 최소 구성.
+    // 프로필 행이 아직 없으면(가입 트리거 직후 등) 최소 구성(email 은 fallback 경로에서만 확보 가능).
     return profile
       ? rowToUser(profile as UserRow)
-      : { id: authUser.id, email: authUser.email ?? '', name: null, nickname: null, role: 'user' };
+      : { id: userId, email: fallbackEmail ?? '', name: null, nickname: null, role: 'user' };
   }
 
   // 비동기(승인 2026-06-26): 현재 사용자를 해석한 뒤 역할을 검사한다.
