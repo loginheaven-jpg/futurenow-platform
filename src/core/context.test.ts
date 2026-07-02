@@ -46,6 +46,18 @@ describe('currentUser / requireRole', () => {
     expect(u).toMatchObject({ id: 'u1', role: 'coach' });
   });
 
+  it('currentUser 요청 단위 메모이즈(C-2) — N회+내부 재호출에도 users SELECT 1회', async () => {
+    const { ctx, calls } = ctxWith({
+      authUser: { id: 'u1', email: 'u1@t.test' },
+      tableResolver: (c) => (c.table === 'users' ? { data: userRow('u1', 'coach'), error: null } : { data: null, error: null }),
+    });
+    await ctx.currentUser();
+    await ctx.currentUser();
+    await ctx.requireRole('coach'); // 내부에서 currentUser 재호출
+    const userSelects = calls.filter((c) => c.table === 'users' && c.op === 'select').length;
+    expect(userSelects).toBe(1); // 인스턴스(=요청) 단위 메모이즈 — 과거 3회 → 1회. 검증(getUser)은 최초 1회 그대로 수행.
+  });
+
   it('requireRole 계층 판정(비동기)', async () => {
     const { ctx } = ctxWith({
       authUser: { id: 'c1' },

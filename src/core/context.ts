@@ -95,6 +95,11 @@ interface CohortMeta {
 }
 
 class SupabaseCoreContext implements CoreContext {
+  // 요청 단위 currentUser 캐시(C-2·ADR-60). CoreContext 는 요청마다 새로 생성(createCoreContext) → 인스턴스 캐시 = 요청 단위.
+  //   getPhone/setProfile/requireRole/requireUser 등이 내부적으로 currentUser 를 재호출해도 getUser(Auth 검증)+users SELECT 는 1회.
+  //   **검증 우회 아님** — 최초 1회 getUser(Auth 서버 JWT 검증)는 그대로 수행하고, 그 검증된 Promise 를 요청 내에서 공유할 뿐(재검증만 생략).
+  private currentUserPromise?: Promise<CoreUser | null>;
+
   constructor(
     private readonly sb: SupabaseClient,
     private readonly validators: Record<string, InstrumentValidators>,
@@ -102,6 +107,10 @@ class SupabaseCoreContext implements CoreContext {
 
   // ── 인증·신원 ──────────────────────────────────────────────
   async currentUser(): Promise<CoreUser | null> {
+    return (this.currentUserPromise ??= this.loadCurrentUser());
+  }
+
+  private async loadCurrentUser(): Promise<CoreUser | null> {
     const { data, error } = await this.sb.auth.getUser();
     if (error || !data?.user) return null;
     const authUser = data.user;
