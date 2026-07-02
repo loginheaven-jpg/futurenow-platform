@@ -1,17 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AdminMembers } from './AdminMembers';
-import type { MemberSummary } from '@/contracts';
+import type { CoachApplication, MemberSummary } from '@/contracts';
 
 const members: MemberSummary[] = [
   { id: 'a1', email: 'admin@t.test', name: '운영자', role: 'admin' },
   { id: 'u1', email: 'user@t.test', name: '이멤버', role: 'user' },
   { id: 'c1', email: 'coach@t.test', name: null, role: 'coach' },
 ];
+const applications: CoachApplication[] = [
+  { id: 'app1', userId: 'u1', applicantName: '김신청', status: 'pending', motivation: '함께 돕고 싶어요', reviewedBy: null, reviewedAt: null, reviewNote: null, createdAt: '2026-07-02T00:00:00Z' },
+];
 const noop = () => {};
-const html = renderToStaticMarkup(<AdminMembers members={members} currentUserId="a1" onPromote={noop} onDemote={noop} />);
+const render = (over: Partial<Parameters<typeof AdminMembers>[0]> = {}) =>
+  renderToStaticMarkup(
+    <AdminMembers members={members} applications={applications} currentUserId="a1" onPromote={noop} onDemote={noop} onApprove={noop} onReject={noop} {...over} />,
+  );
 
-describe('AdminMembers (본부 멤버 관리)', () => {
+describe('AdminMembers (본부 — 승인 대기 + 멤버 관리)', () => {
+  const html = render();
+
   it('역할 라벨·이름(null 폴백)·이메일 렌더', () => {
     expect(html).toContain('운영자');
     expect(html).toContain('코치');
@@ -32,10 +40,22 @@ describe('AdminMembers (본부 멤버 관리)', () => {
     expect(demoteCount).toBe(1); // coach(c1) 한 줄만
   });
 
-  it('셸 헤더(본부) + headerActions 슬롯 전달(로그아웃·내 정보) — Step 3.1', () => {
-    const withAction = renderToStaticMarkup(
-      <AdminMembers members={members} currentUserId="a1" onPromote={noop} onDemote={noop} headerActions={<span>ADMIN_HDR</span>} />,
-    );
+  it('승인 대기 섹션 — 신청자·계기 + 승인/거절 버튼(멤버 관리와 구분)', () => {
+    expect(html).toContain('승인 대기 (1)');
+    expect(html).toContain('김신청');
+    expect(html).toContain('함께 돕고 싶어요');
+    expect(html).toContain('거절');
+    expect(html).toContain('멤버 관리'); // 두 섹션 구분 헤더
+  });
+
+  it('승인 대기 0건 — 빈 안내(신청자 미노출)', () => {
+    const empty = render({ applications: [] });
+    expect(empty).toContain('대기 중인 신청이 없어요');
+    expect(empty).not.toContain('김신청');
+  });
+
+  it('셸 헤더(본부) + headerActions 슬롯 전달 — Step 3.1', () => {
+    const withAction = render({ headerActions: <span>ADMIN_HDR</span> });
     expect(withAction).toContain('본부'); // AppHeader title
     expect(withAction).toContain('ADMIN_HDR'); // action 슬롯 전달
     // X2b: root 모드 — 로고=홈 링크(/admin), 뒤로 없음

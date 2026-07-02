@@ -11,11 +11,13 @@ export function ConsoleHomeClient({
   careMembers,
   cohorts,
   isAdmin = false,
+  pendingCoachApps = 0,
 }: {
   coachName: string;
   careMembers: RosterMember[];
   cohorts: CohortSummary[];
   isAdmin?: boolean; // 운영자만 [본부]→/admin 노출
+  pendingCoachApps?: number; // 운영자 로그인 알림 — 승인 대기 신청 건수(>0 이면 배너)
 }) {
   const router = useRouter();
   return (
@@ -23,6 +25,8 @@ export function ConsoleHomeClient({
       coachName={coachName}
       careMembers={careMembers}
       cohorts={cohorts}
+      pendingCoachApps={pendingCoachApps}
+      onGoAdmin={() => router.push('/admin')}
       headerActions={<HeaderActions homeHref="/coach" navHref={isAdmin ? '/admin' : undefined} navLabel={isAdmin ? '본부' : undefined} />}
       onOpenCohort={(id) => router.push(`/coach/cohort/${id}`)}
       onAllCohorts={() => router.push('/coach/cohorts')}

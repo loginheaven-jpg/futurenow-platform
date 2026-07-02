@@ -61,12 +61,17 @@ export default async function CoachConsolePage() {
     }
   }
 
+  // 운영자 로그인 알림: admin 은 로그인 시 /coach 로 착지 → 승인 대기 신청이 있으면 본부로 유도하는 배너.
+  const isAdmin = me.role === 'admin';
+  const pendingCoachApps = isAdmin ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
+
   return (
     <ConsoleHomeClient
       coachName={me.name ?? me.email}
       careMembers={careMembers}
       cohorts={summaries}
-      isAdmin={me.role === 'admin'}
+      isAdmin={isAdmin}
+      pendingCoachApps={pendingCoachApps}
     />
   );
 }

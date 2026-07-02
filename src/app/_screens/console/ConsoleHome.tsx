@@ -10,6 +10,8 @@ export function ConsoleHome({
   coachName,
   careMembers,
   cohorts,
+  pendingCoachApps = 0,
+  onGoAdmin,
   onOpenCohort,
   onAllCohorts,
   onNewCohort,
@@ -19,6 +21,8 @@ export function ConsoleHome({
   coachName: string;
   careMembers: RosterMember[];
   cohorts: CohortSummary[];
+  pendingCoachApps?: number; // 운영자 로그인 알림 — 승인 대기 건수(>0 이면 본부 유도 배너)
+  onGoAdmin?: () => void;
   onOpenCohort?: (id: string) => void;
   onAllCohorts?: () => void;
   onNewCohort?: () => void;
@@ -28,6 +32,28 @@ export function ConsoleHome({
   return (
     <div>
       <AppHeader variant="root" title="코치 콘솔" subtitle={coachName} homeHref="/coach" action={headerActions} />
+
+      {pendingCoachApps > 0 && (
+        <button
+          type="button"
+          onClick={onGoAdmin}
+          className="t-body"
+          style={{
+            width: '100%',
+            textAlign: 'left',
+            minHeight: 'var(--tap-min)',
+            padding: 'var(--space-3) var(--space-4)',
+            marginBottom: 'var(--space-6)',
+            borderRadius: 'var(--radius)',
+            border: '1.5px solid var(--color-accent)',
+            background: 'var(--color-accent-soft)',
+            color: 'var(--color-primary)',
+            cursor: 'pointer',
+          }}
+        >
+          승인 대기 {pendingCoachApps}건 · 본부에서 확인 ›
+        </button>
+      )}
 
       {careMembers.length > 0 && (
         <section style={{ marginBottom: 'var(--space-6)' }}>

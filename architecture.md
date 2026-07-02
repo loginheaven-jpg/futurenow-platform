@@ -7,7 +7,7 @@
 >
 > 문서 버전: **v1.0** (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ + 문항 원문 · AlertSignal(ADR-19) · 디자인 시스템 v3 구현(색 토큰·공용 UI 12종·응답 위젯 5종·리포트 시각화 5종·ResponseRunner) · 코치 콘솔·본부(코치 승인·역할관리) · 참여 프로필(ADR-32))
 > **v1.0 도달(2026-06-30~07-01)**: X1 색 팔레트 확정 · X2 공통 셸 모드(AppHeader root/sub/flow) · 진입 1~3(공개 소개 현관·플로우 헤더·참여자 홈) · 차수 소개(description) · 진단-1(재진단 허용+dedup ADR-33 · 중간저장 `response_drafts` ADR-34) · 완료 후 착지(A-2, Completion→홈) · 마감 a11y(오류 텍스트 대비). 프로덕션 라이브(Vercel, futurenow-platform.vercel.app).
-> **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46). 이후 A3(본부 신청 구분·알림)·A4(성별 남/여 2값)·A5(코드 전달)·A6(에러/빈/로딩) 예정.
+> **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46) · A3 본부 코치 신청 큐(승인 대기 구분)+운영자 로그인 알림(ADR-47). 이후 A4(성별 남/여 2값)·A5(코드 전달)·A6(에러/빈/로딩) 예정.
 > **남은 미결(plan.md)**: B③ 리포트 **자동 해석 문구(AI 생성)** 구현 대기 — 시각화 5종은 구현 완료, AI 게이트웨이 위치(plan §1)·Q5(문구 검수) 결정 선결. 그 외 다크 모드 색·접근성 키보드 정밀화는 후속.
 
 ---
@@ -236,9 +236,9 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | `/reset` | 공개 | 비밀번호 재설정 요청(Step 2.3). `resetPasswordForEmail`(redirectTo=origin/reset/confirm). enumeration 방지(동일 안내). 비번=auth.users |
 | `/reset/confirm` | 공개 | 새 비밀번호 설정(Step 2.3). 복구 세션 게이트(있을 때만 `updateUser`) → 역할별 랜딩. 만료 시 재요청 안내 |
 | `/account` | 로그인(3페르소나) | 내 정보(Step 2.5·**A2 완결**). 이름=`setName`(users.name)·전화=`setPhone`(user_contacts)·**프로필(성별·생년·종교·신앙연수)=`setProfile`**·**(코치)KPC=`setMyCoachKpc`**·비번=`updateUser`. 프리필=`getProfile`/`getMyCoachKpc`. role 쓰기 경로 없음(2.S2 봉쇄). 게이트 미인증→/login |
-| `/admin` | 운영자 | `listUsers` + 멤버 역할 직접 변경(`setUserRole`→set_user_role RPC). 운영자 게이트(§8.6 첫 조각) |
+| `/admin` | 운영자 | 두 섹션 구분(A3) — **승인 대기**(`listCoachApplications('pending')`→`decideCoachApplication` 승인/거절, 승인 시 user→coach 원자 승격) + **멤버 관리**(`listUsers`+`setUserRole`). 운영자 게이트(§8.6) |
 | `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속) |
-| `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag) |
+| `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag). **(운영자) 승인 대기 N건 배너→/admin**(A3 로그인 알림 — admin 은 로그인 시 여기 착지) |
 | `/coach/new` | 코치/운영자 | `createCohort` |
 | `/coach/cohort/[cohortId]` | 코치/운영자 | `getCohort`·`listEnrollments`·`listResponses`·`listAlerts`·`listCohortMembers` → 3숫자·3묶음 + 관리(마감·정원=`updateCohort`) |
 | `/coach/cohort/[cohortId]/report/[responseId]` | 코치/운영자 | `getResponse`→B② `score`→`ReportScreen`(재사용). 접근=responses RLS(차수 코치+운영자+본인). 참여자 UI 경로 없음 |
@@ -687,6 +687,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-44 | `motivation`(참여 계기) = 응답 전용 선택 필드(계정 아님) 부활 | ADR-32는 계정 복사 4필드만 확정 — motivation 미포함. 참여 계기는 시점 종속이라 계정(`user_profiles`) 아닌 응답 스냅샷 소유. 사전 wave `subjectProfile` 선택 필드(`futurenowProfileSchema.motivation?`)·`ProfileForm`이 프리필/스킵과 무관하게 수집. `profileFieldsByWave`(계정 4필드)엔 미포함. 채점·리포트·거울은 answers만 → 다운스트림 0. 계약·DB 무변경(G1=0) |
 | ADR-45 | 셸 홈 복귀 어포던스 = `HeaderActions.homeHref`(root 노출·자기참조 생략, sub 는 AppHeader 홈 아이콘 재사용) | 트랙 A1(항목5). root 화면(내 정보·내 차수 등)에서 홈 복귀가 로고 링크뿐이라 비발견적 → 우측 액션에 홈 아이콘 링크. `usePathname`으로 **현재=홈이면 생략**(자기참조 방지 — /home·/coach·/admin). sub 는 `AppHeader`(variant='sub')가 이미 홈 아이콘 → homeHref 미전달(중복 회피). 역할 거점(참여자/home·코치/coach·운영자/admin). `HomeIcon` export 재사용. 계약·DB·마이그 0. directive 2026-07-02 승인 |
 | ADR-46 | 프로필 허용값 소유 계층 — 성별=전 서비스 공통 상수(`contracts/vocab.ts`) / 종교·KPC형식·생년상한=퓨처나우(`instruments/futurenow/profileVocab.ts`) + /account 프로필·KPC 편집 완결 | 트랙 A2(항목6). 성별 표기는 전 서비스 일관(지휘부 확정) → 계약 인접 런타임 상수로 원천화. 배럴은 `export type *`(타입 전용)이라 사용처는 `@/contracts/vocab` **직접 import**(척추 성격 보존). 종교 목록은 진단 고유라 인스트루먼트 소유(둘의 소유 계층 분리). **TS 상수 ↔ SQL CHECK 이원**(SQL은 상수 미참조) — 값 변경 시 마이그(CHECK+`handle_new_user` sanitize) 동반 의무(A4). /account 는 `getProfile`/`setProfile`·(코치)`getMyCoachKpc`/`setMyCoachKpc` 재사용(계약 +0). AuthGate·ProfileForm 로컬 상수 → 공유 import(중복 제거·렌더 무변경). 마이그 0. directive 2026-07-02 승인 |
+| ADR-47 | 본부 코치 신청 큐(승인 대기) 구분 + 운영자 로그인 알림(/coach 배너) | 트랙 A3(항목4). /admin 을 두 섹션으로 구분 — ① 승인 대기(`listCoachApplications('pending')`→`decide_coach_application` 승인/거절, 승인 시 user→coach 원자 승격) ② 멤버 관리(기존 `setUserRole`). 운영자는 로그인 시 /coach 로 착지(loginOutcome 무변경)하므로 pending>0 이면 콘솔 상단에 '승인 대기 N건·본부에서 확인' 배너(→/admin). 계약·DB·마이그 0(기존 메서드·RPC·RLS admin 게이트 재사용). directive 2026-07-02 승인 |
 
 ---
 

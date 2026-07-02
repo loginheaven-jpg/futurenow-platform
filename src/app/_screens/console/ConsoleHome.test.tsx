@@ -25,4 +25,15 @@ describe('ConsoleHome (코치 콘솔 셸 — Step 3.1)', () => {
     const html = renderToStaticMarkup(<ConsoleHome coachName="김코치" careMembers={care} cohorts={cohorts} />);
     expect(html).not.toContain('HDR_ACT');
   });
+
+  it('운영자 승인 대기 배너 — pendingCoachApps>0 이면 본부 유도(A3 로그인 알림)', () => {
+    const html = renderToStaticMarkup(<ConsoleHome coachName="김코치" careMembers={care} cohorts={cohorts} pendingCoachApps={2} />);
+    expect(html).toContain('승인 대기 2건');
+    expect(html).toContain('본부에서 확인');
+  });
+
+  it('pendingCoachApps=0(기본) 이면 배너 없음', () => {
+    const html = renderToStaticMarkup(<ConsoleHome coachName="김코치" careMembers={care} cohorts={cohorts} />);
+    expect(html).not.toContain('본부에서 확인');
+  });
 });

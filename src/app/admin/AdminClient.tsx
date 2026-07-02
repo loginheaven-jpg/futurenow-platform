@@ -1,17 +1,26 @@
 'use client';
-// 본부 멤버 관리 클라이언트 래퍼 — 승격/강등 액션 + 갱신. 데이터는 서버 컴포넌트가 주입.
+// 본부 클라이언트 래퍼 — 코치 신청 결정(승인/거절) + 멤버 역할(승격/강등) 액션 + 갱신. 데이터는 서버 컴포넌트가 주입.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { MemberSummary } from '@/contracts';
+import type { CoachApplication, MemberSummary } from '@/contracts';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { AdminMembers } from './AdminMembers';
-import { setUserRoleAction } from './actions';
+import { decideCoachApplicationAction, setUserRoleAction } from './actions';
 
-export function AdminClient({ members, currentUserId }: { members: MemberSummary[]; currentUserId: string }) {
+export function AdminClient({
+  members,
+  applications,
+  currentUserId,
+}: {
+  members: MemberSummary[];
+  applications: CoachApplication[];
+  currentUserId: string;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [appBusyId, setAppBusyId] = useState<string | null>(null);
 
   async function change(userId: string, role: 'coach' | 'user') {
     setBusyId(userId);
@@ -29,14 +38,33 @@ export function AdminClient({ members, currentUserId }: { members: MemberSummary
     }
   }
 
+  async function decide(applicationId: string, decision: 'approved' | 'rejected') {
+    setAppBusyId(applicationId);
+    try {
+      const res = await decideCoachApplicationAction(applicationId, decision);
+      if (res.ok) {
+        toast.success(decision === 'approved' ? '코치로 승인했어요.' : '신청을 거절했어요.');
+        router.refresh();
+      } else {
+        toast.error('신청 처리에 실패했어요.');
+      }
+    } finally {
+      setAppBusyId(null);
+    }
+  }
+
   return (
     <AdminMembers
       members={members}
+      applications={applications}
       currentUserId={currentUserId}
       busyId={busyId}
+      appBusyId={appBusyId}
       headerActions={<HeaderActions homeHref="/admin" navHref="/coach" navLabel="코치 콘솔" />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
+      onApprove={(id) => decide(id, 'approved')}
+      onReject={(id) => decide(id, 'rejected')}
     />
   );
 }

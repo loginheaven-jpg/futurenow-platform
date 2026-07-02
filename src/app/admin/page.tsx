@@ -13,6 +13,7 @@ export default async function AdminPage() {
   if (me.role === 'user') redirect('/home'); // 멤버는 자기 집으로
   if (me.role !== 'admin') redirect('/coach'); // 코치(비운영자)는 코치 콘솔로
 
-  const members = await ctx.listUsers();
-  return <AdminClient members={members} currentUserId={me.id} />;
+  // 멤버 목록(직접 역할관리) + 코치 신청 대기 큐(승인/거절) — 둘을 구분해 본부에 노출.
+  const [members, applications] = await Promise.all([ctx.listUsers(), ctx.listCoachApplications('pending')]);
+  return <AdminClient members={members} applications={applications} currentUserId={me.id} />;
 }
