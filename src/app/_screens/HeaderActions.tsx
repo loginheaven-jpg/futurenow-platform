@@ -19,17 +19,6 @@ const linkStyle = {
   padding: '0 var(--space-2)',
 } as const;
 
-// 홈 아이콘 링크 — AppHeader 의 iconLink 형상과 정합(정사각 탭타깃·on-accent).
-const iconLinkStyle = {
-  color: 'var(--color-text-on-accent)',
-  textDecoration: 'none',
-  minWidth: 'var(--tap-min)',
-  minHeight: 'var(--tap-min)',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-} as const;
-
 export function HeaderActions({ homeHref, navHref, navLabel }: { homeHref?: string; navHref?: string; navLabel?: string }) {
   const pathname = usePathname();
   // 현재 화면이 곧 홈이면 홈 링크 생략(자기참조 방지 — /home·/coach·/admin 에서 스스로 가리키지 않음).
@@ -37,8 +26,10 @@ export function HeaderActions({ homeHref, navHref, navLabel }: { homeHref?: stri
   return (
     <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
       {showHome ? (
-        <a href={homeHref} aria-label="홈" style={iconLinkStyle}>
+        // 홈 복귀 = 라벨드 컨트롤(아이콘 + '홈' 텍스트) — 인지성 강화(A′-5). 자기참조(현재=홈)면 위에서 생략.
+        <a href={homeHref} aria-label="홈" className="t-caption" style={{ ...linkStyle, gap: 'var(--space-1)' }}>
           <HomeIcon />
+          홈
         </a>
       ) : null}
       {navHref && navLabel ? (

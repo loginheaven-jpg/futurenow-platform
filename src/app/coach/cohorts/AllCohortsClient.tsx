@@ -13,7 +13,7 @@ export function AllCohortsClient({ cohorts }: { cohorts: CohortSummary[] }) {
         cohorts={cohorts}
         headerActions={<HeaderActions />}
         backHref="/coach"
-        onOpenCohort={(id) => router.push(`/coach/cohort/${id}`)}
+        onOpenCohort={(id) => router.push(`/coach/cohort/${id}?from=cohorts`)}
         onNewCohort={() => router.push('/coach/new')}
       />
     </div>

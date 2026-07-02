@@ -66,7 +66,8 @@ export function AppHeader({
       {variant === 'root' ? (
         // root: 로고(홈 링크)가 제목 겸함
         <div>
-          <a href={homeHref} aria-label="홈" style={{ textDecoration: 'none' }}>
+          {/* 로고 = 서비스 정체성(제목이 접근성 이름). 홈 복귀는 우측 라벨드 홈 컨트롤이 담당(A′-5 역할 명료화). 로고도 홈으로 링크(브랜드 관례). */}
+          <a href={homeHref} style={{ textDecoration: 'none' }}>
             <span className="t-h1" style={{ color: ON_ACCENT }}>{title}</span>
           </a>
           {subtitle ? <div className="t-caption" style={{ color: 'var(--navy-300)' }}>{subtitle}</div> : null}

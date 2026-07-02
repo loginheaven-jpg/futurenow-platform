@@ -28,7 +28,7 @@ export function ConsoleHomeClient({
       pendingCoachApps={pendingCoachApps}
       onGoAdmin={() => router.push('/admin')}
       headerActions={<HeaderActions homeHref="/home" navHref={isAdmin ? '/admin' : undefined} navLabel={isAdmin ? '본부' : undefined} />}
-      onOpenCohort={(id) => router.push(`/coach/cohort/${id}`)}
+      onOpenCohort={(id) => router.push(`/coach/cohort/${id}?from=console`)}
       onAllCohorts={() => router.push('/coach/cohorts')}
       onNewCohort={() => router.push('/coach/new')}
       onOpenMember={(composite) => {

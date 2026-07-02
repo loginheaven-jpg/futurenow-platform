@@ -8,8 +8,18 @@ import { CohortDetailClient } from './CohortDetailClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CohortDetailPage({ params }: { params: Promise<{ cohortId: string }> }) {
+export default async function CohortDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ cohortId: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
+}) {
   const { cohortId } = await params;
+  // 뒤로가기 출처(A′-4): 콘솔 경유(?from=console)→콘솔, 그 외(목록 경유·직접 진입)→모든 차수 목록 기본.
+  const sp = await searchParams;
+  const from = typeof sp.from === 'string' ? sp.from : null;
+  const backHref = from === 'console' ? '/coach' : '/coach/cohorts';
   const ctx = createCoreContext(await createServerSupabase());
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
@@ -37,5 +47,5 @@ export default async function CohortDetailPage({ params }: { params: Promise<{ c
     code: cohort.code,
   };
 
-  return <CohortDetailClient summary={summary} roster={roster} status={cohort.status} maxMembers={cohort.maxMembers} />;
+  return <CohortDetailClient summary={summary} roster={roster} status={cohort.status} maxMembers={cohort.maxMembers} backHref={backHref} />;
 }

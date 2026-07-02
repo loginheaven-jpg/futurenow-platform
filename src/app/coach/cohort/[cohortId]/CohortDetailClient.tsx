@@ -13,11 +13,13 @@ export function CohortDetailClient({
   roster,
   status,
   maxMembers,
+  backHref,
 }: {
   summary: CohortSummary;
   roster: RosterMember[];
   status: 'active' | 'archived';
   maxMembers: number;
+  backHref: string; // 진입 출처 기반(A′-4) — 서버가 ?from= 로 산출(콘솔/목록)
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -41,7 +43,7 @@ export function CohortDetailClient({
         status={status}
         maxMembers={maxMembers}
         headerActions={<HeaderActions />}
-        backHref="/coach"
+        backHref={backHref}
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
         onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}
