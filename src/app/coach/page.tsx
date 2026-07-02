@@ -31,35 +31,41 @@ export default async function CoachConsolePage() {
   }
 
   const cohorts = await ctx.listCohortsByCoach(me.id);
-  const summaries: CohortSummary[] = [];
-  const careMembers: RosterMember[] = [];
 
-  for (const c of cohorts) {
-    const [enrollments, responses, alerts, members] = await Promise.all([
-      ctx.listEnrollments(c.id),
-      ctx.listResponses({ instrumentId: c.instrumentId, cohortId: c.id }),
-      ctx.listAlerts(c.id),
-      ctx.listCohortMembers(c.id),
-    ]);
+  // 차수 간 순차 왕복(구 1+4N wall-clock)을 병렬로 접는다(C-3·ADR-61). 차수 내 4쿼리는 이미 Promise.all.
+  // map 결과 배열은 입력(cohorts) 순서를 보존 → summaries·careMembers 순서 불변. 예외는 for 루프와 동일하게 전파(첫 reject → 페이지 error, 조용한 삼킴 없음).
+  const perCohort = await Promise.all(
+    cohorts.map(async (c) => {
+      const [enrollments, responses, alerts, members] = await Promise.all([
+        ctx.listEnrollments(c.id),
+        ctx.listResponses({ instrumentId: c.instrumentId, cohortId: c.id }),
+        ctx.listAlerts(c.id),
+        ctx.listCohortMembers(c.id),
+      ]);
 
-    const { roster, responded, waiting, careCount } = buildCohortRoster({ enrollments, responses, alerts, members });
+      const { roster, responded, waiting, careCount } = buildCohortRoster({ enrollments, responses, alerts, members });
 
-    summaries.push({
-      id: c.id,
-      name: c.name,
-      instrumentLabel: instrumentDisplay(c.instrumentId).label,
-      responded,
-      total: responded + waiting,
-      careCount,
-      code: c.code,
-    });
+      const summary: CohortSummary = {
+        id: c.id,
+        name: c.name,
+        instrumentLabel: instrumentDisplay(c.instrumentId).label,
+        responded,
+        total: responded + waiting,
+        careCount,
+        code: c.code,
+      };
 
-    // 먼저 챙길 분(전 차수 합산). id=`${cohortId}__${responseId}` — 리포트 진입에 cohortId 필요.
-    for (const m of roster) {
-      if (m.status !== 'care') continue;
-      careMembers.push({ id: `${c.id}__${m.id}`, name: m.name, status: 'care', note: `${m.note ?? ''} · ${c.name}` });
-    }
-  }
+      // 먼저 챙길 분(차수별). id=`${cohortId}__${responseId}` — 리포트 진입에 cohortId 필요.
+      const care: RosterMember[] = roster
+        .filter((m) => m.status === 'care')
+        .map((m) => ({ id: `${c.id}__${m.id}`, name: m.name, status: 'care', note: `${m.note ?? ''} · ${c.name}` }));
+
+      return { summary, care };
+    }),
+  );
+
+  const summaries: CohortSummary[] = perCohort.map((r) => r.summary);
+  const careMembers: RosterMember[] = perCohort.flatMap((r) => r.care); // 전 차수 합산(차수 순서 보존)
 
   // 운영자 승인 대기 배너: admin 은 로그인 시 /home 착지(loginOutcome 전원 /home)이나 콘솔 진입 시에도 pending 을 알리도록 배너 유지(홈 '본부' 카드 건수와 병행).
   const isAdmin = me.role === 'admin';
