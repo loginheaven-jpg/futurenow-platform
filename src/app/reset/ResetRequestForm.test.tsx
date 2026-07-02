@@ -12,6 +12,7 @@ describe('ResetRequestForm (재설정 요청)', () => {
     expect(html).toContain('이메일');
     expect(html).toContain('재설정 링크 받기');
     expect(html).toContain('href="/login"');
+    expect(html).toContain('href="/"'); // 현관 복귀(A′-3)
   });
 
   it('제출 후: 동일 안내 노출, 이메일 폼 숨김(enumeration 방지)', () => {

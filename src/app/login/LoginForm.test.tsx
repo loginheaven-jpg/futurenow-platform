@@ -40,6 +40,7 @@ describe('LoginForm (로그인 전용 — 가입 폼 없음)', () => {
     expect(html).toContain('href="/join"');
     expect(html).toContain('href="/signup"'); // 로그인 ↔ 가입
     expect(html).toContain('href="/reset"'); // 비밀번호 재설정
+    expect(html).toContain('href="/"'); // 현관 복귀(A′-3)
   });
 
   it('에러는 담담한 카피로 표시(의미색 토큰 없음)', () => {

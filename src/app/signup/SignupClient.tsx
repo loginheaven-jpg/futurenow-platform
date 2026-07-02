@@ -3,6 +3,7 @@
 // 프로필은 metadata 로 트리거 저장(세션 무관). 코치 신청은 세션 확보 후 createCoachApplication RPC(+ setPhone) — client metadata 신뢰 폐기(§3.4).
 // 착지는 loginOutcome 재사용(역할별). 비밀번호·토큰을 로그·URL 에 싣지 않는다.
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
@@ -79,6 +80,12 @@ export function SignupClient() {
       {error ? <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)' }}>{error}</p> : null}
       {notice ? <p className="t-body" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)' }}>{notice}</p> : null}
       <AuthGate allowCoachApply title="회원가입" busy={busy} onSignup={onSignup} onLogin={onLogin} />
+      {/* 막다른 상태 해소(A′-3) — 로그인 페이지·현관 출구 */}
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-4)', textAlign: 'center' }}>
+        이미 계정이 있으신가요? <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인</a>
+        {' · '}
+        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
+      </p>
     </div>
   );
 }

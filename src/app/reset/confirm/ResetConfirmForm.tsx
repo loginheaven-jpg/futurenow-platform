@@ -3,6 +3,7 @@
 //   checking(세션 확인 중) · expired(복구 세션 없음 → 재요청) · ready(비번 2회 입력) · done(성공).
 // 복구 세션 게이트: phase='ready' 일 때만 비번 입력 노출 — 세션 없이 변경 불가(Client 가 phase 결정).
 import { type CSSProperties } from 'react';
+import Link from 'next/link';
 import { Button } from '@/core/ui';
 
 const inputStyle: CSSProperties = {
@@ -88,6 +89,13 @@ export function ResetConfirmForm({
           <Button onClick={onContinue} style={{ width: '100%' }}>계속하기</Button>
         </div>
       ) : null}
+
+      {/* 출구 — 어느 단계에서도 로그인·현관으로 나갈 수 있게(A′-3) */}
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
+        <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인</a>
+        {' · '}
+        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
+      </p>
     </div>
   );
 }

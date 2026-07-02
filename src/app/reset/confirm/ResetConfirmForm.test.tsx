@@ -9,10 +9,12 @@ const render = (phase: ResetPhase, over: Partial<Parameters<typeof ResetConfirmF
   );
 
 describe('ResetConfirmForm (새 비밀번호 — 복구 세션 게이트)', () => {
-  it('ready: 비밀번호 2회 입력 + 변경 버튼', () => {
+  it('ready: 비밀번호 2회 입력 + 변경 버튼 + 로그인·현관 출구(A′-3)', () => {
     const html = render('ready');
     expect((html.match(/type="password"/g) ?? []).length).toBe(2);
     expect(html).toContain('비밀번호 변경');
+    expect(html).toContain('href="/login"');
+    expect(html).toContain('href="/"'); // 현관 복귀
   });
 
   it('expired: 비밀번호 입력 없음(게이트) + 재요청 링크 /reset', () => {

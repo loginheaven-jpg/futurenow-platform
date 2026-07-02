@@ -2,6 +2,7 @@
 // 비밀번호 재설정 요청 폼(프레젠테이션 — 부수효과 없음). 제출 후 항상 동일 안내(enumeration 방지)는 Client 가 주입.
 // 참여자 팔레트·중립. /login 보조 링크는 일반 앵커(라우터 컨텍스트 불요 → 렌더 테스트 가능).
 import { type CSSProperties } from 'react';
+import Link from 'next/link';
 import { Button } from '@/core/ui';
 
 const inputStyle: CSSProperties = {
@@ -68,6 +69,8 @@ export function ResetRequestForm({
 
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
         <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인으로 돌아가기</a>
+        {' · '}
+        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
       </p>
     </div>
   );
