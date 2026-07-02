@@ -21,7 +21,7 @@ import { enrollByCode as enrollAction, finalizeResponse, getCohortMeta, previewC
 
 type Step = 'resolving' | 'code' | 'preview' | 'auth' | 'start' | 'profile' | 'runner' | 'done';
 
-export function JoinClient({ initialCohortId = null }: { initialCohortId?: string | null }) {
+export function JoinClient({ initialCohortId = null, initialCode = null }: { initialCohortId?: string | null; initialCode?: string | null }) {
   const toast = useToast();
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -33,7 +33,7 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
     [supabase],
   );
 
-  const [step, setStep] = useState<Step>(initialCohortId ? 'resolving' : 'code');
+  const [step, setStep] = useState<Step>(initialCohortId || initialCode ? 'resolving' : 'code');
   const [code, setCode] = useState('');
   const [meta, setMeta] = useState<CohortPreviewMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +59,26 @@ export function JoinClient({ initialCohortId = null }: { initialCohortId?: strin
       cancelled = true;
     };
   }, [initialCohortId]);
+
+  // 초대 링크 deep-link(A5): ?code= 있으면 코드 입력을 건너뛰고 미리보기로 자동 진입(cohort= 재진입이 우선).
+  useEffect(() => {
+    if (initialCohortId || !initialCode) return;
+    let cancelled = false;
+    (async () => {
+      const m = await previewCohort(initialCode);
+      if (cancelled) return;
+      if (m) {
+        setCode(initialCode);
+        setMeta(m);
+        setStep('preview');
+      } else {
+        setStep('code'); // 코드 무효 → 수동 입력 폴백
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialCohortId, initialCode]);
 
   async function onCode(c: string) {
     setError(null);

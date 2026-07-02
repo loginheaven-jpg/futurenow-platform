@@ -56,8 +56,39 @@ export function CreateCohort({
   const [createdCode, setCreatedCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null); // 복사/공유 피드백(토스트 의존 회피 — preview 안전)
 
   const shownCode = createdCode ?? code;
+
+  // 초대 링크 = 현재 오리진의 /join?code=… (JoinClient 가 code 파라미터를 읽어 미리보기로 deep-link).
+  function inviteUrl(): string {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/join?code=${shownCode}`;
+  }
+
+  async function copyText(text: string, which: 'code' | 'link') {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(which);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      // 클립보드 불가(비보안 컨텍스트·권한 거부) — 화면의 코드를 직접 읽을 수 있으니 조용히 무시.
+    }
+  }
+
+  async function shareInvite() {
+    const url = inviteUrl();
+    const text = `미래의 나 진단에 초대합니다. 코드 ${shownCode} 를 입력하고 5분만 시간 내 주세요.`;
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: '미래의 나 진단 초대', text, url });
+      } catch {
+        // 사용자 취소 또는 공유 실패 — 조용히(폴백 강요하지 않음).
+      }
+      return;
+    }
+    await copyText(url, 'link'); // Web Share 미지원 → 링크 복사로 폴백
+  }
 
   async function handleCreate() {
     if (!onCreate) {
@@ -134,8 +165,12 @@ export function CreateCohort({
             <div className="t-display tnum" style={{ color: 'var(--color-accent)', letterSpacing: 6 }}>{shownCode}</div>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-            <Button variant="ghost" style={{ flex: 1 }}>코드 복사</Button>
-            <Button variant="ghost" style={{ flex: 1 }}>초대 링크 공유</Button>
+            <Button variant="ghost" style={{ flex: 1 }} onClick={() => copyText(shownCode, 'code')}>
+              {copied === 'code' ? '복사됨 ✓' : '코드 복사'}
+            </Button>
+            <Button variant="ghost" style={{ flex: 1 }} onClick={shareInvite}>
+              {copied === 'link' ? '링크 복사됨 ✓' : '초대 링크 공유'}
+            </Button>
           </div>
           <div style={{ background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', padding: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
             <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 0, whiteSpace: 'pre-line' }}>
