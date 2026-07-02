@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button, OtpInput } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 
-export function CodeInput({ onSubmit }: { onSubmit?: (code: string) => void }) {
+export function CodeInput({ onSubmit, onExperience }: { onSubmit?: (code: string) => void; onExperience?: () => void }) {
   const [code, setCode] = useState('');
   return (
     <div>
@@ -18,6 +18,17 @@ export function CodeInput({ onSubmit }: { onSubmit?: (code: string) => void }) {
       <Button onClick={() => onSubmit?.(code)} disabled={code.length !== 5} style={{ width: '100%' }}>
         확인
       </Button>
+      {/* 체험 진단 진입(트랙 D-2) — 코드 입력 시도 후 '없음'을 깨닫는 지점. general 예약 차수로 합류(딥링크 동형). */}
+      {onExperience ? (
+        <div style={{ marginTop: 'var(--space-6)', textAlign: 'center' }}>
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
+            세미나 코드가 없으신가요? 체험 진단을 해보실 수 있어요.
+          </p>
+          <Button variant="ghost" onClick={onExperience} style={{ width: '100%' }}>
+            체험 진단 시작하기
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

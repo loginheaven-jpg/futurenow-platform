@@ -28,4 +28,14 @@ describe('CohortPreview — 이중 제출 가드(busy) + 소개', () => {
     expect(html).not.toContain('들어가는 중');
     expect(html).toContain('청년부 8주 여정'); // description 노출(진입-2)
   });
+
+  it('general(체험): 인도자·인원 숨김 + 체험 문구 + [체험 시작하기], 진단·예상 시간 유지 (D-2)', () => {
+    const g: CohortPreviewMeta = { ...meta, name: '체험 진단', description: null, coachName: null, memberCount: 0 };
+    const html = renderToStaticMarkup(<CohortPreview meta={g} onEnter={noop} onCancel={noop} isGeneral />);
+    expect(html).toContain('체험 시작하기');
+    expect(html).toContain('세미나 코드 없이'); // 체험 문구
+    expect(html).not.toContain('인도자'); // general 엔 무의미 — 숨김
+    expect(html).not.toContain('현재 인원'); // 숨김
+    expect(html).toContain('예상 시간'); // 진단·예상 시간은 유지
+  });
 });

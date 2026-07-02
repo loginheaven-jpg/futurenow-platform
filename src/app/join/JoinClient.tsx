@@ -12,6 +12,7 @@ import { futurenowFlow } from '@/instruments/futurenow/flow';
 import { futurenowAnswersSchema, futurenowProfileSchema } from '@/instruments/futurenow/schema';
 import { CodeInput } from '@/app/_screens/entry/CodeInput';
 import { CohortPreview } from '@/app/_screens/entry/CohortPreview';
+import { GENERAL_CODE } from '@/app/_screens/entry/general';
 import { AuthGate, type SignupPayload } from '@/app/_screens/entry/AuthGate';
 import { StartGuide } from '@/app/_screens/entry/StartGuide';
 import { ProfileForm, type ProfileStepResult } from '@/app/_screens/entry/ProfileForm';
@@ -206,8 +207,8 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
       {step === 'resolving' && (
         <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>불러오는 중…</p>
       )}
-      {step === 'code' && <CodeInput onSubmit={onCode} />}
-      {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} busy={busy} />}
+      {step === 'code' && <CodeInput onSubmit={onCode} onExperience={() => onCode(GENERAL_CODE)} />}
+      {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} busy={busy} isGeneral={code === GENERAL_CODE} />}
       {step === 'auth' && <AuthGate onSignup={onSignup} onLogin={onLogin} busy={busy} />}
       {step === 'start' && meta && <StartGuide cohortName={meta.name} onStart={onStart} />}
       {step === 'profile' && <ProfileForm accountProfile={accountProfile} onSubmit={onProfileSubmit} busy={busy} />}

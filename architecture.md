@@ -244,7 +244,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | `/reset/confirm` | 공개 | 새 비밀번호 설정(Step 2.3). 복구 세션 게이트(있을 때만 `updateUser`) → `/home`. 만료 시 재요청 안내. **출구(A′-3): 로그인·현관(전 단계)** |
 | `/account` | 로그인(3페르소나) | 내 정보(Step 2.5·**A2 완결**). 이름=`setName`(users.name)·전화=`setPhone`(user_contacts)·**프로필(성별·생년·종교·신앙연수)=`setProfile`**·**(코치)KPC=`setMyCoachKpc`**·비번=`updateUser`. 프리필=`getProfile`/`getMyCoachKpc`. role 쓰기 경로 없음(2.S2 봉쇄). 게이트 미인증→/login |
 | `/admin` | 운영자 | 두 섹션 구분(A3) — **승인 대기**(`listCoachApplications('pending')`→`decideCoachApplication` 승인/거절, 승인 시 user→coach 원자 승격) + **멤버 관리**(`listUsers`+`setUserRole`). 운영자 게이트(§8.6) |
-| `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속). **`?code=` 초대 링크 deep-link(A5)**. **`?wave=post` 사후 진입(B-2)** — getSchema(post)·wave='post' 저장(기본 pre). `?cohort=` 재진입과 함께 실림 |
+| `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속). **`?code=` 초대 링크 deep-link(A5)**. **`?wave=post` 사후 진입(B-2)** — getSchema(post)·wave='post' 저장(기본 pre). `?cohort=` 재진입과 함께 실림. **general 체험(D-2·ADR-63)**: CodeInput 하단 '체험 진단 시작하기' → `onCode(GENERAL_CODE='JOINF')`(딥링크 동형) → CohortPreview `isGeneral`(인도자·인원 숨김·체험 문구) → 기존 enroll→runner 합류. 사전 wave 고정(general 사후 없음) |
 | `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag). **(운영자) 승인 대기 N건 배너→/admin**(콘솔 진입 시). admin 로그인 착지는 **/home**(loginOutcome 전원 /home·ADR-51) — 홈 '본부' 카드에 승인 대기 건수 노출(ADR-59, 배너와 이원) |
 | `/coach/new` | 코치/운영자 | `createCohort` |
 | `/coach/cohort/[cohortId]` | 코치/운영자 | `getCohort`·`listEnrollments`·`listResponses`·`listAlerts`·`listCohortMembers` → 3숫자·3묶음 + 관리(마감·정원=`updateCohort`, **사후 진단 개시=`openPostWave`**·ADR-55). **뒤로=진입 출처(`?from=` 콘솔/목록, 기본 목록·A′-4)** |

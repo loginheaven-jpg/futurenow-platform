@@ -15,11 +15,11 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function CohortPreview({ meta, onEnter, onCancel, busy }: { meta: CohortPreviewMeta; onEnter?: () => void; onCancel?: () => void; busy?: boolean }) {
+export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false }: { meta: CohortPreviewMeta; onEnter?: () => void; onCancel?: () => void; busy?: boolean; isGeneral?: boolean }) {
   const inst = instrumentDisplay(meta.instrumentId);
   return (
     <div>
-      <AppHeader variant="flow" title="이 모임에 들어갑니다" />
+      <AppHeader variant="flow" title={isGeneral ? '체험 진단' : '이 모임에 들어갑니다'} />
       <div
         style={{
           background: 'var(--color-surface-2)',
@@ -33,8 +33,17 @@ export function CohortPreview({ meta, onEnter, onCancel, busy }: { meta: CohortP
         {meta.description ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-line', margin: '0 0 var(--space-4)' }}>{meta.description}</p>
         ) : null}
-        <Row label="인도자" value={meta.coachName ?? '—'} />
-        <Row label="현재 인원" value={`${meta.memberCount}명`} />
+        {/* general 체험: 인도자·인원은 무의미(공개·운영자 소유) → 체험 문구로 대체. 진단·예상 시간은 유지. */}
+        {isGeneral ? (
+          <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
+            세미나 코드 없이 누구나 해볼 수 있는 체험 진단이에요.
+          </p>
+        ) : (
+          <>
+            <Row label="인도자" value={meta.coachName ?? '—'} />
+            <Row label="현재 인원" value={`${meta.memberCount}명`} />
+          </>
+        )}
         <Row label="진단" value={inst.label} />
         <Row label="예상 시간" value={`약 ${inst.minutes}분`} />
       </div>
@@ -44,7 +53,7 @@ export function CohortPreview({ meta, onEnter, onCancel, busy }: { meta: CohortP
 
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
         <Button variant="ghost" onClick={onCancel} disabled={busy} style={{ flex: 1 }}>아니에요</Button>
-        <Button onClick={onEnter} disabled={busy} style={{ flex: 2 }}>{busy ? '들어가는 중…' : '들어가기'}</Button>
+        <Button onClick={onEnter} disabled={busy} style={{ flex: 2 }}>{busy ? '들어가는 중…' : isGeneral ? '체험 시작하기' : '들어가기'}</Button>
       </div>
     </div>
   );
