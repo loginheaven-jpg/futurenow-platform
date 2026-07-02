@@ -35,6 +35,8 @@ export function MemberHome({ greetingName, cohorts, role = 'user' }: { greetingN
   const isStaff = role === 'coach' || role === 'admin'; // 콘솔 접근 자격(운영자는 코치 콘솔도 열람 가능)
   // 진행 중 진단: pre_done=false 중 가장 최근 가입(joinedAt desc) 1건
   const inProgress = [...cohorts].filter((c) => !c.preDone).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))[0] ?? null;
+  // 사후 진단하기: 사후 개시·미완(post_opened && !post_done). 사전 미완이면 위 pre 카드가 우선(B-2).
+  const postPending = [...cohorts].filter((c) => c.postOpened && !c.postDone).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))[0] ?? null;
   const total = cohorts.length;
   const done = cohorts.filter((c) => c.preDone);
   const reportHref = done.length === 1 ? `/my/cohorts/${done[0].cohortId}/report` : '/my/cohorts';
@@ -56,7 +58,7 @@ export function MemberHome({ greetingName, cohorts, role = 'user' }: { greetingN
         </section>
       ) : null}
 
-      {/* 진행 중 진단 — 조건부 최상단(골드 틴트 블록) */}
+      {/* 진행 중 진단 — 조건부 최상단(골드 틴트 블록). 사전 미완 우선, 없으면 사후 개시·미완(B-2). */}
       {inProgress ? (
         <section style={{ background: 'var(--color-accent-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
           <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>진행 중인 진단</p>
@@ -65,6 +67,16 @@ export function MemberHome({ greetingName, cohorts, role = 'user' }: { greetingN
           </p>
           <a className="ui-btn" href={`/join?cohort=${inProgress.cohortId}`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
             이어서 진단하기
+          </a>
+        </section>
+      ) : postPending ? (
+        <section style={{ background: 'var(--color-accent-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
+          <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>사후 진단이 열렸어요</p>
+          <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-4)' }}>
+            {postPending.name} · 세미나를 마친 지금의 나를 담아 주세요.
+          </p>
+          <a className="ui-btn" href={`/join?cohort=${postPending.cohortId}&wave=post`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
+            사후 진단하기
           </a>
         </section>
       ) : null}

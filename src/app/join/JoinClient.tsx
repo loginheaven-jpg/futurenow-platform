@@ -21,7 +21,7 @@ import { enrollByCode as enrollAction, finalizeResponse, getCohortMeta, previewC
 
 type Step = 'resolving' | 'code' | 'preview' | 'auth' | 'start' | 'profile' | 'runner' | 'done';
 
-export function JoinClient({ initialCohortId = null, initialCode = null }: { initialCohortId?: string | null; initialCode?: string | null }) {
+export function JoinClient({ initialCohortId = null, initialCode = null, initialWave = 'pre' }: { initialCohortId?: string | null; initialCode?: string | null; initialWave?: 'pre' | 'post' }) {
   const toast = useToast();
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -213,10 +213,10 @@ export function JoinClient({ initialCohortId = null, initialCode = null }: { ini
       {step === 'profile' && <ProfileForm accountProfile={accountProfile} onSubmit={onProfileSubmit} busy={busy} />}
       {step === 'runner' && meta && (
         <ResponseRunner
-          schema={futurenowFlow.getSchema('pre')}
+          schema={futurenowFlow.getSchema(initialWave)}
           context={context}
           cohortId={meta.id}
-          wave="pre"
+          wave={initialWave}
           subjectProfile={subjectProfile ?? undefined}
           onComplete={async (responseId) => {
             if (busy) return; // 이중 finalize 가드

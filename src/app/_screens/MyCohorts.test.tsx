@@ -43,6 +43,13 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('href="/my/cohorts/co1/report"');
   });
 
+  it('사후 개시·미완(사전 완료) → [사후 진단하기]→/join?cohort=…&wave=post (B-2)', () => {
+    const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: true, postOpened: true, postDone: false })]} />);
+    expect(html).toContain('사후 진단하기');
+    expect(html).toContain('wave=post'); // href 는 &amp; escape — wave=post 존재로 확인
+    expect(html).not.toContain('내 리포트'); // 사후 미완이면 리포트 대신 사후 진단 CTA
+  });
+
   it('참여자 화면 — 의미색 토큰 0', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort()]} />);
     expect(html).not.toMatch(/--care|--danger|--warning/);

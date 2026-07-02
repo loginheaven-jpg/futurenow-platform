@@ -9,7 +9,7 @@
 > **v1.0 도달(2026-06-30~07-01)**: X1 색 팔레트 확정 · X2 공통 셸 모드(AppHeader root/sub/flow) · 진입 1~3(공개 소개 현관·플로우 헤더·참여자 홈) · 차수 소개(description) · 진단-1(재진단 허용+dedup ADR-33 · 중간저장 `response_drafts` ADR-34) · 완료 후 착지(A-2, Completion→홈) · 마감 a11y(오류 텍스트 대비). 프로덕션 라이브(Vercel, futurenow-platform.vercel.app).
 > **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46) · A3 본부 코치 신청 큐(승인 대기 구분)+운영자 로그인 알림(ADR-47) · A4 성별 남/여 2값(마이그 `20260702002311`·ADR-48) · A5 코드 전달(복사·공유·`?code=` deep-link·ADR-49) · A6 빈/로딩/에러 상태 감사+ConsoleHome 빈 상태(ADR-50). **트랙 A(화면 완결성) 완료.**
 > **트랙 A′(네비게이션 통합 홈, 진행 중, 2026-07-02)**: A′-1 역할 감금 해제(통합 홈·비대칭 개방 — /home·/my/cohorts 개방·loginOutcome 전원 /home·MemberHome 운영 카드·ADR-51, ADR-45 부분 대체) · A′-2 홈 복귀 homeHref 통일(콘솔·본부·차수·리포트·내정보 전부 /home · CoachInfoGate flow→sub) · A′-3 인증 영역 현관 복귀·상호 전환(login·signup·reset·reset/confirm → `/`·상호링크, signup 막다른 상태 해소·ADR-52) · A′-4 차수 상세 뒤로가기 출처 기반(`?from=`·ADR-53) · A′-5 root 홈 인지성(라벨드 홈·로고=서비스·ADR-54). **트랙 A′(네비게이션 통합 홈) 완료** — 역할 감금 해제·전 화면 홈 복귀 `/home` 통일·인증 현관 복귀·출처 기반 뒤로가기·홈 인지성. 비대칭 개방(홈 전원·콘솔/본부 게이트) 유지, 데이터 RLS 불변.
-> **트랙 B(사후 진단·차수 라이프사이클, 진행 중, 2026-07-02)**: B-1 사후 인프라·코치 개시(`cohorts.post_opened_at`·`open_post_wave` RPC·my_cohorts/listCohortsByCoach 반환 확장·CohortDetail 개시 컨트롤·ADR-55, responses UNIQUE 미추가로 ADR-33 유지). 이후 B-2(참여자 사후 진입)·B-3(사전↔사후 비교 리포트)·B-4(라이프사이클·죽은 UI 정리) 예정.
+> **트랙 B(사후 진단·차수 라이프사이클, 진행 중, 2026-07-02)**: B-1 사후 인프라·코치 개시(`cohorts.post_opened_at`·`open_post_wave` RPC·my_cohorts/listCohortsByCoach 반환 확장·CohortDetail 개시 컨트롤·ADR-55, responses UNIQUE 미추가로 ADR-33 유지) · B-2 참여자 사후 진입(JoinClient `?wave=post` 파라미터화·MemberHome/MyCohorts '사후 진단하기'·ADR-56). 이후 B-3(사전↔사후 비교 리포트)·B-4(라이프사이클·죽은 UI 정리) 예정.
 > **남은 미결(plan.md)**: B③ 리포트 **자동 해석 문구(AI 생성)** 구현 대기 — 시각화 5종은 구현 완료, AI 게이트웨이 위치(plan §1)·Q5(문구 검수) 결정 선결. 그 외 다크 모드 색·접근성 키보드 정밀화는 후속.
 
 ---
@@ -232,7 +232,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 |---|---|---|
 | `/` | 방문자 | 현관 — 두 갈래(참여하기→/join · 인도자 로그인→/login). 정적, 데이터 없음 |
 | `/home` | 모든 로그인 사용자 | 통합 홈 허브(A′-1·ADR-51). 게이트: **미인증→/login 만**(역할 리다이렉트 제거·전원 개방). 인사 + (코치·운영자)**운영 카드**(→/coach·/admin) + [코드로 세미나 참여]→/join + [내 차수]→/my/cohorts. 셸 헤더+로그아웃 |
-| `/my/cohorts` | 모든 로그인 사용자 | 내 차수 목록(Step 1.2·A′-1 개방). `listMyCohorts`(my_cohorts DEFINER RPC, auth.uid() 스코프) — 차수명·코치명·status·사전/사후 진행. 미완→/join·완료→[내 리포트]. 게이트: 미인증→/login |
+| `/my/cohorts` | 모든 로그인 사용자 | 내 차수 목록(Step 1.2·A′-1 개방). `listMyCohorts`(my_cohorts DEFINER RPC, auth.uid() 스코프) — 차수명·코치명·status·사전/사후 진행·**post_opened**. 사전 미완→/join · **사후 개시·미완→[사후 진단하기]→/join?wave=post(B-2)** · 그 외→[내 리포트]. 게이트: 미인증→/login |
 | `/my/cohorts/[cohortId]/report` | 멤버(user) | 내 리포트 **순화 뷰**(Step 1.3, ADR-27/30). `listResponses`(본인 pre, responses_select self-read)→score→`participantMirror`→`MirrorView`. 측정·severity 0. 계약·DB 무변경(기존 조합) |
 | `/login` | 전 역할 | `signInWithPassword` → **전원 `/home`**(A′-1 `loginOutcome` 통일 — 역할 분기 제거). 로그인 전용(가입은 /signup·/join) |
 | `/signup` | 스태프/일반 | `signUp`(트리거가 users role=user 생성) → 세션 시 `/home`(A′-1 loginOutcome). 확인 필요 시 안내. **출구(A′-3): 로그인·현관(`/`)** — 막다른 상태 해소 |
@@ -240,7 +240,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | `/reset/confirm` | 공개 | 새 비밀번호 설정(Step 2.3). 복구 세션 게이트(있을 때만 `updateUser`) → `/home`. 만료 시 재요청 안내. **출구(A′-3): 로그인·현관(전 단계)** |
 | `/account` | 로그인(3페르소나) | 내 정보(Step 2.5·**A2 완결**). 이름=`setName`(users.name)·전화=`setPhone`(user_contacts)·**프로필(성별·생년·종교·신앙연수)=`setProfile`**·**(코치)KPC=`setMyCoachKpc`**·비번=`updateUser`. 프리필=`getProfile`/`getMyCoachKpc`. role 쓰기 경로 없음(2.S2 봉쇄). 게이트 미인증→/login |
 | `/admin` | 운영자 | 두 섹션 구분(A3) — **승인 대기**(`listCoachApplications('pending')`→`decideCoachApplication` 승인/거절, 승인 시 user→coach 원자 승격) + **멤버 관리**(`listUsers`+`setUserRole`). 운영자 게이트(§8.6) |
-| `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속). **`?code=` 초대 링크 deep-link(A5)** — 코드 입력 건너뛰고 미리보기 자동 진입 |
+| `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속). **`?code=` 초대 링크 deep-link(A5)**. **`?wave=post` 사후 진입(B-2)** — getSchema(post)·wave='post' 저장(기본 pre). `?cohort=` 재진입과 함께 실림 |
 | `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag). **(운영자) 승인 대기 N건 배너→/admin**(A3 로그인 알림 — admin 은 로그인 시 여기 착지) |
 | `/coach/new` | 코치/운영자 | `createCohort` |
 | `/coach/cohort/[cohortId]` | 코치/운영자 | `getCohort`·`listEnrollments`·`listResponses`·`listAlerts`·`listCohortMembers` → 3숫자·3묶음 + 관리(마감·정원=`updateCohort`, **사후 진단 개시=`openPostWave`**·ADR-55). **뒤로=진입 출처(`?from=` 콘솔/목록, 기본 목록·A′-4)** |
@@ -699,6 +699,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-53 | 차수 상세 뒤로가기 = 진입 출처 기반(`?from=`) | 트랙 A′-4. `/coach/cohort/[id]` backHref 고정(`/coach`) → 진입 출처 분기: 콘솔 경유(`?from=console`)→`/coach`, 목록 경유(`?from=cohorts`)→`/coach/cohorts`, 출처 없음(직접)→목록 기본. push 지점(ConsoleHomeClient·AllCohortsClient)이 `from` 부여, 서버 page 가 읽어 backHref 산출. `?from=` 은 `/coach/cohort/[id]` 전용 — A5 `/join?code=`(ADR-49) 와 라우트·파라미터 무충돌 확인. 계약·DB·마이그 0. directive 2026-07-02 승인 |
 | ADR-54 | root 홈 인지성 — 라벨드 홈 컨트롤 + 로고=서비스 역할 분리 | 트랙 A′-5. 우측 홈 어포던스를 아이콘 단독→**아이콘 + '홈' 텍스트 라벨**(인지성 강화). root 로고는 서비스 정체성(제목=접근성 이름·`aria-label="홈"` 제거)이되 홈으로도 링크(브랜드 관례) — "로고=서비스 / 우측=홈 복귀" 역할 명료화. ADR-45·51 어포던스 계승·구체화. 계약·DB·마이그 0. directive 2026-07-02 승인 |
 | ADR-55 | 사후 진단 인프라·코치 개시 — `cohorts.post_opened_at` + `open_post_wave` DEFINER RPC(트랙 B-1) | 차수는 wave 중립(사전=개설=개방). 사후는 코치 수동 개시 = `post_opened_at`(nullable, NULL=미개시). `open_post_wave(p_cohort_id)` self-scoped DEFINER — `is_cohort_coach OR is_admin` 게이트, NULL→now() **단방향·멱등**, `post_opened_at`만 세팅(role/status/기타 불건드림 — 권한 상승 아님, 라이브 실증). 계약 +`openPostWave` + `my_cohorts`·`listCohortsByCoach` 반환에 `post_opened`(형상 변경·G1 명시). **`responses` UNIQUE 미추가**(ADR-33 재진단 허용 유지 — wave 컬럼+latestPerUser dedup으로 분리·페어링, 지시서 개정 반영). 마이그 `20260702051200`. directive 2026-07-02 승인 |
+| ADR-56 | 참여자 사후 진입 — JoinClient wave 파라미터화(`?wave=post`) + MemberHome/MyCohorts '사후 진단하기'(트랙 B-2) | JoinClient `wave="pre"` 하드코딩을 `initialWave`(page `?wave=`)로 파라미터화 — 사후 진입 시 `getSchema('post')`·`wave='post'`로 saveResponse·채점(기본 'pre'·기존 불변). 홈/내차수: `post_opened && !post_done` → '사후 진단하기'(→`/join?cohort=&wave=post`), 사전 미완 시 pre 우선. `finalizeResponse` 는 `resp.wave` 재사용(무변경). 사후 dedup=pre의 `latestPerUser`(ADR-33) wave만 교체 — 하부 재사용. 재진입 UX=pre 동형. `?wave=`↔`?from=`(A′-4)·`?code=`(A5) 무충돌. 계약·DB·마이그 0. directive 2026-07-02 승인 |
 
 ---
 

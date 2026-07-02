@@ -50,6 +50,19 @@ describe('MemberHome (멤버 홈 본문 — 진입-3)', () => {
     expect(html).toContain('진단을 마치면 거울이 생겨요');
   });
 
+  it('사후 개시·미완 → 사후 진단하기 카드(B-2, pre 없을 때)', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'cp', preDone: true, postOpened: true, postDone: false })]} />);
+    expect(html).toContain('사후 진단이 열렸어요');
+    expect(html).toContain('사후 진단하기');
+    expect(html).toContain('wave=post'); // /join?cohort=cp&(amp;)wave=post
+  });
+
+  it('사전 미완 우선 — 사후 개시돼도 pre 카드', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'a', preDone: false, postOpened: true, postDone: false })]} />);
+    expect(html).toContain('사전 진단을 아직 마치지'); // pre 카드 우선
+    expect(html).not.toContain('사후 진단이 열렸어요');
+  });
+
   it('참여자 화면 — 의미색 토큰 0', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort()]} />);
     expect(html).not.toMatch(/--care|--danger|--warning/);
