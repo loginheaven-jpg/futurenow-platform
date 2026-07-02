@@ -55,6 +55,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // 정적 자산·이미지 제외, 그 외 모든 경로에서 실행. 세션 갱신은 공개 경로 포함 전역(로그인 사용자 토큰 유지),
-  // 보호 차단은 본문 isProtectedPath 가 한정. 정적/이미지를 빼 불필요한 실행을 줄인다.
+  // 보호 차단은 본문 isProtectedPath 가 한정.
+  // **matcher 불변식(S-1 위조-strip 커버리지·ADR-66): 좁히지 말 것.** — 이 리터럴은 proxy.guard 의 PROXY_MATCHER 와 **반드시 동일**해야 한다.
+  //   (Next 정적 분석이 matcher 를 리터럴로만 인식 → import 상수 불가. 그래서 리터럴 + proxy.guard.test 의 드리프트 가드가 동기를 강제.)
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
