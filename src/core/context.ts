@@ -196,6 +196,7 @@ class SupabaseCoreContext implements CoreContext {
       status: meta.status as Cohort['status'],
       maxMembers: meta.max_members,
       expiresAt: meta.expires_at,
+      postOpenedAt: null, // resolve_cohort_by_code(공개 메타)는 post_opened_at 미반환 — 가입 결정 경로엔 무관(참여자 홈은 my_cohorts 사용)
     };
   }
 
@@ -245,12 +246,18 @@ class SupabaseCoreContext implements CoreContext {
   async getCohort(cohortId: string): Promise<Cohort> {
     const { data, error } = await this.sb
       .from('cohorts')
-      .select('id,coach_id,instrument_id,name,description,code,status,max_members,expires_at')
+      .select('id,coach_id,instrument_id,name,description,code,status,max_members,expires_at,post_opened_at')
       .eq('id', cohortId)
       .maybeSingle();
     if (error) throw new CoreError(`getCohort 실패: ${error.message}`);
     if (!data) throw new CoreNotFoundError(`차수를 찾을 수 없습니다: ${cohortId}`);
     return rowToCohort(data as CohortRow);
+  }
+
+  // 코치 사후 진단 개시(open_post_wave DEFINER RPC) — 자기 차수(또는 운영자)만·NULL→now() 멱등·post_opened_at 만 세팅. ADR-55
+  async openPostWave(cohortId: string): Promise<void> {
+    const { error } = await this.sb.rpc('open_post_wave', { p_cohort_id: cohortId });
+    if (error) throw new CoreError(`openPostWave 실패: ${error.message}`);
   }
 
   // 차수 개설(코치/운영자). 앱측 코드 생성 + 유니크 충돌(23505) 재시도. RLS(cohorts_insert)가 권한을 강제(이중 방어).
@@ -289,7 +296,7 @@ class SupabaseCoreContext implements CoreContext {
       const { data, error } = await this.sb
         .from('cohorts')
         .insert({ ...base, code: newCode() })
-        .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at')
+        .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at,post_opened_at')
         .single();
       if (!error) return rowToCohort(data as CohortRow);
       if ((error as { code?: string }).code !== '23505') throw new CoreError(`createCohort 실패: ${error.message}`);
@@ -327,7 +334,7 @@ class SupabaseCoreContext implements CoreContext {
       .from('cohorts')
       .update(payload)
       .eq('id', cohortId)
-      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at')
+      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at,post_opened_at')
       .maybeSingle();
     if (error) throw new CoreError(`updateCohort 실패: ${error.message}`);
     if (!data) throw new CoreNotFoundError(`차수를 찾을 수 없거나 수정 권한이 없습니다: ${cohortId}`); // 행 0 = 미존재/RLS 차단
@@ -345,6 +352,7 @@ class SupabaseCoreContext implements CoreContext {
       status: string;
       pre_done: boolean;
       post_done: boolean;
+      post_opened: boolean;
       joined_at: string;
     }[]).map((r) => ({
       cohortId: r.cohort_id,
@@ -353,6 +361,7 @@ class SupabaseCoreContext implements CoreContext {
       status: r.status as MyCohortSummary['status'],
       preDone: r.pre_done,
       postDone: r.post_done,
+      postOpened: r.post_opened,
       joinedAt: r.joined_at,
     }));
   }
@@ -361,7 +370,7 @@ class SupabaseCoreContext implements CoreContext {
   async listCohortsByCoach(coachId: string): Promise<Cohort[]> {
     const { data, error } = await this.sb
       .from('cohorts')
-      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at')
+      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at,post_opened_at')
       .eq('coach_id', coachId);
     if (error) throw new CoreError(`listCohortsByCoach 실패: ${error.message}`);
     return (data ?? []).map((r) => rowToCohort(r as CohortRow));

@@ -26,6 +26,7 @@ describe('rowToCohort', () => {
         status: 'active',
         max_members: 10,
         expires_at: null,
+        post_opened_at: '2026-07-02T05:12:00Z',
       }),
     ).toEqual({
       id: 'co1',
@@ -37,6 +38,7 @@ describe('rowToCohort', () => {
       status: 'active',
       maxMembers: 10,
       expiresAt: null,
+      postOpenedAt: '2026-07-02T05:12:00Z',
     });
   });
 

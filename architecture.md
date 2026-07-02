@@ -9,6 +9,7 @@
 > **v1.0 도달(2026-06-30~07-01)**: X1 색 팔레트 확정 · X2 공통 셸 모드(AppHeader root/sub/flow) · 진입 1~3(공개 소개 현관·플로우 헤더·참여자 홈) · 차수 소개(description) · 진단-1(재진단 허용+dedup ADR-33 · 중간저장 `response_drafts` ADR-34) · 완료 후 착지(A-2, Completion→홈) · 마감 a11y(오류 텍스트 대비). 프로덕션 라이브(Vercel, futurenow-platform.vercel.app).
 > **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46) · A3 본부 코치 신청 큐(승인 대기 구분)+운영자 로그인 알림(ADR-47) · A4 성별 남/여 2값(마이그 `20260702002311`·ADR-48) · A5 코드 전달(복사·공유·`?code=` deep-link·ADR-49) · A6 빈/로딩/에러 상태 감사+ConsoleHome 빈 상태(ADR-50). **트랙 A(화면 완결성) 완료.**
 > **트랙 A′(네비게이션 통합 홈, 진행 중, 2026-07-02)**: A′-1 역할 감금 해제(통합 홈·비대칭 개방 — /home·/my/cohorts 개방·loginOutcome 전원 /home·MemberHome 운영 카드·ADR-51, ADR-45 부분 대체) · A′-2 홈 복귀 homeHref 통일(콘솔·본부·차수·리포트·내정보 전부 /home · CoachInfoGate flow→sub) · A′-3 인증 영역 현관 복귀·상호 전환(login·signup·reset·reset/confirm → `/`·상호링크, signup 막다른 상태 해소·ADR-52) · A′-4 차수 상세 뒤로가기 출처 기반(`?from=`·ADR-53) · A′-5 root 홈 인지성(라벨드 홈·로고=서비스·ADR-54). **트랙 A′(네비게이션 통합 홈) 완료** — 역할 감금 해제·전 화면 홈 복귀 `/home` 통일·인증 현관 복귀·출처 기반 뒤로가기·홈 인지성. 비대칭 개방(홈 전원·콘솔/본부 게이트) 유지, 데이터 RLS 불변.
+> **트랙 B(사후 진단·차수 라이프사이클, 진행 중, 2026-07-02)**: B-1 사후 인프라·코치 개시(`cohorts.post_opened_at`·`open_post_wave` RPC·my_cohorts/listCohortsByCoach 반환 확장·CohortDetail 개시 컨트롤·ADR-55, responses UNIQUE 미추가로 ADR-33 유지). 이후 B-2(참여자 사후 진입)·B-3(사전↔사후 비교 리포트)·B-4(라이프사이클·죽은 UI 정리) 예정.
 > **남은 미결(plan.md)**: B③ 리포트 **자동 해석 문구(AI 생성)** 구현 대기 — 시각화 5종은 구현 완료, AI 게이트웨이 위치(plan §1)·Q5(문구 검수) 결정 선결. 그 외 다크 모드 색·접근성 키보드 정밀화는 후속.
 
 ---
@@ -191,12 +192,13 @@ SAIL의 검증된 스키마를 토대로 한다. 컬럼·정책의 출처는 SAI
 users              -- auth.users 1:1. id·email·name·nickname·role(user/coach/admin)
 user_contacts      -- 민감 신원 격리. user_id PK·phone. RLS: 본인+운영자만
 cohorts            -- 코치 소유 차수. id·coach_id·instrument_id·name·code(가입코드)
-                   --   ·status(active/archived)·max_members·expires_at
+                   --   ·status(active/archived)·max_members·expires_at·post_opened_at(사후 개시 시점 nullable, ADR-55)
 enrollments        -- 차수 참여 조인. (cohort_id, user_id) PK·joined_at
 user_profiles      -- 신원 부가(계정 단위). user_id PK·gender·birth_year·religion·faith_years·updated_at. RLS 본인+운영자 SELECT(코치 열람은 DEFINER RPC cohort_member_profiles). ADR-37
 coach_applications -- 코치 자기등록·지정 승인. UNIQUE(user_id)(한 사람=한 행)·status(pending/approved/rejected)·motivation·kpc_number(KPC 형식 '^KPC[0-9]{5}$')·reviewer 흔적. ADR-39/40
 responses          -- 응답 봉투. id·instrument_id·cohort_id·user_id·wave
-                   --   ·answers(JSONB)·subject_profile(JSONB)·created_at. immutable
+                   --   ·answers(JSONB)·subject_profile(JSONB)·created_at. immutable(ADR-09)
+                   --   (user,cohort,wave) UNIQUE 없음 — 재진단 허용의 의도된 설계(ADR-33·latestPerUser dedup). 트랙 B에서 미추가 확정
 alerts             -- Red Flag·돌봄. response_id·cohort_id·severity·reason. 점수·원문 미적재
 response_drafts    -- 제출 전 작성본(중간저장). PK(user_id,cohort_id,wave)·instrument_id·answers(JSONB)·updated_at
                    --   가변(upsert 덮어쓰기). RLS 본인 한정. 제출 성공 시 정리. responses 와 분리(ADR-34, 진단-1B)
@@ -241,7 +243,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 | `/join` | 참여자 | preview→enroll→runner→finalize(거울). 코드 진입(참여자 가입 결속). **`?code=` 초대 링크 deep-link(A5)** — 코드 입력 건너뛰고 미리보기 자동 진입 |
 | `/coach` | 코치/운영자 | `listCohortsByCoach` + 차수별 `buildCohortRoster`(먼저 챙길 분=`listAlerts` care/red_flag). **(운영자) 승인 대기 N건 배너→/admin**(A3 로그인 알림 — admin 은 로그인 시 여기 착지) |
 | `/coach/new` | 코치/운영자 | `createCohort` |
-| `/coach/cohort/[cohortId]` | 코치/운영자 | `getCohort`·`listEnrollments`·`listResponses`·`listAlerts`·`listCohortMembers` → 3숫자·3묶음 + 관리(마감·정원=`updateCohort`). **뒤로=진입 출처(`?from=` 콘솔/목록, 기본 목록·A′-4)** |
+| `/coach/cohort/[cohortId]` | 코치/운영자 | `getCohort`·`listEnrollments`·`listResponses`·`listAlerts`·`listCohortMembers` → 3숫자·3묶음 + 관리(마감·정원=`updateCohort`, **사후 진단 개시=`openPostWave`**·ADR-55). **뒤로=진입 출처(`?from=` 콘솔/목록, 기본 목록·A′-4)** |
 | `/coach/cohort/[cohortId]/report/[responseId]` | 코치/운영자 | `getResponse`→B② `score`→`ReportScreen`(재사용). 접근=responses RLS(차수 코치+운영자+본인). 참여자 UI 경로 없음 |
 
 ---
@@ -696,6 +698,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-52 | 인증 영역 네비 정비(A′-3) — 현관(`/`) 복귀 + 상호 전환, 경량 인라인(AppHeader auth variant 미신설) | login·signup·reset·reset/confirm 에 `/`(현관) 출구 + 상호 링크(로그인↔가입↔재설정). signup 막다른 상태 해소(→/login·→/). **§5 Q2 판단**: 인증 페이지가 AppHeader 를 안 씀(독립 폼) 실측 → 경량 인라인 채택(root/sub/flow 에 variant 추가 안 함 — 모드 파급 0). 루트 `/` 링크는 `no-html-link-for-pages` 룰로 `next/link`, 하위 라우트는 기존 `<a>` 유지. 계약·DB·마이그 0. directive 2026-07-02 승인 |
 | ADR-53 | 차수 상세 뒤로가기 = 진입 출처 기반(`?from=`) | 트랙 A′-4. `/coach/cohort/[id]` backHref 고정(`/coach`) → 진입 출처 분기: 콘솔 경유(`?from=console`)→`/coach`, 목록 경유(`?from=cohorts`)→`/coach/cohorts`, 출처 없음(직접)→목록 기본. push 지점(ConsoleHomeClient·AllCohortsClient)이 `from` 부여, 서버 page 가 읽어 backHref 산출. `?from=` 은 `/coach/cohort/[id]` 전용 — A5 `/join?code=`(ADR-49) 와 라우트·파라미터 무충돌 확인. 계약·DB·마이그 0. directive 2026-07-02 승인 |
 | ADR-54 | root 홈 인지성 — 라벨드 홈 컨트롤 + 로고=서비스 역할 분리 | 트랙 A′-5. 우측 홈 어포던스를 아이콘 단독→**아이콘 + '홈' 텍스트 라벨**(인지성 강화). root 로고는 서비스 정체성(제목=접근성 이름·`aria-label="홈"` 제거)이되 홈으로도 링크(브랜드 관례) — "로고=서비스 / 우측=홈 복귀" 역할 명료화. ADR-45·51 어포던스 계승·구체화. 계약·DB·마이그 0. directive 2026-07-02 승인 |
+| ADR-55 | 사후 진단 인프라·코치 개시 — `cohorts.post_opened_at` + `open_post_wave` DEFINER RPC(트랙 B-1) | 차수는 wave 중립(사전=개설=개방). 사후는 코치 수동 개시 = `post_opened_at`(nullable, NULL=미개시). `open_post_wave(p_cohort_id)` self-scoped DEFINER — `is_cohort_coach OR is_admin` 게이트, NULL→now() **단방향·멱등**, `post_opened_at`만 세팅(role/status/기타 불건드림 — 권한 상승 아님, 라이브 실증). 계약 +`openPostWave` + `my_cohorts`·`listCohortsByCoach` 반환에 `post_opened`(형상 변경·G1 명시). **`responses` UNIQUE 미추가**(ADR-33 재진단 허용 유지 — wave 컬럼+latestPerUser dedup으로 분리·페어링, 지시서 개정 반영). 마이그 `20260702051200`. directive 2026-07-02 승인 |
 
 ---
 

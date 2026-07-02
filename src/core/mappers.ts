@@ -29,6 +29,7 @@ export interface CohortRow {
   status: string;
   max_members: number;
   expires_at: string | null;
+  post_opened_at?: string | null; // post_opened_at 을 select 한 경로만 채움(그 외 → null). ADR-55
 }
 export function rowToCohort(r: CohortRow): Cohort {
   return {
@@ -41,6 +42,7 @@ export function rowToCohort(r: CohortRow): Cohort {
     status: r.status as Cohort['status'],
     maxMembers: r.max_members,
     expiresAt: r.expires_at,
+    postOpenedAt: r.post_opened_at ?? null,
   };
 }
 

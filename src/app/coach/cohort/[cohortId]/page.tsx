@@ -47,5 +47,5 @@ export default async function CohortDetailPage({
     code: cohort.code,
   };
 
-  return <CohortDetailClient summary={summary} roster={roster} status={cohort.status} maxMembers={cohort.maxMembers} backHref={backHref} />;
+  return <CohortDetailClient summary={summary} roster={roster} status={cohort.status} maxMembers={cohort.maxMembers} postOpened={cohort.postOpenedAt != null} backHref={backHref} />;
 }

@@ -51,6 +51,7 @@ export function CohortDetail({
   roster,
   status = 'active',
   maxMembers = 100,
+  postOpened = false,
   backHref,
   onOpenMember,
   onArchive,
@@ -58,6 +59,7 @@ export function CohortDetail({
   onRename,
   onSetDescription,
   onReopen,
+  onOpenPost,
   onGroupReport,
   headerActions,
 }: {
@@ -65,6 +67,7 @@ export function CohortDetail({
   roster: RosterMember[];
   status?: 'active' | 'archived';
   maxMembers?: number;
+  postOpened?: boolean; // 사후 진단 개시 여부(개시 컨트롤 상태). ADR-55
   backHref?: string; // 셸 sub 뒤로 경로(→/coach). X2a 모드 셸 전환
   onOpenMember?: (id: string) => void;
   onArchive?: () => void | Promise<void>;
@@ -72,6 +75,7 @@ export function CohortDetail({
   onRename?: (name: string) => void | Promise<void>; // 이름 수정 → updateCohort({name})
   onSetDescription?: (description: string | null) => void | Promise<void>; // 소개 수정 → updateCohort({description}). 빈 값=null
   onReopen?: () => void | Promise<void>; // 마감 복구 → updateCohort({status:'active'})
+  onOpenPost?: () => void | Promise<void>; // 사후 진단 개시 → openPostWave(단방향 멱등). ADR-55
   onGroupReport?: () => void; // 차수 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
@@ -122,6 +126,14 @@ export function CohortDetail({
     setBusy(true);
     try {
       await onReopen?.();
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function doOpenPost() {
+    setBusy(true);
+    try {
+      await onOpenPost?.();
     } finally {
       setBusy(false);
     }
@@ -187,6 +199,20 @@ export function CohortDetail({
               <Stepper value={cap} min={1} max={100} onChange={setCap} label="정원" />
               <Button variant="ghost" onClick={saveCap} disabled={busy || cap === maxMembers}>저장</Button>
             </div>
+          </div>
+          {/* 사후 진단 개시 — 세미나 종료 후 코치가 수동 개시(단방향·멱등). 참여자 홈에 '사후 진단하기' 노출(B-2). ADR-55 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <div style={{ minWidth: 0 }}>
+              <span className="t-body" style={{ color: 'var(--color-text)' }}>사후 진단</span>
+              <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
+                {postOpened ? '개시됨 — 참여자가 사후 진단에 참여할 수 있어요' : '세미나를 마친 뒤 열어 주세요'}
+              </div>
+            </div>
+            {postOpened ? (
+              <span className="t-caption" style={{ color: 'var(--color-accent)', whiteSpace: 'nowrap', fontWeight: 600 }}>개시됨</span>
+            ) : (
+              <Button variant="ghost" onClick={doOpenPost} disabled={busy}>사후 진단 개시</Button>
+            )}
           </div>
           {archived ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>

@@ -33,6 +33,7 @@ export interface Cohort {
   status: 'active' | 'archived';
   maxMembers: number;
   expiresAt: string | null;
+  postOpenedAt: string | null; // 사후 진단 개시 시점(NULL=미개시). 코치 수동 개시(open_post_wave). ADR-55
 }
 
 export interface Enrollment {
@@ -57,6 +58,7 @@ export interface MyCohortSummary {
   status: 'active' | 'archived';
   preDone: boolean;
   postDone: boolean;
+  postOpened: boolean; // 사후 진단 개시 여부(참여자 홈이 '사후 진단하기' 노출 판정). ADR-55
   joinedAt: string;
 }
 

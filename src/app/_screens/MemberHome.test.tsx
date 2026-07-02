@@ -10,6 +10,7 @@ const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
   status: 'active',
   preDone: false,
   postDone: false,
+  postOpened: false,
   joinedAt: '2026-06-01',
   ...over,
 });

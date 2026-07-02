@@ -5,7 +5,7 @@ import { CohortDetail } from '@/app/_screens/console/CohortDetail';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { useToast } from '@/app/_toast/ToastProvider';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
-import { archiveCohortAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
+import { archiveCohortAction, openPostWaveAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
 import { refineActionError } from './cohortAdmin';
 
 export function CohortDetailClient({
@@ -13,12 +13,14 @@ export function CohortDetailClient({
   roster,
   status,
   maxMembers,
+  postOpened,
   backHref,
 }: {
   summary: CohortSummary;
   roster: RosterMember[];
   status: 'active' | 'archived';
   maxMembers: number;
+  postOpened: boolean; // 사후 진단 개시 여부(cohort.post_opened_at != null). ADR-55
   backHref: string; // 진입 출처 기반(A′-4) — 서버가 ?from= 로 산출(콘솔/목록)
 }) {
   const router = useRouter();
@@ -42,6 +44,7 @@ export function CohortDetailClient({
         roster={roster}
         status={status}
         maxMembers={maxMembers}
+        postOpened={postOpened}
         headerActions={<HeaderActions />}
         backHref={backHref}
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
@@ -51,6 +54,7 @@ export function CohortDetailClient({
         onRename={(name) => run(() => renameCohortAction(summary.id, name), '이름을 바꿨어요.')}
         onSetDescription={(description) => run(() => setCohortDescriptionAction(summary.id, description), '소개를 저장했어요.')}
         onReopen={() => run(() => reopenCohortAction(summary.id), '차수를 다시 열었어요.')}
+        onOpenPost={() => run(() => openPostWaveAction(summary.id), '사후 진단을 개시했어요.')}
       />
     </div>
   );

@@ -56,3 +56,13 @@ export async function reopenCohortAction(cohortId: string): Promise<{ ok: boolea
     return { ok: false, error: e instanceof Error ? e.message : '다시 열기에 실패했습니다.' };
   }
 }
+
+// 사후 진단 개시 — open_post_wave RPC 경유(코치 자기 차수·NULL→now() 멱등). 권한은 RPC 내부 게이트. ADR-55
+export async function openPostWaveAction(cohortId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await (await ctx()).openPostWave(cohortId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '사후 진단 개시에 실패했습니다.' };
+  }
+}
