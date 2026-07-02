@@ -7,7 +7,7 @@
 >
 > 문서 버전: **v1.0** (거점=SAIL 승격 · 코어(CoreContext) 구현 · 가입-by-코드/Q1~Q3 확정 · B①·B②·B④ + 문항 원문 · AlertSignal(ADR-19) · 디자인 시스템 v3 구현(색 토큰·공용 UI 12종·응답 위젯 5종·리포트 시각화 5종·ResponseRunner) · 코치 콘솔·본부(코치 승인·역할관리) · 참여 프로필(ADR-32))
 > **v1.0 도달(2026-06-30~07-01)**: X1 색 팔레트 확정 · X2 공통 셸 모드(AppHeader root/sub/flow) · 진입 1~3(공개 소개 현관·플로우 헤더·참여자 홈) · 차수 소개(description) · 진단-1(재진단 허용+dedup ADR-33 · 중간저장 `response_drafts` ADR-34) · 완료 후 착지(A-2, Completion→홈) · 마감 a11y(오류 텍스트 대비). 프로덕션 라이브(Vercel, futurenow-platform.vercel.app).
-> **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46) · A3 본부 코치 신청 큐(승인 대기 구분)+운영자 로그인 알림(ADR-47) · A4 성별 남/여 2값(마이그 `20260702002311`·ADR-48) · A5 코드 전달(복사·공유·`?code=` deep-link·ADR-49). 이후 A6(에러/빈/로딩) 예정.
+> **UX 2차 트랙 A(진행 중, 2026-07-02)**: A1 셸 홈 복귀 어포던스(ADR-45) · A2 내 정보 완결(프로필·KPC 편집)+성별 전 서비스 공통 상수(ADR-46) · A3 본부 코치 신청 큐(승인 대기 구분)+운영자 로그인 알림(ADR-47) · A4 성별 남/여 2값(마이그 `20260702002311`·ADR-48) · A5 코드 전달(복사·공유·`?code=` deep-link·ADR-49) · A6 빈/로딩/에러 상태 감사+ConsoleHome 빈 상태(ADR-50). **트랙 A(화면 완결성) 완료.**
 > **남은 미결(plan.md)**: B③ 리포트 **자동 해석 문구(AI 생성)** 구현 대기 — 시각화 5종은 구현 완료, AI 게이트웨이 위치(plan §1)·Q5(문구 검수) 결정 선결. 그 외 다크 모드 색·접근성 키보드 정밀화는 후속.
 
 ---
@@ -690,6 +690,7 @@ interface AlertPlugin<S = unknown> {
 | ADR-47 | 본부 코치 신청 큐(승인 대기) 구분 + 운영자 로그인 알림(/coach 배너) | 트랙 A3(항목4). /admin 을 두 섹션으로 구분 — ① 승인 대기(`listCoachApplications('pending')`→`decide_coach_application` 승인/거절, 승인 시 user→coach 원자 승격) ② 멤버 관리(기존 `setUserRole`). 운영자는 로그인 시 /coach 로 착지(loginOutcome 무변경)하므로 pending>0 이면 콘솔 상단에 '승인 대기 N건·본부에서 확인' 배너(→/admin). 계약·DB·마이그 0(기존 메서드·RPC·RLS admin 게이트 재사용). directive 2026-07-02 승인 |
 | ADR-48 | 성별 허용값 '남'/'여' 2값으로 축소('남성/여성/기타' 폐기) | 트랙 A4(항목3). 성별=남/여 2값을 전 서비스 일관 규약으로 확정(지휘부). ADR-46 이원 동기화 의무 이행 — TS 상수(`GENDERS=['남','여']`) + SQL 마이그(`20260702002311`: 구 CHECK **DROP → 데이터 변환**(남성→남·여성→여·그 외 NULL) **→ 새 CHECK ADD** IN('남','여') → `handle_new_user` sanitize 교체) 동시 변경. 순서 필수(DROP 먼저 — 구 CHECK 살아있으면 변환값 '남'이 구 값집합에 걸림). 실측 기존 '남성' 1행→'남'. AuthGate·ProfileForm·AccountForm 은 공유 상수 참조라 자동 반영(재수정 0). 마이그 1. directive 2026-07-02 승인 |
 | ADR-49 | 코드 전달 배선 — 코드 복사(clipboard) + 초대 링크 공유(Web Share·폴백) + /join `?code=` deep-link | 트랙 A5(항목: 코드 전달). CreateCohort 완료 스텝 placeholder 두 버튼 실배선 — 코드 복사=`navigator.clipboard`, 초대 공유=`navigator.share`(미지원 시 링크 clipboard 폴백). 피드백은 로컬 상태(토스트 미의존 — 미리보기 안전·비보안 컨텍스트 try/catch). 초대 링크=`${origin}/join?code=<코드>`; JoinClient 가 `initialCode` 로 받아 미리보기 자동 deep-link(코드 입력 생략, `cohort=` 재진입 우선). 계약·DB·마이그 0. directive 2026-07-02 승인 |
+| ADR-50 | 빈/로딩/에러 상태 감사 + ConsoleHome '진행 중 차수' 빈 상태 보강 | 트랙 A6(항목: 상태 완결). 감사 결과 대부분 기존 처리 확인 — 빈 상태(MyCohorts·AllCohorts·AdminMembers 승인대기·MemberHome), 로딩(Next 서버 로드 + 버튼 busy + JoinClient resolving), 에러(`error.tsx` 경계 + 액션 토스트). 조용한 catch 들은 의도된 폴백(null→빈 폼·`notFound`·우아한 저하 ADR-27·재시도 상태)이라 보존(무분별 제거 금지). 유일 갭=ConsoleHome '진행 중 차수' 빈 목록 → 안내 문구 추가. 계약·DB·마이그 0. directive 2026-07-02 승인 |
 
 ---
 

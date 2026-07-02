@@ -68,11 +68,17 @@ export function ConsoleHome({
 
       <section style={{ marginBottom: 'var(--space-6)' }}>
         <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-3)' }}>진행 중 차수</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {cohorts.map((c) => (
-            <CohortCard key={c.id} c={c} onOpen={() => onOpenCohort?.(c.id)} />
-          ))}
-        </div>
+        {cohorts.length === 0 ? (
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
+            아직 개설한 차수가 없어요. 아래 [+ 새 차수]로 첫 차수를 시작해 보세요.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {cohorts.map((c) => (
+              <CohortCard key={c.id} c={c} onOpen={() => onOpenCohort?.(c.id)} />
+            ))}
+          </div>
+        )}
       </section>
 
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
