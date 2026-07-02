@@ -61,7 +61,7 @@ export default async function CoachConsolePage() {
     }
   }
 
-  // 운영자 로그인 알림: admin 은 로그인 시 /coach 로 착지 → 승인 대기 신청이 있으면 본부로 유도하는 배너.
+  // 운영자 승인 대기 배너: admin 은 로그인 시 /home 착지(loginOutcome 전원 /home)이나 콘솔 진입 시에도 pending 을 알리도록 배너 유지(홈 '본부' 카드 건수와 병행).
   const isAdmin = me.role === 'admin';
   const pendingCoachApps = isAdmin ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
 

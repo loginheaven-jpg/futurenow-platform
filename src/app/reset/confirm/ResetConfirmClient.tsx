@@ -4,14 +4,12 @@
 // 성공 시 복구 세션이 정규 세션이 됨 → 역할별 랜딩. raw 에러는 화면에 노출하지 않고 정제 메시지로 갈음.
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { loginOutcome } from '@/app/login/loginOutcome';
 import { ResetConfirmForm, type ResetPhase } from './ResetConfirmForm';
 
 export function ResetConfirmClient() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
-  const ctx = useMemo(() => createCoreContext(supabase), [supabase]);
   const router = useRouter();
 
   const [phase, setPhase] = useState<ResetPhase>('checking');
@@ -57,8 +55,7 @@ export function ResetConfirmClient() {
   }
 
   async function onContinue() {
-    const role = (await ctx.currentUser())?.role ?? null;
-    router.push(loginOutcome({ error: null, hasSession: true, role }).redirect ?? '/login');
+    router.push(loginOutcome({ error: null, hasSession: true }).redirect ?? '/home');
   }
 
   return (

@@ -87,4 +87,9 @@ describe('MemberHome (멤버 홈 본문 — 진입-3)', () => {
     expect(html).toContain('본부');
     expect(html).toContain('href="/admin"');
   });
+
+  it('운영자 본부 카드 — 승인 대기 건수 노출(정합 마감·홈 알림)', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="관리자" cohorts={[]} role="admin" pendingCoachApps={3} />);
+    expect(html).toContain('승인 대기 3건');
+  });
 });

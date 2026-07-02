@@ -19,8 +19,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
   const { cohortId } = await params;
   const ctx = createCoreContext(await createServerSupabase());
   const me = await ctx.currentUser();
-  if (!me) redirect('/login');
-  if (me.role !== 'user') redirect('/coach');
+  if (!me) redirect('/login'); // 전 역할 개방(A′-1 정합) — 본인 참여분만 순화 뷰. RLS(responses_select user_id=auth.uid())가 본인 스코프. 코치/운영자도 자기 참여 리포트 열람.
 
   // 본인 사전·사후 각 wave 최신 1건(재진단 dedup) → 순화 미러. 다중 행이어도 latestPerUser가 최신끼리 페어링.
   const mirrorFor = async (wave: 'pre' | 'post') => {

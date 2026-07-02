@@ -114,20 +114,7 @@ export const commitLabel: Record<WaveKey, string> = {
   post: "나는 이 5주에서 만난 '미래의 나'를, 오늘 이후의 삶에서 계속 살아내겠습니다.",
 };
 
-// 화면 공용 안내 문구 — ResponseSchema 밖(렌더러 상단·하단 카피).
-export const notices = {
-  security: '여기 적는 모든 것은 세미나 인도자 한 사람만 봅니다.',
-  preIntro: "정답은 없습니다. 그냥 '지금의 나'를 만나는 시간입니다.",
-  postIntro: '5주 전과 똑같은 질문입니다. 그때의 나와 만나는 시간입니다.',
-};
-
-// subjectProfile 화면 label + 노출 필드 (지휘부 확정 2026-06-29: 생년·성별 필수, 종교·신앙연수 선택).
-export const profileLabels: Record<string, string> = {
-  birthYear: '생년',
-  gender: '성별',
-  religion: '종교',
-  faithYears: '신앙 연수',
-};
+// subjectProfile 계정 복사 4필드(사양 상수 — ADR-32/44 규범 참조). 실수집·프리필·라벨은 ProfileForm/AuthGate(@/contracts/vocab·profileVocab)가 소유.
 export const profileFieldsByWave: Record<WaveKey, string[]> = {
   pre: ['birthYear', 'gender', 'religion', 'faithYears'],
   post: ['birthYear', 'gender', 'religion', 'faithYears'],

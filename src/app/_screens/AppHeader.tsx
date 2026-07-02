@@ -49,7 +49,7 @@ export function AppHeader({
   title: ReactNode;
   subtitle?: ReactNode;
   backHref?: string; // sub 뒤로 경로(문자열, 서버 호환). backHref 우선
-  homeHref?: string; // 홈 복귀 경로(페르소나별 — 기본 /home, 호출부 override)
+  homeHref?: string; // 홈 복귀 경로(A′-2/ADR-51 통합 홈 — 전 화면 /home. 기본 /home)
   onBack?: () => void; // 콜백 뒤로(위저드 단계 등 backHref 로 표현 불가한 경우 — sub 전용)
   action?: ReactNode; // 우측 액션 슬롯(HeaderActions 등 — root/sub 전용)
 }) {

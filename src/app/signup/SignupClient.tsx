@@ -19,8 +19,7 @@ export function SignupClient() {
   const [notice, setNotice] = useState<string | null>(null);
 
   async function land() {
-    const role = (await ctx.currentUser())?.role ?? null;
-    router.push(loginOutcome({ error: null, hasSession: true, role }).redirect ?? '/home');
+    router.push(loginOutcome({ error: null, hasSession: true }).redirect ?? '/home');
   }
 
   async function onSignup(p: SignupPayload) {

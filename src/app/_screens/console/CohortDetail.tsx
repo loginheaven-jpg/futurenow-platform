@@ -89,6 +89,7 @@ export function CohortDetail({
   const [description, setDescription] = useState(cohort.description ?? '');
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [shared, setShared] = useState<'link' | null>(null); // 재공유 피드백(토스트 미의존)
   const archived = status === 'archived';
 
   const trimmedName = name.trim();
@@ -136,6 +137,27 @@ export function CohortDetail({
       await onOpenPost?.();
     } finally {
       setBusy(false);
+    }
+  }
+  // 코드 재공유(정합 마감) — 코치가 상세에서 초대 코드/링크를 다시 공유. Web Share, 미지원 시 링크 복사 폴백(A5·ADR-49 로직 동형).
+  async function shareInvite() {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/join?code=${cohort.code}`;
+    const text = `미래의 나 진단에 초대합니다. 코드 ${cohort.code} 를 입력하고 5분만 시간 내 주세요.`;
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: '미래의 나 진단 초대', text, url });
+      } catch {
+        // 사용자 취소·공유 실패 — 조용히(코드가 화면에 노출됨).
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared('link');
+      setTimeout(() => setShared(null), 1500);
+    } catch {
+      // 클립보드 불가(비보안 컨텍스트) — 화면의 코드를 직접 전달.
     }
   }
   async function doArchive() {
@@ -280,10 +302,11 @@ export function CohortDetail({
         </span>
         <button
           type="button"
+          onClick={shareInvite}
           className="t-caption"
           style={{ minHeight: 'var(--tap-min)', padding: '0 var(--space-4)', borderRadius: 'var(--radius)', border: '1px solid var(--color-border-strong)', background: 'transparent', color: 'var(--color-primary)', cursor: 'pointer' }}
         >
-          다시 공유
+          {shared === 'link' ? '링크 복사됨 ✓' : '다시 공유'}
         </button>
       </div>
     </div>

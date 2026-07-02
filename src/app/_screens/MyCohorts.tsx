@@ -1,6 +1,6 @@
 // 내 차수 목록 본문(프레젠테이션 — 부수효과 없음). 멤버 시점: 내가 속한 차수 + 진행 상태.
 // 참여자 팔레트·중립. danger/warning/care 의미색 0(§0.4). 완료 배지만 accent(골드=진행 흔적).
-// [내 리포트]는 Step 1.3 자리 — 라우트 미생성. 죽은 링크 금지 → 비활성(준비 중).
+// 다음 행동: 사전 미완→[진단 시작하기] · 사후 개시·미완→[사후 진단하기](B-2) · 그 외→[내 리포트](순화 뷰, 라우트 구현 완료).
 import type { CSSProperties } from 'react';
 import type { MyCohortSummary } from '@/contracts';
 

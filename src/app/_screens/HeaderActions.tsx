@@ -1,7 +1,7 @@
 'use client';
 // 공통 셸 헤더 우측 액션 — (선택)홈 아이콘 + (선택)전환 링크 + [내 정보](/account) + 로그아웃. 세 페르소나 공통.
 // AppHeader 의 action 슬롯에 주입(네이비 바 위라 텍스트는 on-accent·밝게). 절제.
-// homeHref: 홈 복귀 경로. root 화면 호출부가 "그 화면의 홈"(역할 거점 — /home·/coach·/admin)을 전달한다.
+// homeHref: 홈 복귀 경로. A′-2/ADR-51 로 전 화면이 통합 홈 `/home` 을 전달한다(역할별 거점 폐지).
 //   usePathname 으로 현재 경로와 같으면(=이미 홈) 홈 링크를 생략(자기참조 방지). → 실제 노출은 /account·/my/cohorts 등 홈이 아닌 root.
 //   sub 화면은 AppHeader(variant='sub')가 홈 아이콘을 이미 렌더하므로 homeHref 를 넘기지 않는다(중복 회피).
 // nav(navHref+navLabel): 맥락 전환 링크. 운영자 콘솔의 [본부]→/admin, 본부의 [코치 콘솔]→/coach (Step 3.정비).

@@ -18,11 +18,13 @@ export default async function MemberHomePage() {
 
   const greetingName = me.name?.trim() || me.email.split('@')[0] || '회원';
   const cohorts = await ctx.listMyCohorts(); // my_cohorts DEFINER RPC(본인 차수+진행). 앱은 cohorts·responses 직접 select 안 함.
+  // 운영자 로그인 알림(정합 마감): admin 은 /home 착지(loginOutcome 전원 /home)이므로 승인 대기 건수를 '본부' 카드에 노출(A3 배너를 홈에서도).
+  const pendingCoachApps = me.role === 'admin' ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="퓨처나우" subtitle="내 자리" homeHref="/home" action={<HeaderActions homeHref="/home" />} />
-      <MemberHome greetingName={greetingName} cohorts={cohorts} role={me.role} />
+      <MemberHome greetingName={greetingName} cohorts={cohorts} role={me.role} pendingCoachApps={pendingCoachApps} />
     </div>
   );
 }

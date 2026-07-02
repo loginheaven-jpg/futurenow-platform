@@ -31,7 +31,7 @@ function ActivityRow({ href, title, subtitle, disabled }: { href?: string; title
   return disabled || !href ? <div style={style}>{body}</div> : <a href={href} style={style}>{body}</a>;
 }
 
-export function MemberHome({ greetingName, cohorts, role = 'user' }: { greetingName: string; cohorts: MyCohortSummary[]; role?: Role }) {
+export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachApps = 0 }: { greetingName: string; cohorts: MyCohortSummary[]; role?: Role; pendingCoachApps?: number }) {
   const isStaff = role === 'coach' || role === 'admin'; // 콘솔 접근 자격(운영자는 코치 콘솔도 열람 가능)
   // 진행 중 진단: pre_done=false 중 가장 최근 가입(joinedAt desc) 1건
   const inProgress = [...cohorts].filter((c) => !c.preDone).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))[0] ?? null;
@@ -53,7 +53,7 @@ export function MemberHome({ greetingName, cohorts, role = 'user' }: { greetingN
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', fontWeight: 600, margin: '0 0 var(--space-2)' }}>운영</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <ActivityRow href="/coach" title="인도자 콘솔" subtitle="내 차수·돌봄 관리" />
-            {role === 'admin' ? <ActivityRow href="/admin" title="본부" subtitle="코치 신청·멤버 관리" /> : null}
+            {role === 'admin' ? <ActivityRow href="/admin" title="본부" subtitle={pendingCoachApps > 0 ? `승인 대기 ${pendingCoachApps}건 · 코치 신청·멤버 관리` : '코치 신청·멤버 관리'} /> : null}
           </div>
         </section>
       ) : null}
