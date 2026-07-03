@@ -1,9 +1,11 @@
 'use server';
 // 참여 진입 서버 액션 — 코어 CoreContext(서버 supabase) 경유. 진단 채점·알림은 인스트루먼트.
 // 응답 저장(B①) 후 채점(B②)→알림(B④) 주입은 **코어 오케스트레이션**이 책임(ADR-19).
+import { after } from 'next/server';
 import type { Answers, CohortPreviewMeta } from '@/contracts';
 import { createServerContext } from '@/core/supabase/server';
 import { futurenowAlerts } from '@/instruments/futurenow/alerts';
+import { generateInterpretation } from '@/instruments/futurenow/report/interpretation';
 import { participantMirror, type ParticipantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { futurenowAnswersSchema, futurenowProfileSchema } from '@/instruments/futurenow/schema';
@@ -72,10 +74,21 @@ export async function finalizeResponse(
     const signals = futurenowAlerts.evaluate(scores, resp.answers);
     let raised = 0;
     if (resp.cohortId) {
+      const cohortId = resp.cohortId;
       for (const sig of signals) {
-        await c.raiseAlert({ ...sig, responseId, cohortId: resp.cohortId });
+        await c.raiseAlert({ ...sig, responseId, cohortId });
         raised += 1;
       }
+      // #3 자동 사전생성(비차단): 응답 반환 뒤 백그라운드로 코치 해석 초안 생성·저장 → 코치가 이름 클릭 시 즉시 열람.
+      //   after() 는 참여자 응답 전송 후 실행 → 완료 UX 지연 0. 저장은 save_report_interpretation(소유자 허용 DEFINER).
+      //   실패는 무해 — 코치 첫 열람의 지연 생성(ADR-64)이 폴백. ctx 의 supabase 클라이언트는 캡처된 cookieStore 로 after 에서도 참여자 JWT 유지.
+      after(async () => {
+        try {
+          await generateInterpretation(c, responseId, scores, cohortId);
+        } catch {
+          /* 사전생성 실패는 조용히 — 지연 생성이 폴백, 참여자 영향 0 */
+        }
+      });
     }
     return { ok: true, alerts: raised, mirror: participantMirror(scores) };
   } catch {

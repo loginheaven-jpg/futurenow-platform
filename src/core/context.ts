@@ -617,15 +617,18 @@ class SupabaseCoreContext implements CoreContext {
     aiContent: unknown;
     aiModel?: string | null;
   }): Promise<InterpretationView> {
-    // 지연 생성: 없을 때만 INSERT(ignoreDuplicates) — 기존 원문/수정본을 덮어쓰지 않음.
-    const { error } = await this.sb.from('report_interpretations').upsert(
-      { response_id: input.responseId, cohort_id: input.cohortId, ai_content: input.aiContent, ai_model: input.aiModel ?? null },
-      { onConflict: 'response_id', ignoreDuplicates: true },
-    );
+    // 없을 때만 저장(멱등) — 자격: 응답 소유자(참여자 사전생성·#3) OR 차수 코치 OR 운영자(save_report_interpretation DEFINER).
+    //   DEFINER 가 저장/기존 행을 반환 → 참여자(SELECT RLS 차단)도 재조회 없이 뷰 구성. 코치/운영자 경로는 기존과 동형.
+    const { data, error } = await this.sb.rpc('save_report_interpretation', {
+      p_response_id: input.responseId,
+      p_cohort_id: input.cohortId,
+      p_ai_content: input.aiContent,
+      p_ai_model: input.aiModel ?? null,
+    });
     if (error) throw new CoreError(`saveInterpretation 실패: ${error.message}`);
-    const view = await this.getInterpretation(input.responseId);
-    if (!view) throw new CoreError('saveInterpretation: 저장 후 조회 실패(권한/응답 확인).');
-    return view;
+    const row = (Array.isArray(data) ? data[0] : data) as InterpretationRow | null;
+    if (!row) throw new CoreError('saveInterpretation: 저장 후 행 반환 없음(권한/응답 확인).');
+    return rowToInterpretation(row);
   }
 
   async setCoachInterpretation(responseId: string, content: unknown): Promise<void> {

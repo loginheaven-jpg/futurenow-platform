@@ -7,6 +7,9 @@
 import { JoinClient } from './JoinClient';
 
 export const dynamic = 'force-dynamic';
+// finalizeResponse(#3)가 after()로 코치 해석 초안을 배경 생성(aiChat ~수십초). after 는 이 라우트의 maxDuration 예산 안에서 실행 →
+// 참여자 응답은 즉시 반환되지만 배경 작업 완주를 위해 60s 확보(코치 리포트 페이지 maxDuration 과 동일 근거, ADR-64).
+export const maxDuration = 60;
 
 export default async function JoinPage({ searchParams }: { searchParams: Promise<{ cohort?: string | string[]; code?: string | string[]; wave?: string | string[] }> }) {
   const sp = await searchParams;
