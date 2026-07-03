@@ -38,6 +38,26 @@ export default function Home() {
       <div style={divider} />
       <SeminarIntro />
 
+      {/* 과정·참석 안내(랜딩 전용) */}
+      <div
+        style={{
+          marginTop: 'var(--space-8)',
+          padding: 'var(--space-5)',
+          background: 'var(--color-accent-soft)',
+          borderRadius: 'var(--radius-lg)',
+          border: 'var(--border-hair) solid var(--color-border)',
+        }}
+      >
+        <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-3)' }}>
+          특강에 이어 5주의 <strong style={{ color: 'var(--color-primary)' }}>&lsquo;변화+성장+도약 과정&rsquo;</strong>에 참여하실 분은 진단에 응하시면 됩니다.
+        </p>
+        <p className="t-body" style={{ color: 'var(--color-text)', margin: 0 }}>
+          참석비용은 <span style={{ textDecoration: 'line-through', color: 'var(--color-text-muted)' }}>50만원</span> →{' '}
+          <strong style={{ color: 'var(--color-primary)' }}>25만원</strong>{' '}
+          <span className="t-caption" style={{ color: 'var(--color-accent)', fontWeight: 600 }}>(성도특별할인 50%)</span> 입니다.
+        </p>
+      </div>
+
       {/* 인도자 진입 — 보조(하단·ghost, 참여자 현관이라 우선순위 낮게) */}
       <div style={{ ...divider, margin: 'var(--space-8) 0 var(--space-6)' }} />
       <a className="ui-btn ui-btn--ghost" href="/login" style={full}>
