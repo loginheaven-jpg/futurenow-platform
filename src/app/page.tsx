@@ -1,5 +1,5 @@
 // 루트 현관(/) — 공개 소개 현관(진입-1). 스크롤 마케팅: 권유부+CTA(첫 화면) → 소개 3단락 → 인도자 진입(하단).
-// 청년 대상 — 큰 골드 CTA(초대) + 작은 코드 보조 링크(지름길), 둘 다 /join 합류. AppHeader 미사용(권유 문구가 h1).
+// 참여자 대상 — 큰 골드 CTA(초대) + 작은 코드 보조 링크(지름길), 둘 다 /join 합류. AppHeader 미사용(권유 문구가 h1).
 // 참여자 팔레트·디자인 토큰, 의미색 0. 정적(env·라우터 컨텍스트 불요). 계약·DB 무변경.
 import type { CSSProperties } from 'react';
 import { SeminarIntro } from '@/app/_screens/SeminarIntro';
@@ -38,7 +38,7 @@ export default function Home() {
       <div style={divider} />
       <SeminarIntro />
 
-      {/* 인도자 진입 — 보조(하단·ghost, 청년 현관이라 우선순위 낮게) */}
+      {/* 인도자 진입 — 보조(하단·ghost, 참여자 현관이라 우선순위 낮게) */}
       <div style={{ ...divider, margin: 'var(--space-8) 0 var(--space-6)' }} />
       <a className="ui-btn ui-btn--ghost" href="/login" style={full}>
         인도자 로그인
