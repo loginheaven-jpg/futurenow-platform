@@ -185,7 +185,7 @@ export function AuthGate({
             {allowCoachApply && (
               <label className="t-caption" style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={coachApply} onChange={(e) => setCoachApply(e.target.checked)} style={{ width: 18, height: 18 }} />
-                인도자(코치)로 신청할게요
+                인도자로 신청할게요
               </label>
             )}
 

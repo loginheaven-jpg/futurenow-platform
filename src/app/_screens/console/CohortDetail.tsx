@@ -4,6 +4,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, ListRow, Stepper } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
+import { GENERAL_CODE } from '../entry/general';
 import type { CohortSummary, RosterMember } from '../types';
 
 const nameInputStyle: CSSProperties = {
@@ -61,7 +62,11 @@ export function CohortDetail({
   onReopen,
   onOpenPost,
   onGroupReport,
+  onDelete,
   headerActions,
+  isAdmin = false,
+  memberCount = 0,
+  responseCount = 0,
 }: {
   cohort: CohortSummary;
   roster: RosterMember[];
@@ -77,7 +82,11 @@ export function CohortDetail({
   onReopen?: () => void | Promise<void>; // 마감 복구 → updateCohort({status:'active'})
   onOpenPost?: () => void | Promise<void>; // 사후 진단 개시 → openPostWave(단방향 멱등). ADR-55
   onGroupReport?: () => void; // 차수 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
+  onDelete?: () => void | Promise<void>; // 차수 하드삭제(파괴적) → deleteCohort. ADR-67
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
+  isAdmin?: boolean; // 운영자 = 데이터 있는 차수도 삭제 가능(코치는 빈 차수만). ADR-67
+  memberCount?: number; // 참여 수(삭제 가능 판정·컨펌 영향)
+  responseCount?: number; // 응답 수(동)
 }) {
   const care = roster.filter((m) => m.status === 'care');
   const done = roster.filter((m) => m.status === 'done');
@@ -88,9 +97,15 @@ export function CohortDetail({
   const [name, setName] = useState(cohort.name);
   const [description, setDescription] = useState(cohort.description ?? '');
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [shared, setShared] = useState<'link' | null>(null); // 재공유 피드백(토스트 미의존)
   const archived = status === 'archived';
+
+  // 삭제 가능 판정(ADR-67): 예약 general 차수(체험)는 불가(인프라). 운영자=임의 / 코치=빈 차수만(참여·응답 0).
+  const isReserved = cohort.code === GENERAL_CODE;
+  const isEmptyCohort = memberCount === 0 && responseCount === 0;
+  const canDelete = !isReserved && (isAdmin || isEmptyCohort);
 
   const trimmedName = name.trim();
   const nameValid = trimmedName.length >= 1 && trimmedName.length <= 40;
@@ -167,6 +182,15 @@ export function CohortDetail({
     } finally {
       setBusy(false);
       setConfirmArchive(false);
+    }
+  }
+  async function doDelete() {
+    setBusy(true);
+    try {
+      await onDelete?.(); // 성공 시 래퍼가 목록으로 이동(차수 소멸)
+    } finally {
+      setBusy(false);
+      setConfirmDelete(false);
     }
   }
 
@@ -247,6 +271,29 @@ export function CohortDetail({
             <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
               <Button variant="ghost" onClick={() => setConfirmArchive(false)} style={{ flex: 1 }}>취소</Button>
               <Button onClick={doArchive} disabled={busy} style={{ flex: 1 }}>마감 확정</Button>
+            </div>
+          )}
+
+          {/* 차수 삭제(파괴적·ADR-67) — 예약 체험 차수는 숨김. 코치+데이터 있으면 마감 유도, 운영자 또는 빈 차수면 삭제(위험색·2단계 컨펌·영향 표시). */}
+          {isReserved ? null : !canDelete ? (
+            <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>
+              참여자·응답이 있어 삭제할 수 없어요. 마감을 이용해 주세요.
+            </p>
+          ) : !confirmDelete ? (
+            <Button variant="ghost" onClick={() => setConfirmDelete(true)} disabled={busy} style={{ width: '100%', color: 'var(--care-text)', borderColor: 'var(--care-text)' }}>
+              차수 삭제
+            </Button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <p className="t-caption" style={{ color: 'var(--care-text)', margin: 0 }}>
+                {isEmptyCohort
+                  ? '이 차수를 삭제할까요? 되돌릴 수 없어요.'
+                  : `참여 ${memberCount} · 응답 ${responseCount} 이 있는 차수예요. 삭제하면 되돌릴 수 없어요.`}
+              </p>
+              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={busy} style={{ flex: 1 }}>취소</Button>
+                <Button onClick={doDelete} disabled={busy} style={{ flex: 1, background: 'var(--care-text)' }}>삭제 확정</Button>
+              </div>
             </div>
           )}
         </section>

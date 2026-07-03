@@ -22,14 +22,14 @@ describe('AdminMembers (본부 — 승인 대기 + 멤버 관리)', () => {
 
   it('역할 라벨·이름(null 폴백)·이메일 렌더', () => {
     expect(html).toContain('운영자');
-    expect(html).toContain('코치');
+    expect(html).toContain('인도자'); // coach 역할 라벨(용어 통일)
     expect(html).toContain('멤버');
     expect(html).toContain('이름 미입력'); // c1 name null
     expect(html).toContain('user@t.test');
   });
 
-  it('user 행에 [코치로 승격], coach 행에 [멤버로 강등]', () => {
-    expect(html).toContain('코치로 승격');
+  it('user 행에 [인도자로 승격], coach 행에 [멤버로 강등]', () => {
+    expect(html).toContain('인도자로 승격');
     expect(html).toContain('멤버로 강등');
   });
 

@@ -7,7 +7,7 @@ import { Button } from '@/core/ui';
 import type { CoachApplication, MemberSummary } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
 
-const ROLE_LABEL: Record<string, string> = { admin: '운영자', coach: '코치', user: '멤버' };
+const ROLE_LABEL: Record<string, string> = { admin: '운영자', coach: '인도자', user: '멤버' };
 
 const rowStyle = {
   display: 'flex',
@@ -44,15 +44,15 @@ export function AdminMembers({
 }) {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="root" title="본부" subtitle="코치 신청·멤버 관리" homeHref="/home" action={headerActions} />
+      <AppHeader variant="root" title="본부" subtitle="인도자 신청·멤버 관리" homeHref="/home" action={headerActions} />
 
-      {/* ① 승인 대기 — 코치 신청 큐(멤버 역할 관리와 구분) */}
+      {/* ① 승인 대기 — 인도자 신청 큐(멤버 역할 관리와 구분) */}
       <section style={{ marginBottom: 'var(--space-6)' }}>
         <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-1)' }}>
           승인 대기{applications.length > 0 ? ` (${applications.length})` : ''}
         </h2>
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-          인도자(코치) 신청을 검토해 승인하거나 거절합니다. 승인하면 곧바로 코치로 전환돼요.
+          인도자 신청을 검토해 승인하거나 거절합니다. 승인하면 곧바로 인도자로 전환돼요.
         </p>
         {applications.length === 0 ? (
           <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>대기 중인 신청이 없어요.</p>
@@ -81,7 +81,7 @@ export function AdminMembers({
       <section>
         <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-1)' }}>멤버 관리</h2>
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-          멤버를 코치로 승격하거나 되돌릴 수 있어요. 운영자 전용입니다.
+          멤버를 인도자로 승격하거나 되돌릴 수 있어요. 운영자 전용입니다.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {members.map((m) => {
@@ -98,7 +98,7 @@ export function AdminMembers({
                 </div>
                 <span className="t-caption" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>{ROLE_LABEL[m.role] ?? m.role}</span>
                 {m.role === 'user' ? (
-                  <Button onClick={() => onPromote(m.id)} disabled={busy}>{busy ? '처리 중…' : '코치로 승격'}</Button>
+                  <Button onClick={() => onPromote(m.id)} disabled={busy}>{busy ? '처리 중…' : '인도자로 승격'}</Button>
                 ) : m.role === 'coach' && !isSelf ? (
                   <Button variant="ghost" onClick={() => onDemote(m.id)} disabled={busy}>{busy ? '처리 중…' : '멤버로 강등'}</Button>
                 ) : null}

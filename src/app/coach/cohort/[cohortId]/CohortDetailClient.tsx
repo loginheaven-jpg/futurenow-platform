@@ -6,7 +6,7 @@ import { CohortDetail } from '@/app/_screens/console/CohortDetail';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { useToast } from '@/app/_toast/ToastProvider';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
-import { archiveCohortAction, openPostWaveAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
+import { archiveCohortAction, deleteCohortAction, openPostWaveAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
 import { applyOptimistic, refineActionError } from './cohortAdmin';
 
 export function CohortDetailClient({
@@ -16,6 +16,9 @@ export function CohortDetailClient({
   maxMembers,
   postOpened,
   backHref,
+  isAdmin,
+  memberCount,
+  responseCount,
 }: {
   summary: CohortSummary;
   roster: RosterMember[];
@@ -23,6 +26,9 @@ export function CohortDetailClient({
   maxMembers: number;
   postOpened: boolean; // 사후 진단 개시 여부(cohort.post_opened_at != null). ADR-55
   backHref: string; // 진입 출처 기반(A′-4) — 서버가 ?from= 로 산출(콘솔/목록)
+  isAdmin: boolean; // 운영자면 데이터 있는 차수도 삭제 가능(코치는 빈 차수만). ADR-67
+  memberCount: number; // 참여 수(삭제 가능 판정·컨펌 영향 표시)
+  responseCount: number; // 응답 수(동)
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -57,6 +63,17 @@ export function CohortDetailClient({
     });
   }
 
+  // 차수 삭제(파괴적·ADR-67) — 성공 시 차수 소멸이라 refresh 대신 목록으로 이동 + 토스트. 실패 시 정제 토스트(예약/데이터 가드 메시지 노출).
+  async function onDelete() {
+    const res = await deleteCohortAction(summary.id);
+    if (res.ok) {
+      toast.success('차수를 삭제했어요.');
+      router.push(backHref);
+    } else {
+      toast.error(refineActionError(res.error));
+    }
+  }
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <CohortDetail
@@ -67,6 +84,9 @@ export function CohortDetailClient({
         postOpened={postOpened}
         headerActions={<HeaderActions />}
         backHref={backHref}
+        isAdmin={isAdmin}
+        memberCount={memberCount}
+        responseCount={responseCount}
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
         onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}
@@ -75,6 +95,7 @@ export function CohortDetailClient({
         onSetDescription={(description) => run(() => setCohortDescriptionAction(summary.id, description), '소개를 저장했어요.')}
         onReopen={() => run(() => reopenCohortAction(summary.id), '차수를 다시 열었어요.')}
         onOpenPost={() => run(() => openPostWaveAction(summary.id), '사후 진단을 개시했어요.')}
+        onDelete={onDelete}
       />
     </div>
   );

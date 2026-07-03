@@ -27,7 +27,7 @@ export function AdminClient({
     try {
       const res = await setUserRoleAction(userId, role);
       if (res.ok) {
-        toast.success(role === 'coach' ? '코치로 승격했어요.' : '멤버로 되돌렸어요.');
+        toast.success(role === 'coach' ? '인도자로 승격했어요.' : '멤버로 되돌렸어요.');
         router.refresh();
       } else {
         // 친화 고정 메시지(액션 raw 사유 비노출 — setUserRole 정제는 후속 범위).
@@ -43,7 +43,7 @@ export function AdminClient({
     try {
       const res = await decideCoachApplicationAction(applicationId, decision);
       if (res.ok) {
-        toast.success(decision === 'approved' ? '코치로 승인했어요.' : '신청을 거절했어요.');
+        toast.success(decision === 'approved' ? '인도자로 승인했어요.' : '신청을 거절했어요.');
         router.refresh();
       } else {
         toast.error('신청 처리에 실패했어요.');
@@ -60,7 +60,7 @@ export function AdminClient({
       currentUserId={currentUserId}
       busyId={busyId}
       appBusyId={appBusyId}
-      headerActions={<HeaderActions homeHref="/home" navHref="/coach" navLabel="코치 콘솔" />}
+      headerActions={<HeaderActions homeHref="/home" navHref="/coach" navLabel="인도자 콘솔" />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
       onApprove={(id) => decide(id, 'approved')}

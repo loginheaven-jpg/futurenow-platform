@@ -66,6 +66,9 @@ export interface CoreContext {
   ): Promise<Cohort>; // 차수 부분수정(코치/운영자). coach_id·instrument_id·code·id 는 불변(patch 제외). 승인 2026-06-28
   getCohort(cohortId: string): Promise<Cohort>;
   openPostWave(cohortId: string): Promise<void>; // 코치 사후 진단 개시(open_post_wave DEFINER RPC — 자기 차수·NULL→now() 멱등). ADR-55
+  // 차수 하드삭제(파괴적). RLS(cohorts_delete: 소유 코치 OR 운영자) 이중. **운영자=임의 차수 / 코치=빈 차수만**(참여·응답 0 — 데이터 파괴 방지, 데이터 있으면 마감).
+  //   예약 general 차수(체험) 보호는 앱 액션이 강제(코어는 진단어휘 무지). FK: enrollments/response_drafts CASCADE·responses/alerts/해석 SET NULL. ADR-67
+  deleteCohort(cohortId: string): Promise<void>;
 
   listMyCohorts(): Promise<MyCohortSummary[]>; // 멤버 본인 차수+진행(RPC my_cohorts, DEFINER 비민감 메타). 코치 시점 listEnrollments 와 분리. 승인 2026-06-29
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체. 승인 2026-06-28

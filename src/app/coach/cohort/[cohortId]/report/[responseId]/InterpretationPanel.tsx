@@ -172,7 +172,7 @@ export function InterpretationPanel({ responseId, initial }: { responseId: strin
     return (
       <section style={boxStyle}>
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-          이 해석을 다듬으실 수 있어요. 저장하면 코치가 확정한 문구가 됩니다.
+          이 해석을 다듬으실 수 있어요. 저장하면 인도자가 확정한 문구가 됩니다.
         </p>
         <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>전체 인상</label>
         <textarea rows={2} style={{ ...fieldStyle, marginBottom: 'var(--space-3)' }} value={draft.headline} onChange={(e) => setDraft({ ...draft, headline: e.target.value })} aria-label="전체 인상" />
@@ -205,7 +205,7 @@ export function InterpretationPanel({ responseId, initial }: { responseId: strin
   return (
     <section style={boxStyle}>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-        {vm.coachEdited ? '코치가 다듬어 확정한 문구예요.' : 'AI 초안 · 참고용입니다. 코치가 다듬어 확정할 수 있어요.'}
+        {vm.coachEdited ? '인도자가 다듬어 확정한 문구예요.' : 'AI 초안 · 참고용입니다. 인도자가 다듬어 확정할 수 있어요.'}
       </p>
       <h2 className="t-h2" style={{ color: 'var(--color-primary)', margin: '0 0 var(--space-3)' }}>{c.headline}</h2>
       {c.axes.length > 0 ? (

@@ -31,7 +31,7 @@ export function ConsoleHome({
 }) {
   return (
     <div>
-      <AppHeader variant="root" title="코치 콘솔" subtitle={coachName} homeHref="/home" action={headerActions} />
+      <AppHeader variant="root" title="인도자 콘솔" subtitle={coachName} homeHref="/home" action={headerActions} />
 
       {pendingCoachApps > 0 && (
         <button

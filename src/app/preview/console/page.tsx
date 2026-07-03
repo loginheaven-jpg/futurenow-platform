@@ -37,7 +37,7 @@ export default function ConsolePreviewPage() {
   return (
     <div style={{ padding: 'var(--space-6)', display: 'flex', flexWrap: 'wrap', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
       <Frame label="§8.1 콘솔 홈">
-        <ConsoleHome coachName="김인도 코치" careMembers={careMembers} cohorts={cohorts} />
+        <ConsoleHome coachName="김인도 인도자" careMembers={careMembers} cohorts={cohorts} />
       </Frame>
       <Frame label="§8.3 차수 상세">
         <CohortDetail cohort={cohorts[0]} roster={roster} />

@@ -8,12 +8,12 @@ const cohorts: CohortSummary[] = [
 ];
 const care: RosterMember[] = [{ id: 'm1', name: '이참여', status: 'care', note: '안부' }];
 
-describe('ConsoleHome (코치 콘솔 셸 — Step 3.1)', () => {
+describe('ConsoleHome (인도자 콘솔 셸 — Step 3.1)', () => {
   it('헤더 액션 슬롯 전달(로그아웃·내 정보 자리) + 제목·코치명', () => {
     const html = renderToStaticMarkup(
       <ConsoleHome coachName="김코치" careMembers={care} cohorts={cohorts} headerActions={<span>HDR_ACT</span>} />,
     );
-    expect(html).toContain('코치 콘솔');
+    expect(html).toContain('인도자 콘솔');
     expect(html).toContain('김코치');
     expect(html).toContain('HDR_ACT'); // AppHeader action 슬롯으로 전달됨
     // A′-2: root 로고=통합 홈 링크(/home), 뒤로 없음

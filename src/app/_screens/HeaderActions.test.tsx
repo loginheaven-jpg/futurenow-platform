@@ -31,11 +31,11 @@ describe('HeaderActions — 홈 링크 노출 규칙(A1 · 항목5 홈으로 가
     expect(html).not.toContain('aria-label="홈"');
   });
 
-  it('본부(/admin): 자기참조라 홈 생략, [코치 콘솔] 전환 링크는 노출', () => {
+  it('본부(/admin): 자기참조라 홈 생략, [인도자 콘솔] 전환 링크는 노출', () => {
     mockPathname = '/admin';
-    const html = renderToStaticMarkup(<HeaderActions homeHref="/admin" navHref="/coach" navLabel="코치 콘솔" />);
+    const html = renderToStaticMarkup(<HeaderActions homeHref="/admin" navHref="/coach" navLabel="인도자 콘솔" />);
     expect(html).not.toContain('aria-label="홈"');
-    expect(html).toContain('코치 콘솔');
+    expect(html).toContain('인도자 콘솔');
     expect(html).toContain('href="/coach"');
   });
 });

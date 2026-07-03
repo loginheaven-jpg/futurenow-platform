@@ -285,6 +285,27 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`openPostWave 실패: ${error.message}`);
   }
 
+  // 차수 하드삭제(파괴적·ADR-67). RLS(cohorts_delete: 소유 코치 OR 운영자)가 소유를 강제(이중 방어).
+  //   **운영자 = 임의 차수 / 코치(소유) = 빈 차수만**(참여·응답 0). 데이터 있는 차수를 코치가 지우는 파괴(응답 SET NULL 고아화)를 코드 경계에서 차단 — 데이터 있으면 마감 유도.
+  //   예약 general 차수(체험) 보호는 앱 액션 소관(코어는 진단어휘 무지). 빈 판정 = enrollments + responses(진행중 draft 는 CASCADE 로 함께 정리).
+  async deleteCohort(cohortId: string): Promise<void> {
+    const me = await this.requireUser();
+    if (me.role !== 'coach' && me.role !== 'admin') {
+      throw new CoreForbiddenError('차수 삭제는 코치 또는 운영자만 가능합니다');
+    }
+    if (me.role !== 'admin') {
+      const [{ count: enrolled }, { count: responded }] = await Promise.all([
+        this.sb.from('enrollments').select('*', { count: 'exact', head: true }).eq('cohort_id', cohortId),
+        this.sb.from('responses').select('*', { count: 'exact', head: true }).eq('cohort_id', cohortId),
+      ]);
+      if ((enrolled ?? 0) > 0 || (responded ?? 0) > 0) {
+        throw new CoreError('참여자나 응답이 있는 차수는 삭제할 수 없어요. 마감을 이용해 주세요.');
+      }
+    }
+    const { error } = await this.sb.from('cohorts').delete().eq('id', cohortId);
+    if (error) throw new CoreError(`deleteCohort 실패: ${error.message}`);
+  }
+
   // 차수 개설(코치/운영자). 앱측 코드 생성 + 유니크 충돌(23505) 재시도. RLS(cohorts_insert)가 권한을 강제(이중 방어).
   async createCohort(input: {
     name: string;

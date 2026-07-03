@@ -17,12 +17,12 @@ describe('AuthGate — 통합 가입/로그인 폼(S3)', () => {
 
   it('allowCoachApply=false(기본): 인도자 체크 미노출(참여자 노이즈 방지)', () => {
     const html = renderToStaticMarkup(<AuthGate onSignup={noop} onLogin={noop} />);
-    expect(html).not.toContain('인도자(코치)로 신청');
+    expect(html).not.toContain('인도자로 신청');
   });
 
   it('allowCoachApply: 인도자 체크 노출', () => {
     const html = renderToStaticMarkup(<AuthGate allowCoachApply onSignup={noop} onLogin={noop} />);
-    expect(html).toContain('인도자(코치)로 신청');
+    expect(html).toContain('인도자로 신청');
   });
 
   it('busy: [처리 중…] 표시(이중 제출 신호)', () => {

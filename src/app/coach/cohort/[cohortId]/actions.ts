@@ -1,10 +1,25 @@
 'use server';
-// 차수 관리(마감·정원·이름·복구) — 기존 updateCohort 위 배선. 계약 변경 0. 권한은 앱 게이트 + cohorts_update RLS 이중.
+// 차수 관리(마감·정원·이름·복구·삭제) — updateCohort/deleteCohort 위 배선. 권한은 앱 게이트 + cohorts_* RLS 이중.
+import { GENERAL_CODE } from '@/app/_screens/entry/general';
 import { createServerContext } from '@/core/supabase/server';
 import { cohortNameValid } from './cohortAdmin';
 
 async function ctx() {
   return await createServerContext();
+}
+
+// 차수 하드삭제(파괴적·ADR-67). 예약 general 차수(체험 진단·JOINF)는 **운영자 포함 삭제 금지**(인프라 보호) — 앱 액션이 강제(코어는 진단어휘 무지).
+//   나머지(운영자 임의·코치 빈차수만·소유 RLS)는 코어 deleteCohort. 성공 시 차수 소멸 → 호출측이 목록으로 이동.
+export async function deleteCohortAction(cohortId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const c = await ctx();
+    const cohort = await c.getCohort(cohortId); // RLS 미달/부재 → throw → catch
+    if (cohort.code === GENERAL_CODE) return { ok: false, error: '예약된 체험 진단 차수는 삭제할 수 없어요.' };
+    await c.deleteCohort(cohortId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '삭제에 실패했습니다.' };
+  }
 }
 
 export async function archiveCohortAction(cohortId: string): Promise<{ ok: boolean; error?: string }> {

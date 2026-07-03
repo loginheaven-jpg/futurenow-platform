@@ -53,7 +53,7 @@ export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachA
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', fontWeight: 600, margin: '0 0 var(--space-2)' }}>운영</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <ActivityRow href="/coach" title="인도자 콘솔" subtitle="내 차수·돌봄 관리" />
-            {role === 'admin' ? <ActivityRow href="/admin" title="본부" subtitle={pendingCoachApps > 0 ? `승인 대기 ${pendingCoachApps}건 · 코치 신청·멤버 관리` : '코치 신청·멤버 관리'} /> : null}
+            {role === 'admin' ? <ActivityRow href="/admin" title="본부" subtitle={pendingCoachApps > 0 ? `승인 대기 ${pendingCoachApps}건 · 인도자 신청·멤버 관리` : '인도자 신청·멤버 관리'} /> : null}
           </div>
         </section>
       ) : null}
