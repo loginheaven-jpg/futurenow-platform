@@ -63,12 +63,14 @@ export function AuthGate({
   busy,
   onSignup,
   onLogin,
+  onBack,
 }: {
   allowCoachApply?: boolean;
   title?: string;
   busy?: boolean;
   onSignup?: (p: SignupPayload) => void;
   onLogin?: (email: string, password: string) => void;
+  onBack?: () => void; // 제공 시(/join 진입 플로우) 출구 부여 — sub 헤더(‹뒤로=이전 스텝 + 홈). 미제공(/signup)이면 flow 유지(SignupClient 가 현관 링크 제공).
 }) {
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
   const [email, setEmail] = useState('');
@@ -111,7 +113,7 @@ export function AuthGate({
 
   return (
     <div>
-      <AppHeader variant="flow" title={title} />
+      <AppHeader variant={onBack ? 'sub' : 'flow'} title={title} onBack={onBack} />
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
         <TabBtn active={mode === 'signup'} onClick={() => setMode('signup')}>처음이에요</TabBtn>
         <TabBtn active={mode === 'login'} onClick={() => setMode('login')}>계정이 있어요</TabBtn>

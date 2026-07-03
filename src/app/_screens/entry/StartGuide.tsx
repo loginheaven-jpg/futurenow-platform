@@ -6,7 +6,8 @@ import { AppHeader } from '../AppHeader';
 export function StartGuide({ cohortName, onStart }: { cohortName: string; onStart?: () => void }) {
   return (
     <div>
-      <AppHeader variant="flow" title="잠깐, 호흡 한 번" subtitle={cohortName} />
+      {/* 출구(홈) 제공 — sub 우상단 홈 아이콘(/home). 가입·시작 전이라 홈 이탈 안전(진행분 없음). */}
+      <AppHeader variant="sub" title="잠깐, 호흡 한 번" subtitle={cohortName} />
       <p
         className="t-body-lg"
         style={{ color: 'var(--color-text)', lineHeight: 1.8, whiteSpace: 'pre-line', margin: '0 0 var(--space-6)' }}

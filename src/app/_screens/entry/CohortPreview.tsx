@@ -19,7 +19,8 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
   const inst = instrumentDisplay(meta.instrumentId);
   return (
     <div>
-      <AppHeader variant="flow" title={isGeneral ? '체험 진단' : '이 모임에 들어갑니다'} />
+      {/* 출구(홈) 제공 — sub 우상단 홈 아이콘(/home). 뒤로는 아래 '아니에요'(→코드)로. */}
+      <AppHeader variant="sub" title={isGeneral ? '체험 진단' : '이 모임에 들어갑니다'} />
       <div
         style={{
           background: 'var(--color-surface-2)',

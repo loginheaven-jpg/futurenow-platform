@@ -61,7 +61,8 @@ export function ProfileForm({ accountProfile, onSubmit, busy }: { accountProfile
 
   return (
     <div>
-      <AppHeader variant="flow" title="잠깐, 몇 가지만" subtitle="응답을 더 깊이 읽기 위한 준비예요" />
+      {/* 출구(홈) 제공 — sub 우상단 홈 아이콘(/home). 응답 전 단계라 홈 이탈 안전(가입·차수 유지, 재개 가능). */}
+      <AppHeader variant="sub" title="잠깐, 몇 가지만" subtitle="응답을 더 깊이 읽기 위한 준비예요" />
 
       <div style={fieldGap}>
         {!accountComplete && (

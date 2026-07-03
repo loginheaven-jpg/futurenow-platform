@@ -34,4 +34,12 @@ describe('AuthGate — 통합 가입/로그인 폼(S3)', () => {
     const html = renderToStaticMarkup(<AuthGate allowCoachApply onSignup={noop} onLogin={noop} />);
     expect(html).not.toMatch(/--care|--danger|--warning/);
   });
+
+  it('출구(전진밖에 없는 화면 보완): onBack 있으면(/join) 뒤로+홈, 없으면(/signup) 없음', () => {
+    const withBack = renderToStaticMarkup(<AuthGate onSignup={noop} onLogin={noop} onBack={noop} />);
+    expect(withBack).toContain('aria-label="뒤로"');
+    expect(withBack).toContain('aria-label="홈"');
+    const withoutBack = renderToStaticMarkup(<AuthGate onSignup={noop} onLogin={noop} />);
+    expect(withoutBack).not.toContain('aria-label="홈"'); // flow 유지(SignupClient 가 현관 링크 제공)
+  });
 });
