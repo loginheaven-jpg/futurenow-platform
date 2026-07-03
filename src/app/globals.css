@@ -173,12 +173,24 @@ body {
   .print-only {
     display: block !important;
   }
-  /* 인쇄 루트: 화면 max-width 해제 → A4 폭 채우기 */
+  /* 인쇄 루트: 화면 max-width 해제 → A4 폭 채우기. flex column + order 로 인쇄 페이지 순서만 재배치(화면 DOM 순서 무변경). */
   .report-print-root {
     max-width: none !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+  /* 페이지 순서: 브랜드 헤더(0) → 차트(1페이지) → 해석·코칭(2페이지). 화면은 해석이 위지만 PDF는 여기서만 뒤바꾼다. */
+  .report-print-root > .print-only {
+    order: 0;
+  }
+  .report-charts-block {
+    order: 1;
+  }
+  .report-interp-block {
+    order: 2;
   }
   /* 패널·섹션이 페이지 경계에서 잘리지 않게(카드 단위 보존) */
   .report-print-root section {

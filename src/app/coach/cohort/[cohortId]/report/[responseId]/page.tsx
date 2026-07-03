@@ -70,8 +70,11 @@ export default async function CoachReportPage({
       </div>
       {/* PDF 전용 브랜드 문서 헤더(화면 미노출) */}
       <ReportPrintHeader participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />
-      <InterpretationPanel responseId={responseId} initial={initialVm} />
-      <div style={{ marginTop: 'var(--space-4)' }}>
+      {/* 화면 순서: 해석(위) → 차트(아래). PDF 인쇄에서만 order 로 차트=1페이지·해석=2페이지로 재배치(ADR-69). */}
+      <div className="report-interp-block">
+        <InterpretationPanel responseId={responseId} initial={initialVm} />
+      </div>
+      <div className="report-charts-block" style={{ marginTop: 'var(--space-4)' }}>
         <ReportScreen scores={scores} />
       </div>
     </div>
