@@ -10,6 +10,8 @@ import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import type { InterpretationContent } from '@/instruments/futurenow/report/interpretation';
 import { InterpretationPanel } from './InterpretationPanel';
+import { ReportPrintButton } from './ReportPrintButton';
+import { ReportPrintHeader } from './ReportPrintHeader';
 
 export const dynamic = 'force-dynamic';
 // 비차단(B③-A): 서버 렌더는 existing 해석(getInterpretation·빠름)만 조회 — aiChat 동기 await 제거(첫 열람 26s 블랭크 회피).
@@ -33,6 +35,17 @@ export default async function CoachReportPage({
   const scores = futurenowScoring.score(resp.answers, { wave: resp.wave });
   const backTo = `/coach/cohort/${resp.cohortId ?? cohortId}`;
 
+  // PDF 문서 헤더용 메타(대상·차수·회차·날짜). 코치는 소유 차수라 getCohort·listCohortMembers 통과(RLS). 실패는 우아한 폴백.
+  const [cohort, members] = await Promise.all([
+    ctx.getCohort(resp.cohortId ?? cohortId).catch(() => null),
+    ctx.listCohortMembers(resp.cohortId ?? cohortId).catch(() => []),
+  ]);
+  const participantName = members.find((m) => m.userId === resp.userId)?.name ?? '참여자';
+  const cohortName = cohort?.name ?? '';
+  const waveLabel = resp.wave === 'post' ? '사후 진단' : '사전 진단';
+  const [ry, rm, rd] = resp.createdAt.slice(0, 10).split('-');
+  const dateStr = `${ry}년 ${Number(rm)}월 ${Number(rd)}일`;
+
   // 비차단(B③-A): existing 해석만 즉시 조회(빠름). 없으면 null → 패널이 마운트 후 생성 트리거.
   //   게이트웨이 동기 블로킹 제거 → 리포트 시각화가 첫 열람부터 즉시 렌더. 해석 실패는 패널이 재시도 안내(시각화 무관).
   // 초기 VM(B③-B): effective(coach본 우선) + AI 원문(되돌리기 대상) + 코치 수정 여부(출처·되돌리기 노출).
@@ -47,8 +60,16 @@ export default async function CoachReportPage({
       : null;
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
+    <div className="report-print-root" style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
+      {/* 앱 크롬(헤더·PDF 버튼) — 화면 전용(인쇄 제외) */}
+      <div className="no-print">
+        <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
+          <ReportPrintButton />
+        </div>
+      </div>
+      {/* PDF 전용 브랜드 문서 헤더(화면 미노출) */}
+      <ReportPrintHeader participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />
       <InterpretationPanel responseId={responseId} initial={initialVm} />
       <div style={{ marginTop: 'var(--space-4)' }}>
         <ReportScreen scores={scores} />

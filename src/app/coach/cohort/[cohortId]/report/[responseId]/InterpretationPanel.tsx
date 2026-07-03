@@ -154,7 +154,7 @@ export function InterpretationPanel({ responseId, initial }: { responseId: strin
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
             해석을 준비하지 못했어요. 잠시 후 다시 시도해 주세요.
           </p>
-          <button type="button" onClick={generate} className="t-caption" style={ghostBtn}>다시 시도</button>
+          <button type="button" onClick={generate} className="no-print t-caption" style={ghostBtn}>다시 시도</button>
         </section>
       );
     }
@@ -221,7 +221,8 @@ export function InterpretationPanel({ responseId, initial }: { responseId: strin
         <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>{c.caution}</p>
       ) : null}
       <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-4)' }}>{c.growth}</p>
-      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+      {/* 검수 컨트롤 — 화면 전용(PDF 인쇄엔 해석 텍스트만) */}
+      <div className="no-print" style={{ display: 'flex', gap: 'var(--space-3)' }}>
         <button type="button" onClick={startEdit} disabled={busy} className="t-caption" style={ghostBtn}>다듬기</button>
         {vm.coachEdited ? (
           <button type="button" onClick={revertToAi} disabled={busy} className="t-caption" style={ghostBtn}>AI 원문으로</button>

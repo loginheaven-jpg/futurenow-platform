@@ -149,3 +149,39 @@ body {
   font-weight: 400;
   line-height: 1.4;
 }
+
+/* ── 인쇄(PDF 저장) — 개인 리포트 A4 ─────────────────────────────────
+   window.print() 로 브라우저 "PDF로 저장". 벡터 텍스트·SVG 차트 그대로(래스터화 없음).
+   .no-print = 앱 크롬(헤더·버튼) 인쇄 제외 · .print-only = 인쇄 전용 브랜드 문서 헤더. */
+.print-only {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact; /* 리포트는 색으로 구간·척도 전달 → 배경/차트 색 유지 필수 */
+    print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  /* 인쇄 루트: 화면 max-width 해제 → A4 폭 채우기 */
+  .report-print-root {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* 패널·섹션이 페이지 경계에서 잘리지 않게(카드 단위 보존) */
+  .report-print-root section {
+    break-inside: avoid;
+  }
+}
