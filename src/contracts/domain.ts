@@ -70,6 +70,14 @@ export interface MemberSummary {
   role: Role;
 }
 
+// 본부 멤버 세부(활동) — 운영자 화면. admin_member_activity(DEFINER) RPC 집계. ADR-71
+//   신원(전화=getPhone·프로필=getProfile)은 별도 게터로 조회하고, 여기선 참여 '활동'만 담는다.
+export interface MemberActivity {
+  ownedCohorts: string[]; // 소유(인도) 차수 이름 — 삭제 시 함께 사라지는 대상(영향 표시)
+  enrolledCohorts: string[]; // 참여(가입) 차수 이름
+  responseCount: number; // 응답 수
+}
+
 // 코치 신청(USER→COACH 승격 대기). 본부 §8.6 [승인 대기]의 데이터. ADR-24
 // 읽기는 운영자 전용(coach_apps_select=admin). 결정(승인/거절)은 decide_coach_application RPC(원자 승격).
 export interface CoachApplication {

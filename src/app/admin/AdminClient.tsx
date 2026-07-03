@@ -6,7 +6,7 @@ import type { CoachApplication, MemberSummary } from '@/contracts';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { AdminMembers } from './AdminMembers';
-import { decideCoachApplicationAction, setUserRoleAction } from './actions';
+import { decideCoachApplicationAction, deleteMemberAction, setUserRoleAction } from './actions';
 
 export function AdminClient({
   members,
@@ -38,6 +38,21 @@ export function AdminClient({
     }
   }
 
+  async function remove(userId: string) {
+    setBusyId(userId);
+    try {
+      const res = await deleteMemberAction(userId);
+      if (res.ok) {
+        toast.success('멤버를 삭제했어요.');
+        router.refresh();
+      } else {
+        toast.error('멤버 삭제에 실패했어요.');
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function decide(applicationId: string, decision: 'approved' | 'rejected') {
     setAppBusyId(applicationId);
     try {
@@ -63,6 +78,7 @@ export function AdminClient({
       headerActions={<HeaderActions homeHref="/home" navHref="/coach" navLabel="인도자 콘솔" />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
+      onDelete={remove}
       onApprove={(id) => decide(id, 'approved')}
       onReject={(id) => decide(id, 'rejected')}
     />

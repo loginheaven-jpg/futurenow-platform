@@ -16,6 +16,7 @@ import type {
   InstrumentId,
   InterpretationView,
   UserProfile,
+  MemberActivity,
   MemberRef,
   MemberSummary,
   MyCohortSummary,
@@ -113,4 +114,8 @@ export interface CoreContext {
   // 본부 — 멤버 역할 관리(직접 승격/강등). 운영자 전용. ADR-28
   listUsers(): Promise<MemberSummary[]>; // 운영자 전용(users_select=admin 전체). 비admin은 RLS로 본인 행만.
   setUserRole(userId: string, role: Role): Promise<void>; // 운영자 전용, RPC set_user_role(가드: admin·화이트리스트·자기강등 방지).
+
+  // 본부 — 멤버 세부(활동)·삭제. 운영자 전용(DEFINER RPC 내부 is_admin 게이트). ADR-70·71
+  getMemberActivity(userId: string): Promise<MemberActivity>; // 소유/참여 차수·응답 수(admin_member_activity). 신원은 getPhone·getProfile.
+  deleteMember(userId: string): Promise<void>; // 임의 멤버 계정 하드삭제(delete_user — auth.users 삭제·전체 연쇄). 가드: admin·자기삭제 금지.
 }

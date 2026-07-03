@@ -6,8 +6,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/core/ui';
 import type { CoachApplication, MemberSummary } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
-
-const ROLE_LABEL: Record<string, string> = { admin: '운영자', coach: '인도자', user: '멤버' };
+import { MemberRow } from './MemberRow';
 
 const rowStyle = {
   display: 'flex',
@@ -27,6 +26,7 @@ export function AdminMembers({
   appBusyId,
   onPromote,
   onDemote,
+  onDelete,
   onApprove,
   onReject,
   headerActions,
@@ -38,6 +38,7 @@ export function AdminMembers({
   appBusyId?: string | null;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
+  onDelete: (id: string) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   headerActions?: ReactNode;
@@ -77,34 +78,24 @@ export function AdminMembers({
         )}
       </section>
 
-      {/* ② 멤버 관리 — 역할 직접 승격/강등 */}
+      {/* ② 멤버 관리 — 역할 직접 승격/강등 + 이름 클릭 세부(신원·활동) + 삭제 */}
       <section>
         <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-1)' }}>멤버 관리</h2>
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-          멤버를 인도자로 승격하거나 되돌릴 수 있어요. 운영자 전용입니다.
+          이름을 누르면 세부정보(신원·활동)를 볼 수 있어요. 승격·강등·삭제는 운영자 전용입니다.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          {members.map((m) => {
-            const isSelf = m.id === currentUserId;
-            const busy = busyId === m.id;
-            return (
-              <div key={m.id} style={rowStyle}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="t-body" style={{ color: 'var(--color-text)' }}>
-                    {m.name ?? '이름 미입력'}
-                    {isSelf ? <span className="t-caption" style={{ color: 'var(--color-text-muted)' }}> · 나</span> : null}
-                  </div>
-                  <div className="t-caption" style={{ color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.email}</div>
-                </div>
-                <span className="t-caption" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>{ROLE_LABEL[m.role] ?? m.role}</span>
-                {m.role === 'user' ? (
-                  <Button onClick={() => onPromote(m.id)} disabled={busy}>{busy ? '처리 중…' : '인도자로 승격'}</Button>
-                ) : m.role === 'coach' && !isSelf ? (
-                  <Button variant="ghost" onClick={() => onDemote(m.id)} disabled={busy}>{busy ? '처리 중…' : '멤버로 강등'}</Button>
-                ) : null}
-              </div>
-            );
-          })}
+          {members.map((m) => (
+            <MemberRow
+              key={m.id}
+              member={m}
+              isSelf={m.id === currentUserId}
+              busy={busyId === m.id}
+              onPromote={onPromote}
+              onDemote={onDemote}
+              onDelete={onDelete}
+            />
+          ))}
         </div>
       </section>
     </div>

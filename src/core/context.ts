@@ -15,6 +15,7 @@ import type {
   Enrollment,
   InstrumentId,
   InterpretationView,
+  MemberActivity,
   MemberRef,
   MemberSummary,
   MyCohortSummary,
@@ -716,6 +717,26 @@ class SupabaseCoreContext implements CoreContext {
   async setUserRole(userId: string, role: Role): Promise<void> {
     const { error } = await this.sb.rpc('set_user_role', { p_user_id: userId, p_role: role });
     if (error) throw new CoreError(`setUserRole 실패: ${error.message}`);
+  }
+
+  // 멤버 세부(활동) — 소유/참여 차수·응답 수. admin_member_activity(DEFINER) 내부 is_admin 게이트. RETURNS TABLE → 1행 배열.
+  async getMemberActivity(userId: string): Promise<MemberActivity> {
+    const { data, error } = await this.sb.rpc('admin_member_activity', { p_user_id: userId });
+    if (error) throw new CoreError(`getMemberActivity 실패: ${error.message}`);
+    const r = (Array.isArray(data) ? data[0] : data) as
+      | { owned_cohorts: string[] | null; enrolled_cohorts: string[] | null; response_count: number | string | null }
+      | undefined;
+    return {
+      ownedCohorts: r?.owned_cohorts ?? [],
+      enrolledCohorts: r?.enrolled_cohorts ?? [],
+      responseCount: Number(r?.response_count ?? 0), // bigint → PostgREST string → 숫자화
+    };
+  }
+
+  // 멤버 하드삭제(임의). delete_user(DEFINER) — auth.users 삭제 → public.users CASCADE 연쇄. 가드(admin·자기삭제)는 RPC 내부.
+  async deleteMember(userId: string): Promise<void> {
+    const { error } = await this.sb.rpc('delete_user', { p_user_id: userId });
+    if (error) throw new CoreError(`deleteMember 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────
