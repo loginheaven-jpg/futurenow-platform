@@ -29,7 +29,15 @@ export default async function CoachConsolePage() {
     }
   }
 
-  const cohorts = await ctx.listCohortsByCoach(me.id);
+  // 운영자(수퍼바이저)는 모든 인도자 차수를 본다(ADR-74). 인도자는 본인 소유만. RLS 가 이중으로 강제.
+  const isAdmin = me.role === 'admin';
+  const cohorts = isAdmin ? await ctx.listAllCohorts() : await ctx.listCohortsByCoach(me.id);
+  // 운영자 뷰: 각 차수 소유 인도자 이름(누구의 차수인지). listUsers(운영자 전체) 1회 조회 → id→name 맵.
+  const coachNameById = new Map<string, string | null>();
+  if (isAdmin) {
+    const users = await ctx.listUsers().catch(() => []);
+    for (const u of users) coachNameById.set(u.id, u.name);
+  }
 
   // 차수 간 순차 왕복(구 1+4N wall-clock)을 병렬로 접는다(C-3·ADR-61). 차수 내 4쿼리는 이미 Promise.all.
   // map 결과 배열은 입력(cohorts) 순서를 보존 → summaries·careMembers 순서 불변. 예외는 for 루프와 동일하게 전파(첫 reject → 페이지 error, 조용한 삼킴 없음).
@@ -47,6 +55,7 @@ export default async function CoachConsolePage() {
       const summary: CohortSummary = {
         id: c.id,
         name: c.name,
+        coachName: isAdmin ? (coachNameById.get(c.coachId) ?? null) : undefined,
         instrumentLabel: instrumentDisplay(c.instrumentId).label,
         responded,
         total: responded + waiting,
@@ -67,7 +76,6 @@ export default async function CoachConsolePage() {
   const careMembers: RosterMember[] = perCohort.flatMap((r) => r.care); // 전 차수 합산(차수 순서 보존)
 
   // 운영자 승인 대기 배너: admin 은 로그인 시 /home 착지(loginOutcome 전원 /home)이나 콘솔 진입 시에도 pending 을 알리도록 배너 유지(홈 '본부' 카드 건수와 병행).
-  const isAdmin = me.role === 'admin';
   const pendingCoachApps = isAdmin ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
 
   return (

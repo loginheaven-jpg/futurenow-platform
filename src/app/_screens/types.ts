@@ -20,6 +20,7 @@ export interface CohortSummary {
   id: string;
   name: string;
   description?: string | null; // 코치 차수 소개(편집용 — 차수 상세에서만 채움)
+  coachName?: string | null; // 소유 인도자 이름(운영자 전체 차수 뷰에서만 채움 — 누구의 차수인지). ADR-74
   instrumentLabel: string;
   responded: number;
   total: number;

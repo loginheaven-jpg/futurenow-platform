@@ -430,6 +430,17 @@ class SupabaseCoreContext implements CoreContext {
     return (data ?? []).map((r) => rowToCohort(r as CohortRow));
   }
 
+  // 전체 차수(운영자 콘솔 — 모든 인도자 차수 감독). coach 필터 없음 → RLS(cohorts_select)가 운영자=전체·그 외=본인/멤버 차수로 제한.
+  //   앱은 운영자에게만 호출(수퍼바이저 뷰); 비운영자가 호출해도 RLS 로 자기 스코프만 반환(안전). 최신순 정렬.
+  async listAllCohorts(): Promise<Cohort[]> {
+    const { data, error } = await this.sb
+      .from('cohorts')
+      .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at,post_opened_at')
+      .order('created_at', { ascending: false });
+    if (error) throw new CoreError(`listAllCohorts 실패: ${error.message}`);
+    return (data ?? []).map((r) => rowToCohort(r as CohortRow));
+  }
+
   // 차수 멤버 id+name(코치/운영자). 권한·노출은 cohort_member_directory(DEFINER) 내부에서 강제 — 미달 시 빈 결과.
   async listCohortMembers(cohortId: string): Promise<MemberRef[]> {
     const { data, error } = await this.sb.rpc('cohort_member_directory', { p_cohort_id: cohortId });

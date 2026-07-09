@@ -25,6 +25,7 @@ export function ConsoleHomeClient({
       coachName={coachName}
       careMembers={careMembers}
       cohorts={cohorts}
+      isAdmin={isAdmin}
       pendingCoachApps={pendingCoachApps}
       onGoAdmin={() => router.push('/admin')}
       headerActions={<HeaderActions homeHref="/home" navHref={isAdmin ? '/admin' : undefined} navLabel={isAdmin ? '본부' : undefined} />}

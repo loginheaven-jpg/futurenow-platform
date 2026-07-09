@@ -13,7 +13,10 @@ export function CohortCard({ c, onOpen }: { c: CohortSummary; onOpen?: () => voi
             <span className="t-caption" style={{ color: 'var(--care-text)', fontWeight: 600 }}>먼저 챙길 분 {c.careCount}</span>
           ) : null}
         </div>
-        <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>{c.instrumentLabel}</p>
+        <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
+          {c.instrumentLabel}
+          {c.coachName ? <span style={{ color: 'var(--color-text-muted)' }}> · 인도자 {c.coachName}</span> : null}
+        </p>
         <ProgressBar value={c.responded} max={c.total} />
         <p className="t-caption tnum" style={{ color: 'var(--color-text-muted)', margin: 'var(--space-2) 0 0' }}>
           응답 {c.responded}/{c.total}

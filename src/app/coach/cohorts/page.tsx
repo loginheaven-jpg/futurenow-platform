@@ -15,7 +15,14 @@ export default async function AllCohortsPage() {
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용
 
-  const cohorts = await ctx.listCohortsByCoach(me.id);
+  // 운영자(수퍼바이저)는 모든 인도자 차수(ADR-74). 인도자는 본인 소유만. RLS 이중 강제.
+  const isAdmin = me.role === 'admin';
+  const cohorts = isAdmin ? await ctx.listAllCohorts() : await ctx.listCohortsByCoach(me.id);
+  const coachNameById = new Map<string, string | null>();
+  if (isAdmin) {
+    const users = await ctx.listUsers().catch(() => []);
+    for (const u of users) coachNameById.set(u.id, u.name);
+  }
   const summaries: CohortSummary[] = [];
   for (const c of cohorts) {
     const [enrollments, responses, alerts, members] = await Promise.all([
@@ -28,6 +35,7 @@ export default async function AllCohortsPage() {
     summaries.push({
       id: c.id,
       name: c.name,
+      coachName: isAdmin ? (coachNameById.get(c.coachId) ?? null) : undefined,
       instrumentLabel: instrumentDisplay(c.instrumentId).label,
       responded,
       total: responded + waiting,
@@ -36,5 +44,5 @@ export default async function AllCohortsPage() {
     });
   }
 
-  return <AllCohortsClient cohorts={summaries} />;
+  return <AllCohortsClient cohorts={summaries} isAdmin={isAdmin} />;
 }

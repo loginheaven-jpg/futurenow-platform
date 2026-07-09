@@ -5,12 +5,13 @@ import { AllCohorts } from '@/app/_screens/console/AllCohorts';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import type { CohortSummary } from '@/app/_screens/types';
 
-export function AllCohortsClient({ cohorts }: { cohorts: CohortSummary[] }) {
+export function AllCohortsClient({ cohorts, isAdmin = false }: { cohorts: CohortSummary[]; isAdmin?: boolean }) {
   const router = useRouter();
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AllCohorts
         cohorts={cohorts}
+        isAdmin={isAdmin}
         headerActions={<HeaderActions />}
         backHref="/coach"
         onOpenCohort={(id) => router.push(`/coach/cohort/${id}?from=cohorts`)}
