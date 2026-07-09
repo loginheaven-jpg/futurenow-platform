@@ -80,3 +80,14 @@ export async function openPostWaveAction(cohortId: string): Promise<{ ok: boolea
     return { ok: false, error: e instanceof Error ? e.message : '사후 진단 개시에 실패했습니다.' };
   }
 }
+
+// 차수에서 참여자 제거(휴지통·파괴적·ADR-73) — removeCohortMember(remove_cohort_member RPC) 경유.
+//   권한(해당 차수 코치 OR 운영자)은 RPC 내부 is_cohort_coach/is_admin 게이트가 강제. 이 차수 한정 응답·참여 삭제.
+export async function removeCohortMemberAction(cohortId: string, userId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await (await ctx()).removeCohortMember(cohortId, userId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '참여자 삭제에 실패했습니다.' };
+  }
+}

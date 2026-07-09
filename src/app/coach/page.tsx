@@ -57,7 +57,7 @@ export default async function CoachConsolePage() {
       // 먼저 챙길 분(차수별). id=`${cohortId}__${responseId}` — 리포트 진입에 cohortId 필요.
       const care: RosterMember[] = roster
         .filter((m) => m.status === 'care')
-        .map((m) => ({ id: `${c.id}__${m.id}`, name: m.name, status: 'care', note: `${m.note ?? ''} · ${c.name}` }));
+        .map((m) => ({ id: `${c.id}__${m.id}`, userId: m.userId, name: m.name, status: 'care', note: `${m.note ?? ''} · ${c.name}` }));
 
       return { summary, care };
     }),

@@ -49,4 +49,11 @@ describe('buildCohortRoster (§8.3 3숫자·3묶음·이름 매핑)', () => {
   it('care 행의 id 는 신호 달린 responseId(리포트가 신호를 보이도록)', () => {
     expect(model.roster.find((m) => m.status === 'care')?.id).toBe('r1');
   });
+
+  it('userId 는 응답/미응답 모두 참여자 식별(휴지통 — 차수에서 제거)', () => {
+    // 응답자: id=responseId 여도 userId 는 사용자(u1). 미응답: id==userId.
+    expect(model.roster.find((m) => m.id === 'r1')?.userId).toBe('u1'); // care
+    expect(model.roster.find((m) => m.id === 'r2')?.userId).toBe('u2'); // done
+    expect(model.roster.find((m) => m.id === 'u4')?.userId).toBe('u4'); // pending
+  });
 });

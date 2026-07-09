@@ -50,16 +50,16 @@ export function buildCohortRoster(input: {
     const careResp = rs.find((r) => careByResp.has(r.id));
     if (careResp) {
       careCount += 1;
-      roster.push({ id: careResp.id, name: name(uid), status: 'care', note: careByResp.get(careResp.id)!.join(' · ') });
+      roster.push({ id: careResp.id, userId: uid, name: name(uid), status: 'care', note: careByResp.get(careResp.id)!.join(' · ') });
     } else {
       const latest = rs.reduce((a, b) => (b.createdAt > a.createdAt ? b : a));
-      roster.push({ id: latest.id, name: name(uid), status: 'done' });
+      roster.push({ id: latest.id, userId: uid, name: name(uid), status: 'done' });
     }
   }
 
   // 미응답 = 가입했으나 응답 없는 멤버. id=userId(리포트 진입 없음).
   for (const e of input.enrollments) {
-    if (!byUser.has(e.userId)) roster.push({ id: e.userId, name: name(e.userId), status: 'pending' });
+    if (!byUser.has(e.userId)) roster.push({ id: e.userId, userId: e.userId, name: name(e.userId), status: 'pending' });
   }
 
   const responded = byUser.size;

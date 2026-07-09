@@ -307,6 +307,13 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`deleteCohort 실패: ${error.message}`);
   }
 
+  // 차수에서 참여자 제거(휴지통). 권한(해당 차수 코치 OR 운영자)은 remove_cohort_member(DEFINER) 내부에서 강제.
+  //   이 차수 한정 삭제: responses(→alerts·해석 CASCADE)·response_drafts·enrollments. 계정·타 차수 데이터는 불변.
+  async removeCohortMember(cohortId: string, userId: string): Promise<void> {
+    const { error } = await this.sb.rpc('remove_cohort_member', { p_cohort_id: cohortId, p_user_id: userId });
+    if (error) throw new CoreError(`removeCohortMember 실패: ${error.message}`);
+  }
+
   // 차수 개설(코치/운영자). 앱측 코드 생성 + 유니크 충돌(23505) 재시도. RLS(cohorts_insert)가 권한을 강제(이중 방어).
   async createCohort(input: {
     name: string;

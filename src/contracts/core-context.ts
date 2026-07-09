@@ -70,6 +70,9 @@ export interface CoreContext {
   // 차수 하드삭제(파괴적). RLS(cohorts_delete: 소유 코치 OR 운영자) 이중. **운영자=임의 차수 / 코치=빈 차수만**(참여·응답 0 — 데이터 파괴 방지, 데이터 있으면 마감).
   //   예약 general 차수(체험) 보호는 앱 액션이 강제(코어는 진단어휘 무지). FK: enrollments/response_drafts CASCADE·responses/alerts/해석 SET NULL. ADR-67
   deleteCohort(cohortId: string): Promise<void>;
+  // 차수에서 참여자 제거(휴지통) — 해당 차수 코치 또는 운영자만(remove_cohort_member DEFINER: is_cohort_coach OR is_admin).
+  //   이 차수 한정 삭제: responses(→alerts·해석 CASCADE)·response_drafts·enrollments. 계정·타 차수 불변. ADR-73
+  removeCohortMember(cohortId: string, userId: string): Promise<void>;
 
   listMyCohorts(): Promise<MyCohortSummary[]>; // 멤버 본인 차수+진행(RPC my_cohorts, DEFINER 비민감 메타). 코치 시점 listEnrollments 와 분리. 승인 2026-06-29
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체. 승인 2026-06-28

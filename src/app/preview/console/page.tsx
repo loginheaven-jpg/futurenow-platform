@@ -13,11 +13,11 @@ const cohorts: CohortSummary[] = [
 ];
 
 const roster: RosterMember[] = [
-  { id: 'm1', name: '이참여', status: 'care', note: '활력 시들음 · 개별 안부 권장' },
-  { id: 'm2', name: '박응답', status: 'done' },
-  { id: 'm3', name: '최완료', status: 'done' },
-  { id: 'm4', name: '정대기', status: 'pending' },
-  { id: 'm5', name: '한아직', status: 'pending' },
+  { id: 'm1', userId: 'u1', name: '이참여', status: 'care', note: '활력 시들음 · 개별 안부 권장' },
+  { id: 'm2', userId: 'u2', name: '박응답', status: 'done' },
+  { id: 'm3', userId: 'u3', name: '최완료', status: 'done' },
+  { id: 'm4', userId: 'u4', name: '정대기', status: 'pending' },
+  { id: 'm5', userId: 'u5', name: '한아직', status: 'pending' },
 ];
 
 const careMembers = roster.filter((m) => m.status === 'care');

@@ -6,7 +6,7 @@ import { CohortDetail } from '@/app/_screens/console/CohortDetail';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { useToast } from '@/app/_toast/ToastProvider';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
-import { archiveCohortAction, deleteCohortAction, openPostWaveAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
+import { archiveCohortAction, deleteCohortAction, openPostWaveAction, removeCohortMemberAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
 import { applyOptimistic, refineActionError } from './cohortAdmin';
 
 export function CohortDetailClient({
@@ -17,6 +17,7 @@ export function CohortDetailClient({
   postOpened,
   backHref,
   isAdmin,
+  canManageMembers,
   memberCount,
   responseCount,
 }: {
@@ -27,6 +28,7 @@ export function CohortDetailClient({
   postOpened: boolean; // 사후 진단 개시 여부(cohort.post_opened_at != null). ADR-55
   backHref: string; // 진입 출처 기반(A′-4) — 서버가 ?from= 로 산출(콘솔/목록)
   isAdmin: boolean; // 운영자면 데이터 있는 차수도 삭제 가능(코치는 빈 차수만). ADR-67
+  canManageMembers: boolean; // 참여자 휴지통 노출 — 해당 차수 코치 또는 운영자만(서버 판정). ADR-73
   memberCount: number; // 참여 수(삭제 가능 판정·컨펌 영향 표시)
   responseCount: number; // 응답 수(동)
 }) {
@@ -74,6 +76,17 @@ export function CohortDetailClient({
     }
   }
 
+  // 참여자 제거(휴지통·ADR-73) — 성공 시 refresh(명단에서 사라짐). 컨펌은 RosterRow 가 담당(2단계).
+  async function onRemoveMember(userId: string, name: string) {
+    const res = await removeCohortMemberAction(summary.id, userId);
+    if (res.ok) {
+      toast.success(`${name} 님을 차수에서 지웠어요.`);
+      router.refresh();
+    } else {
+      toast.error(refineActionError(res.error));
+    }
+  }
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <CohortDetail
@@ -85,8 +98,10 @@ export function CohortDetailClient({
         headerActions={<HeaderActions />}
         backHref={backHref}
         isAdmin={isAdmin}
+        canManageMembers={canManageMembers}
         memberCount={memberCount}
         responseCount={responseCount}
+        onRemoveMember={onRemoveMember}
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
         onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}

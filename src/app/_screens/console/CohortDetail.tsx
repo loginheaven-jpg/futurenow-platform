@@ -2,10 +2,11 @@
 // §8.3 차수 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
 // 덜 쓰는 관리(마감·정원)는 헤더 메뉴. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Button, ListRow, Stepper } from '@/core/ui';
+import { Button, Stepper } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 import { GENERAL_CODE } from '../entry/general';
 import type { CohortSummary, RosterMember } from '../types';
+import { RosterRow } from './RosterRow';
 
 const nameInputStyle: CSSProperties = {
   flex: 1,
@@ -63,6 +64,8 @@ export function CohortDetail({
   onOpenPost,
   onGroupReport,
   onDelete,
+  onRemoveMember,
+  canManageMembers = false,
   headerActions,
   isAdmin = false,
   memberCount = 0,
@@ -83,6 +86,8 @@ export function CohortDetail({
   onOpenPost?: () => void | Promise<void>; // 사후 진단 개시 → openPostWave(단방향 멱등). ADR-55
   onGroupReport?: () => void; // 차수 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
   onDelete?: () => void | Promise<void>; // 차수 하드삭제(파괴적) → deleteCohort. ADR-67
+  onRemoveMember?: (userId: string, name: string) => void | Promise<void>; // 참여자 제거(휴지통) → removeCohortMember. ADR-73
+  canManageMembers?: boolean; // 휴지통 노출 — 해당 차수 코치 또는 운영자만(서버 판정)
   headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
   isAdmin?: boolean; // 운영자 = 데이터 있는 차수도 삭제 가능(코치는 빈 차수만). ADR-67
   memberCount?: number; // 참여 수(삭제 가능 판정·컨펌 영향)
@@ -315,14 +320,14 @@ export function CohortDetail({
       {care.length > 0 && (
         <Group title="먼저 챙길 분" color="var(--care-text)">
           {care.map((m) => (
-            <ListRow key={m.id} tone="care" title={m.name} subtitle={m.note} trailing="›" onClick={() => onOpenMember?.(m.id)} />
+            <RosterRow key={m.userId} member={m} onOpen={onOpenMember} onRemove={onRemoveMember} canRemove={canManageMembers} />
           ))}
         </Group>
       )}
 
       <Group title="응답 완료">
         {done.length ? (
-          done.map((m) => <ListRow key={m.id} title={m.name} trailing="›" onClick={() => onOpenMember?.(m.id)} />)
+          done.map((m) => <RosterRow key={m.userId} member={m} onOpen={onOpenMember} onRemove={onRemoveMember} canRemove={canManageMembers} />)
         ) : (
           <p className="t-caption" style={{ color: 'var(--color-text-muted)' }}>아직 없어요.</p>
         )}
@@ -330,7 +335,7 @@ export function CohortDetail({
 
       <Group title="아직 안 함">
         {pending.map((m) => (
-          <ListRow key={m.id} title={m.name} subtitle="미응답" />
+          <RosterRow key={m.userId} member={m} onRemove={onRemoveMember} canRemove={canManageMembers} />
         ))}
       </Group>
 

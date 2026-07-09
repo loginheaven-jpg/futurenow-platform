@@ -46,6 +46,9 @@ export default async function CohortDetailPage({
     code: cohort.code,
   };
 
+  // 참여자 휴지통 노출·권한(ADR-73): 운영자 또는 이 차수의 코치(소유)만. RPC 도 동일 게이트로 이중 방어.
+  const canManageMembers = me.role === 'admin' || cohort.coachId === me.id;
+
   return (
     <CohortDetailClient
       summary={summary}
@@ -55,6 +58,7 @@ export default async function CohortDetailPage({
       postOpened={cohort.postOpenedAt != null}
       backHref={backHref}
       isAdmin={me.role === 'admin'}
+      canManageMembers={canManageMembers}
       memberCount={enrollments.length}
       responseCount={responses.length}
     />

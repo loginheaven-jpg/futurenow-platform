@@ -9,7 +9,8 @@ export function instrumentDisplay(instrumentId: string): { label: string; minute
 
 // 콘솔 샘플/표시용 명단 행
 export interface RosterMember {
-  id: string;
+  id: string; // 응답자=responseId(리포트 진입)·미응답=userId
+  userId: string; // 참여자 식별(휴지통 — 차수에서 제거). id 와 별도(id 는 응답자면 responseId). ADR-73
   name: string;
   status: 'care' | 'done' | 'pending';
   note?: string; // 먼저 챙길 분 사유(인도자 화면)
