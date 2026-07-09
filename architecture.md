@@ -238,7 +238,7 @@ plan Q1~Q3 을 확정한다(과거 plan.md §3 → 본 절로 승격).
 **라우트 맵**(전부 기존 메서드 위 배선 — 계약 변경 0):
 | 라우트 | 주체 | 데이터 |
 |---|---|---|
-| `/` | 방문자 | 현관 — 두 갈래(참여하기→/join · 인도자 로그인→/login). 정적, 데이터 없음 |
+| `/` | 방문자 | 현관 — 참여하기→/join · **로그인(전 역할 공용)→/login**(상단 "이미 참여하셨나요? 로그인" + 하단 로그인 버튼) · 인도자 회원가입→/signup. 정적, 데이터 없음 |
 | `/home` | 모든 로그인 사용자 | 통합 홈 허브(A′-1·ADR-51). 게이트: **미인증→/login 만**(역할 리다이렉트 제거·전원 개방). 인사 + (코치·운영자)**운영 카드**(→/coach·/admin) + [코드로 세미나 참여]→/join + [내 차수]→/my/cohorts. 셸 헤더+로그아웃 |
 | `/my/cohorts` | 모든 로그인 사용자 | 내 차수 목록(Step 1.2·A′-1 개방). `listMyCohorts`(my_cohorts DEFINER RPC, auth.uid() 스코프) — 차수명·코치명·status·사전/사후 진행·**post_opened**. 사전 미완→/join · **사후 개시·미완→[사후 진단하기]→/join?wave=post(B-2)** · 그 외→[내 리포트]. 게이트: 미인증→/login |
 | `/my/cohorts/[cohortId]/report` | 전 로그인 사용자(본인 참여분) | 내 리포트 **순화 뷰**(Step 1.3, ADR-27/30·role 게이트 제거 ADR-59 — RLS 본인 스코프). `listResponses`(본인 pre·post, self-read)→각 wave `latestPerUser`→score→`participantMirror`→`MirrorView`. **사전·사후 모두 있으면 미러 2개 나란히 비교(B-3·ADR-57), 하나면 단독**. 측정·severity 0(순화 유지). 계약·DB 무변경 |

@@ -83,6 +83,8 @@ export function AdminMembers({
         <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-1)' }}>멤버 관리</h2>
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
           이름을 누르면 세부정보(신원·활동)를 볼 수 있어요. 승격·강등·삭제는 운영자 전용입니다.
+          <br />
+          <span style={{ color: 'var(--color-text-muted)' }}>인도자로 승격하실 분은 표시 이름이 <strong>실명</strong>인지 먼저 확인해 주세요.</span>
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {members.map((m) => (

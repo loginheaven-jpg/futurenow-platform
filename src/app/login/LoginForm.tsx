@@ -1,5 +1,5 @@
 'use client';
-// 인도자 로그인 폼(프레젠테이션 — 부수효과 없음). 로그인 전용(가입 폼·탭 없음 — 가입은 /join).
+// 로그인 폼(프레젠테이션 — 부수효과 없음). 로그인 전용(가입 폼·탭 없음). **전 역할 공용**(참여자·인도자·운영자) — 로그인 후 역할별 착지.
 // 참여자 팔레트(네이비 틀·중립). 의미색 불필요. 보조 링크는 일반 앵커(라우터 컨텍스트 불요 → 렌더 테스트 가능).
 import { type CSSProperties } from 'react';
 import Link from 'next/link';
@@ -41,10 +41,10 @@ export function LoginForm({
   return (
     <div style={{ maxWidth: 420, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <h1 className="t-h1" style={{ color: 'var(--color-primary)', fontSize: 22, margin: '0 0 var(--space-2)' }}>
-        퓨처나우 · 인도자 로그인
+        퓨처나우 · 로그인
       </h1>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
-        인도자·운영자 전용 로그인이에요.
+        이미 가입하셨다면 이메일과 비밀번호로 로그인하세요. 참여자·인도자 모두 이곳에서 들어옵니다.
       </p>
 
       {error ? (
@@ -98,11 +98,11 @@ export function LoginForm({
         <a href="/reset" style={{ color: 'var(--color-primary)' }}>비밀번호를 잊으셨나요?</a>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
-        인도자·스태프 계정이 없으신가요? <a href="/signup" style={{ color: 'var(--color-primary)' }}>회원가입</a>
+        처음 참여하시나요? 인도자에게 받은 코드로{' '}
+        <a href="/join" style={{ color: 'var(--color-primary)' }}>입장하기</a>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
-        참여자는 인도자에게 받은 코드로 입장해 주세요.{' '}
-        <a href="/join" style={{ color: 'var(--color-primary)' }}>입장하기</a>
+        인도자로 활동하실 분은 <a href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</a>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-4)', textAlign: 'center' }}>
         <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>

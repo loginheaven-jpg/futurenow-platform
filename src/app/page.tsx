@@ -33,6 +33,9 @@ export default function Home() {
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0', textAlign: 'center' }}>
         코드가 있으신가요? <a href="/join" style={{ color: 'var(--color-primary)' }}>코드로 입장</a>
       </p>
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-1) 0 0', textAlign: 'center' }}>
+        이미 참여하셨나요? <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인</a>
+      </p>
 
       {/* 소개 세 단락 — 스크롤(공통 소개, SeminarIntro 단일 출처 — 코드 미리보기와 공유) */}
       <div style={divider} />
@@ -58,13 +61,13 @@ export default function Home() {
         </p>
       </div>
 
-      {/* 인도자 진입 — 보조(하단·ghost, 참여자 현관이라 우선순위 낮게) */}
+      {/* 로그인·인도자 진입 — 보조(하단·ghost, 참여자 현관이라 우선순위 낮게). 로그인은 전 역할 공용. */}
       <div style={{ ...divider, margin: 'var(--space-8) 0 var(--space-6)' }} />
       <a className="ui-btn ui-btn--ghost" href="/login" style={full}>
-        인도자 로그인
+        로그인
       </a>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0', textAlign: 'center' }}>
-        처음이세요? <a href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</a>
+        인도자로 활동하실 분은 <a href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</a>
       </p>
     </main>
   );

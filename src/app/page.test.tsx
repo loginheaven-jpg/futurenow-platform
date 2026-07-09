@@ -23,9 +23,10 @@ describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
     expect(html).toContain('사전 진단'); // 진행 본문
   });
 
-  it('인도자 진입(보조) → /login·/signup', () => {
+  it('로그인·인도자 진입(보조) → /login·/signup + 재방문 로그인', () => {
     expect(html).toContain('href="/login"');
-    expect(html).toContain('인도자 로그인');
+    expect(html).toContain('로그인'); // 일반 로그인(전 역할 공용)
+    expect(html).toContain('이미 참여하셨나요?'); // 상단 재방문 참여자 로그인 진입
     expect(html).toContain('href="/signup"');
     expect(html).toContain('회원가입');
   });
