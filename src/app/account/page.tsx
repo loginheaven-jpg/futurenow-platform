@@ -15,8 +15,9 @@ export default async function AccountPage() {
 
   const contact = await ctx.getContactDetail(me.id).catch(() => null); // 본인 — 전화·주소·계좌(assertContactAccess 통과)
   const profile = await ctx.getProfile(me.id).catch(() => null); // 본인 프로필(RLS 본인/운영자). 없으면 null → 빈 폼
-  // KPC 는 코치만(set_my_coach_kpc RPC 가 role=coach 게이트). 비코치는 조회·섹션 생략.
-  const kpc = me.role === 'coach' ? await ctx.getMyCoachKpc().catch(() => null) : null;
+  // KPC 는 코치·운영자(set_my_coach_kpc RPC 가 coach|admin 게이트 — 2026-07-09). 멤버(user)는 조회·섹션 생략.
+  const canKpc = me.role === 'coach' || me.role === 'admin';
+  const kpc = canKpc ? await ctx.getMyCoachKpc().catch(() => null) : null;
   // 홈 복귀 = 통합 홈 /home(A′-2 — 역할 무관 단일 홈. 콘솔·본부는 홈의 운영 카드로 진입).
   const homeHref = '/home';
 
@@ -30,7 +31,7 @@ export default async function AccountPage() {
         initialBankAccount={contact?.bankAccount ?? ''}
         initialProfile={profile}
         initialKpc={kpc ?? ''}
-        allowKpc={me.role === 'coach'}
+        allowKpc={canKpc}
       />
     </div>
   );
