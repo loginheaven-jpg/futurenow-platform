@@ -9,6 +9,7 @@ import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { loginOutcome } from '@/app/login/loginOutcome';
 import { AuthGate, type SignupPayload } from '@/app/_screens/entry/AuthGate';
+import { CONSENT_VERSION } from '@/app/_consent/consent';
 
 export function SignupClient() {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -41,10 +42,12 @@ export function SignupClient() {
         setNotice('가입 확인 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인해 주세요.' + (p.coachApply ? ' 인도자 신청은 로그인 후 이어집니다.' : ''));
         return;
       }
-      // 세션 있음 → 코치 신청(선택). 프로필은 트리거가 metadata 로 저장.
+      // 세션 있음 → 연락처(전화·주소·계좌) + 개인정보 동의 저장(전원·ADR-76). 프로필은 트리거가 metadata 로 저장.
+      await ctx.setContact({ phone: p.phone ?? null, address: p.address ?? null, bankAccount: p.bankAccount ?? null }).catch(() => {});
+      await ctx.recordConsent('privacy_use', CONSENT_VERSION).catch(() => {});
+      if (p.consentSensitive) await ctx.recordConsent('sensitive_use', CONSENT_VERSION).catch(() => {});
+      // 코치 신청(선택).
       if (p.coachApply) {
-        const me = await ctx.currentUser();
-        if (me && p.phone) await ctx.setPhone(me.id, p.phone).catch(() => {});
         try {
           await ctx.createCoachApplication({ kpcNumber: p.kpc ?? null });
         } catch {

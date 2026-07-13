@@ -98,9 +98,11 @@ export function MemberRow({
             <p className="t-caption" style={{ color: 'var(--color-danger)', margin: 0 }}>세부정보를 불러오지 못했어요.</p>
           ) : detail ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              {/* 신원 */}
+              {/* 신원 (운영자 전용 — 전화·주소·계좌 포함) */}
               <dl style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', margin: 0 }}>
-                <Field label="전화" value={detail.phone ?? '—'} />
+                <Field label="전화" value={detail.contact?.phone ?? '—'} />
+                <Field label="주소" value={detail.contact?.address ?? '—'} />
+                <Field label="계좌" value={detail.contact?.bankAccount ?? '—'} />
                 <Field label="성별" value={p?.gender ? (GENDER_LABEL[p.gender] ?? p.gender) : '—'} />
                 <Field label="출생연도" value={p?.birthYear != null ? `${p.birthYear}년` : '—'} />
                 <Field label="종교" value={p?.religion ?? '—'} />

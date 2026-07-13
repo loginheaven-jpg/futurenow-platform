@@ -1,6 +1,6 @@
 'use server';
 // 본부 멤버 역할 변경 — 기존 setUserRole(set_user_role RPC) 위 배선. 권한·가드는 RPC 내부에서 강제.
-import type { MemberActivity, Role, UserProfile } from '@/contracts';
+import type { ContactDetail, MemberActivity, Role, UserProfile } from '@/contracts';
 import { createServerContext } from '@/core/supabase/server';
 
 export async function setUserRoleAction(userId: string, role: Role): Promise<{ ok: boolean; error?: string }> {
@@ -29,18 +29,18 @@ export async function decideCoachApplicationAction(
 
 // 멤버 세부(신원+활동) — 전화(getPhone 게이트)·프로필(getProfile)·활동(getMemberActivity) 병렬 수집. 전부 운영자 게이트(RLS·RPC).
 //   전화/프로필은 부재 시 null(throw 아님) — 방어적 catch 로 활동만 있어도 표시. 활동 실패는 액션 실패로.
-export type MemberDetail = { phone: string | null; profile: UserProfile | null; activity: MemberActivity };
+export type MemberDetail = { contact: ContactDetail | null; profile: UserProfile | null; activity: MemberActivity };
 export async function memberDetailAction(
   userId: string,
 ): Promise<{ ok: true; detail: MemberDetail } | { ok: false; error?: string }> {
   try {
     const ctx = await createServerContext();
-    const [phone, profile, activity] = await Promise.all([
-      ctx.getPhone(userId).catch(() => null),
+    const [contact, profile, activity] = await Promise.all([
+      ctx.getContactDetail(userId).catch(() => null), // 전화·주소·계좌(운영자 전용)
       ctx.getProfile(userId).catch(() => null),
       ctx.getMemberActivity(userId),
     ]);
-    return { ok: true, detail: { phone, profile, activity } };
+    return { ok: true, detail: { contact, profile, activity } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : '세부정보 조회에 실패했습니다.' };
   }

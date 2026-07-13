@@ -7,6 +7,8 @@ import { GENDERS } from '@/contracts/vocab';
 import { RELIGIONS, KPC_RE, CURRENT_YEAR } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
+import { ConsentBlock } from '@/app/_consent/ConsentBlock';
+import { PRIVACY_CONSENT, SENSITIVE_CONSENT } from '@/app/_consent/consent';
 
 export type SignupPayload = {
   email: string;
@@ -19,6 +21,9 @@ export type SignupPayload = {
   coachApply?: boolean;
   phone?: string;
   kpc?: string;
+  address?: string; // 선택
+  bankAccount?: string; // 선택(개근장학금 입금)
+  consentSensitive?: boolean; // 민감정보(종교·신앙) 수집 동의 여부. privacy(필수)는 제출=동의. ADR-76
 };
 
 const inputStyle: CSSProperties = {
@@ -83,14 +88,18 @@ export function AuthGate({
   const [coachApply, setCoachApply] = useState(false);
   const [phone, setPhone] = useState('');
   const [kpc, setKpc] = useState('');
+  const [address, setAddress] = useState('');
+  const [bankAccount, setBankAccount] = useState('');
+  const [consentPrivacy, setConsentPrivacy] = useState(false); // 필수 동의(미체크 시 가입 불가)
+  const [consentSensitive, setConsentSensitive] = useState(false); // 선택 — 종교·신앙 입력 게이팅
 
   const yearNum = Number(birthYear);
   const yearValid = /^\d{4}$/.test(birthYear) && yearNum >= 1900 && yearNum <= CURRENT_YEAR;
   const coachOn = allowCoachApply && coachApply;
   const phoneValid = phone.trim() !== ''; // 전 참여자 필수(연락처 확보 — ADR-75). 코치는 KPC 추가.
   const coachValid = !coachOn || KPC_RE.test(kpc.trim());
-  // 폼이 유일 강제 지점(DB nullable): 이름·전화·성별·생년 필수(IdentityPolicy user.name='required' + 전화·성별·생년 게이트).
-  const signupValid = !!email && !!password && name.trim() !== '' && phoneValid && gender !== '' && yearValid && coachValid;
+  // 폼이 유일 강제 지점(DB nullable): 이름·전화·성별·생년 + **개인정보 동의(필수)**. 민감(종교·신앙)은 선택 동의로 게이팅(ADR-76).
+  const signupValid = !!email && !!password && name.trim() !== '' && phoneValid && gender !== '' && yearValid && coachValid && consentPrivacy;
   const loginValid = !!email && !!password;
 
   function submit() {
@@ -100,10 +109,15 @@ export function AuthGate({
       return;
     }
     if (!signupValid) return;
-    const p: SignupPayload = { email, password, name: name.trim(), gender, birthYear: yearNum, phone: phone.trim() };
-    if (religion) p.religion = religion;
-    const fy = Number(faithYears);
-    if (faithYears.trim() && Number.isFinite(fy) && fy >= 0) p.faithYears = fy;
+    const p: SignupPayload = { email, password, name: name.trim(), gender, birthYear: yearNum, phone: phone.trim(), consentSensitive };
+    if (address.trim()) p.address = address.trim();
+    if (bankAccount.trim()) p.bankAccount = bankAccount.trim();
+    // 민감정보(종교·신앙)는 선택 동의한 경우에만 실림(미동의 시 수집 안 함).
+    if (consentSensitive) {
+      if (religion) p.religion = religion;
+      const fy = Number(faithYears);
+      if (faithYears.trim() && Number.isFinite(fy) && fy >= 0) p.faithYears = fy;
+    }
     if (coachOn) {
       p.coachApply = true;
       p.kpc = kpc.trim();
@@ -175,19 +189,34 @@ export function AuthGate({
             </label>
 
             <label className="t-caption" style={labelStyle}>
-              종교 (선택)
-              <select style={inputStyle} value={religion} onChange={(e) => setReligion(e.target.value)} aria-label="종교">
-                <option value="">선택 안 함</option>
-                {RELIGIONS.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
+              주소 (선택)
+              <input style={inputStyle} type="text" autoComplete="street-address" placeholder="도로명 주소 (선택)" value={address} onChange={(e) => setAddress(e.target.value)} aria-label="주소" />
             </label>
 
             <label className="t-caption" style={labelStyle}>
-              신앙 연수 (선택)
-              <input style={inputStyle} type="number" inputMode="numeric" placeholder="예: 10 (년)" value={faithYears} onChange={(e) => setFaithYears(e.target.value)} aria-label="신앙 연수" />
+              입금 계좌 (선택 · 개근장학금)
+              <input style={inputStyle} type="text" inputMode="numeric" placeholder="은행 계좌번호 (선택)" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} aria-label="입금 계좌" />
             </label>
+
+            {/* 민감정보(종교·신앙)는 선택 동의한 경우에만 입력란 노출·수집(ADR-76·PIPA 별도동의) */}
+            <ConsentBlock text={SENSITIVE_CONSENT} checked={consentSensitive} onChange={setConsentSensitive} />
+            {consentSensitive && (
+              <>
+                <label className="t-caption" style={labelStyle}>
+                  종교
+                  <select style={inputStyle} value={religion} onChange={(e) => setReligion(e.target.value)} aria-label="종교">
+                    <option value="">선택 안 함</option>
+                    {RELIGIONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="t-caption" style={labelStyle}>
+                  신앙 연수
+                  <input style={inputStyle} type="number" inputMode="numeric" placeholder="예: 10 (년)" value={faithYears} onChange={(e) => setFaithYears(e.target.value)} aria-label="신앙 연수" />
+                </label>
+              </>
+            )}
 
             {allowCoachApply && (
               <label className="t-caption" style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
@@ -205,6 +234,9 @@ export function AuthGate({
                 ) : null}
               </label>
             )}
+
+            {/* 개인정보 수집·이용 동의(필수) — 미체크 시 가입 버튼 비활성(ADR-76) */}
+            <ConsentBlock text={PRIVACY_CONSENT} checked={consentPrivacy} onChange={setConsentPrivacy} />
           </>
         )}
       </div>

@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { MemberHome } from '@/app/_screens/MemberHome';
+import { ConsentGate } from '@/app/_consent/ConsentGate';
+import { CONSENT_VERSION } from '@/app/_consent/consent';
 import { createServerContext } from '@/core/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +16,11 @@ export default async function MemberHomePage() {
   const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
+
+  // 개인정보 동의 소급 게이트(ADR-76): 필수(privacy_use) 최신 버전 미동의면 홈 대신 동의 화면. 기존 회원 소급.
+  const consents = await ctx.listMyConsents().catch(() => []);
+  const consented = consents.some((c) => c.type === 'privacy_use' && c.version === CONSENT_VERSION);
+  if (!consented) return <ConsentGate />;
 
   const greetingName = me.name?.trim() || me.email.split('@')[0] || '회원';
   const cohorts = await ctx.listMyCohorts(); // my_cohorts DEFINER RPC(본인 차수+진행). 앱은 cohorts·responses 직접 select 안 함.

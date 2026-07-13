@@ -5,6 +5,14 @@
 // 부가했다. **형상 변경은 지휘부 승인 후에만**(architecture §0 / CLAUDE §1).
 
 export type Role = 'user' | 'coach' | 'admin';
+
+// 개인정보 동의 유형(ADR-76). privacy_use=멤버 필수 수집·이용 · sensitive_use=민감정보(종교·신앙) 선택 · coach_pledge=인도자 보호 서약.
+export type ConsentType = 'privacy_use' | 'sensitive_use' | 'coach_pledge';
+export interface ConsentRecord { type: ConsentType; version: string; agreedAt: string; }
+
+// 연락처 상세(운영자·본인만 — user_contacts 격리). 주소·계좌는 운영 목적(장학금)·인도자 비노출. ADR-76
+export interface ContactDetail { phone: string | null; address: string | null; bankAccount: string | null; }
+
 export type Wave = 'pre' | 'post' | null; // 단발 진단은 null
 export type InstrumentId = string; // 'futurenow' | 'sail' | …
 export type FieldRequirement = 'required' | 'optional' | 'hidden';

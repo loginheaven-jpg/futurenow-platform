@@ -18,6 +18,7 @@ import { StartGuide } from '@/app/_screens/entry/StartGuide';
 import { ProfileForm, type ProfileStepResult } from '@/app/_screens/entry/ProfileForm';
 import { Completion, type ParticipantMirrorView } from '@/app/_screens/entry/Completion';
 import { useToast } from '@/app/_toast/ToastProvider';
+import { CONSENT_VERSION } from '@/app/_consent/consent';
 import { enrollByCode as enrollAction, finalizeResponse, getCohortMeta, previewCohort } from './actions';
 
 type Step = 'resolving' | 'code' | 'preview' | 'auth' | 'start' | 'profile' | 'runner' | 'done';
@@ -134,8 +135,10 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
         setError('이메일 확인이 필요할 수 있어요. 받은 메일의 링크를 누른 뒤 다시 시도해 주세요.');
         return;
       }
-      // 전화번호 저장(필수 수집·ADR-75) — 세션=본인이라 setPhone 통과. 실패해도 진입은 계속(추후 /account 보완).
-      if (p.phone) await context.setPhone(res.data.session.user.id, p.phone).catch(() => {});
+      // 연락처(전화 필수·주소/계좌 선택) 저장 + 개인정보 동의 기록(ADR-75·76). 세션=본인. 실패해도 진입은 계속.
+      await context.setContact({ phone: p.phone ?? null, address: p.address ?? null, bankAccount: p.bankAccount ?? null }).catch(() => {});
+      await context.recordConsent('privacy_use', CONSENT_VERSION).catch(() => {});
+      if (p.consentSensitive) await context.recordConsent('sensitive_use', CONSENT_VERSION).catch(() => {});
       await enrollThenStart();
     } finally {
       setBusy(false);

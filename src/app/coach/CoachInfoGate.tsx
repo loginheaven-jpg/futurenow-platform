@@ -7,6 +7,8 @@ import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { Button } from '@/core/ui';
 import { AppHeader } from '@/app/_screens/AppHeader';
+import { ConsentBlock } from '@/app/_consent/ConsentBlock';
+import { COACH_PLEDGE, CONSENT_VERSION } from '@/app/_consent/consent';
 
 const KPC_RE = /^KPC\d{5}$/;
 
@@ -24,18 +26,19 @@ const inputStyle: CSSProperties = {
 };
 const labelStyle: CSSProperties = { color: 'var(--color-text-secondary)', display: 'block' };
 
-export function CoachInfoGate({ userId, initialPhone, initialKpc }: { userId: string; initialPhone: string; initialKpc: string }) {
+export function CoachInfoGate({ userId, initialPhone, initialKpc, needPledge = false }: { userId: string; initialPhone: string; initialKpc: string; needPledge?: boolean }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const ctx = useMemo(() => createCoreContext(supabase), [supabase]);
   const router = useRouter();
   const [phone, setPhone] = useState(initialPhone);
   const [kpc, setKpc] = useState(initialKpc);
+  const [pledge, setPledge] = useState(false); // 개인정보 보호 서약(needPledge 일 때 필수)
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const kpcFormatBad = kpc.trim() !== '' && !KPC_RE.test(kpc.trim());
-  // 부분 저장 허용: 전화 또는 (형식 통과한)KPC 중 하나라도 채우면 저장. 콘솔은 둘 다 완비 시 refresh 로 열림.
-  const canSave = !busy && (phone.trim() !== '' || (kpc.trim() !== '' && KPC_RE.test(kpc.trim())));
+  // 전화·(형식 통과)KPC 중 하나 이상 채우고, 서약이 필요하면 서약까지 체크해야 저장. 콘솔은 전화·KPC·서약 완비 시 refresh 로 열림.
+  const canSave = !busy && (phone.trim() !== '' || (kpc.trim() !== '' && KPC_RE.test(kpc.trim()))) && (!needPledge || pledge);
 
   async function save() {
     if (!canSave) return;
@@ -44,6 +47,7 @@ export function CoachInfoGate({ userId, initialPhone, initialKpc }: { userId: st
     try {
       if (phone.trim()) await ctx.setPhone(userId, phone.trim());
       if (kpc.trim() && KPC_RE.test(kpc.trim())) await ctx.setMyCoachKpc(kpc.trim());
+      if (needPledge && pledge) await ctx.recordConsent('coach_pledge', CONSENT_VERSION);
       router.refresh(); // 게이트 재평가 — 완비면 콘솔, 아니면 보완 유지
     } catch {
       setError('저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
@@ -70,6 +74,9 @@ export function CoachInfoGate({ userId, initialPhone, initialKpc }: { userId: st
             <span className="t-caption" style={{ color: 'var(--color-text-secondary)', display: 'block', marginTop: 'var(--space-1)' }}>KPC + 숫자 5자리 (예: KPC12345)</span>
           ) : null}
         </label>
+
+        {/* 개인정보 보호 서약(ADR-76) — 서약 전에는 콘솔·조원 신상 접근 불가 */}
+        {needPledge ? <ConsentBlock text={COACH_PLEDGE} checked={pledge} onChange={setPledge} /> : null}
       </div>
 
       <Button onClick={save} disabled={!canSave} style={{ width: '100%', marginTop: 'var(--space-6)' }}>

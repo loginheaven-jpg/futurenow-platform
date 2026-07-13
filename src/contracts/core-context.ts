@@ -12,6 +12,9 @@ import type {
   Cohort,
   CohortMemberDetail,
   CohortPreviewMeta,
+  ConsentRecord,
+  ConsentType,
+  ContactDetail,
   CoreUser,
   Enrollment,
   InstrumentId,
@@ -36,6 +39,12 @@ export interface CoreContext {
   // 민감 채널 — 운영자 또는 본인만 성공. 그 외 호출 시 코어가 차단
   getPhone(userId: string): Promise<string | null>;
   setPhone(userId: string, phone: string): Promise<void>;
+  getContactDetail(userId: string): Promise<ContactDetail>; // 전화·주소·계좌(운영자·본인만, assertContactAccess). 인도자 비노출. ADR-76
+  setContact(input: { phone?: string | null; address?: string | null; bankAccount?: string | null }): Promise<void>; // 본인 연락처 부분 upsert(제공 필드만). ADR-76
+
+  // 개인정보 동의(ADR-76) — 본인 기록/조회. 게이트 판정(멤버 privacy_use·인도자 coach_pledge)·재동의(version)에 사용.
+  recordConsent(type: ConsentType, version: string): Promise<void>; // 본인 동의 기록(user_id+type upsert — 최신 version·시각)
+  listMyConsents(): Promise<ConsentRecord[]>; // 본인 동의 목록(게이트가 유형·version 확인)
   setName(name: string): Promise<void>; // 본인 표시 이름 수정(users.name). 본인 전용(id=auth.uid()). role 미포함(2.S2 봉쇄·set_user_role 전용). 승인 2026-06-29
 
   // 참여 프로필(user_profiles) — 신원 부가. CoreUser 무변경(getPhone 패턴 정합). UX통합가입 S2, 승인 2026-07-01

@@ -11,6 +11,9 @@ import type {
   Cohort,
   CohortMemberDetail,
   CohortPreviewMeta,
+  ConsentRecord,
+  ConsentType,
+  ContactDetail,
   CoreContext,
   CoreUser,
   Enrollment,
@@ -171,6 +174,47 @@ class SupabaseCoreContext implements CoreContext {
       .from('user_contacts')
       .upsert({ user_id: userId, phone }, { onConflict: 'user_id' });
     if (error) throw new CoreError(`setPhone 실패: ${error.message}`);
+  }
+
+  // 전화·주소·계좌(운영자·본인만). 인도자 비노출(ADR-76 — 운영 목적). getPhone 게이트 동일(assertContactAccess).
+  async getContactDetail(userId: string): Promise<ContactDetail> {
+    await this.assertContactAccess(userId);
+    const { data, error } = await this.sb
+      .from('user_contacts')
+      .select('phone,address,bank_account')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw new CoreError(`getContactDetail 실패: ${error.message}`);
+    const r = data as { phone: string | null; address: string | null; bank_account: string | null } | null;
+    return { phone: r?.phone ?? null, address: r?.address ?? null, bankAccount: r?.bank_account ?? null };
+  }
+
+  // 본인 연락처 부분 upsert(제공 필드만 — PostgREST upsert 는 payload 컬럼만 갱신 → 미제공 필드 보존). self(RLS).
+  async setContact(input: { phone?: string | null; address?: string | null; bankAccount?: string | null }): Promise<void> {
+    const me = await this.requireUser();
+    const payload: Record<string, unknown> = { user_id: me.id, updated_at: new Date().toISOString() };
+    if (input.phone !== undefined) payload.phone = input.phone;
+    if (input.address !== undefined) payload.address = input.address;
+    if (input.bankAccount !== undefined) payload.bank_account = input.bankAccount;
+    const { error } = await this.sb.from('user_contacts').upsert(payload, { onConflict: 'user_id' });
+    if (error) throw new CoreError(`setContact 실패: ${error.message}`);
+  }
+
+  // 개인정보 동의 기록/조회(ADR-76). 본인 기록(user_id+type PK upsert — 최신 version·시각). RLS: 본인 insert/update.
+  async recordConsent(type: ConsentType, version: string): Promise<void> {
+    const me = await this.requireUser();
+    const { error } = await this.sb
+      .from('user_consents')
+      .upsert({ user_id: me.id, type, version, agreed_at: new Date().toISOString() }, { onConflict: 'user_id,type' });
+    if (error) throw new CoreError(`recordConsent 실패: ${error.message}`);
+  }
+
+  async listMyConsents(): Promise<ConsentRecord[]> {
+    const me = await this.currentUser();
+    if (!me) return [];
+    const { data, error } = await this.sb.from('user_consents').select('type,version,agreed_at').eq('user_id', me.id);
+    if (error) throw new CoreError(`listMyConsents 실패: ${error.message}`);
+    return ((data ?? []) as { type: ConsentType; version: string; agreed_at: string }[]).map((r) => ({ type: r.type, version: r.version, agreedAt: r.agreed_at }));
   }
 
   // 본인 표시 이름 수정(users.name). 본인 행만(id=auth.uid()) — RLS(users_update) + 컬럼권한(name=true, 2.S2)이 이중 보장.
