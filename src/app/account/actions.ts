@@ -28,6 +28,20 @@ export async function setPhoneAction(phone: string): Promise<{ ok: boolean; erro
   }
 }
 
+// 연락처 일괄 저장(전화·주소·계좌) — 본인 setContact(부분 upsert). 빈 값=null(지움). ADR-76
+export async function setContactAction(input: { phone: string; address: string; bankAccount: string }): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await (await ctx()).setContact({
+      phone: input.phone.trim() || null,
+      address: input.address.trim() || null,
+      bankAccount: input.bankAccount.trim() || null,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '연락처 저장에 실패했습니다.' };
+  }
+}
+
 // 참여 프로필(user_profiles) — 본인 upsert(RLS user_id=auth.uid). role·kpc 미포함(자기수정 봉쇄 유지).
 export async function setProfileAction(input: {
   gender: string | null;

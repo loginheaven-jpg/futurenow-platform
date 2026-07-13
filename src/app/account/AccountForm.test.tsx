@@ -19,16 +19,20 @@ const render = (over: Partial<Parameters<typeof AccountForm>[0]> = {}) =>
     <AccountForm
       name="홍길동"
       phone="010-1234-5678"
+      address="서울시 예봄로 1"
+      bankAccount="123-456-789"
       pw1=""
       pw2=""
       busy={null}
       profile={profile}
       onName={noop}
       onPhone={noop}
+      onAddress={noop}
+      onBankAccount={noop}
       onPw1={noop}
       onPw2={noop}
       onSaveName={noop}
-      onSavePhone={noop}
+      onSaveContact={noop}
       onSavePassword={noop}
       {...over}
     />,
@@ -37,12 +41,14 @@ const render = (over: Partial<Parameters<typeof AccountForm>[0]> = {}) =>
 describe('AccountForm (내 정보)', () => {
   const html = render();
 
-  it('이름·전화 prefill + 비번 2회 + 섹션별 저장', () => {
+  it('이름·연락처(전화·주소·계좌) prefill + 비번 2회 + 섹션별 저장', () => {
     expect(html).toContain('value="홍길동"');
     expect(html).toContain('value="010-1234-5678"');
+    expect(html).toContain('value="서울시 예봄로 1"'); // 주소 prefill
+    expect(html).toContain('value="123-456-789"'); // 계좌 prefill
     expect((html.match(/type="password"/g) ?? []).length).toBe(2);
     expect(html).toContain('이름 저장');
-    expect(html).toContain('전화번호 저장');
+    expect(html).toContain('연락처 저장');
     expect(html).toContain('비밀번호 변경');
   });
 

@@ -66,6 +66,8 @@ function genderBtnStyle(on: boolean): CSSProperties {
 export function AccountForm({
   name,
   phone,
+  address,
+  bankAccount,
   pw1,
   pw2,
   busy,
@@ -73,14 +75,18 @@ export function AccountForm({
   coachKpc,
   onName,
   onPhone,
+  onAddress,
+  onBankAccount,
   onPw1,
   onPw2,
   onSaveName,
-  onSavePhone,
+  onSaveContact,
   onSavePassword,
 }: {
   name: string;
   phone: string;
+  address: string;
+  bankAccount: string;
   pw1: string;
   pw2: string;
   busy: AccountBusy;
@@ -88,10 +94,12 @@ export function AccountForm({
   coachKpc?: AccountKpcProps; // 코치만 — undefined 면 KPC 섹션 미노출
   onName: (v: string) => void;
   onPhone: (v: string) => void;
+  onAddress: (v: string) => void;
+  onBankAccount: (v: string) => void;
   onPw1: (v: string) => void;
   onPw2: (v: string) => void;
   onSaveName: () => void;
-  onSavePhone: () => void;
+  onSaveContact: () => void;
   onSavePassword: () => void;
 }) {
   return (
@@ -107,17 +115,25 @@ export function AccountForm({
         </Button>
       </section>
 
-      {/* 전화 */}
+      {/* 연락처 — 전화·주소·계좌(주소·계좌는 선택, 운영자 전용 열람) */}
       <section style={section}>
         <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
           전화번호
           <input style={inputStyle} type="tel" autoComplete="tel" placeholder="010-0000-0000" value={phone} onChange={(e) => onPhone(e.target.value)} />
         </label>
+        <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
+          주소 (선택)
+          <input style={inputStyle} type="text" autoComplete="street-address" placeholder="도로명 주소" value={address} onChange={(e) => onAddress(e.target.value)} aria-label="주소" />
+        </label>
+        <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
+          입금 계좌 (선택 · 개근장학금)
+          <input style={inputStyle} type="text" inputMode="numeric" placeholder="은행 계좌번호" value={bankAccount} onChange={(e) => onBankAccount(e.target.value)} aria-label="입금 계좌" />
+        </label>
         <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>
-          전화번호는 인도자 연락에만 쓰여요. 본인과 운영자만 볼 수 있어요.
+          전화는 인도자 연락에, 주소·계좌는 운영(장학금)에 쓰여요. 본인과 운영자만 볼 수 있어요.
         </p>
-        <Button onClick={onSavePhone} disabled={busy === 'phone'} style={{ alignSelf: 'flex-start' }}>
-          {busy === 'phone' ? '저장 중…' : '전화번호 저장'}
+        <Button onClick={onSaveContact} disabled={busy === 'phone'} style={{ alignSelf: 'flex-start' }}>
+          {busy === 'phone' ? '저장 중…' : '연락처 저장'}
         </Button>
       </section>
 

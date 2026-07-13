@@ -7,17 +7,21 @@ import { CURRENT_YEAR, KPC_RE } from '@/instruments/futurenow/profileVocab';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { AccountForm, type AccountBusy } from './AccountForm';
-import { setKpcAction, setNameAction, setPhoneAction, setProfileAction } from './actions';
+import { setContactAction, setKpcAction, setNameAction, setProfileAction } from './actions';
 
 export function AccountClient({
   initialName,
   initialPhone,
+  initialAddress,
+  initialBankAccount,
   initialProfile,
   initialKpc,
   allowKpc,
 }: {
   initialName: string;
   initialPhone: string;
+  initialAddress: string;
+  initialBankAccount: string;
   initialProfile: UserProfile | null;
   initialKpc: string;
   allowKpc: boolean; // role==='coach' — KPC 섹션 노출·저장 허용
@@ -27,6 +31,8 @@ export function AccountClient({
 
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState(initialPhone);
+  const [address, setAddress] = useState(initialAddress);
+  const [bankAccount, setBankAccount] = useState(initialBankAccount);
   const [gender, setGender] = useState(initialProfile?.gender ?? '');
   const [birthYear, setBirthYear] = useState(initialProfile?.birthYear != null ? String(initialProfile.birthYear) : '');
   const [religion, setReligion] = useState(initialProfile?.religion ?? '');
@@ -45,13 +51,13 @@ export function AccountClient({
     else toast.error('이름 저장에 실패했어요.');
   }
 
-  async function onSavePhone() {
+  async function onSaveContact() {
     if (busy) return;
     setBusy('phone');
-    const res = await setPhoneAction(phone.trim());
+    const res = await setContactAction({ phone, address, bankAccount });
     setBusy(null);
-    if (res.ok) toast.success('전화번호를 저장했어요.');
-    else toast.error('전화번호 저장에 실패했어요.');
+    if (res.ok) toast.success('연락처를 저장했어요.');
+    else toast.error('연락처 저장에 실패했어요.');
   }
 
   async function onSaveProfile() {
@@ -129,6 +135,8 @@ export function AccountClient({
     <AccountForm
       name={name}
       phone={phone}
+      address={address}
+      bankAccount={bankAccount}
       pw1={pw1}
       pw2={pw2}
       busy={busy}
@@ -146,10 +154,12 @@ export function AccountClient({
       coachKpc={allowKpc ? { kpc, onKpc: setKpc, onSave: onSaveKpc } : undefined}
       onName={setName}
       onPhone={setPhone}
+      onAddress={setAddress}
+      onBankAccount={setBankAccount}
       onPw1={setPw1}
       onPw2={setPw2}
       onSaveName={onSaveName}
-      onSavePhone={onSavePhone}
+      onSaveContact={onSaveContact}
       onSavePassword={onSavePassword}
     />
   );
