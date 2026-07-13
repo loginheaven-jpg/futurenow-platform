@@ -70,6 +70,20 @@ export interface MemberSummary {
   role: Role;
 }
 
+// 차수 멤버 신상정보(코치 조원 열람 — §10 완화, 자기 차수 한정). cohort_member_detail(DEFINER) RPC. ADR-75
+//   전화·이메일 포함. 코치는 자기 차수 조원만·참여 이력은 호출자 가시 범위로 스코프(운영자=전체·코치=자기 차수).
+export interface CohortMemberDetail {
+  name: string | null;
+  email: string;
+  phone: string | null;
+  gender: string | null;
+  birthYear: number | null;
+  religion: string | null;
+  faithYears: number | null;
+  responseCount: number;
+  cohortNames: string[];
+}
+
 // 본부 멤버 세부(활동) — 운영자 화면. admin_member_activity(DEFINER) RPC 집계. ADR-71
 //   신원(전화=getPhone·프로필=getProfile)은 별도 게터로 조회하고, 여기선 참여 '활동'만 담는다.
 export interface MemberActivity {

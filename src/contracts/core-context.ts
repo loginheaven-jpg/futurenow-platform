@@ -10,6 +10,7 @@ import type {
   AlertInput,
   CoachApplication,
   Cohort,
+  CohortMemberDetail,
   CohortPreviewMeta,
   CoreUser,
   Enrollment,
@@ -78,6 +79,7 @@ export interface CoreContext {
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체.
   listAllCohorts(): Promise<Cohort[]>; // 전체 차수(운영자 수퍼바이저 뷰 — 모든 인도자 차수 감독). RLS(cohorts_select is_admin)가 운영자만 전체 반환. ADR-74 승인 2026-06-28
   listCohortMembers(cohortId: string): Promise<MemberRef[]>; // 차수 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28
+  getCohortMemberDetail(cohortId: string, userId: string): Promise<CohortMemberDetail>; // 차수 멤버 신상(코치=자기 조원만·운영자=전체, cohort_member_detail DEFINER). 전화·이메일 포함. ADR-75
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
   // 진행 중 응답 보존(중간저장) — 본인 한정(RLS user_id=auth.uid()). 제출 전 작성본.

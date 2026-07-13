@@ -9,6 +9,7 @@ import type {
   AlertInput,
   CoachApplication,
   Cohort,
+  CohortMemberDetail,
   CohortPreviewMeta,
   CoreContext,
   CoreUser,
@@ -446,6 +447,28 @@ class SupabaseCoreContext implements CoreContext {
     const { data, error } = await this.sb.rpc('cohort_member_directory', { p_cohort_id: cohortId });
     if (error) throw new CoreError(`listCohortMembers 실패: ${error.message}`);
     return ((data ?? []) as { user_id: string; name: string | null }[]).map((r) => ({ userId: r.user_id, name: r.name }));
+  }
+
+  // 차수 멤버 신상(코치=자기 조원만·운영자=전체). 권한·구성원 검사·스코프는 cohort_member_detail(DEFINER) 내부에서 강제.
+  //   전화(user_contacts) 개방은 이 RPC 한정(§10 완화·ADR-75). RETURNS TABLE → 1행.
+  async getCohortMemberDetail(cohortId: string, userId: string): Promise<CohortMemberDetail> {
+    const { data, error } = await this.sb.rpc('cohort_member_detail', { p_cohort_id: cohortId, p_user_id: userId });
+    if (error) throw new CoreError(`getCohortMemberDetail 실패: ${error.message}`);
+    const r = (Array.isArray(data) ? data[0] : data) as
+      | { name: string | null; email: string | null; phone: string | null; gender: string | null; birth_year: number | null; religion: string | null; faith_years: number | null; response_count: number | string | null; cohort_names: string[] | null }
+      | undefined;
+    if (!r) throw new CoreError('getCohortMemberDetail: 대상을 찾을 수 없습니다(권한/구성원 확인).');
+    return {
+      name: r.name ?? null,
+      email: r.email ?? '',
+      phone: r.phone ?? null,
+      gender: r.gender ?? null,
+      birthYear: r.birth_year ?? null,
+      religion: r.religion ?? null,
+      faithYears: r.faith_years ?? null,
+      responseCount: Number(r.response_count ?? 0),
+      cohortNames: r.cohort_names ?? [],
+    };
   }
 
   async listEnrollments(cohortId: string): Promise<Enrollment[]> {

@@ -10,6 +10,7 @@ import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import type { InterpretationContent } from '@/instruments/futurenow/report/interpretation';
 import { InterpretationPanel } from './InterpretationPanel';
+import { MemberProfilePanel } from './MemberProfilePanel';
 import { ReportPrintButton } from './ReportPrintButton';
 import { ReportPrintHeader } from './ReportPrintHeader';
 
@@ -59,6 +60,11 @@ export default async function CoachReportPage({
         }
       : null;
 
+  // 신상정보(ADR-75): 이 차수 코치·운영자만(cohort_member_detail 내부 게이트). 실패·부재 → 패널 미표시(우아한 저하).
+  const memberDetail = resp.userId
+    ? await ctx.getCohortMemberDetail(resp.cohortId ?? cohortId, resp.userId).catch(() => null)
+    : null;
+
   return (
     <div className="report-print-root" style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* 앱 크롬(헤더·PDF 버튼) — 화면 전용(인쇄 제외) */}
@@ -67,6 +73,8 @@ export default async function CoachReportPage({
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
           <ReportPrintButton />
         </div>
+        {/* 신상정보 패널(화면 전용) — 코치가 조원에게 바로 연락·확인. PDF 미포함(연락처 비유출). ADR-75 */}
+        {memberDetail ? <MemberProfilePanel detail={memberDetail} /> : null}
       </div>
       {/* PDF 전용 브랜드 문서 헤더(화면 미노출) */}
       <ReportPrintHeader participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />

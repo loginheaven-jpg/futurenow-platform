@@ -87,9 +87,10 @@ export function AuthGate({
   const yearNum = Number(birthYear);
   const yearValid = /^\d{4}$/.test(birthYear) && yearNum >= 1900 && yearNum <= CURRENT_YEAR;
   const coachOn = allowCoachApply && coachApply;
-  const coachValid = !coachOn || (phone.trim() !== '' && KPC_RE.test(kpc.trim()));
-  // 폼이 유일 강제 지점(DB nullable): 이름·성별·생년 필수(IdentityPolicy user.name='required' + 성별·생년 게이트).
-  const signupValid = !!email && !!password && name.trim() !== '' && gender !== '' && yearValid && coachValid;
+  const phoneValid = phone.trim() !== ''; // 전 참여자 필수(연락처 확보 — ADR-75). 코치는 KPC 추가.
+  const coachValid = !coachOn || KPC_RE.test(kpc.trim());
+  // 폼이 유일 강제 지점(DB nullable): 이름·전화·성별·생년 필수(IdentityPolicy user.name='required' + 전화·성별·생년 게이트).
+  const signupValid = !!email && !!password && name.trim() !== '' && phoneValid && gender !== '' && yearValid && coachValid;
   const loginValid = !!email && !!password;
 
   function submit() {
@@ -99,13 +100,12 @@ export function AuthGate({
       return;
     }
     if (!signupValid) return;
-    const p: SignupPayload = { email, password, name: name.trim(), gender, birthYear: yearNum };
+    const p: SignupPayload = { email, password, name: name.trim(), gender, birthYear: yearNum, phone: phone.trim() };
     if (religion) p.religion = religion;
     const fy = Number(faithYears);
     if (faithYears.trim() && Number.isFinite(fy) && fy >= 0) p.faithYears = fy;
     if (coachOn) {
       p.coachApply = true;
-      p.phone = phone.trim();
       p.kpc = kpc.trim();
     }
     onSignup?.(p);
@@ -170,6 +170,11 @@ export function AuthGate({
             </label>
 
             <label className="t-caption" style={labelStyle}>
+              전화번호
+              <input style={inputStyle} type="tel" autoComplete="tel" placeholder="010-0000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} aria-label="전화번호" />
+            </label>
+
+            <label className="t-caption" style={labelStyle}>
               종교 (선택)
               <select style={inputStyle} value={religion} onChange={(e) => setReligion(e.target.value)} aria-label="종교">
                 <option value="">선택 안 함</option>
@@ -192,19 +197,13 @@ export function AuthGate({
             )}
 
             {coachOn && (
-              <>
-                <label className="t-caption" style={labelStyle}>
-                  전화번호
-                  <input style={inputStyle} type="tel" autoComplete="tel" placeholder="010-0000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                </label>
-                <label className="t-caption" style={labelStyle}>
-                  KPC 인증번호
-                  <input style={inputStyle} type="text" placeholder="KPC12345" value={kpc} onChange={(e) => setKpc(e.target.value)} aria-label="KPC 인증번호" />
-                  {kpc.trim() !== '' && !KPC_RE.test(kpc.trim()) ? (
-                    <span className="t-caption" style={{ color: 'var(--color-text-secondary)', display: 'block', marginTop: 'var(--space-1)' }}>형식: KPC + 숫자 5자리 (예: KPC12345)</span>
-                  ) : null}
-                </label>
-              </>
+              <label className="t-caption" style={labelStyle}>
+                KPC 인증번호
+                <input style={inputStyle} type="text" placeholder="KPC12345" value={kpc} onChange={(e) => setKpc(e.target.value)} aria-label="KPC 인증번호" />
+                {kpc.trim() !== '' && !KPC_RE.test(kpc.trim()) ? (
+                  <span className="t-caption" style={{ color: 'var(--color-text-secondary)', display: 'block', marginTop: 'var(--space-1)' }}>형식: KPC + 숫자 5자리 (예: KPC12345)</span>
+                ) : null}
+              </label>
             )}
           </>
         )}
