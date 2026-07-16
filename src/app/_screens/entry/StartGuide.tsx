@@ -24,7 +24,7 @@ export function StartGuide({ cohortName, onStart }: { cohortName: string; onStar
         }}
       >
         <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-          여기 적는 모든 것은 세미나 인도자 한 사람만 봅니다.
+          여기 적는 모든 것은 세미나 인도자와 운영자만 봅니다.
         </p>
       </div>
       <Button onClick={onStart} style={{ width: '100%' }}>시작하기</Button>

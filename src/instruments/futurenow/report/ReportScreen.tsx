@@ -5,6 +5,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { FuturenowScores } from '../scoring';
 import { SUBJECTIVE_LABELS } from './labels';
 import { CareSignal, CompassDumbbell, GapRadar, GrowBars, VitalityBand } from './visuals';
+import { FacilitatorPanel } from './FacilitatorPanel';
 
 const panelStyle: CSSProperties = {
   background: 'var(--color-surface-2)',
@@ -62,6 +63,8 @@ export function ReportScreen({ scores, prev }: { scores: FuturenowScores; prev?:
           </div>
         </Panel>
       )}
+      {/* 2면 — 인도자 전용 숨은 층(주관식 다음). ADR-77 */}
+      <FacilitatorPanel scores={scores} />
     </div>
   );
 }

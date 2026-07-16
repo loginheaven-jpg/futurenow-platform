@@ -26,11 +26,13 @@ describe('buildInterpretationInput — scores를 labels 어휘로 변환', () =>
     expect(input).toContain('8점');
   });
 
-  it('함정(D코드)·믿음(faith) 어휘는 노출하지 않음(환각 방지)', () => {
+  it('함정(D코드)·믿음(faith)·원응답 문항은 AI 입력에 없음(환각 방지·어휘 분리 ADR-77 §5.5)', () => {
     const input = buildInterpretationInput(scores());
     expect(input).not.toContain('D1');
     expect(input).not.toContain('D2');
     expect(input).not.toMatch(/믿음|신앙/);
+    expect(input).not.toMatch(/관성|안주/); // 함정 라벨(TRAP_AXES) 미입력('준비'는 '준비도'와 충돌해 제외 — 관성·안주로 충분)
+    expect(input).not.toContain('제자리걸음'); // 원응답 문항 원문(A2) 전량 미입력 — E1~E3 클립만 유지
   });
 
   it('돌봄 신호 없으면 caution 키 금지 안내, 있으면 포함 안내', () => {

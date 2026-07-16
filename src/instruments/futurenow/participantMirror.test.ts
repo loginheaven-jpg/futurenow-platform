@@ -49,4 +49,14 @@ describe('participantMirror (갈망 거울 — 측정 미노출)', () => {
     expect(participantMirror(baseScores({ faith: { F1: 4, F2: null } })).faith).toBeUndefined();
     expect(participantMirror(baseScores({ faith: { F1: null, F2: null } })).faith).toBeUndefined();
   });
+
+  // ADR-77 §5.4 — 참여자 미러에 함정·믿음 값·원응답이 새지 않음(숨은 층은 코치 전용).
+  //   (정성 '믿음 한 줄'은 허용 — F1·F2 값·D코드가 아님. 회귀가드는 값·코드·라벨·문항을 겨냥.)
+  it('§5.4 회귀가드: 미러에 함정 라벨·D/F 코드·원응답 문항 없음', () => {
+    const m = participantMirror(baseScores({ trap: { D1: 5, D2: 1, D3: 1, primary: 'D1' }, faith: { F1: 4, F2: 5 } }));
+    const s = JSON.stringify(m);
+    expect(s).not.toMatch(/관성|준비|안주/); // 함정 라벨(TRAP_AXES)
+    expect(s).not.toMatch(/D1|D2|D3|F1|F2/); // 구인 코드
+    expect(s).not.toContain('제자리걸음'); // 원응답 문항 원문(A2) 미노출
+  });
 });

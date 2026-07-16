@@ -49,6 +49,16 @@ export const GAP_AXES = [
 
 export const SUBJECTIVE_LABELS = { E1: '기대', E2: '정서', E3: '요청' } as const;
 
+// 함정 유형(D1~D3) — 인도자 전용 강의 어휘(소그룹 편성 참고). 참여자 미노출. 최고점=주 함정, 동점 D1>D2>D3. ADR-77
+export const TRAP_AXES = [
+  { code: 'D1', label: '관성' },
+  { code: 'D2', label: '준비' },
+  { code: 'D3', label: '안주' },
+] as const;
+
+// 믿음의 자리(F1·F2) — 점수화하지 않는 목회적 신호. 무응답 가능(null). ADR-77
+export const FAITH_LABELS = { F1: '의미', F2: '실행' } as const;
+
 // 돌봄 신호 배너(§5.5) — 활력 시들음 OR Red Flag OR 돌봄 체크 시에만. 없으면 null(배너 미렌더).
 // 경보·낙인 아님 — 우선순위 안내. 의미색 저채도(--care-*).
 export function careBanner(scores: FuturenowScores): { title: string; body: string } | null {

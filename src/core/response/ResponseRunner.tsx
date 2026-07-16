@@ -149,7 +149,7 @@ export function ResponseRunner({ schema, context, cohortId, wave, onComplete, su
       <main style={page}>
         <h1 className="t-h1" style={{ color: 'var(--color-primary)' }}>고맙습니다.</h1>
         <p className="t-body-lg" style={{ color: 'var(--color-text-secondary)' }}>
-          응답이 저장되었습니다. 여기 적은 모든 것은 인도자 한 사람만 봅니다.
+          응답이 저장되었습니다. 여기 적은 모든 것은 인도자와 운영자만 봅니다.
         </p>
       </main>
     );
