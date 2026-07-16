@@ -25,9 +25,11 @@ export function buildCohortRoster(input: {
   responses: RespLike[];
   alerts: AlertLike[];
   members: { userId: string; name: string | null }[];
+  trapByUserId?: Record<string, string>; // 주 함정 라벨(응답자별) — 인스트루먼트가 채점해 주입. 미전달 시 태그 없음(ADR-77 P3)
 }): CohortRosterModel {
   const nameOf = new Map(input.members.map((m) => [m.userId, m.name] as const));
   const name = (uid: string | null): string => (uid ? (nameOf.get(uid) ?? null) : null) ?? '참여자';
+  const trapOf = (uid: string): string | undefined => input.trapByUserId?.[uid];
 
   // care/red_flag 알림을 responseId 별 사유로 묶는다.
   const careByResp = new Map<string, string[]>();
@@ -50,10 +52,10 @@ export function buildCohortRoster(input: {
     const careResp = rs.find((r) => careByResp.has(r.id));
     if (careResp) {
       careCount += 1;
-      roster.push({ id: careResp.id, userId: uid, name: name(uid), status: 'care', note: careByResp.get(careResp.id)!.join(' · ') });
+      roster.push({ id: careResp.id, userId: uid, name: name(uid), status: 'care', note: careByResp.get(careResp.id)!.join(' · '), trap: trapOf(uid) });
     } else {
       const latest = rs.reduce((a, b) => (b.createdAt > a.createdAt ? b : a));
-      roster.push({ id: latest.id, userId: uid, name: name(uid), status: 'done' });
+      roster.push({ id: latest.id, userId: uid, name: name(uid), status: 'done', trap: trapOf(uid) });
     }
   }
 

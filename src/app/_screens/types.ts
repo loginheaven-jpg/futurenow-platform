@@ -14,6 +14,7 @@ export interface RosterMember {
   name: string;
   status: 'care' | 'done' | 'pending';
   note?: string; // 먼저 챙길 분 사유(인도자 화면)
+  trap?: string; // 주 함정 라벨(관성/준비/안주 — 소그룹 편성 참고). 응답자만·인스트루먼트가 계산·주입. ADR-77 Phase 3
 }
 
 export interface CohortSummary {

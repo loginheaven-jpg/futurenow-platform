@@ -47,12 +47,28 @@ export function RosterRow({
     );
   }
 
+  // 주 함정 태그(Phase 3·ADR-77) — 소그룹 편성 참고. 중립 pill(care 톤 아님). 응답자만(member.trap 있을 때).
+  const title = member.trap ? (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+      {member.name}
+      <span
+        className="t-micro"
+        title="주 함정 (소그룹 편성 참고)"
+        style={{ color: 'var(--color-text-secondary)', background: 'var(--color-surface-sunken)', borderRadius: 'var(--radius-pill)', padding: '1px var(--space-2)', fontWeight: 600 }}
+      >
+        {member.trap}
+      </span>
+    </span>
+  ) : (
+    member.name
+  );
+
   return (
     <div style={{ display: 'flex', alignItems: 'stretch', gap: 'var(--space-1)' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <ListRow
           tone={tone}
-          title={member.name}
+          title={title}
           subtitle={subtitle}
           trailing={responded ? '›' : undefined}
           onClick={responded && onOpen ? () => onOpen(member.id) : undefined}

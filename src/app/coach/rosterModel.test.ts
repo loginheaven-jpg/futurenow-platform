@@ -56,4 +56,13 @@ describe('buildCohortRoster (§8.3 3숫자·3묶음·이름 매핑)', () => {
     expect(model.roster.find((m) => m.id === 'r2')?.userId).toBe('u2'); // done
     expect(model.roster.find((m) => m.id === 'u4')?.userId).toBe('u4'); // pending
   });
+
+  it('trapByUserId 주입 시 응답자 행에 주 함정 라벨(미응답은 없음) — ADR-77 P3', () => {
+    const tagged = buildCohortRoster({ enrollments, responses, alerts, members, trapByUserId: { u1: '관성', u2: '안주' } });
+    expect(tagged.roster.find((m) => m.userId === 'u1')?.trap).toBe('관성'); // care
+    expect(tagged.roster.find((m) => m.userId === 'u2')?.trap).toBe('안주'); // done
+    expect(tagged.roster.find((m) => m.userId === 'u4')?.trap).toBeUndefined(); // 미응답 → 태그 없음
+    // 미주입(기본) 시 태그 없음
+    expect(model.roster.find((m) => m.userId === 'u1')?.trap).toBeUndefined();
+  });
 });
