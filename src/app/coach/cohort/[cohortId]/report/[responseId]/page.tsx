@@ -7,6 +7,7 @@ import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
+import { RawAnswers } from '@/instruments/futurenow/report/RawAnswers';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import type { InterpretationContent } from '@/instruments/futurenow/report/interpretation';
 import { InterpretationPanel } from './InterpretationPanel';
@@ -84,6 +85,10 @@ export default async function CoachReportPage({
       </div>
       <div className="report-charts-block" style={{ marginTop: 'var(--space-4)' }}>
         <ReportScreen scores={scores} />
+      </div>
+      {/* 3면 — 참여자 원응답(코치/운영자 전용). 화면 접이식·PDF 펼침(order 3·개행). ADR-77 Phase 2 */}
+      <div className="report-raw-block" style={{ marginTop: 'var(--space-4)' }}>
+        <RawAnswers answers={resp.answers as Record<string, unknown>} wave={resp.wave} />
       </div>
     </div>
   );

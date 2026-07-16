@@ -192,6 +192,17 @@ body {
   .report-interp-block {
     order: 2;
   }
+  /* 3면 원응답 — 마지막 페이지(개행). 화면 접이(display:none)여도 PDF엔 강제 펼침(ADR-77). 토글 버튼은 인쇄 제외. */
+  .report-raw-block {
+    order: 3;
+    break-before: page;
+  }
+  .report-raw-content {
+    display: block !important;
+  }
+  .report-raw-toggle {
+    display: none !important;
+  }
   /* 패널·섹션이 페이지 경계에서 잘리지 않게(카드 단위 보존) */
   .report-print-root section {
     break-inside: avoid;
