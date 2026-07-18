@@ -27,6 +27,7 @@ export function AdminMembers({
   onPromote,
   onDemote,
   onDelete,
+  onSetPassword,
   onApprove,
   onReject,
   headerActions,
@@ -39,6 +40,7 @@ export function AdminMembers({
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
   onDelete: (id: string) => void;
+  onSetPassword: (id: string, password: string) => Promise<{ ok: boolean }>;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   headerActions?: ReactNode;
@@ -96,6 +98,7 @@ export function AdminMembers({
               onPromote={onPromote}
               onDemote={onDemote}
               onDelete={onDelete}
+              onSetPassword={onSetPassword}
             />
           ))}
         </div>

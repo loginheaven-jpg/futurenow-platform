@@ -43,6 +43,7 @@ export function MemberRow({
   onPromote,
   onDemote,
   onDelete,
+  onSetPassword,
 }: {
   member: MemberSummary;
   isSelf: boolean;
@@ -50,12 +51,24 @@ export function MemberRow({
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
   onDelete: (id: string) => void;
+  onSetPassword: (id: string, password: string) => Promise<{ ok: boolean }>;
 }) {
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<MemberDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [pw, setPw] = useState(''); // 임시 비번 입력
+  const [pwConfirm, setPwConfirm] = useState(false); // 1단계 확인
+  const [pwBusy, setPwBusy] = useState(false);
+
+  async function doSetPassword() {
+    setPwBusy(true);
+    const res = await onSetPassword(member.id, pw); // 부모(AdminClient)가 액션+토스트(전달용 비번 표기)
+    setPwBusy(false);
+    setPwConfirm(false);
+    if (res.ok) setPw(''); // 성공 시 입력칸 비움(비번은 토스트로 전달)
+  }
 
   async function toggle() {
     const next = !open;
@@ -116,6 +129,34 @@ export function MemberRow({
                   <Field label="인도 차수" value={detail.activity.ownedCohorts.join(', ')} />
                 ) : null}
               </dl>
+              {/* 비밀번호 리셋(임시·계정 복구) — 입력 후 [비번 리셋] → 1단계 확인 → 변경. 최소 8자. ADR-79 */}
+              <div style={{ paddingTop: 'var(--space-2)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
+                <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-2)' }}>비밀번호 리셋 (임시)</div>
+                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                  <input
+                    type="text"
+                    value={pw}
+                    onChange={(e) => { setPw(e.target.value); setPwConfirm(false); }}
+                    placeholder="임시 비밀번호 (8자 이상)"
+                    aria-label="임시 비밀번호"
+                    style={{ flex: 1, minWidth: 0, minHeight: 'var(--tap-min)', padding: '0 var(--space-3)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', font: 'inherit', fontSize: 15 }}
+                  />
+                  {!pwConfirm ? (
+                    <Button variant="ghost" onClick={() => setPwConfirm(true)} disabled={pwBusy || pw.trim().length < 8}>비번 리셋</Button>
+                  ) : null}
+                </div>
+                {pwConfirm ? (
+                  <div style={{ marginTop: 'var(--space-2)', padding: 'var(--space-3)', background: 'var(--color-surface-sunken)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                    <p className="t-caption" style={{ color: 'var(--color-text)', margin: 0 }}>
+                      <strong>{member.name ?? member.email}</strong> 님의 비밀번호를 <strong style={{ color: 'var(--color-primary)' }}>{pw}</strong> 로 바꿀까요? 사용자에게 전달하고, 로그인 후 변경하도록 안내하세요.
+                    </p>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
+                      <Button variant="ghost" onClick={() => setPwConfirm(false)} disabled={pwBusy}>취소</Button>
+                      <Button onClick={doSetPassword} disabled={pwBusy}>{pwBusy ? '변경 중…' : '변경'}</Button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
               {/* 삭제 */}
               {isSelf ? (
                 <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>본인 계정은 여기서 삭제할 수 없어요.</p>

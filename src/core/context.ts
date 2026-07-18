@@ -828,6 +828,12 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`deleteMember 실패: ${error.message}`);
   }
 
+  // 운영자 임시 비번 설정(계정 복구). 권한(is_admin)·최소 8자·bcrypt 는 admin_set_temp_password(DEFINER) 내부. 서비스롤 미사용.
+  async setMemberPassword(userId: string, password: string): Promise<void> {
+    const { error } = await this.sb.rpc('admin_set_temp_password', { p_user_id: userId, p_password: password });
+    if (error) throw new CoreError(`setMemberPassword 실패: ${error.message}`);
+  }
+
   // ── 내부 ───────────────────────────────────────────────────
   private async requireUser(): Promise<CoreUser> {
     const u = await this.currentUser();

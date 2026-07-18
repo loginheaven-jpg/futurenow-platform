@@ -133,4 +133,5 @@ export interface CoreContext {
   // 본부 — 멤버 세부(활동)·삭제. 운영자 전용(DEFINER RPC 내부 is_admin 게이트). ADR-70·71
   getMemberActivity(userId: string): Promise<MemberActivity>; // 소유/참여 차수·응답 수(admin_member_activity). 신원은 getPhone·getProfile.
   deleteMember(userId: string): Promise<void>; // 임의 멤버 계정 하드삭제(delete_user — auth.users 삭제·전체 연쇄). 가드: admin·자기삭제 금지.
+  setMemberPassword(userId: string, password: string): Promise<void>; // 운영자 임시 비번 설정(admin_set_temp_password DEFINER, is_admin·최소 8자). 계정 복구용. ADR-79
 }

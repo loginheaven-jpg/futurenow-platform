@@ -56,3 +56,14 @@ export async function deleteMemberAction(userId: string): Promise<{ ok: boolean;
     return { ok: false, error: e instanceof Error ? e.message : '멤버 삭제에 실패했습니다.' };
   }
 }
+
+// 운영자 임시 비번 설정 — admin_set_temp_password(DEFINER) 위 배선. 권한(admin)·최소 8자는 RPC 내부. 계정 복구용.
+export async function setMemberPasswordAction(userId: string, password: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.setMemberPassword(userId, password);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '비밀번호 설정에 실패했습니다.' };
+  }
+}

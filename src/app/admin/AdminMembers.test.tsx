@@ -14,7 +14,7 @@ const applications: CoachApplication[] = [
 const noop = () => {};
 const render = (over: Partial<Parameters<typeof AdminMembers>[0]> = {}) =>
   renderToStaticMarkup(
-    <AdminMembers members={members} applications={applications} currentUserId="a1" onPromote={noop} onDemote={noop} onDelete={noop} onApprove={noop} onReject={noop} {...over} />,
+    <AdminMembers members={members} applications={applications} currentUserId="a1" onPromote={noop} onDemote={noop} onDelete={noop} onSetPassword={async () => ({ ok: true })} onApprove={noop} onReject={noop} {...over} />,
   );
 
 describe('AdminMembers (본부 — 승인 대기 + 멤버 관리)', () => {

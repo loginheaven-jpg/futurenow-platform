@@ -6,7 +6,7 @@ import type { CoachApplication, MemberSummary } from '@/contracts';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { AdminMembers } from './AdminMembers';
-import { decideCoachApplicationAction, deleteMemberAction, setUserRoleAction } from './actions';
+import { decideCoachApplicationAction, deleteMemberAction, setMemberPasswordAction, setUserRoleAction } from './actions';
 
 export function AdminClient({
   members,
@@ -53,6 +53,14 @@ export function AdminClient({
     }
   }
 
+  // 임시 비번 설정 — 성공 시 설정한 비번을 토스트로 표기(운영자가 사용자에게 전달). 목록 무변경(refresh 불요).
+  async function setPassword(userId: string, password: string): Promise<{ ok: boolean }> {
+    const res = await setMemberPasswordAction(userId, password);
+    if (res.ok) toast.success(`임시 비밀번호를 설정했어요 — 전달: ${password} (로그인 후 변경 안내)`);
+    else toast.error('비밀번호 설정에 실패했어요.');
+    return { ok: res.ok };
+  }
+
   async function decide(applicationId: string, decision: 'approved' | 'rejected') {
     setAppBusyId(applicationId);
     try {
@@ -79,6 +87,7 @@ export function AdminClient({
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
       onDelete={remove}
+      onSetPassword={setPassword}
       onApprove={(id) => decide(id, 'approved')}
       onReject={(id) => decide(id, 'rejected')}
     />
