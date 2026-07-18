@@ -84,6 +84,7 @@ export interface CohortMemberDetail {
   name: string | null;
   email: string;
   phone: string | null;
+  address: string | null; // 주소(코치+운영자 — 목양 방문용, ADR-78). 계좌는 미포함(운영 전용).
   gender: string | null;
   birthYear: number | null;
   religion: string | null;

@@ -499,13 +499,14 @@ class SupabaseCoreContext implements CoreContext {
     const { data, error } = await this.sb.rpc('cohort_member_detail', { p_cohort_id: cohortId, p_user_id: userId });
     if (error) throw new CoreError(`getCohortMemberDetail 실패: ${error.message}`);
     const r = (Array.isArray(data) ? data[0] : data) as
-      | { name: string | null; email: string | null; phone: string | null; gender: string | null; birth_year: number | null; religion: string | null; faith_years: number | null; response_count: number | string | null; cohort_names: string[] | null }
+      | { name: string | null; email: string | null; phone: string | null; address: string | null; gender: string | null; birth_year: number | null; religion: string | null; faith_years: number | null; response_count: number | string | null; cohort_names: string[] | null }
       | undefined;
     if (!r) throw new CoreError('getCohortMemberDetail: 대상을 찾을 수 없습니다(권한/구성원 확인).');
     return {
       name: r.name ?? null,
       email: r.email ?? '',
       phone: r.phone ?? null,
+      address: r.address ?? null,
       gender: r.gender ?? null,
       birthYear: r.birth_year ?? null,
       religion: r.religion ?? null,

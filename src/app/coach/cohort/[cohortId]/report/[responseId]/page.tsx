@@ -11,7 +11,7 @@ import { RawAnswers } from '@/instruments/futurenow/report/RawAnswers';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import type { InterpretationContent } from '@/instruments/futurenow/report/interpretation';
 import { InterpretationPanel } from './InterpretationPanel';
-import { MemberProfilePanel } from './MemberProfilePanel';
+import { MemberProfileButton } from './MemberProfileButton';
 import { ReportPrintButton } from './ReportPrintButton';
 import { ReportPrintHeader } from './ReportPrintHeader';
 
@@ -71,11 +71,11 @@ export default async function CoachReportPage({
       {/* 앱 크롬(헤더·PDF 버튼) — 화면 전용(인쇄 제외) */}
       <div className="no-print">
         <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
+        {/* 툴바 — 신상정보(팝업)·PDF. 신상정보는 홈→멤버관리 왕복 없이 리포트에서 바로(ADR-78). */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+          {memberDetail ? <MemberProfileButton detail={memberDetail} /> : null}
           <ReportPrintButton />
         </div>
-        {/* 신상정보 패널(화면 전용) — 코치가 조원에게 바로 연락·확인. PDF 미포함(연락처 비유출). ADR-75 */}
-        {memberDetail ? <MemberProfilePanel detail={memberDetail} /> : null}
       </div>
       {/* PDF 전용 브랜드 문서 헤더(화면 미노출) */}
       <ReportPrintHeader participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />

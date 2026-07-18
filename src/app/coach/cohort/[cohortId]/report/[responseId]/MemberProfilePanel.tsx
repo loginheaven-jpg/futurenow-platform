@@ -36,6 +36,9 @@ export function MemberProfilePanel({ detail }: { detail: CohortMemberDetail }) {
         <Field label="이메일">
           {detail.email ? <a href={`mailto:${detail.email}`} style={linkStyle}>{detail.email}</a> : <span style={{ color: 'var(--color-text-muted)' }}>—</span>}
         </Field>
+        <Field label="주소">
+          <span style={{ color: detail.address ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{detail.address ?? '미등록'}</span>
+        </Field>
       </dl>
 
       {/* 프로필 */}
