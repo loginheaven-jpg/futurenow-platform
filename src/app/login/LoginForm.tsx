@@ -95,7 +95,8 @@ export function LoginForm({
       </form>
 
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
-        <a href="/reset" style={{ color: 'var(--color-primary)' }}>비밀번호를 잊으셨나요?</a>
+        {/* 이메일 리셋 발송이 안정화될 때까지 운영자 카톡 리셋을 안내. '비밀번호'에는 테스트용으로 기존 이메일 리셋 링크(/reset) 유지. */}
+        <a href="/reset" style={{ color: 'var(--color-primary)' }}>비밀번호</a>를 잊으신 분은 운영자에게 카톡으로 리셋을 요청해 주십시오.
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
         처음 참여하시나요? 인도자에게 받은 코드로{' '}
