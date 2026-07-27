@@ -13,6 +13,18 @@ type Flags = { shareConsent: boolean; suggestionAnon: boolean; contactRequest: b
 const gray = { color: 'var(--color-text-muted)' } as const;
 const help = { color: 'var(--color-text-secondary)' } as const;
 const fieldGap = { display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' } as const;
+// 단일행 입력 — 앱 전역 inputStyle(AuthGate 등)과 동일 박스형(테두리+배경). 밑줄 아님(카드 내 TextArea·앱 통일).
+const inputBox = {
+  width: '100%',
+  minHeight: 'var(--tap-min)',
+  padding: '0 var(--space-3)',
+  borderRadius: 'var(--radius)',
+  border: 'var(--border-hair) solid var(--color-border)',
+  background: 'var(--color-surface-2)',
+  color: 'var(--color-text)',
+  font: 'inherit',
+  fontSize: 15,
+} as const;
 
 function Field({ label, helpText, children }: { label: string; helpText?: string; children: React.ReactNode }) {
   return (
@@ -138,7 +150,7 @@ export function CheckinCardClient({
       </Field>
       <Field label={copy.today.mood.label} helpText={copy.today.mood.help}>
         <MultiChoiceChips options={[...copy.today.mood.options]} value={mood} max={copy.today.mood.max} exclusive={copy.today.mood.exclusive} onChange={(v) => setAnswer('mood', v)} ariaLabel={copy.today.mood.label} />
-        <input className="ui-input" value={str('mood_custom')} onChange={(e) => setAnswer('mood_custom', e.target.value)} onBlur={flushSave} placeholder={copy.today.moodCustom.placeholder} aria-label={copy.today.moodCustom.placeholder} style={{ marginTop: 'var(--space-2)' }} />
+        <input value={str('mood_custom')} onChange={(e) => setAnswer('mood_custom', e.target.value)} onBlur={flushSave} placeholder={copy.today.moodCustom.placeholder} aria-label={copy.today.moodCustom.placeholder} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
       </Field>
 
       {/* 1면 하단 · 심화(선택·접힘) */}
@@ -165,13 +177,13 @@ export function CheckinCardClient({
         <div className="t-caption" style={help}>{copy.step.help}</div>
       </div>
       <Field label={copy.step.what.label}>
-        <input className="ui-input" value={str('step_what')} onChange={(e) => setAnswer('step_what', e.target.value)} onBlur={flushSave} aria-label={copy.step.what.label} />
+        <input style={inputBox} value={str('step_what')} onChange={(e) => setAnswer('step_what', e.target.value)} onBlur={flushSave} aria-label={copy.step.what.label} />
       </Field>
       <Field label={copy.step.when.label} helpText={copy.step.when.help}>
-        <input className="ui-input" value={str('step_when')} onChange={(e) => setAnswer('step_when', e.target.value)} onBlur={flushSave} placeholder={copy.step.when.placeholder} aria-label={copy.step.when.label} />
+        <input style={inputBox} value={str('step_when')} onChange={(e) => setAnswer('step_when', e.target.value)} onBlur={flushSave} placeholder={copy.step.when.placeholder} aria-label={copy.step.when.label} />
       </Field>
       <Field label={`${copy.step.blocker.label} ${copy.step.blocker.optional}`} helpText={copy.step.blocker.help}>
-        <input className="ui-input" value={str('step_blocker')} onChange={(e) => setAnswer('step_blocker', e.target.value)} onBlur={flushSave} placeholder={copy.step.blocker.placeholder} aria-label={copy.step.blocker.label} />
+        <input style={inputBox} value={str('step_blocker')} onChange={(e) => setAnswer('step_blocker', e.target.value)} onBlur={flushSave} placeholder={copy.step.blocker.placeholder} aria-label={copy.step.blocker.label} />
       </Field>
       {/* 예시(접힘·탭 불가 회색 텍스트) */}
       <div style={{ marginBottom: 'var(--space-4)' }}>
@@ -210,10 +222,10 @@ export function CheckinCardClient({
         <div style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-5)' }}>
           <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{copy.wrap.facilitatorBox.title}</div>
           <Field label={copy.wrap.facilitatorBox.need.label}>
-            <input className="ui-input" value={str('need')} onChange={(e) => setAnswer('need', e.target.value)} onBlur={flushSave} aria-label={copy.wrap.facilitatorBox.need.label} />
+            <input style={inputBox} value={str('need')} onChange={(e) => setAnswer('need', e.target.value)} onBlur={flushSave} aria-label={copy.wrap.facilitatorBox.need.label} />
           </Field>
           <Field label={copy.wrap.facilitatorBox.suggestion.label}>
-            <input className="ui-input" value={str('suggestion')} onChange={(e) => setAnswer('suggestion', e.target.value)} onBlur={flushSave} aria-label={copy.wrap.facilitatorBox.suggestion.label} />
+            <input style={inputBox} value={str('suggestion')} onChange={(e) => setAnswer('suggestion', e.target.value)} onBlur={flushSave} aria-label={copy.wrap.facilitatorBox.suggestion.label} />
           </Field>
           <CheckRow label={copy.wrap.facilitatorBox.suggestionAnon.label} checked={flags.suggestionAnon} onChange={(v) => setFlag('suggestionAnon', v)} />
           <div style={{ marginTop: 'var(--space-2)' }}>
