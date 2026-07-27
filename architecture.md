@@ -742,3 +742,4 @@ interface AlertPlugin<S = unknown> {
 - **봉투(envelope)**: `responses`의 코어 소유 메타. 속(answers·subjectProfile)은 진단 소유.
 - **wave**: 사전(pre)·사후(post). 단발 진단은 null.
 - **돌봄/Red Flag**: 위기 신호 → 인도자 즉시 알림.
+- **인도자 / 코치**: 화면·안내·문서·AI 프롬프트에 노출되는 역할명은 **'인도자'**다. 코드 식별자·DB 컬럼·RPC·라우트는 `coach`를 유지한다(마이그레이션 위험 대비 편익 없음). '코치'라는 낱말은 워크북 STEP 1의 은유 — 참여자가 자기 인생을 대하는 태도 — 를 가리킬 때만 쓴다. AI 프롬프트(`interpretation.ts`)는 화면 어휘를 따른다(출력 오염 방지 — `INTERPRETATION_SYSTEM_PROMPT`·`buildInterpretationInput` 회귀 단언으로 고정). `CoreForbiddenError` 메시지의 '코치'도 '인도자'로 교체(refineActionError는 '가능합니다' 접미사 매칭이라 정제 유지).

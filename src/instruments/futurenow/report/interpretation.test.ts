@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FuturenowScores } from '../scoring';
-import { buildInterpretationInput, parseInterpretation } from './interpretation';
+import { INTERPRETATION_SYSTEM_PROMPT, buildInterpretationInput, parseInterpretation } from './interpretation';
 
 function scores(over: Partial<FuturenowScores> = {}): FuturenowScores {
   return {
@@ -46,6 +46,17 @@ describe('buildInterpretationInput — scores를 labels 어휘로 변환', () =>
   it('주관식 원문 발췌 포함(라벨과 함께)', () => {
     const input = buildInterpretationInput(scores());
     expect(input).toContain('기대: 더 단단해지고 싶어요');
+  });
+});
+
+describe('역할명 어휘 회귀 방지 — 화면·AI 어휘는 "인도자"(코치 아님)', () => {
+  it('시스템 프롬프트에 역할명 "코치"가 없다', () => {
+    expect(INTERPRETATION_SYSTEM_PROMPT).not.toContain('코치');
+  });
+
+  it('유저 프롬프트에도 역할명 "코치"가 없다(70행 유래 — AI 출력 오염원)', () => {
+    // 유저 프롬프트는 buildInterpretationInput(scores)가 생성. 되돌아가면 AI 초안이 '코치님'을 쓴다.
+    expect(buildInterpretationInput(scores())).not.toContain('코치');
   });
 });
 

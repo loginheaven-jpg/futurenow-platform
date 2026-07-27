@@ -15,7 +15,7 @@ export interface InterpretationContent {
 }
 
 // ── system_prompt (★ 최박사 검토·고정 지점) ──────────────────────────────
-export const INTERPRETATION_SYSTEM_PROMPT = `당신은 자기발견 세미나의 진단 결과를 코치에게 설명하는 조력자입니다.
+export const INTERPRETATION_SYSTEM_PROMPT = `당신은 자기발견 세미나의 진단 결과를 인도자에게 설명하는 조력자입니다.
 아래 규칙을 반드시 지킵니다.
 
 [데이터 범위]
@@ -31,9 +31,9 @@ export const INTERPRETATION_SYSTEM_PROMPT = `당신은 자기발견 세미나의
 - 아래 JSON 형식으로만 답합니다. 백틱·서두·설명 없이 JSON 객체 하나만 출력합니다.
 { "headline": "...", "axes": [{"name":"...","reading":"..."}], "caution": "...(선택)", "growth": "..." }
 - caution은 돌봄 신호가 있을 때만 포함하고, 없으면 키를 넣지 않습니다.
-- 각 항목은 간결하게. 코치가 읽고 다듬을 분량입니다.
+- 각 항목은 간결하게. 인도자가 읽고 다듬을 분량입니다.
 
-이 해석은 코치를 위한 참고 초안이며, 코치가 수정해 확정할 수 있습니다.`;
+이 해석은 인도자를 위한 참고 초안이며, 인도자가 수정해 확정할 수 있습니다.`;
 
 // 숫자 표기: 정수면 그대로, 소수면 1자리(GROW 평균이 x.5 가능).
 const fmt = (v: number): string => (Number.isInteger(v) ? String(v) : v.toFixed(1));
@@ -67,7 +67,7 @@ export function buildInterpretationInput(scores: FuturenowScores): string {
   if (subj.length) lines.push(`[참여자가 쓴 말]\n${subj.join('\n')}`);
 
   return [
-    '다음은 한 참여자의 자기발견 진단 결과입니다. 위 규칙에 따라 코치용 해석 초안을 JSON 으로 작성해 주세요.',
+    '다음은 한 참여자의 자기발견 진단 결과입니다. 위 규칙에 따라 인도자용 해석 초안을 JSON 으로 작성해 주세요.',
     '',
     ...lines,
     '',

@@ -337,7 +337,7 @@ class SupabaseCoreContext implements CoreContext {
   async deleteCohort(cohortId: string): Promise<void> {
     const me = await this.requireUser();
     if (me.role !== 'coach' && me.role !== 'admin') {
-      throw new CoreForbiddenError('차수 삭제는 코치 또는 운영자만 가능합니다');
+      throw new CoreForbiddenError('차수 삭제는 인도자 또는 운영자만 가능합니다');
     }
     if (me.role !== 'admin') {
       const [{ count: enrolled }, { count: responded }] = await Promise.all([
@@ -369,7 +369,7 @@ class SupabaseCoreContext implements CoreContext {
   }): Promise<Cohort> {
     const me = await this.requireUser();
     if (me.role !== 'coach' && me.role !== 'admin') {
-      throw new CoreForbiddenError('차수 개설은 코치 또는 운영자만 가능합니다');
+      throw new CoreForbiddenError('차수 개설은 인도자 또는 운영자만 가능합니다');
     }
 
     // 코드 알파벳 — DB cohorts_code_check(^[…]{5}$)와 글자 그대로 일치(혼동문자 I·L·O·0·1 제외, 31자).
@@ -418,7 +418,7 @@ class SupabaseCoreContext implements CoreContext {
   ): Promise<Cohort> {
     const me = await this.requireUser();
     if (me.role !== 'coach' && me.role !== 'admin') {
-      throw new CoreForbiddenError('차수 수정은 코치 또는 운영자만 가능합니다');
+      throw new CoreForbiddenError('차수 수정은 인도자 또는 운영자만 가능합니다');
     }
 
     const payload: Record<string, unknown> = {};
