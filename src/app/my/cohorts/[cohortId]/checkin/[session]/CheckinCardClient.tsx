@@ -4,7 +4,7 @@
 //   공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d). 이탈 경고(beforeunload) 없음.
 import { useEffect, useRef, useState } from 'react';
 import { Button, CheckRow, MultiChoiceChips, TextArea } from '@/core/ui';
-import { CHECKIN_SESSION_1, checkinFilledCount } from '@/instruments/futurenow/checkin/session1';
+import { CHECKIN_SESSION_1, CHECKIN_REQUIRED_TOTAL, checkinFilledCount } from '@/instruments/futurenow/checkin/session1';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 
 const copy = CHECKIN_SESSION_1;
@@ -61,7 +61,6 @@ export function CheckinCardClient({
   const [saveFailed, setSaveFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deepOpen, setDeepOpen] = useState(initialFlags.deepOpened);
-  const [exampleOpen, setExampleOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 최초 진입 표식(계측) — 1회.
@@ -180,12 +179,12 @@ export function CheckinCardClient({
         <input value={str('mood_custom')} onChange={(e) => setAnswer('mood_custom', e.target.value)} onBlur={flushSave} placeholder={copy.today.moodCustom.placeholder} aria-label={copy.today.moodCustom.placeholder} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
       </Field>
 
-      {/* 1면 하단 · 심화(선택·접힘) */}
+      {/* 1면 하단 · 심화(접힘 기본 · 제목 클릭으로 펼침) */}
       <div style={{ marginBottom: 'var(--space-5)' }}>
-        <button type="button" onClick={() => { const n = !deepOpen; setDeepOpen(n); if (n && !flags.deepOpened) setFlag('deepOpened', true); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text)' }} aria-expanded={deepOpen}>
-          <span className="t-body">{copy.deepen.title}</span> <span className="t-caption" style={gray}>{copy.deepen.optional}</span>
+        <button type="button" onClick={() => { const n = !deepOpen; setDeepOpen(n); if (n && !flags.deepOpened) setFlag('deepOpened', true); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }} aria-expanded={deepOpen}>
+          <span className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{copy.deepen.title}</span>
+          <span aria-hidden className="t-caption" style={gray}>{deepOpen ? '▾' : '▸'}</span>
         </button>
-        <div className="t-caption" style={help}>{copy.deepen.help}</div>
         {deepOpen ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
             {copy.deepen.fields.map((f) => (
@@ -206,15 +205,7 @@ export function CheckinCardClient({
       </div>
       <Field label={copy.step.what.label}>{textInput('step_what')}</Field>
       <Field label={copy.step.when.label} helpText={copy.step.when.help}>{textInput('step_when', copy.step.when.placeholder)}</Field>
-      <Field label={`${copy.step.blocker.label} ${copy.step.blocker.optional}`} helpText={copy.step.blocker.help}>{textInput('step_blocker', copy.step.blocker.placeholder)}</Field>
-      {/* 예시(접힘·탭 불가 회색 텍스트) */}
-      <div style={{ marginBottom: 'var(--space-4)' }}>
-        <button type="button" onClick={() => setExampleOpen((o) => !o)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} aria-expanded={exampleOpen}>
-          <span className="t-caption" style={help}>{copy.step.example.opener}</span>
-        </button>
-        {exampleOpen ? <p className="t-caption" style={{ ...gray, whiteSpace: 'pre-line', marginTop: 'var(--space-2)' }}>{copy.step.example.body}</p> : null}
-      </div>
-      <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-5)' }}>{copy.step.shareNotice}</p>
+      <Field label={copy.step.blocker.label} helpText={copy.step.blocker.help}>{textInput('step_blocker', copy.step.blocker.placeholder)}</Field>
 
       {/* 3면 · 마무리 */}
       <div style={{ paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
@@ -222,6 +213,10 @@ export function CheckinCardClient({
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
             <input type="range" min={0} max={10} value={confidence ?? 5} onChange={(e) => setAnswer('confidence', Number(e.target.value))} onBlur={flushSave} aria-label={copy.wrap.confidence.label} style={{ flex: 1 }} />
             <span className="t-body-lg" style={{ color: confidence == null ? 'var(--color-text-muted)' : 'var(--color-primary)', minWidth: 24, textAlign: 'center' }}>{confidence ?? '—'}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-1)' }}>
+            <span className="t-caption" style={gray}>{copy.wrap.confidence.leftLabel}</span>
+            <span className="t-caption" style={gray}>{copy.wrap.confidence.rightLabel}</span>
           </div>
         </Field>
 
@@ -245,8 +240,11 @@ export function CheckinCardClient({
         </div>
       </div>
 
-      {/* 저장(단일 버튼) */}
+      {/* 저장(단일 버튼) — 필수 미충족이어도 막지 않는다(소프트). 남은 필수 칸만 조용히 안내. */}
       <Button onClick={onSubmit} disabled={busy} style={{ width: '100%' }}>{busy ? '저장 중…' : copy.save.button}</Button>
+      {filled < CHECKIN_REQUIRED_TOTAL ? (
+        <p className="t-caption" style={{ ...gray, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>필수 {CHECKIN_REQUIRED_TOTAL - filled}칸 남음</p>
+      ) : null}
       <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>{copy.save.notice1}</p>
       <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 0 }}>{copy.save.notice2}</p>
       {saveFailed ? (

@@ -17,8 +17,8 @@ export const CHECKIN_SESSION_1 = {
     desire: {
       label: '오늘 바꿔 쓴 문장 한 쌍을 옮겨 주세요. (책 49~52쪽)',
       help: '여러 개 쓰셨다면, 바꿔 쓰는 순간 가장 시원했던 하나만 고르시면 됩니다.',
-      from: { key: 'desire_from', label: '바꾸기 전', placeholder: '나는 늘 게을렀다' },
-      to: { key: 'desire_to', label: '바꾼 뒤', placeholder: '나는 주도적인 삶을 갈망한다' },
+      from: { key: 'desire_from', label: '바꾸기 전', placeholder: '나는 늘 소심했다' },
+      to: { key: 'desire_to', label: '바꾼 뒤', placeholder: '나는 신중하고 사려깊은 사람이다.' },
       required: true,
     },
     // ② 존재가치 선언문 (기존, 순서만 뒤로)
@@ -42,9 +42,8 @@ export const CHECKIN_SESSION_1 = {
     moodCustom: { key: 'mood_custom', placeholder: '직접 쓰기 (선택)' },
   },
   deepen: {
-    title: '조금 더 머물러 보시겠어요?',
-    optional: '선택',
-    help: '건너뛰고 다음 장으로 가셔도 됩니다.',
+    // 제목 자체를 클릭해 펼친다('선택' 태그·건너뛰기 안내 삭제 — 적극적 참여자 전제). 접힘 기본·두 칸 공백 허용.
+    title: '깊은 생각 갈무리하기',
     fields: [
       { key: 'scene', label: '오늘 떠올린 기억 중에서, 수업이 끝난 뒤에도 계속 생각난 것은 무엇인가요?', help: '노트에 찍은 점 하나여도 좋습니다.' },
       { key: 'letter_line', label: '과거의 나에게 편지를 써 보세요.', help: '만약 종이에 이미 썼다면 그 내용 중 가장 해 주고 싶었던 말 한 줄만 옮겨 주세요. 파일첨부기능이 오픈되면 종이에 쓴 내용을 촬영해서 첨부하실 수 있습니다. (책 59쪽)' },
@@ -64,23 +63,20 @@ export const CHECKIN_SESSION_1 = {
     blocker: {
       key: 'step_blocker',
       label: '못 하게 될 것 같은 때가 있다면 언제일까요?',
-      optional: '선택',
       placeholder: '야근이 늦게 끝나는 날',
       help: '미리 적어 두면 그 순간에 덜 무너집니다.',
     },
-    example: {
-      opener: '예시가 필요하신가요?',
-      body: '지난 기수에는 이런 답들이 있었습니다.\n과거의 나에게 쓴 편지를 한 번 더 읽기 / 존재가치 문장을 잘 보이는 곳에 붙이기\n여기 없는 것, 오늘 내 마음에 떠오른 것이면 더 좋습니다.',
-    },
-    shareNotice: '이번 한 걸음은 나와 인도자만 봅니다. 다음 시간부터는 여는 자리에서 이름과 함께 나눕니다.',
+    // 예시 블록·공유 안내 삭제(적극적 참여자 전제 + '한 걸음은 내가 정할 때 힘'. 공유 안내는 인도자 대면 동의 모델과도 모순).
   },
   wrap: {
     confidence: {
       key: 'confidence',
-      label: '이 한 걸음, 다음 시간까지 해낼 것 같으세요?',
+      label: '이 한 걸음, 다음 시간까지 어느 정도로 해내실까요?',
       help: '솔직하게요. 낮게 답하셔도 아무 일 없습니다.',
       min: 0,
       max: 10,
+      leftLabel: '거의 불가능',
+      rightLabel: '완전 성공',
     },
     // 공유 동의(share_consent·share_target) UI 삭제(C2-d) — 나눔 동의는 인도자 개별 대면 요청으로 대체.
     facilitatorBox: {
@@ -97,7 +93,7 @@ export const CHECKIN_SESSION_1 = {
     selfNote: {
       key: 'self_note',
       label: '오늘 여기까지 온 나에게, 한마디만 건네주세요.',
-      help: '잘했다는 말이 아니어도 됩니다. 오늘 필요한 말이면 됩니다.',
+      help: '격려도, 자책도 다 좋습니다. 오늘 필요한 말이면 됩니다.',
       placeholder: '괜찮아, 오늘은 여기까지만 해도 돼',
       required: true,
     },
