@@ -7,10 +7,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   Alert,
   AlertInput,
+  CheckinRecord,
   CoachApplication,
   Cohort,
   CohortMemberDetail,
   CohortPreviewMeta,
+  CohortSession,
   ConsentRecord,
   ConsentType,
   ContactDetail,
@@ -31,6 +33,7 @@ import type {
   ChatRequest,
   ChatResponse,
 } from '@/contracts';
+import { z } from 'zod';
 import { gatewayChat } from './ai/gateway';
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
@@ -104,6 +107,68 @@ interface CohortMeta {
   member_count: number | string;
   expires_at: string | null;
 }
+
+// ── 회차 갈무리 매퍼·경계 스키마(ADR-80) ─────────────────────
+const CHECKIN_COLS =
+  'id,cohort_id,user_id,session_no,answers,step_private,share_consent,suggestion_anon,contact_request,prompted_at,prompt_count,has_content,first_opened_at,deep_opened,submitted_at,edit_count,updated_at';
+
+interface CohortSessionRow {
+  cohort_id: string;
+  session_no: number;
+  held_at: string;
+  opens_at: string;
+  closes_at: string;
+}
+function rowToCohortSession(r: CohortSessionRow): CohortSession {
+  return { cohortId: r.cohort_id, sessionNo: r.session_no, heldAt: r.held_at, opensAt: r.opens_at, closesAt: r.closes_at };
+}
+
+interface CheckinRow {
+  id: string;
+  cohort_id: string;
+  user_id: string;
+  session_no: number;
+  answers: Record<string, unknown> | null;
+  step_private: boolean;
+  share_consent: boolean;
+  suggestion_anon: boolean;
+  contact_request: boolean;
+  prompted_at: string | null;
+  prompt_count: number;
+  has_content: boolean;
+  first_opened_at: string | null;
+  deep_opened: boolean;
+  submitted_at: string | null;
+  edit_count: number;
+  updated_at: string;
+}
+function rowToCheckin(r: CheckinRow): CheckinRecord {
+  return {
+    id: r.id,
+    cohortId: r.cohort_id,
+    userId: r.user_id,
+    sessionNo: r.session_no,
+    answers: r.answers ?? {},
+    stepPrivate: r.step_private,
+    shareConsent: r.share_consent,
+    suggestionAnon: r.suggestion_anon,
+    contactRequest: r.contact_request,
+    promptedAt: r.prompted_at,
+    promptCount: r.prompt_count,
+    hasContent: r.has_content,
+    firstOpenedAt: r.first_opened_at,
+    deepOpened: r.deep_opened,
+    submittedAt: r.submitted_at,
+    editCount: r.edit_count,
+    updatedAt: r.updated_at,
+  };
+}
+
+// 일반 구조 한계(인스트루먼트 어휘 무지): 스칼라·짧은 문자열 배열·null 만. 미지 키는 버리지 않되 값 형태는 강제.
+const CHECKIN_ANSWERS_SCHEMA = z.record(
+  z.string().max(100),
+  z.union([z.string().max(2000), z.number().finite(), z.boolean(), z.null(), z.array(z.string().max(2000)).max(8)]),
+);
 
 class SupabaseCoreContext implements CoreContext {
   // 요청 단위 currentUser 캐시(C-2·ADR-60). CoreContext 는 요청마다 새로 생성(createCoreContext) → 인스턴스 캐시 = 요청 단위.
@@ -452,6 +517,9 @@ class SupabaseCoreContext implements CoreContext {
       pre_done: boolean;
       post_done: boolean;
       post_opened: boolean;
+      open_session_no: number | null;
+      open_session_submitted: boolean;
+      open_session_has_content: boolean;
       joined_at: string;
     }[]).map((r) => ({
       cohortId: r.cohort_id,
@@ -461,6 +529,10 @@ class SupabaseCoreContext implements CoreContext {
       preDone: r.pre_done,
       postDone: r.post_done,
       postOpened: r.post_opened,
+      // 배포 순서 방어(D2): 마이그 선행이 원칙이나, 중간 창·롤백에도 안전하도록 undefined→null/false.
+      openSessionNo: r.open_session_no ?? null,
+      openSessionSubmitted: r.open_session_submitted ?? false,
+      openSessionHasContent: r.open_session_has_content ?? false,
       joinedAt: r.joined_at,
     }));
   }
@@ -832,6 +904,99 @@ class SupabaseCoreContext implements CoreContext {
   async setMemberPassword(userId: string, password: string): Promise<void> {
     const { error } = await this.sb.rpc('admin_set_temp_password', { p_user_id: userId, p_password: password });
     if (error) throw new CoreError(`setMemberPassword 실패: ${error.message}`);
+  }
+
+  // ── 회차 갈무리(ADR-80) ─────────────────────────────────────
+  // responses 와 완전 분리. 쓰기는 전량 DEFINER RPC(checkin_*), 일정은 cohort_sessions(RLS 코치/운영자 write).
+
+  async listCohortSessions(cohortId: string): Promise<CohortSession[]> {
+    const { data, error } = await this.sb
+      .from('cohort_sessions')
+      .select('cohort_id,session_no,held_at,opens_at,closes_at')
+      .eq('cohort_id', cohortId)
+      .order('session_no');
+    if (error) throw new CoreError(`listCohortSessions 실패: ${error.message}`);
+    return (data ?? []).map((r) => rowToCohortSession(r as CohortSessionRow));
+  }
+
+  async upsertCohortSessions(cohortId: string, rows: CohortSession[]): Promise<void> {
+    const payload = rows.map((s) => ({
+      cohort_id: cohortId,
+      session_no: s.sessionNo,
+      held_at: s.heldAt,
+      opens_at: s.opensAt,
+      closes_at: s.closesAt,
+    }));
+    const { error } = await this.sb.from('cohort_sessions').upsert(payload, { onConflict: 'cohort_id,session_no' });
+    if (error) throw new CoreError(`upsertCohortSessions 실패: ${error.message}`);
+  }
+
+  async seedCohortSessions(cohortId: string, firstHeldAt: string, count?: number): Promise<void> {
+    const args: Record<string, unknown> = { p_cohort_id: cohortId, p_first_held: firstHeldAt };
+    if (count != null) args.p_count = count;
+    const { error } = await this.sb.rpc('seed_cohort_sessions', args);
+    if (error) throw new CoreError(`seedCohortSessions 실패: ${error.message}`);
+  }
+
+  async getMyCheckin(cohortId: string, sessionNo: number): Promise<CheckinRecord | null> {
+    const me = await this.requireUser();
+    const { data, error } = await this.sb
+      .from('checkins')
+      .select(CHECKIN_COLS)
+      .eq('cohort_id', cohortId)
+      .eq('session_no', sessionNo)
+      .eq('user_id', me.id)
+      .maybeSingle();
+    if (error) throw new CoreError(`getMyCheckin 실패: ${error.message}`);
+    return data ? rowToCheckin(data as CheckinRow) : null;
+  }
+
+  async saveMyCheckin(input: {
+    cohortId: string;
+    sessionNo: number;
+    answers: Record<string, unknown>;
+    flags?: Partial<Pick<CheckinRecord, 'stepPrivate' | 'shareConsent' | 'suggestionAnon' | 'contactRequest' | 'deepOpened'>>;
+  }): Promise<void> {
+    // 경계 검증(CLAUDE §9·S4): 갈무리는 채점 안 하므로 의미는 안 보되, 무제한 JSONB 는 막는다.
+    //   코어는 인스트루먼트 어휘(키명·confidence 범위)를 모른다(§2·§7) — 일반 구조 한계만 강제.
+    const answers = CHECKIN_ANSWERS_SCHEMA.parse(input.answers);
+    if (JSON.stringify(answers).length > 32_768) throw new CoreError('saveMyCheckin 실패: 갈무리 내용이 너무 큽니다.');
+    const flags: Record<string, boolean> = {};
+    if (input.flags) {
+      for (const [k, v] of Object.entries(input.flags)) if (typeof v === 'boolean') flags[k] = v;
+    }
+    const { error } = await this.sb.rpc('checkin_save', {
+      p_cohort_id: input.cohortId,
+      p_session_no: input.sessionNo,
+      p_answers: answers,
+      p_flags: flags,
+    });
+    if (error) throw new CoreError(`saveMyCheckin 실패: ${error.message}`);
+  }
+
+  async submitMyCheckin(cohortId: string, sessionNo: number): Promise<void> {
+    const { error } = await this.sb.rpc('checkin_submit', { p_cohort_id: cohortId, p_session_no: sessionNo });
+    if (error) throw new CoreError(`submitMyCheckin 실패: ${error.message}`);
+  }
+
+  async markCheckinPrompted(cohortId: string, sessionNo: number): Promise<void> {
+    const { error } = await this.sb.rpc('checkin_mark', { p_cohort_id: cohortId, p_session_no: sessionNo, p_kind: 'prompt' });
+    if (error) throw new CoreError(`markCheckinPrompted 실패: ${error.message}`);
+  }
+
+  async markCheckinOpened(cohortId: string, sessionNo: number): Promise<void> {
+    const { error } = await this.sb.rpc('checkin_mark', { p_cohort_id: cohortId, p_session_no: sessionNo, p_kind: 'open' });
+    if (error) throw new CoreError(`markCheckinOpened 실패: ${error.message}`);
+  }
+
+  async listCohortCheckins(cohortId: string, sessionNo: number): Promise<CheckinRecord[]> {
+    const { data, error } = await this.sb
+      .from('checkins')
+      .select(CHECKIN_COLS)
+      .eq('cohort_id', cohortId)
+      .eq('session_no', sessionNo);
+    if (error) throw new CoreError(`listCohortCheckins 실패: ${error.message}`);
+    return (data ?? []).map((r) => rowToCheckin(r as CheckinRow));
   }
 
   // ── 내부 ───────────────────────────────────────────────────

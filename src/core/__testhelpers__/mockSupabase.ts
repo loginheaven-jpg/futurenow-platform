@@ -48,6 +48,10 @@ class Builder {
     this.call.filters[col] = val;
     return this;
   }
+  order(_col: string) {
+    // 정렬은 모킹에 불필요 — 체이닝만 유지.
+    return this;
+  }
   single() {
     this.call.single = 'single';
     return this;

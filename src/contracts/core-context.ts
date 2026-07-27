@@ -10,8 +10,10 @@ import type {
   AlertInput,
   CoachApplication,
   Cohort,
+  CheckinRecord,
   CohortMemberDetail,
   CohortPreviewMeta,
+  CohortSession,
   ConsentRecord,
   ConsentType,
   ContactDetail,
@@ -134,4 +136,20 @@ export interface CoreContext {
   getMemberActivity(userId: string): Promise<MemberActivity>; // 소유/참여 차수·응답 수(admin_member_activity). 신원은 getPhone·getProfile.
   deleteMember(userId: string): Promise<void>; // 임의 멤버 계정 하드삭제(delete_user — auth.users 삭제·전체 연쇄). 가드: admin·자기삭제 금지.
   setMemberPassword(userId: string, password: string): Promise<void>; // 운영자 임시 비번 설정(admin_set_temp_password DEFINER, is_admin·최소 8자). 계정 복구용. ADR-79
+
+  // 회차 갈무리 — responses 와 완전 분리(별도 테이블 checkins). 채점·AI 입력·리포트 미배선. ADR-80
+  listCohortSessions(cohortId: string): Promise<CohortSession[]>; // 멤버·담당 인도자·운영자(cohort_sessions RLS)
+  upsertCohortSessions(cohortId: string, rows: CohortSession[]): Promise<void>; // 담당 인도자·운영자만(RLS)
+  seedCohortSessions(cohortId: string, firstHeldAt: string, count?: number): Promise<void>; // 담당 인도자·운영자 · seed_cohort_sessions DEFINER
+  getMyCheckin(cohortId: string, sessionNo: number): Promise<CheckinRecord | null>; // 본인(checkins SELECT RLS)
+  saveMyCheckin(input: { // 본인 · 자동 저장(checkin_save DEFINER upsert · has_content 서버 계산)
+    cohortId: string;
+    sessionNo: number;
+    answers: Record<string, unknown>;
+    flags?: Partial<Pick<CheckinRecord, 'stepPrivate' | 'shareConsent' | 'suggestionAnon' | 'contactRequest' | 'deepOpened'>>;
+  }): Promise<void>;
+  submitMyCheckin(cohortId: string, sessionNo: number): Promise<void>; // 본인 · 최초 submitted_at 고정, 재제출 edit_count+1(checkin_submit)
+  markCheckinPrompted(cohortId: string, sessionNo: number): Promise<void>; // 본인 · 전면 안내 노출 기록(checkin_mark 'prompt', 상한 2)
+  markCheckinOpened(cohortId: string, sessionNo: number): Promise<void>; // 본인 · first_opened_at 최초 1회(checkin_mark 'open')
+  listCohortCheckins(cohortId: string, sessionNo: number): Promise<CheckinRecord[]>; // 담당 인도자·운영자(checkins SELECT RLS)
 }

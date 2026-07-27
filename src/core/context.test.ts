@@ -552,7 +552,7 @@ describe('listMyCohorts (멤버 본인 차수 — my_cohorts RPC)', () => {
         name === 'my_cohorts'
           ? {
               data: [
-                { cohort_id: 'co1', name: '1기', coach_name: '김코치', status: 'active', pre_done: true, post_done: false, joined_at: '2026-06-01' },
+                { cohort_id: 'co1', name: '1기', coach_name: '김코치', status: 'active', pre_done: true, post_done: false, post_opened: false, open_session_no: 2, open_session_submitted: false, open_session_has_content: true, joined_at: '2026-06-01' },
               ],
               error: null,
             }
@@ -560,7 +560,8 @@ describe('listMyCohorts (멤버 본인 차수 — my_cohorts RPC)', () => {
     });
     const list = await ctx.listMyCohorts();
     expect(list[0]).toEqual({
-      cohortId: 'co1', name: '1기', coachName: '김코치', status: 'active', preDone: true, postDone: false, joinedAt: '2026-06-01',
+      cohortId: 'co1', name: '1기', coachName: '김코치', status: 'active', preDone: true, postDone: false, postOpened: false,
+      openSessionNo: 2, openSessionSubmitted: false, openSessionHasContent: true, joinedAt: '2026-06-01',
     });
     expect(rpcCalls.some((c) => c.name === 'my_cohorts')).toBe(true);
   });

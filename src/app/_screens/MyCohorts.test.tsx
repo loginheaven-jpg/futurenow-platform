@@ -11,6 +11,9 @@ const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
   preDone: false,
   postDone: false,
   postOpened: false,
+  openSessionNo: null,
+  openSessionSubmitted: false,
+  openSessionHasContent: false,
   joinedAt: '2026-06-01',
   ...over,
 });

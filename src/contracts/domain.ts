@@ -67,7 +67,39 @@ export interface MyCohortSummary {
   preDone: boolean;
   postDone: boolean;
   postOpened: boolean; // 사후 진단 개시 여부(참여자 홈이 '사후 진단하기' 노출 판정). ADR-55
+  openSessionNo: number | null; // 지금 열린 회차(now∈[opens_at,closes_at], 없으면 null). ADR-80
+  openSessionSubmitted: boolean; // 그 회차 갈무리 제출 완료 여부
+  openSessionHasContent: boolean; // 그 회차에 한 글자라도 썼는가(배너 문구 분기)
   joinedAt: string;
+}
+
+// 회차 갈무리 — responses 와 완전 분리(별도 테이블 checkins·cohort_sessions). 채점·AI 입력·리포트 미배선. ADR-80
+export interface CohortSession {
+  cohortId: string;
+  sessionNo: number;
+  heldAt: string;
+  opensAt: string;
+  closesAt: string;
+}
+
+export interface CheckinRecord {
+  id: string;
+  cohortId: string;
+  userId: string;
+  sessionNo: number;
+  answers: Record<string, unknown>;
+  stepPrivate: boolean;
+  shareConsent: boolean;
+  suggestionAnon: boolean;
+  contactRequest: boolean;
+  promptedAt: string | null;
+  promptCount: number;
+  hasContent: boolean; // 실제 컬럼. checkin_save 가 쓰기 시점에 계산(행 존재≠작성 중)
+  firstOpenedAt: string | null;
+  deepOpened: boolean;
+  submittedAt: string | null;
+  editCount: number;
+  updatedAt: string;
 }
 
 // 본부 멤버 관리(운영자 화면)용 사용자 요약. 운영자만 전체 조회(users_select=admin). ADR-28
