@@ -40,10 +40,16 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('href="/join?cohort=co1"');
   });
 
-  it('사전 완료 → [내 리포트] → /my/cohorts/[id]/report 활성 링크', () => {
+  it('사전 완료·열린 회차 없음 → [차수 열기] → 차수 홈(ADR-80 Phase 3)', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: true })]} />);
-    expect(html).toContain('내 리포트');
-    expect(html).toContain('href="/my/cohorts/co1/report"');
+    expect(html).toContain('차수 열기');
+    expect(html).toContain('href="/my/cohorts/co1"');
+  });
+
+  it('열린 회차 미제출 → [이번 주 갈무리] → /my/cohorts/[id]/checkin/[n] (2순위, ADR-80)', () => {
+    const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: true, openSessionNo: 3, openSessionSubmitted: false })]} />);
+    expect(html).toContain('이번 주 갈무리');
+    expect(html).toContain('href="/my/cohorts/co1/checkin/3"');
   });
 
   it('사후 개시·미완(사전 완료) → [사후 진단하기]→/join?cohort=…&wave=post (B-2)', () => {

@@ -48,8 +48,8 @@ class Builder {
     this.call.filters[col] = val;
     return this;
   }
-  order(_col: string) {
-    // 정렬은 모킹에 불필요 — 체이닝만 유지.
+  order() {
+    // 정렬은 모킹에 불필요 — 체이닝만 유지(런타임 여분 인자 무시).
     return this;
   }
   single() {

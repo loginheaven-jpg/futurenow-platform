@@ -4,6 +4,10 @@ import { LoginClient } from './LoginClient';
 
 export const dynamic = 'force-dynamic';
 
-export default function LoginPage() {
-  return <LoginClient />;
+// ?returnTo=… : 로그인 후 되돌아갈 내부 경로(QR 왕복). 서버에서 읽어 전달(useSearchParams/Suspense 회피).
+//   실제 검증(화이트리스트)은 loginOutcome 이 수행 — 여기선 원문만 넘긴다.
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ returnTo?: string | string[] }> }) {
+  const sp = await searchParams;
+  const returnTo = Array.isArray(sp.returnTo) ? sp.returnTo[0] : sp.returnTo;
+  return <LoginClient returnTo={returnTo ?? null} />;
 }

@@ -8,6 +8,7 @@ export { DotScale } from './DotScale';
 export { NumberSlider } from './NumberSlider';
 export { TextArea } from './TextArea';
 export { CheckRow } from './CheckRow';
+export { MultiChoiceChips } from './MultiChoiceChips';
 export { StickyScaleHeader } from './StickyScaleHeader';
 export { OtpInput } from './OtpInput';
 export { Stepper } from './Stepper';

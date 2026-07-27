@@ -43,23 +43,29 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
           key={c.cohortId}
           style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' }}
         >
-          <div className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{c.name}</div>
-          <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-            {c.coachName ?? '인도자'} · {c.status === 'archived' ? '마감' : '진행 중'}
-          </div>
+          {/* 카드 제목 → 차수 홈(진단 둘 + 갈무리 일곱을 담는 본체, ADR-80) */}
+          <a href={`/my/cohorts/${c.cohortId}`} style={{ textDecoration: 'none', display: 'block' }}>
+            <div className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{c.name}</div>
+            <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
+              {c.coachName ?? '인도자'} · {c.status === 'archived' ? '마감' : '진행 중'}
+            </div>
+          </a>
 
+          {/* 배지는 진단 둘만(갈무리는 배지로 만들지 않는다 — 죄책감 장치·480px 줄바꿈 방지, ADR-80) */}
           <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
             <ProgressBadge label="사전 진단" done={c.preDone} pendingText="미완" />
             <ProgressBadge label="사후 진단" done={c.postDone} pendingText="대기" />
           </div>
 
-          {/* 다음 행동: 사전 미완 → 진단 직행 · 사후 개시·미완 → 사후 진단하기(B-2) · 그 외 → 내 리포트(순화 뷰) */}
+          {/* 우선순위(ADR-80): 사전 미완 → 진단 · 열린 회차 미제출 → 이번 주 갈무리 · 사후 개시·미완 → 사후 · 그 외 → 차수 열기 */}
           {!c.preDone ? (
             <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>진단 시작하기</a>
+          ) : c.openSessionNo !== null && !c.openSessionSubmitted ? (
+            <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}`} style={full}>이번 주 갈무리</a>
           ) : c.postOpened && !c.postDone ? (
             <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>사후 진단하기</a>
           ) : (
-            <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}/report`} style={full}>내 리포트</a>
+            <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>차수 열기</a>
           )}
         </div>
       ))}

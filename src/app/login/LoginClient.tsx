@@ -7,7 +7,7 @@ import { createBrowserSupabase } from '@/core/supabase/client';
 import { LoginForm } from './LoginForm';
 import { loginOutcome } from './loginOutcome';
 
-export function LoginClient() {
+export function LoginClient({ returnTo = null }: { returnTo?: string | null }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const router = useRouter();
 
@@ -22,7 +22,7 @@ export function LoginClient() {
     setBusy(true);
     setError(null);
     const res = await supabase.auth.signInWithPassword({ email, password });
-    const outcome = loginOutcome({ error: res.error, hasSession: !!res.data.session });
+    const outcome = loginOutcome({ error: res.error, hasSession: !!res.data.session, returnTo });
     setBusy(false);
     if (outcome.error) {
       setError(outcome.error); // 원시 에러(자격 정보 누출 가능)는 싣지 않는다

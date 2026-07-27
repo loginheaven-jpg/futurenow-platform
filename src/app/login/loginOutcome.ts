@@ -7,9 +7,12 @@ export interface LoginOutcome {
   error?: string;
 }
 
-export function loginOutcome(input: { error: unknown; hasSession: boolean }): LoginOutcome {
+import { safeReturnTo } from '@/app/_lib/safeReturn';
+
+export function loginOutcome(input: { error: unknown; hasSession: boolean; returnTo?: string | null }): LoginOutcome {
   if (input.error || !input.hasSession) {
     return { error: '이메일 또는 비밀번호를 확인해 주세요.' };
   }
-  return { redirect: '/home' };
+  // returnTo 는 화이트리스트 통과 상대 경로만(오픈 리다이렉트 방어). 그 외/부재 → /home.
+  return { redirect: safeReturnTo(input.returnTo) ?? '/home' };
 }

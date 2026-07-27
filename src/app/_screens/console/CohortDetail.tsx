@@ -312,10 +312,19 @@ export function CohortDetail({
 
       {/* 차수 단위 집계 — 1주차 오프닝 핵심(그룹 평균·분포). 코치 전용 리얼 리포트. */}
       {onGroupReport ? (
-        <Button onClick={onGroupReport} style={{ width: '100%', marginBottom: 'var(--space-6)' }}>
+        <Button onClick={onGroupReport} style={{ width: '100%', marginBottom: 'var(--space-3)' }}>
           그룹 리포트 보기
         </Button>
       ) : null}
+
+      {/* 회차 갈무리 현황(ADR-80 · Phase 7) — 회차 일정 등록·명단·한 걸음. */}
+      <a
+        className="ui-btn ui-btn--ghost"
+        href={`/coach/cohort/${cohort.id}/checkin`}
+        style={{ width: '100%', textDecoration: 'none', textAlign: 'center', marginBottom: 'var(--space-6)' }}
+      >
+        회차 갈무리 현황
+      </a>
 
       {care.length > 0 && (
         <Group title="먼저 챙길 분" color="var(--care-text)">
