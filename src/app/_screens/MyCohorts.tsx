@@ -41,32 +41,43 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
       {cohorts.map((c) => (
         <div
           key={c.cohortId}
-          style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' }}
+          style={{ position: 'relative', padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' }}
         >
-          {/* 카드 제목 → 차수 홈(진단 둘 + 갈무리 일곱을 담는 본체, ADR-80) */}
-          <a href={`/my/cohorts/${c.cohortId}`} style={{ textDecoration: 'none', display: 'block' }}>
-            <div className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{c.name}</div>
+          {/* 카드 전체 탭 → 차수 홈(진단 둘 + 갈무리 일곱을 담는 본체, ADR-80). 스트레치드 링크 — 버튼만 위로 올려 자기 액션 유지 */}
+          <a
+            href={`/my/cohorts/${c.cohortId}`}
+            aria-label={`${c.name} 차수 홈 열기`}
+            style={{ position: 'absolute', inset: 0, zIndex: 0, borderRadius: 'var(--radius)' }}
+          />
+
+          {/* 제목·배지(클릭은 카드 링크로 통과 — pointerEvents none) */}
+          <div style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
+            <div className="t-body-lg" style={{ color: 'var(--color-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 'var(--space-2)' }}>
+              <span>{c.name}</span>
+              <span aria-hidden style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>차수 홈 ›</span>
+            </div>
             <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
               {c.coachName ?? '인도자'} · {c.status === 'archived' ? '마감' : '진행 중'}
             </div>
-          </a>
-
-          {/* 배지는 진단 둘만(갈무리는 배지로 만들지 않는다 — 죄책감 장치·480px 줄바꿈 방지, ADR-80) */}
-          <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-            <ProgressBadge label="사전 진단" done={c.preDone} pendingText="미완" />
-            <ProgressBadge label="사후 진단" done={c.postDone} pendingText="대기" />
+            {/* 배지는 진단 둘만(갈무리는 배지로 만들지 않는다 — 죄책감 장치·480px 줄바꿈 방지, ADR-80) */}
+            <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+              <ProgressBadge label="사전 진단" done={c.preDone} pendingText="미완" />
+              <ProgressBadge label="사후 진단" done={c.postDone} pendingText="대기" />
+            </div>
           </div>
 
-          {/* 우선순위(ADR-80): 사전 미완 → 진단 · 열린 회차 미제출 → 이번 주 갈무리 · 사후 개시·미완 → 사후 · 그 외 → 차수 열기 */}
-          {!c.preDone ? (
-            <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>진단 시작하기</a>
-          ) : c.openSessionNo !== null && !c.openSessionSubmitted ? (
-            <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}`} style={full}>이번 주 갈무리</a>
-          ) : c.postOpened && !c.postDone ? (
-            <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>사후 진단하기</a>
-          ) : (
-            <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>차수 열기</a>
-          )}
+          {/* 우선순위 버튼(카드 링크 위 — 자기 목적지). 사전 미완 → 진단 · 열린 회차 미제출 → 이번 주 갈무리 · 사후 개시·미완 → 사후 · 그 외 → 차수 열기 */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {!c.preDone ? (
+              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>진단 시작하기</a>
+            ) : c.openSessionNo !== null && !c.openSessionSubmitted ? (
+              <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}`} style={full}>이번 주 갈무리</a>
+            ) : c.postOpened && !c.postDone ? (
+              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>사후 진단하기</a>
+            ) : (
+              <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>차수 열기</a>
+            )}
+          </div>
         </div>
       ))}
     </div>

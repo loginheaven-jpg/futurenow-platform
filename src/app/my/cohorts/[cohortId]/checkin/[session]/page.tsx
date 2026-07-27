@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
-import { CHECKIN_SESSION_1 } from '@/instruments/futurenow/checkin/session1';
 import { CheckinCardClient } from './CheckinCardClient';
 
 export const dynamic = 'force-dynamic';
@@ -63,7 +62,6 @@ export default async function CheckinCardPage({ params }: { params: Promise<{ co
       <CheckinCardClient
         cohortId={cohortId}
         sessionNo={sessionNo}
-        copy={CHECKIN_SESSION_1}
         initialAnswers={(existing?.answers ?? {}) as Record<string, unknown>}
         initialFlags={{
           shareConsent: existing?.shareConsent ?? false,

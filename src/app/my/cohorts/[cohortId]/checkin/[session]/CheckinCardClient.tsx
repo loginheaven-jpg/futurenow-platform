@@ -3,11 +3,11 @@
 //   판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출' 낱말 미사용. 이탈 경고(beforeunload) 없음.
 import { useEffect, useRef, useState } from 'react';
 import { Button, CheckRow, MultiChoiceChips, TextArea } from '@/core/ui';
-import type { CHECKIN_SESSION_1 } from '@/instruments/futurenow/checkin/session1';
-import { checkinFilledCount } from '@/instruments/futurenow/checkin/session1';
+// 문안 상수는 클라이언트가 직접 import — 서버→클라이언트 prop 으로 넘기면 함수(counter 등)가 직렬화 불가로 렌더 에러.
+import { CHECKIN_SESSION_1, checkinFilledCount } from '@/instruments/futurenow/checkin/session1';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 
-type Copy = typeof CHECKIN_SESSION_1;
+const copy = CHECKIN_SESSION_1;
 type Flags = { shareConsent: boolean; suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean };
 
 const gray = { color: 'var(--color-text-muted)' } as const;
@@ -27,7 +27,6 @@ function Field({ label, helpText, children }: { label: string; helpText?: string
 export function CheckinCardClient({
   cohortId,
   sessionNo,
-  copy,
   initialAnswers,
   initialFlags,
   alreadyOpened,
@@ -36,7 +35,6 @@ export function CheckinCardClient({
 }: {
   cohortId: string;
   sessionNo: number;
-  copy: Copy;
   initialAnswers: Record<string, unknown>;
   initialFlags: Flags;
   alreadyOpened: boolean;
