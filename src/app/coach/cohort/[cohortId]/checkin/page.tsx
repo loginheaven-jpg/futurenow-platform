@@ -57,7 +57,7 @@ export default async function CoachCheckinPage({
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="회차 갈무리 현황" backHref={`/coach/cohort/${cohortId}`} homeHref="/home" action={<HeaderActions />} />
 
-      <ScheduleSeedClient cohortId={cohortId} hasSchedule={hasSchedule} />
+      <ScheduleSeedClient cohortId={cohortId} sessions={sessions} />
 
       {!hasSchedule ? null : (
         <>
