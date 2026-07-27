@@ -4,11 +4,11 @@
 import type { CohortSession } from '@/contracts';
 import { createServerContext } from '@/core/supabase/server';
 
-export async function seedSessionsAction(cohortId: string, firstHeldAt: string): Promise<{ ok: boolean; error?: string }> {
+export async function seedSessionsAction(cohortId: string, firstHeldAt: string): Promise<{ ok: boolean; inserted?: number; error?: string }> {
   try {
     const ctx = await createServerContext();
-    await ctx.seedCohortSessions(cohortId, firstHeldAt);
-    return { ok: true };
+    const inserted = await ctx.seedCohortSessions(cohortId, firstHeldAt);
+    return { ok: true, inserted };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : '일정 생성에 실패했습니다.' };
   }

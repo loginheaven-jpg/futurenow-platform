@@ -140,7 +140,7 @@ export interface CoreContext {
   // 회차 갈무리 — responses 와 완전 분리(별도 테이블 checkins). 채점·AI 입력·리포트 미배선. ADR-80
   listCohortSessions(cohortId: string): Promise<CohortSession[]>; // 멤버·담당 인도자·운영자(cohort_sessions RLS)
   upsertCohortSessions(cohortId: string, rows: CohortSession[]): Promise<void>; // 담당 인도자·운영자만(RLS)
-  seedCohortSessions(cohortId: string, firstHeldAt: string, count?: number): Promise<void>; // 담당 인도자·운영자 · seed_cohort_sessions DEFINER
+  seedCohortSessions(cohortId: string, firstHeldAt: string, count?: number): Promise<number>; // 담당 인도자·운영자 · seed_cohort_sessions DEFINER · 삽입 행 수 반환(0=이미 있음)
   getMyCheckin(cohortId: string, sessionNo: number): Promise<CheckinRecord | null>; // 본인(checkins SELECT RLS)
   saveMyCheckin(input: { // 본인 · 자동 저장(checkin_save DEFINER upsert · has_content 서버 계산)
     cohortId: string;

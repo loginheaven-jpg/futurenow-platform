@@ -1,6 +1,6 @@
-// 회차 갈무리 · 1회차 문안 상수(ADR-80 · UI 지시서 §3 원문). 임의 윤문 금지 — 조사 하나 바꾸지 않는다.
+// 회차 갈무리 · 1회차 문안 v2(ADR-80 · 수정지시서 C2). 임의 윤문 금지 — 조사 하나 바꾸지 않는다.
+// 책 페이지 참조는 문장 끝 괄호에 좌표로만(참여자에게 책은 배포됨·워크북은 미배포라 언급 금지).
 // 코어는 이 파일을 모른다(인스트루먼트 소유). 채점·AI 입력 미배선 — 화면 렌더용 문자열만.
-// 2~7회차는 1기 1회차 실측 후 보정해 추가한다(이 파일에 없다).
 
 export const CHECKIN_SESSION_1 = {
   sessionNo: 1,
@@ -8,18 +8,28 @@ export const CHECKIN_SESSION_1 = {
     brand: 'FUTURE NOW · 1회차',
     title: '오늘의 갈무리',
     subtitle: '과거의 나를 만나다',
-    counter: (n: number) => `필수 4칸 중 ${n}칸 채움 · 약 3분`,
+    counter: (n: number) => `필수 5칸 중 ${n}칸 채움 · 약 4분`,
     band: '첫 갈무리는 아주 짧습니다. 잘 쓰려 하지 않으셔도 됩니다.',
     firstVisitOnce: '이건 진단이 아닙니다. 점수도, 정답도 없습니다.',
   },
   today: {
-    identitySentence: {
-      key: 'identity_sentence',
-      label: '오늘 워크북에 적은 존재가치 한 문장을 그대로 옮겨 주세요.',
-      help: '다듬지 않으셔도 됩니다. 쓰신 그대로면 됩니다.',
-      placeholder: '나는 ______ 사람이다',
+    // ① 바꿔 쓴 문장 한 쌍 (신규·필수). 순서: 책 진행(재해석 → 존재가치)을 따른다.
+    desire: {
+      label: '오늘 바꿔 쓴 문장 한 쌍을 옮겨 주세요. (책 49~52쪽)',
+      help: '여러 개 쓰셨다면, 바꿔 쓰는 순간 가장 시원했던 하나만 고르시면 됩니다.',
+      from: { key: 'desire_from', label: '바꾸기 전', placeholder: '나는 늘 게을렀다' },
+      to: { key: 'desire_to', label: '바꾼 뒤', placeholder: '나는 주도적인 삶을 갈망한다' },
       required: true,
     },
+    // ② 존재가치 선언문 (기존, 순서만 뒤로)
+    identitySentence: {
+      key: 'identity_sentence',
+      label: '오늘 완성한 존재가치 선언문을 그대로 옮겨 주세요. (책 53~58쪽)',
+      help: '다듬지 않으셔도 됩니다. 쓰신 그대로면 됩니다.',
+      placeholder: '나는 ___의 가치를 최우선으로 여기며, ___하는 삶을 살기를 갈망하는 사람이다',
+      required: true,
+    },
+    // ③ 오늘의 마음 (변경 없음)
     mood: {
       key: 'mood',
       label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?',
@@ -36,26 +46,26 @@ export const CHECKIN_SESSION_1 = {
     optional: '선택',
     help: '건너뛰고 다음 장으로 가셔도 됩니다.',
     fields: [
-      { key: 'scene', label: '오늘 꺼낸 장면 중, 집에 오는 길까지 따라온 것 하나는 무엇이었나요?' },
-      { key: 'reframe', label: '오늘 다시 펼쳐 본 그 페이지에서, 예전에는 안 보이던 것이 보였다면 무엇인가요?' },
+      { key: 'scene', label: '오늘 떠올린 기억 중에서, 수업이 끝난 뒤에도 계속 생각난 것은 무엇인가요?', help: '노트에 찍은 점 하나여도 좋습니다.' },
+      { key: 'letter_line', label: '과거의 나에게 쓴 편지에서, 가장 해 주고 싶었던 말 한 줄만 옮겨 주세요. (책 59쪽)', help: '전부 옮기지 않으셔도 됩니다. 한 줄이면 됩니다.' },
     ],
   },
   step: {
-    title: '다음 시간까지, 한 걸음만 정해 봅시다.',
-    help: '두 개를 적으면 대개 둘 다 하지 않습니다. 하나면 충분합니다.',
-    what: { key: 'step_what', label: '무엇을', required: true },
+    title: '다음 시간까지 할 작은 실천 하나를 정해 봅시다.',
+    help: "이 세미나에서는 이것을 '한 걸음'이라고 부릅니다. 하나면 충분해요.\n두 개를 적으면 대개 둘 다 하지 않거든요.",
+    what: { key: 'step_what', label: '무엇을 하시겠어요?', required: true },
     when: {
       key: 'step_when',
-      label: '언제 · 어디서',
+      label: '언제, 어디서 하시겠어요?',
       placeholder: '토요일 아침, 집 앞 카페에서',
       help: '시점과 장소가 적히면 실행률이 눈에 띄게 올라갑니다.',
       required: true,
     },
     blocker: {
       key: 'step_blocker',
-      label: '혹시 못 하게 된다면, 무엇 때문일까요?',
+      label: '못 하게 될 것 같은 때가 있다면 언제일까요?',
       optional: '선택',
-      placeholder: '야근이 늦게 끝나면',
+      placeholder: '야근이 늦게 끝나는 날',
       help: '미리 적어 두면 그 순간에 덜 무너집니다.',
     },
     example: {
@@ -72,16 +82,11 @@ export const CHECKIN_SESSION_1 = {
       min: 0,
       max: 10,
     },
-    shareConsent: { key: 'share_consent', label: '위에 쓴 문장 하나를 이름 없이 다음 시간에 나눠도 좋습니다' },
-    shareTarget: {
-      key: 'share_target',
-      label: '어느 문장을 나눌까요?',
-      options: ['존재가치 한 문장', '따라온 장면'] as const,
-    },
+    // 공유 동의(share_consent·share_target) UI 삭제(C2-d) — 나눔 동의는 인도자 개별 대면 요청으로 대체.
     facilitatorBox: {
       title: '선택 · 하고 싶은 말이 있을 때만',
-      need: { key: 'need', label: '나에게 필요한 것' },
-      suggestion: { key: 'suggestion', label: '세미나에 대한 제안' },
+      need: { key: 'need', label: '인도자에게 부탁하고 싶은 것이 있나요?' },
+      suggestion: { key: 'suggestion', label: '세미나에 대해 바라는 점이 있나요?' },
       suggestionAnon: { key: 'suggestion_anon', label: '이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.' },
       contactRequest: {
         key: 'contact_request',
@@ -110,15 +115,17 @@ export const CHECKIN_SESSION_1 = {
   },
 } as const;
 
-// 필수 칸 판정(§3.7): identity_sentence·mood(1+)·(step_what & step_when)·self_note. confidence 는 세지 않는다.
+// 필수 칸 판정(v2 · 5칸): identity_sentence · (desire_from 그리고 desire_to) · mood(1+) · (step_what 그리고 step_when) · self_note.
+// confidence 는 세지 않는다. 옮겨 적기라 창작 부담 아님.
 export function checkinFilledCount(answers: Record<string, unknown>): number {
   const has = (k: string) => typeof answers[k] === 'string' && (answers[k] as string).trim() !== '';
   const mood = Array.isArray(answers.mood) && (answers.mood as unknown[]).length > 0;
   let n = 0;
   if (has('identity_sentence')) n += 1;
+  if (has('desire_from') && has('desire_to')) n += 1;
   if (mood) n += 1;
   if (has('step_what') && has('step_when')) n += 1;
   if (has('self_note')) n += 1;
   return n;
 }
-export const CHECKIN_REQUIRED_TOTAL = 4;
+export const CHECKIN_REQUIRED_TOTAL = 5;

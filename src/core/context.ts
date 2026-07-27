@@ -931,11 +931,12 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`upsertCohortSessions 실패: ${error.message}`);
   }
 
-  async seedCohortSessions(cohortId: string, firstHeldAt: string, count?: number): Promise<void> {
+  async seedCohortSessions(cohortId: string, firstHeldAt: string, count?: number): Promise<number> {
     const args: Record<string, unknown> = { p_cohort_id: cohortId, p_first_held: firstHeldAt };
     if (count != null) args.p_count = count;
-    const { error } = await this.sb.rpc('seed_cohort_sessions', args);
+    const { data, error } = await this.sb.rpc('seed_cohort_sessions', args);
     if (error) throw new CoreError(`seedCohortSessions 실패: ${error.message}`);
+    return typeof data === 'number' ? data : 0; // 삽입 행 수(0=이미 일정 있음)
   }
 
   async getMyCheckin(cohortId: string, sessionNo: number): Promise<CheckinRecord | null> {

@@ -46,9 +46,17 @@ export default async function CoachCheckinPage({
     .filter((c) => !c.stepPrivate)
     .map((c) => ({ name: nameOf(c.userId), what: c.answers.step_what as string, when: (c.answers.step_when as string) ?? '' }));
 
-  const shares = checkins
-    .filter((c) => c.shareConsent && typeof c.answers?.share_target === 'string' && (c.answers.share_target as string).trim() !== '')
-    .map((c) => c.answers.share_target as string);
+  // 문장 모아 보기(C2 §4.4) — 실명 + 갈망·존재가치·기억. 나눔 전 인도자가 개별 대면 동의를 구하는 실무 도구.
+  const sstr = (c: (typeof checkins)[number], k: string) => (typeof c.answers?.[k] === 'string' ? (c.answers[k] as string) : '');
+  const sentences = checkins
+    .map((c) => ({
+      name: nameOf(c.userId),
+      desireFrom: sstr(c, 'desire_from'),
+      desireTo: sstr(c, 'desire_to'),
+      identity: sstr(c, 'identity_sentence'),
+      scene: sstr(c, 'scene'),
+    }))
+    .filter((s) => s.desireFrom || s.desireTo || s.identity || s.scene);
 
   const sectionTitle = { color: 'var(--color-primary)', fontSize: 16, margin: '0 0 var(--space-2)' } as const;
   const card = { padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' } as const;
@@ -111,17 +119,29 @@ export default async function CoachCheckinPage({
             </div>
           </section>
 
-          {/* 공유 동의 문장(이름 없이) */}
-          {shares.length > 0 ? (
-            <section>
-              <h2 className="t-h2" style={sectionTitle}>나눔 문장 <span className="t-caption" style={{ color: 'var(--color-text-muted)' }}>· 이름 없이</span></h2>
-              <div style={card}>
-                {shares.map((s, i) => (
-                  <div key={i} className="t-body" style={{ color: 'var(--color-text)', marginBottom: 'var(--space-1)' }}>· {s}</div>
-                ))}
-              </div>
-            </section>
-          ) : null}
+          {/* 문장 모아 보기(C2 §4.4) — 실명 + 세 문장. 나눔 전 개별 대면 동의를 구하는 실무 도구. */}
+          <section>
+            <h2 className="t-h2" style={sectionTitle}>문장 모아 보기</h2>
+            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
+              다음 시간에 나눌 문장을 여기서 고르세요. 나누기 전에 본인에게 개별로 동의를 구합니다.
+            </p>
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {sentences.length === 0 ? (
+                <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>아직 없어요.</p>
+              ) : (
+                sentences.map((s, i) => (
+                  <div key={i} style={{ borderBottom: i < sentences.length - 1 ? 'var(--border-hair) solid var(--color-border)' : 'none', paddingBottom: 'var(--space-2)' }}>
+                    <div className="t-body" style={{ color: 'var(--color-text)', marginBottom: 'var(--space-1)' }}>{s.name}</div>
+                    {s.desireFrom || s.desireTo ? (
+                      <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>갈망 · {s.desireFrom} → {s.desireTo}</div>
+                    ) : null}
+                    {s.identity ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>존재가치 · {s.identity}</div> : null}
+                    {s.scene ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>기억 · {s.scene}</div> : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
         </>
       )}
     </div>

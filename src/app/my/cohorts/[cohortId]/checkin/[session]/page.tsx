@@ -64,7 +64,6 @@ export default async function CheckinCardPage({ params }: { params: Promise<{ co
         sessionNo={sessionNo}
         initialAnswers={(existing?.answers ?? {}) as Record<string, unknown>}
         initialFlags={{
-          shareConsent: existing?.shareConsent ?? false,
           suggestionAnon: existing?.suggestionAnon ?? false,
           contactRequest: existing?.contactRequest ?? false,
           deepOpened: existing?.deepOpened ?? false,

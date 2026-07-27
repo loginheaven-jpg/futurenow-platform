@@ -1,19 +1,20 @@
 'use client';
-// 회차 갈무리 카드 클라이언트(ADR-80). 자동 저장(디바운스 2s/blur)·단일 버튼(save→submit)·완료 상태.
-//   판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출' 낱말 미사용. 이탈 경고(beforeunload) 없음.
+// 회차 갈무리 카드 클라이언트(ADR-80 · 문안 v2). 자동 저장(디바운스 2s/blur)·단일 버튼(save→submit)·완료 상태.
+//   판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출·워크북' 미사용('이건 진단이 아닙니다'는 지정 예외).
+//   공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d). 이탈 경고(beforeunload) 없음.
 import { useEffect, useRef, useState } from 'react';
 import { Button, CheckRow, MultiChoiceChips, TextArea } from '@/core/ui';
-// 문안 상수는 클라이언트가 직접 import — 서버→클라이언트 prop 으로 넘기면 함수(counter 등)가 직렬화 불가로 렌더 에러.
 import { CHECKIN_SESSION_1, checkinFilledCount } from '@/instruments/futurenow/checkin/session1';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 
 const copy = CHECKIN_SESSION_1;
-type Flags = { shareConsent: boolean; suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean };
+type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean };
 
 const gray = { color: 'var(--color-text-muted)' } as const;
 const help = { color: 'var(--color-text-secondary)' } as const;
-const fieldGap = { display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' } as const;
-// 단일행 입력 — 앱 전역 inputStyle(AuthGate 등)과 동일 박스형(테두리+배경). 밑줄 아님(카드 내 TextArea·앱 통일).
+// 필드 라벨 — 섹션 제목(t-body-lg)보다 낮은 위계(수정지시서 §4.1: '선택' 상자가 필수 구역보다 커 보이던 문제).
+const fieldLabel = { color: 'var(--color-text)', fontSize: 15, fontWeight: 500 } as const;
+// 단일행 입력 — 앱 전역 inputStyle(AuthGate)과 동일 박스형.
 const inputBox = {
   width: '100%',
   minHeight: 'var(--tap-min)',
@@ -29,7 +30,7 @@ const inputBox = {
 function Field({ label, helpText, children }: { label: string; helpText?: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-      <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{label}</div>
+      <div style={fieldLabel}>{label}</div>
       {helpText ? <div className="t-caption" style={help}>{helpText}</div> : null}
       {children}
     </div>
@@ -61,7 +62,6 @@ export function CheckinCardClient({
   const [busy, setBusy] = useState(false);
   const [deepOpen, setDeepOpen] = useState(initialFlags.deepOpened);
   const [exampleOpen, setExampleOpen] = useState(false);
-  const version = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 최초 진입 표식(계측) — 1회.
@@ -75,7 +75,6 @@ export function CheckinCardClient({
   const confidence = typeof answers.confidence === 'number' ? (answers.confidence as number) : null;
 
   function scheduleSave(nextAnswers: Record<string, unknown>, nextFlags: Flags) {
-    version.current += 1;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void doSave(nextAnswers, nextFlags), 2000);
   }
@@ -99,7 +98,7 @@ export function CheckinCardClient({
     setFlags(next);
     scheduleSave(answers, next);
   }
-  const flushSave = () => { if (timer.current) { clearTimeout(timer.current); } void doSave(answers, flags); };
+  const flushSave = () => { if (timer.current) clearTimeout(timer.current); void doSave(answers, flags); };
 
   async function onSubmit() {
     setBusy(true);
@@ -109,6 +108,17 @@ export function CheckinCardClient({
     if (res.ok) setMode('done');
     else setSaveFailed(true);
   }
+
+  const textInput = (key: string, placeholder?: string) => (
+    <input
+      value={str(key)}
+      onChange={(e) => setAnswer(key, e.target.value)}
+      onBlur={flushSave}
+      placeholder={placeholder}
+      aria-label={placeholder ?? key}
+      style={inputBox}
+    />
+  );
 
   if (mode === 'done') {
     return (
@@ -131,6 +141,7 @@ export function CheckinCardClient({
   }
 
   const filled = checkinFilledCount(answers);
+  const d = copy.today.desire;
   return (
     <div style={{ paddingTop: 'var(--space-2)' }}>
       {/* 표지 */}
@@ -144,10 +155,26 @@ export function CheckinCardClient({
         {closed ? <p className="t-caption" style={help}>마감이 지났지만 지금 적으셔도 됩니다.</p> : null}
       </div>
 
-      {/* 1면 · 오늘 */}
+      {/* 1면 · 오늘 — ① 바꿔 쓴 문장 한 쌍 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+        <div style={fieldLabel}>{d.label}</div>
+        <div className="t-caption" style={help}>{d.help}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{d.from.label}</span>
+          {textInput(d.from.key, d.from.placeholder)}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{d.to.label}</span>
+          {textInput(d.to.key, d.to.placeholder)}
+        </div>
+      </div>
+
+      {/* ② 존재가치 선언문 */}
       <Field label={copy.today.identitySentence.label} helpText={copy.today.identitySentence.help}>
         <TextArea value={str('identity_sentence')} onChange={(v) => setAnswer('identity_sentence', v)} placeholder={copy.today.identitySentence.placeholder} rows={2} ariaLabel={copy.today.identitySentence.label} />
       </Field>
+
+      {/* ③ 오늘의 마음 */}
       <Field label={copy.today.mood.label} helpText={copy.today.mood.help}>
         <MultiChoiceChips options={[...copy.today.mood.options]} value={mood} max={copy.today.mood.max} exclusive={copy.today.mood.exclusive} onChange={(v) => setAnswer('mood', v)} ariaLabel={copy.today.mood.label} />
         <input value={str('mood_custom')} onChange={(e) => setAnswer('mood_custom', e.target.value)} onBlur={flushSave} placeholder={copy.today.moodCustom.placeholder} aria-label={copy.today.moodCustom.placeholder} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
@@ -160,10 +187,11 @@ export function CheckinCardClient({
         </button>
         <div className="t-caption" style={help}>{copy.deepen.help}</div>
         {deepOpen ? (
-          <div style={{ ...fieldGap, marginTop: 'var(--space-3)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
             {copy.deepen.fields.map((f) => (
-              <div key={f.key} style={fieldGap}>
-                <div className="t-caption" style={help}>{f.label}</div>
+              <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div style={fieldLabel}>{f.label}</div>
+                <div className="t-caption" style={help}>{f.help}</div>
                 <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={2} ariaLabel={f.label} />
               </div>
             ))}
@@ -174,17 +202,11 @@ export function CheckinCardClient({
       {/* 2면 · 한 걸음 */}
       <div style={{ marginBottom: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
         <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.step.title}</div>
-        <div className="t-caption" style={help}>{copy.step.help}</div>
+        <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line' }}>{copy.step.help}</div>
       </div>
-      <Field label={copy.step.what.label}>
-        <input style={inputBox} value={str('step_what')} onChange={(e) => setAnswer('step_what', e.target.value)} onBlur={flushSave} aria-label={copy.step.what.label} />
-      </Field>
-      <Field label={copy.step.when.label} helpText={copy.step.when.help}>
-        <input style={inputBox} value={str('step_when')} onChange={(e) => setAnswer('step_when', e.target.value)} onBlur={flushSave} placeholder={copy.step.when.placeholder} aria-label={copy.step.when.label} />
-      </Field>
-      <Field label={`${copy.step.blocker.label} ${copy.step.blocker.optional}`} helpText={copy.step.blocker.help}>
-        <input style={inputBox} value={str('step_blocker')} onChange={(e) => setAnswer('step_blocker', e.target.value)} onBlur={flushSave} placeholder={copy.step.blocker.placeholder} aria-label={copy.step.blocker.label} />
-      </Field>
+      <Field label={copy.step.what.label}>{textInput('step_what')}</Field>
+      <Field label={copy.step.when.label} helpText={copy.step.when.help}>{textInput('step_when', copy.step.when.placeholder)}</Field>
+      <Field label={`${copy.step.blocker.label} ${copy.step.blocker.optional}`} helpText={copy.step.blocker.help}>{textInput('step_blocker', copy.step.blocker.placeholder)}</Field>
       {/* 예시(접힘·탭 불가 회색 텍스트) */}
       <div style={{ marginBottom: 'var(--space-4)' }}>
         <button type="button" onClick={() => setExampleOpen((o) => !o)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} aria-expanded={exampleOpen}>
@@ -202,31 +224,12 @@ export function CheckinCardClient({
             <span className="t-body-lg" style={{ color: confidence == null ? 'var(--color-text-muted)' : 'var(--color-primary)', minWidth: 24, textAlign: 'center' }}>{confidence ?? '—'}</span>
           </div>
         </Field>
-        <div style={{ marginBottom: 'var(--space-4)' }}>
-          <CheckRow label={copy.wrap.shareConsent.label} checked={flags.shareConsent} onChange={(v) => setFlag('shareConsent', v)} />
-          {flags.shareConsent ? (
-            <div style={{ marginTop: 'var(--space-2)' }}>
-              <div className="t-caption" style={help}>{copy.wrap.shareTarget.label}</div>
-              <MultiChoiceChips
-                options={[...copy.wrap.shareTarget.options].filter((o) => o !== '따라온 장면' || str('scene').trim() !== '')}
-                value={str('share_target') ? [str('share_target')] : []}
-                max={1}
-                onChange={(v) => setAnswer('share_target', v[0] ?? '')}
-                ariaLabel={copy.wrap.shareTarget.label}
-              />
-            </div>
-          ) : null}
-        </div>
 
         {/* 인도자에게(선택) */}
         <div style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-5)' }}>
           <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{copy.wrap.facilitatorBox.title}</div>
-          <Field label={copy.wrap.facilitatorBox.need.label}>
-            <input style={inputBox} value={str('need')} onChange={(e) => setAnswer('need', e.target.value)} onBlur={flushSave} aria-label={copy.wrap.facilitatorBox.need.label} />
-          </Field>
-          <Field label={copy.wrap.facilitatorBox.suggestion.label}>
-            <input style={inputBox} value={str('suggestion')} onChange={(e) => setAnswer('suggestion', e.target.value)} onBlur={flushSave} aria-label={copy.wrap.facilitatorBox.suggestion.label} />
-          </Field>
+          <Field label={copy.wrap.facilitatorBox.need.label}>{textInput('need')}</Field>
+          <Field label={copy.wrap.facilitatorBox.suggestion.label}>{textInput('suggestion')}</Field>
           <CheckRow label={copy.wrap.facilitatorBox.suggestionAnon.label} checked={flags.suggestionAnon} onChange={(v) => setFlag('suggestionAnon', v)} />
           <div style={{ marginTop: 'var(--space-2)' }}>
             <CheckRow label={copy.wrap.facilitatorBox.contactRequest.label} checked={flags.contactRequest} onChange={(v) => setFlag('contactRequest', v)} />

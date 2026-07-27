@@ -45,11 +45,14 @@ export function ScheduleSeedClient({ cohortId, sessions }: { cohortId: string; s
 
   async function onSeed() {
     if (!date) return;
-    setBusy(true); setErr(null);
+    setBusy(true); setErr(null); setMsg(null);
     const res = await seedSessionsAction(cohortId, new Date(`${date}T10:00`).toISOString());
     setBusy(false);
-    if (res.ok) router.refresh();
-    else setErr('일정 생성에 실패했어요.');
+    if (!res.ok) { setErr('일정 생성에 실패했어요.'); return; }
+    const n = res.inserted ?? 0;
+    // 0 = 이미 있음(레이스 등) → 편집기로 유도. 1~7 = 생성됨 → refresh 시 아래 편집기가 실제 날짜로 확인.
+    if (n === 0) { setMsg('이미 등록된 일정이 있어 아무것도 바뀌지 않았습니다. 아래에서 회차별로 수정해 주세요.'); router.refresh(); return; }
+    router.refresh();
   }
 
   function setRow(i: number, k: 'held' | 'opens' | 'closes', v: string) {
@@ -82,6 +85,7 @@ export function ScheduleSeedClient({ cohortId, sessions }: { cohortId: string; s
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="1회차 시작일" style={{ ...dateInput, flex: 1, fontSize: 15 }} />
           <Button onClick={onSeed} disabled={busy || !date}>{busy ? '생성 중…' : '일정 등록'}</Button>
         </div>
+        {msg ? <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0' }}>{msg}</p> : null}
         {err ? <p className="t-caption" style={{ color: 'var(--color-danger)', margin: 'var(--space-2) 0 0' }}>{err}</p> : null}
       </div>
     );
