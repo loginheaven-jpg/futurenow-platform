@@ -192,7 +192,7 @@ export function CheckinCardClient({
               <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <div style={fieldLabel}>{f.label}</div>
                 <div className="t-caption" style={help}>{f.help}</div>
-                <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={2} ariaLabel={f.label} />
+                <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
               </div>
             ))}
           </div>

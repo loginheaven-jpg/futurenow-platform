@@ -167,7 +167,8 @@ function rowToCheckin(r: CheckinRow): CheckinRecord {
 // 일반 구조 한계(인스트루먼트 어휘 무지): 스칼라·짧은 문자열 배열·null 만. 미지 키는 버리지 않되 값 형태는 강제.
 const CHECKIN_ANSWERS_SCHEMA = z.record(
   z.string().max(100),
-  z.union([z.string().max(2000), z.number().finite(), z.boolean(), z.null(), z.array(z.string().max(2000)).max(8)]),
+  // 문자열 4000자(편지 옮겨쓰기 수용 — '편지를 써 보세요' 문안, ADR-82 후속). 배열 원소는 짧은 낱말이라 2000. 전체 32KB.
+  z.union([z.string().max(4000), z.number().finite(), z.boolean(), z.null(), z.array(z.string().max(2000)).max(8)]),
 );
 
 class SupabaseCoreContext implements CoreContext {

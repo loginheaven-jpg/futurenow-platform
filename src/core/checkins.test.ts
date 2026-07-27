@@ -60,10 +60,10 @@ describe('갈무리 쓰기는 전량 DEFINER RPC 경유(직접 테이블 write �
 });
 
 describe('saveMyCheckin 경계 검증(CLAUDE §9 · S4) — 무제한 JSONB 차단, 인스트루먼트 어휘 무지', () => {
-  it('2000자 초과 문자열 값 → 거부', async () => {
+  it('문자열 상한(4000자) 초과 → 거부', async () => {
     const { ctx } = ctxWith({ rpcResolver: () => ({ data: null, error: null }) });
     await expect(
-      ctx.saveMyCheckin({ cohortId: 'co1', sessionNo: 1, answers: { self_note: 'x'.repeat(2001) } }),
+      ctx.saveMyCheckin({ cohortId: 'co1', sessionNo: 1, answers: { letter_line: 'x'.repeat(4001) } }),
     ).rejects.toThrow();
   });
 
