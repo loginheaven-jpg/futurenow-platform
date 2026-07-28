@@ -24,3 +24,14 @@ export async function saveScheduleAction(cohortId: string, rows: CohortSession[]
     return { ok: false, error: e instanceof Error ? e.message : '일정 저장에 실패했습니다.' };
   }
 }
+
+// 편지 사진 삭제(운영자) — storage RLS(본인/운영자)가 강제. 인도자는 삭제 불가(정책상 거부).
+export async function deletePhotoAction(path: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.deleteCheckinPhoto(path);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '사진 삭제에 실패했습니다.' };
+  }
+}

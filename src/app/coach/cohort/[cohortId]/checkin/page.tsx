@@ -6,6 +6,7 @@ import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { ScheduleSeedClient } from './ScheduleSeedClient';
+import { CoachPhotos } from './CoachPhotos';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,17 +47,20 @@ export default async function CoachCheckinPage({
     .filter((c) => !c.stepPrivate)
     .map((c) => ({ name: nameOf(c.userId), what: c.answers.step_what as string, when: (c.answers.step_when as string) ?? '' }));
 
-  // 문장 모아 보기(C2 §4.4) — 실명 + 갈망·존재가치·기억. 나눔 전 인도자가 개별 대면 동의를 구하는 실무 도구.
+  // 문장 모아 보기(C2 §4.4) — 실명 + 갈망·존재가치·기억 + 편지 사진(ADR-83). 나눔 전 인도자가 개별 대면 동의.
   const sstr = (c: (typeof checkins)[number], k: string) => (typeof c.answers?.[k] === 'string' ? (c.answers[k] as string) : '');
-  const sentences = checkins
-    .map((c) => ({
+  const isAdmin = me.role === 'admin';
+  const perMember = await Promise.all(
+    checkins.map(async (c) => ({
       name: nameOf(c.userId),
       desireFrom: sstr(c, 'desire_from'),
       desireTo: sstr(c, 'desire_to'),
       identity: sstr(c, 'identity_sentence'),
       scene: sstr(c, 'scene'),
-    }))
-    .filter((s) => s.desireFrom || s.desireTo || s.identity || s.scene);
+      photos: await ctx.listCheckinPhotos(cohortId, sessionNo, c.userId).catch(() => []),
+    })),
+  );
+  const sentences = perMember.filter((s) => s.desireFrom || s.desireTo || s.identity || s.scene || s.photos.length > 0);
 
   const sectionTitle = { color: 'var(--color-primary)', fontSize: 16, margin: '0 0 var(--space-2)' } as const;
   const card = { padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' } as const;
@@ -137,6 +141,7 @@ export default async function CoachCheckinPage({
                     ) : null}
                     {s.identity ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>존재가치 · {s.identity}</div> : null}
                     {s.scene ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>기억 · {s.scene}</div> : null}
+                    <CoachPhotos photos={s.photos} canDelete={isAdmin} />
                   </div>
                 ))
               )}

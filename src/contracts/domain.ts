@@ -82,6 +82,12 @@ export interface CohortSession {
   closesAt: string;
 }
 
+// 편지 사진 첨부(ADR-83). 비공개 버킷 checkin-photos · signed URL(만료). 열람 본인/코치/운영자.
+export interface CheckinPhoto {
+  path: string; // {cohort}/{user}/{session}/{uuid}.jpg
+  url: string; // 만료 signed URL
+}
+
 export interface CheckinRecord {
   id: string;
   cohortId: string;

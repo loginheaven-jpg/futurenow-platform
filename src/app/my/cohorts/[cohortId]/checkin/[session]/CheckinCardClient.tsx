@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, CheckRow, MultiChoiceChips, TextArea } from '@/core/ui';
 import { CHECKIN_SESSION_1, CHECKIN_REQUIRED_TOTAL, checkinFilledCount } from '@/instruments/futurenow/checkin/session1';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
+import { LetterPhotos } from './LetterPhotos';
 
 const copy = CHECKIN_SESSION_1;
 type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean };
@@ -40,6 +41,7 @@ function Field({ label, helpText, children }: { label: string; helpText?: string
 export function CheckinCardClient({
   cohortId,
   sessionNo,
+  userId,
   initialAnswers,
   initialFlags,
   alreadyOpened,
@@ -48,6 +50,7 @@ export function CheckinCardClient({
 }: {
   cohortId: string;
   sessionNo: number;
+  userId: string;
   initialAnswers: Record<string, unknown>;
   initialFlags: Flags;
   alreadyOpened: boolean;
@@ -192,6 +195,7 @@ export function CheckinCardClient({
                 <div style={fieldLabel}>{f.label}</div>
                 <div className="t-caption" style={help}>{f.help}</div>
                 <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
+                {f.key === 'letter_line' ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}
               </div>
             ))}
           </div>

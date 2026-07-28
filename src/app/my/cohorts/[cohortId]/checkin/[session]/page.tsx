@@ -62,6 +62,7 @@ export default async function CheckinCardPage({ params }: { params: Promise<{ co
       <CheckinCardClient
         cohortId={cohortId}
         sessionNo={sessionNo}
+        userId={me.id}
         initialAnswers={(existing?.answers ?? {}) as Record<string, unknown>}
         initialFlags={{
           suggestionAnon: existing?.suggestionAnon ?? false,

@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   Alert,
   AlertInput,
+  CheckinPhoto,
   CheckinRecord,
   CoachApplication,
   Cohort,
@@ -111,6 +112,7 @@ interface CohortMeta {
 // ── 회차 갈무리 매퍼·경계 스키마(ADR-80) ─────────────────────
 const CHECKIN_COLS =
   'id,cohort_id,user_id,session_no,answers,step_private,share_consent,suggestion_anon,contact_request,prompted_at,prompt_count,has_content,first_opened_at,deep_opened,submitted_at,edit_count,updated_at';
+const CHECKIN_PHOTO_BUCKET = 'checkin-photos';
 
 interface CohortSessionRow {
   cohort_id: string;
@@ -999,6 +1001,26 @@ class SupabaseCoreContext implements CoreContext {
       .eq('session_no', sessionNo);
     if (error) throw new CoreError(`listCohortCheckins 실패: ${error.message}`);
     return (data ?? []).map((r) => rowToCheckin(r as CheckinRow));
+  }
+
+  // 편지 사진(ADR-83) — storage RLS(본인/코치/운영자)로 게이트. 만료 signed URL 반환.
+  async listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]> {
+    const prefix = `${cohortId}/${userId}/${sessionNo}`;
+    const { data: objs, error } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).list(prefix);
+    if (error) throw new CoreError(`listCheckinPhotos 실패: ${error.message}`);
+    const out: CheckinPhoto[] = [];
+    for (const o of objs ?? []) {
+      if (o.name.startsWith('.')) continue; // 폴더 플레이스홀더 제외
+      const path = `${prefix}/${o.name}`;
+      const { data: signed } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).createSignedUrl(path, 3600);
+      if (signed?.signedUrl) out.push({ path, url: signed.signedUrl });
+    }
+    return out;
+  }
+
+  async deleteCheckinPhoto(path: string): Promise<void> {
+    const { error } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).remove([path]);
+    if (error) throw new CoreError(`deleteCheckinPhoto 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────

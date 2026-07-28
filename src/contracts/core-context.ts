@@ -10,6 +10,7 @@ import type {
   AlertInput,
   CoachApplication,
   Cohort,
+  CheckinPhoto,
   CheckinRecord,
   CohortMemberDetail,
   CohortPreviewMeta,
@@ -152,4 +153,8 @@ export interface CoreContext {
   markCheckinPrompted(cohortId: string, sessionNo: number): Promise<void>; // 본인 · 전면 안내 노출 기록(checkin_mark 'prompt', 상한 2)
   markCheckinOpened(cohortId: string, sessionNo: number): Promise<void>; // 본인 · first_opened_at 최초 1회(checkin_mark 'open')
   listCohortCheckins(cohortId: string, sessionNo: number): Promise<CheckinRecord[]>; // 담당 인도자·운영자(checkins SELECT RLS)
+
+  // 편지 사진 첨부(ADR-83) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
+  listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/차수 코치/운영자(storage RLS) · signed URL 포함
+  deleteCheckinPhoto(path: string): Promise<void>; // 본인/운영자(storage RLS)
 }
