@@ -427,6 +427,12 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`removeCohortMember 실패: ${error.message}`);
   }
 
+  // 참여자 이동(운영자) — enrollment 만 옮긴다(응답·갈무리 불변). 삭제=휴지통으로 이동. move_cohort_member(DEFINER·admin). ADR-84
+  async moveCohortMember(userId: string, fromCohortId: string, toCohortId: string): Promise<void> {
+    const { error } = await this.sb.rpc('move_cohort_member', { p_user: userId, p_from: fromCohortId, p_to: toCohortId });
+    if (error) throw new CoreError(`moveCohortMember 실패: ${error.message}`);
+  }
+
   // 차수 개설(코치/운영자). 앱측 코드 생성 + 유니크 충돌(23505) 재시도. RLS(cohorts_insert)가 권한을 강제(이중 방어).
   async createCohort(input: {
     name: string;

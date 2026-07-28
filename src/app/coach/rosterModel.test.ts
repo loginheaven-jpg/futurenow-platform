@@ -57,6 +57,18 @@ describe('buildCohortRoster (§8.3 3숫자·3묶음·이름 매핑)', () => {
     expect(model.roster.find((m) => m.id === 'u4')?.userId).toBe('u4'); // pending
   });
 
+  it('등록에서 빠진 사람의 응답은 집계·명단에서 제외(ADR-84 — 이동/삭제 후 통계 clean)', () => {
+    // u9 는 응답이 있으나 enrollments 에 없음(이동/삭제됨) → 명단·responded 에서 제외.
+    const withGhost = buildCohortRoster({
+      enrollments,
+      responses: [...responses, { id: 'r9', userId: 'u9', createdAt: '2026-06-09' }],
+      alerts,
+      members,
+    });
+    expect(withGhost.responded).toBe(3); // u9 미포함(여전히 3)
+    expect(withGhost.roster.find((m) => m.userId === 'u9')).toBeUndefined();
+  });
+
   it('trapByUserId 주입 시 응답자 행에 주 함정 라벨(미응답은 없음) — ADR-77 P3', () => {
     const tagged = buildCohortRoster({ enrollments, responses, alerts, members, trapByUserId: { u1: '관성', u2: '안주' } });
     expect(tagged.roster.find((m) => m.userId === 'u1')?.trap).toBe('관성'); // care

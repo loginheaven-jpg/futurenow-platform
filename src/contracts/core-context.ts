@@ -86,6 +86,7 @@ export interface CoreContext {
   // 차수에서 참여자 제거(휴지통) — 해당 차수 코치 또는 운영자만(remove_cohort_member DEFINER: is_cohort_coach OR is_admin).
   //   이 차수 한정 삭제: responses(→alerts·해석 CASCADE)·response_drafts·enrollments. 계정·타 차수 불변. ADR-73
   removeCohortMember(cohortId: string, userId: string): Promise<void>;
+  moveCohortMember(userId: string, fromCohortId: string, toCohortId: string): Promise<void>; // 운영자 전용 · 등록만 이동(응답·갈무리 불변). 삭제=휴지통으로 이동. ADR-84
 
   listMyCohorts(): Promise<MyCohortSummary[]>; // 멤버 본인 차수+진행(RPC my_cohorts, DEFINER 비민감 메타). 코치 시점 listEnrollments 와 분리. 승인 2026-06-29
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체.

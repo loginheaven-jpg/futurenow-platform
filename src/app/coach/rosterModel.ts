@@ -38,10 +38,12 @@ export function buildCohortRoster(input: {
     careByResp.set(a.responseId, [...(careByResp.get(a.responseId) ?? []), a.reason]);
   }
 
-  // 응답을 사람(userId)별로 모은다.
+  // 응답을 사람(userId)별로 모은다. **등록된 멤버의 응답만** — 이동/삭제(등록 제거)된 사람의 응답은
+  // DB에 남아 있어도(불변) 집계에서 제외해 원 차수 통계를 clean 하게 유지한다(ADR-84 #4).
+  const enrolledSet = new Set(input.enrollments.map((e) => e.userId));
   const byUser = new Map<string, RespLike[]>();
   for (const r of input.responses) {
-    if (!r.userId) continue;
+    if (!r.userId || !enrolledSet.has(r.userId)) continue;
     byUser.set(r.userId, [...(byUser.get(r.userId) ?? []), r]);
   }
 

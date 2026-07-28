@@ -54,8 +54,10 @@ export default async function CoachCheckinPage({
   // 문장 모아 보기(C2 §4.4) — 실명 + 갈망·존재가치·기억 + 편지 사진(ADR-83). 나눔 전 인도자가 개별 대면 동의.
   const sstr = (c: (typeof checkins)[number], k: string) => (typeof c.answers?.[k] === 'string' ? (c.answers[k] as string) : '');
   const isAdmin = me.role === 'admin';
+  // 등록된 멤버의 갈무리만(이동/삭제된 사람의 checkins 는 DB에 남아도 현황에서 제외 — ADR-84)
+  const memberIds = new Set(members.map((m) => m.userId));
   const perMember = await Promise.all(
-    checkins.map(async (c) => ({
+    checkins.filter((c) => memberIds.has(c.userId)).map(async (c) => ({
       name: nameOf(c.userId),
       desireFrom: sstr(c, 'desire_from'),
       desireTo: sstr(c, 'desire_to'),
