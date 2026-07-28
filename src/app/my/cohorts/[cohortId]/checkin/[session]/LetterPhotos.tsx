@@ -62,17 +62,24 @@ export function LetterPhotos({ cohortId, sessionNo, userId }: { cohortId: string
     }
     setBusy(true);
     setErr(null);
+    let blob: Blob;
     try {
-      const blob = await processImage(file);
-      const path = `${prefix}/${crypto.randomUUID()}.jpg`;
-      const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg' });
-      if (error) throw error;
-      await refresh();
+      blob = await processImage(file); // 디코드/재인코딩 실패(HEIC 등) → 형식 안내
     } catch {
-      setErr('사진을 올리지 못했어요. jpg·png 사진으로 다시 시도해 주세요.');
-    } finally {
+      setErr('jpg·png 사진으로 다시 시도해 주세요.');
       setBusy(false);
+      return;
     }
+    const path = `${prefix}/${crypto.randomUUID()}.jpg`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg' });
+    if (error) {
+      // 서버 상한(3MB·jpeg) 거부 등 — 크기 안내(경고색 없음).
+      setErr('사진이 너무 커요. 다시 시도해 주세요.');
+      setBusy(false);
+      return;
+    }
+    await refresh();
+    setBusy(false);
   }
 
   async function onDelete(path: string) {
@@ -110,7 +117,7 @@ export function LetterPhotos({ cohortId, sessionNo, userId }: { cohortId: string
         ) : null}
       </div>
       <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>
-        사진은 본인·인도자·운영자가 봅니다. 본인이 지우기 전까지 보관돼요. 위치정보는 자동으로 지워집니다.
+        첨부한 사진은 인도자와 운영자가 볼 수 있습니다. 언제든 직접 지우실 수 있어요. 위치정보는 자동으로 지워져요.
       </p>
       {err ? <p className="t-caption" style={{ color: 'var(--color-danger)', margin: 'var(--space-1) 0 0' }}>{err}</p> : null}
     </div>
