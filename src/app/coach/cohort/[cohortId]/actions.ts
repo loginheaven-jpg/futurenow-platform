@@ -91,3 +91,13 @@ export async function removeCohortMemberAction(cohortId: string, userId: string)
     return { ok: false, error: e instanceof Error ? e.message : '참여자 삭제에 실패했습니다.' };
   }
 }
+
+// 참여자 이동(운영자·ADR-84) — 등록만 옮김(응답·갈무리 불변). 대상=다른 차수/미배정(체험)/휴지통(삭제). 권한은 move_cohort_member(admin) 내부.
+export async function moveMemberAction(userId: string, fromCohortId: string, toCohortId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await (await ctx()).moveCohortMember(userId, fromCohortId, toCohortId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '참여자 이동에 실패했습니다.' };
+  }
+}

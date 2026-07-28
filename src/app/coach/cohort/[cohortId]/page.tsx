@@ -72,6 +72,14 @@ export default async function CohortDetailPage({
   // 참여자 휴지통 노출·권한(ADR-73): 운영자 또는 이 차수의 코치(소유)만. RPC 도 동일 게이트로 이중 방어.
   const canManageMembers = me.role === 'admin' || cohort.coachId === me.id;
 
+  // 참여자 이동 대상(ADR-84·운영자 전용): 같은 진단의 모든 차수(미배정 체험·휴지통 포함), 현재 차수 제외.
+  const moveTargets =
+    me.role === 'admin'
+      ? (await ctx.listAllCohorts())
+          .filter((c) => c.id !== cohortId && c.instrumentId === cohort.instrumentId)
+          .map((c) => ({ id: c.id, name: c.name }))
+      : [];
+
   return (
     <CohortDetailClient
       summary={summary}
@@ -84,6 +92,7 @@ export default async function CohortDetailPage({
       canManageMembers={canManageMembers}
       memberCount={enrollments.length}
       responseCount={responses.length}
+      moveTargets={moveTargets}
     />
   );
 }

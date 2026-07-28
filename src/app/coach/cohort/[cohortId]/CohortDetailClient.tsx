@@ -2,12 +2,50 @@
 // §8.3 차수 상세 클라이언트 래퍼 — 라우팅·관리 액션 배선 + 결과 토스트(2.4 패턴). 데이터는 서버 컴포넌트가 주입.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/core/ui';
 import { CohortDetail } from '@/app/_screens/console/CohortDetail';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { useToast } from '@/app/_toast/ToastProvider';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
-import { archiveCohortAction, deleteCohortAction, openPostWaveAction, removeCohortMemberAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
+import { archiveCohortAction, deleteCohortAction, moveMemberAction, openPostWaveAction, removeCohortMemberAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
 import { applyOptimistic, refineActionError } from './cohortAdmin';
+
+type MoveTarget = { id: string; name: string };
+
+// 운영자 참여자 이동 행 — 이름 + 대상 선택 + [이동]. 대상=다른 차수/미배정(체험)/휴지통(삭제).
+function MoveRow({ member, targets, onMove }: { member: RosterMember; targets: MoveTarget[]; onMove: (userId: string, name: string, toId: string, toName: string) => Promise<void> }) {
+  const [to, setTo] = useState('');
+  const [busy, setBusy] = useState(false);
+  const name = member.name ?? '참여자';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <span className="t-body" style={{ flex: 1, minWidth: 0, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+      <select
+        value={to}
+        onChange={(e) => setTo(e.target.value)}
+        aria-label={`${name} 이동 대상`}
+        style={{ minHeight: 'var(--tap-min)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', background: 'var(--color-surface-1)', color: 'var(--color-text)', font: 'inherit', fontSize: 13, maxWidth: 150 }}
+      >
+        <option value="">이동 대상…</option>
+        {targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+      </select>
+      <Button
+        variant="ghost"
+        disabled={!to || busy}
+        onClick={async () => {
+          const t = targets.find((x) => x.id === to);
+          if (!t) return;
+          setBusy(true);
+          await onMove(member.userId, name, t.id, t.name);
+          setBusy(false);
+          setTo('');
+        }}
+      >
+        {busy ? '이동 중…' : '이동'}
+      </Button>
+    </div>
+  );
+}
 
 export function CohortDetailClient({
   summary,
@@ -20,6 +58,7 @@ export function CohortDetailClient({
   canManageMembers,
   memberCount,
   responseCount,
+  moveTargets,
 }: {
   summary: CohortSummary;
   roster: RosterMember[];
@@ -31,6 +70,7 @@ export function CohortDetailClient({
   canManageMembers: boolean; // 참여자 휴지통 노출 — 해당 차수 코치 또는 운영자만(서버 판정). ADR-73
   memberCount: number; // 참여 수(삭제 가능 판정·컨펌 영향 표시)
   responseCount: number; // 응답 수(동)
+  moveTargets: MoveTarget[]; // 운영자 이동 대상(같은 진단 차수 + 미배정/휴지통, 현재 차수 제외). 비운영자는 빈 배열. ADR-84
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -87,6 +127,17 @@ export function CohortDetailClient({
     }
   }
 
+  // 참여자 이동(운영자·ADR-84) — 등록만 옮김. 성공 시 refresh(명단에서 사라짐).
+  async function onMove(userId: string, name: string, toId: string, toName: string) {
+    const res = await moveMemberAction(userId, summary.id, toId);
+    if (res.ok) {
+      toast.success(`${name} 님을 ‘${toName}’(으)로 옮겼어요.`);
+      router.refresh();
+    } else {
+      toast.error(refineActionError(res.error));
+    }
+  }
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <CohortDetail
@@ -112,6 +163,19 @@ export function CohortDetailClient({
         onOpenPost={() => run(() => openPostWaveAction(summary.id), '사후 진단을 개시했어요.')}
         onDelete={onDelete}
       />
+
+      {/* 운영자 참여자 이동(ADR-84) — 다른 차수·미배정(체험)·휴지통(삭제)으로. 응답·갈무리는 원 차수에 남고 통계에서 빠짐. */}
+      {isAdmin && moveTargets.length > 0 && roster.length > 0 ? (
+        <section style={{ marginTop: 'var(--space-6)' }}>
+          <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 16, margin: '0 0 var(--space-1)' }}>참여자 이동 <span className="t-caption" style={{ color: 'var(--color-text-muted)' }}>· 운영자</span></h2>
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
+            다른 차수·미배정(체험)·휴지통(삭제)으로 옮깁니다. 응답·갈무리는 원 차수에 남고, 옮기면 이 차수 통계에서 빠집니다. 휴지통에서 다시 옮기면 복원됩니다.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {roster.map((m) => <MoveRow key={m.userId} member={m} targets={moveTargets} onMove={onMove} />)}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
