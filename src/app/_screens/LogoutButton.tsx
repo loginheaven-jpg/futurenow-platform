@@ -29,19 +29,28 @@ export function LogoutButton() {
       type="button"
       onClick={logout}
       disabled={busy}
-      className="t-caption"
+      aria-label={failed ? '로그아웃 다시 시도' : '로그아웃'}
+      title={failed ? '다시 시도' : '로그아웃'}
       style={{
-        minHeight: 'var(--tap-min)',
-        padding: '0 var(--space-3)',
+        width: 'var(--tap-min)',
+        height: 'var(--tap-min)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         borderRadius: 'var(--radius)',
-        border: '1px solid var(--color-text-on-accent)',
+        border: `1px solid ${failed ? 'var(--color-danger)' : 'var(--color-text-on-accent)'}`,
         background: 'transparent',
-        color: 'var(--color-text-on-accent)',
+        color: failed ? 'var(--color-danger)' : 'var(--color-text-on-accent)',
         cursor: 'pointer',
         opacity: busy ? 0.6 : 1,
       }}
     >
-      {busy ? '나가는 중…' : failed ? '다시 시도' : '로그아웃'}
+      {/* 나가기(로그아웃) 아이콘 */}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
     </button>
   );
 }

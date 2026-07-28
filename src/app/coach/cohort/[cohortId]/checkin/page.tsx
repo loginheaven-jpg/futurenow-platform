@@ -7,6 +7,7 @@ import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { ScheduleSeedClient } from './ScheduleSeedClient';
 import { CoachPhotos } from './CoachPhotos';
+import { SessionLinks } from './SessionLinks';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,11 @@ export default async function CoachCheckinPage({
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home');
 
-  const [sessions, members] = await Promise.all([ctx.listCohortSessions(cohortId), ctx.listCohortMembers(cohortId)]);
+  const [sessions, members, cohort] = await Promise.all([
+    ctx.listCohortSessions(cohortId),
+    ctx.listCohortMembers(cohortId),
+    ctx.getCohort(cohortId).catch(() => null),
+  ]);
   const hasSchedule = sessions.length > 0;
   const reqSession = typeof sp.session === 'string' ? Number(sp.session) : NaN;
   const sessionNo = Number.isFinite(reqSession) ? reqSession : (sessions[0]?.sessionNo ?? 1);
@@ -70,6 +75,8 @@ export default async function CoachCheckinPage({
       <AppHeader variant="sub" title="회차 갈무리 현황" backHref={`/coach/cohort/${cohortId}`} homeHref="/home" action={<HeaderActions />} />
 
       <ScheduleSeedClient cohortId={cohortId} sessions={sessions} />
+
+      {hasSchedule && cohort ? <SessionLinks code={cohort.code} sessions={sessions} /> : null}
 
       {!hasSchedule ? null : (
         <>
