@@ -13,7 +13,7 @@ const barStyle: CSSProperties = {
   marginBottom: 'var(--space-6)',
   display: 'flex',
   alignItems: 'center',
-  gap: 'var(--space-3)',
+  gap: 'var(--space-2)',
 };
 const ON_ACCENT = 'var(--color-text-on-accent)';
 const iconLink: CSSProperties = {
@@ -55,9 +55,10 @@ export function AppHeader({
 }) {
   // 제목 블록(sub·flow 공용): 제목 + 옅은 네이비 부제
   const titleBlock = (
-    <div style={{ minWidth: 0 }}>
-      <div className="t-h1" style={{ color: ON_ACCENT, whiteSpace: 'nowrap' }}>{title}</div>
-      {subtitle ? <div className="t-caption" style={{ color: 'var(--navy-300)', whiteSpace: 'nowrap' }}>{subtitle}</div> : null}
+    // flex:1 로 제목이 남는 공간을 차지 → 우측 홈 아이콘을 끝으로 밀어 겹침 방지. 넘치면 말줄임.
+    <div style={{ minWidth: 0, flex: 1 }}>
+      <div className="t-h1" style={{ color: ON_ACCENT, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+      {subtitle ? <div className="t-caption" style={{ color: 'var(--navy-300)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subtitle}</div> : null}
     </div>
   );
 

@@ -188,10 +188,13 @@ export function CheckinCardClient({
           type="button"
           onClick={() => { const n = !deepOpen; setDeepOpen(n); if (n && !flags.deepOpened) setFlag('deepOpened', true); }}
           aria-expanded={deepOpen}
-          style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-3) var(--space-4)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-surface-1)', cursor: 'pointer' }}
+          style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 'var(--space-1)', padding: 'var(--space-3) var(--space-4)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-surface-1)', cursor: 'pointer', textAlign: 'left' }}
         >
           <span className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{copy.deepen.title}</span>
-          <span aria-hidden style={{ fontSize: 26, lineHeight: 1, color: 'var(--color-primary)', transform: deepOpen ? 'rotate(90deg)' : 'none', transition: 'transform .15s ease' }}>›</span>
+          {/* 우측방향 화살표 — 텍스트 바로 옆·두껍게(펼침 유도) */}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-primary)', flexShrink: 0 }} aria-hidden="true">
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
         </button>
         {deepOpen ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
