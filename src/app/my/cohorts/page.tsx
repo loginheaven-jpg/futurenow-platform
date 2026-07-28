@@ -16,6 +16,9 @@ export default async function MyCohortsPage() {
 
   const cohorts = await ctx.listMyCohorts();
 
+  // 차수 1개면 목록은 불필요한 경유 — 막바로 차수 홈으로. (0개=빈 상태, 2개+=목록이 값을 함)
+  if (cohorts.length === 1) redirect(`/my/cohorts/${cohorts[0].cohortId}`);
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="내 차수" homeHref="/home" action={<HeaderActions homeHref="/home" />} />

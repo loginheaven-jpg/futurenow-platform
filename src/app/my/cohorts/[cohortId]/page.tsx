@@ -107,7 +107,7 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title={c.name} backHref="/my/cohorts" homeHref="/home" action={<HeaderActions />} />
+      <AppHeader variant="sub" title={c.name} backHref="/home" homeHref="/home" action={<HeaderActions />} />
       {ordered.map((s, i) => (s ? <div key={i}>{s}</div> : null))}
     </div>
   );
