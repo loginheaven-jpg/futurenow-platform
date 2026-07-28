@@ -7,7 +7,6 @@ import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { ScheduleSeedClient } from './ScheduleSeedClient';
 import { CoachPhotos } from './CoachPhotos';
-import { SessionLinks } from './SessionLinks';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,9 +73,7 @@ export default async function CoachCheckinPage({
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="회차 갈무리 현황" backHref={`/coach/cohort/${cohortId}`} homeHref="/home" action={<HeaderActions />} />
 
-      <ScheduleSeedClient cohortId={cohortId} sessions={sessions} />
-
-      {hasSchedule && cohort ? <SessionLinks code={cohort.code} sessions={sessions} /> : null}
+      <ScheduleSeedClient cohortId={cohortId} code={cohort?.code ?? ''} sessions={sessions} />
 
       {!hasSchedule ? null : (
         <>
