@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CHECKIN_SESSION_1, CHECKIN_REQUIRED_TOTAL, checkinFilledCount } from './session1';
+import { CHECKIN_SESSION_1 } from './session1';
+
+// ADR-85: 판정 함수·필수 총계는 세션 객체 내부로 이관(레지스트리 형태). 참조 경로만 바뀌고 규칙은 v2 그대로.
+const checkinFilledCount = CHECKIN_SESSION_1.filledCount;
+const CHECKIN_REQUIRED_TOTAL = CHECKIN_SESSION_1.requiredTotal;
 
 // 수정지시서 §5-9: 필수 5칸. 갈망 두 칸 중 하나만 채우면 미충족.
 describe('checkinFilledCount — 필수 5칸(문안 v2)', () => {
@@ -54,7 +58,7 @@ describe('1회차 문안 v2 — 금지어·핵심 문자열', () => {
     expect(CHECKIN_SESSION_1.today.desire.to.key).toBe('desire_to');
     expect(CHECKIN_SESSION_1.deepen.fields[1].key).toBe('letter_line');
     expect(CHECKIN_SESSION_1.wrap.facilitatorBox.need.label).toContain('부탁하고 싶은');
-    expect(CHECKIN_SESSION_1.today.identitySentence.label).toContain('(책 53~58쪽)');
+    expect(CHECKIN_SESSION_1.today.identity.label).toContain('(책 53~58쪽)');
   });
   it('공유 동의(share_target) 문자열이 문안에서 사라졌다', () => {
     expect(flat).not.toContain('share_target');

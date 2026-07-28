@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
+import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { CheckinCardClient } from './CheckinCardClient';
 
 export const dynamic = 'force-dynamic';
@@ -52,10 +53,24 @@ export default async function CheckinCardPage({ params }: { params: Promise<{ co
   }
   const closed = new Date(row.closesAt).getTime() < now;
 
-  // 1회차 카드만 이번 범위. 2~7회차 문항은 실측 후 보정해 추가.
-  if (sessionNo !== 1) return <Shell cohortId={cohortId}><Notice text="이 회차 갈무리는 준비 중입니다." /></Shell>;
+  // 미등록 회차는 '준비 중'(레지스트리에 없음 · ADR-85). 회차 추가 = sessionN.ts + 레지스트리 한 줄.
+  if (getCheckinSession(sessionNo) === null) return <Shell cohortId={cohortId}><Notice text="이 회차 갈무리는 준비 중입니다." /></Shell>;
 
   const existing = await ctx.getMyCheckin(cohortId, sessionNo);
+
+  // 되비추기(§6·Phase 4) — 지난 회차 답 둘(존재가치 문장·한 걸음)을 읽기전용으로. 새 코어 메서드 없음.
+  //   지난 회차 정체성 키는 그 회차 레지스트리에서 얻는다(1회차 identity_sentence). step 키는 전 회차 공통.
+  //   미제출이어도 값이 있으면 보여 준다. 조회 실패는 조용히 넘긴다(되비추기 없다고 카드가 막히면 안 됨).
+  let prior: { identity: string | null; stepWhat: string | null; stepWhen: string | null } | null = null;
+  if (sessionNo > 1) {
+    const priorCopy = getCheckinSession(sessionNo - 1);
+    const priorRow = await ctx.getMyCheckin(cohortId, sessionNo - 1).catch(() => null);
+    if (priorCopy && priorRow) {
+      const pa = (priorRow.answers ?? {}) as Record<string, unknown>;
+      const s = (k: string) => (typeof pa[k] === 'string' && (pa[k] as string).trim() !== '' ? (pa[k] as string) : null);
+      prior = { identity: s(priorCopy.today.identity.key), stepWhat: s('step_what'), stepWhen: s('step_when') };
+    }
+  }
 
   return (
     <Shell cohortId={cohortId}>
@@ -68,10 +83,12 @@ export default async function CheckinCardPage({ params }: { params: Promise<{ co
           suggestionAnon: existing?.suggestionAnon ?? false,
           contactRequest: existing?.contactRequest ?? false,
           deepOpened: existing?.deepOpened ?? false,
+          stepPrivate: existing?.stepPrivate ?? false,
         }}
         alreadyOpened={existing?.firstOpenedAt != null}
         submitted={existing?.submittedAt != null}
         closed={closed}
+        prior={prior}
       />
     </Shell>
   );

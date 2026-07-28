@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
+import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { ScheduleSeedClient } from './ScheduleSeedClient';
 import { CoachPhotos } from './CoachPhotos';
 
@@ -51,22 +52,25 @@ export default async function CoachCheckinPage({
     .filter((c) => !c.stepPrivate)
     .map((c) => ({ name: nameOf(c.userId), what: c.answers.step_what as string, when: (c.answers.step_when as string) ?? '' }));
 
-  // 문장 모아 보기(C2 §4.4) — 실명 + 갈망·존재가치·기억 + 편지 사진(ADR-83). 나눔 전 인도자가 개별 대면 동의.
+  // 문장 모아 보기(C2 §4.4) — 실명 + 회차별 요약 열(§5-6) + 편지 사진(ADR-83). 나눔 전 인도자가 개별 대면 동의.
+  //   열 정의는 세션 레지스트리 summaryFields 에서(1회차 갈망·존재가치·기억 / 2회차 영역·인생의 한 문장·장면). 회차 키 하드코딩 제거(ADR-85).
   const sstr = (c: (typeof checkins)[number], k: string) => (typeof c.answers?.[k] === 'string' ? (c.answers[k] as string) : '');
   const isAdmin = me.role === 'admin';
+  const summaryFields = getCheckinSession(sessionNo)?.summaryFields ?? [];
   // 등록된 멤버의 갈무리만(이동/삭제된 사람의 checkins 는 DB에 남아도 현황에서 제외 — ADR-84)
   const memberIds = new Set(members.map((m) => m.userId));
   const perMember = await Promise.all(
     checkins.filter((c) => memberIds.has(c.userId)).map(async (c) => ({
       name: nameOf(c.userId),
-      desireFrom: sstr(c, 'desire_from'),
-      desireTo: sstr(c, 'desire_to'),
-      identity: sstr(c, 'identity_sentence'),
-      scene: sstr(c, 'scene'),
+      cells: summaryFields.map((f) =>
+        'from' in f
+          ? { label: f.label, text: `${sstr(c, f.from)} → ${sstr(c, f.to)}`, has: !!(sstr(c, f.from) || sstr(c, f.to)) }
+          : { label: f.label, text: sstr(c, f.key), has: !!sstr(c, f.key) },
+      ),
       photos: await ctx.listCheckinPhotos(cohortId, sessionNo, c.userId).catch(() => []),
     })),
   );
-  const sentences = perMember.filter((s) => s.desireFrom || s.desireTo || s.identity || s.scene || s.photos.length > 0);
+  const sentences = perMember.filter((s) => s.cells.some((c) => c.has) || s.photos.length > 0);
 
   const sectionTitle = { color: 'var(--color-primary)', fontSize: 16, margin: '0 0 var(--space-2)' } as const;
   const card = { padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' } as const;
@@ -142,11 +146,9 @@ export default async function CoachCheckinPage({
                 sentences.map((s, i) => (
                   <div key={i} style={{ borderBottom: i < sentences.length - 1 ? 'var(--border-hair) solid var(--color-border)' : 'none', paddingBottom: 'var(--space-2)' }}>
                     <div className="t-body" style={{ color: 'var(--color-text)', marginBottom: 'var(--space-1)' }}>{s.name}</div>
-                    {s.desireFrom || s.desireTo ? (
-                      <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>갈망 · {s.desireFrom} → {s.desireTo}</div>
-                    ) : null}
-                    {s.identity ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>존재가치 · {s.identity}</div> : null}
-                    {s.scene ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>기억 · {s.scene}</div> : null}
+                    {s.cells.map((c, j) => (c.has ? (
+                      <div key={j} className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{c.label} · {c.text}</div>
+                    ) : null))}
                     <CoachPhotos photos={s.photos} canDelete={isAdmin} />
                   </div>
                 ))

@@ -1,15 +1,17 @@
 'use client';
-// 회차 갈무리 카드 클라이언트(ADR-80 · 문안 v2). 자동 저장(디바운스 2s/blur)·단일 버튼(save→submit)·완료 상태.
-//   판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출·워크북' 미사용('이건 진단이 아닙니다'는 지정 예외).
-//   공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d). 이탈 경고(beforeunload) 없음.
+// 회차 갈무리 카드(ADR-80·85). getCheckinSession(sessionNo)로 회차 문안을 직접 로드 — 회차번호로 분기하지 않고 '블록 존재'로 렌더.
+//   copy 를 prop 으로 받지 않는다: copy 에 함수(filledCount·counter)가 있어 서버→클라 직렬화가 깨진다(레지스트리는 순수 모듈이라 클라 import 가능).
+//   자동저장(디바운스 2s/blur)·단일버튼(save→submit)·완료상태. 판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출·워크북' 미사용.
+//   되비추기(prior): 지난 회차 답을 읽기전용 회색으로 되비춘다(§6). 공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d).
 import { useEffect, useRef, useState } from 'react';
 import { Button, CheckRow, MultiChoiceChips, TextArea } from '@/core/ui';
-import { CHECKIN_SESSION_1, CHECKIN_REQUIRED_TOTAL, checkinFilledCount } from '@/instruments/futurenow/checkin/session1';
+import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 import { LetterPhotos } from './LetterPhotos';
 
-const copy = CHECKIN_SESSION_1;
-type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean };
+type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean; stepPrivate: boolean };
+// 되비추기 재료 — page 가 getMyCheckin(sessionNo-1)에서 뽑아 넘긴다(§6). 없으면 null.
+type PriorMirror = { identity: string | null; stepWhat: string | null; stepWhen: string | null };
 
 const gray = { color: 'var(--color-text-muted)' } as const;
 const help = { color: 'var(--color-text-secondary)' } as const;
@@ -38,6 +40,16 @@ function Field({ label, helpText, children }: { label: string; helpText?: string
   );
 }
 
+// 되비추기 — 읽기전용 회색(테두리 없음, 입력칸으로 오해 방지 · §6). 기울임 없음.
+function Mirror({ caption, value }: { caption: string; value: string }) {
+  return (
+    <div style={{ marginBottom: 'var(--space-3)' }}>
+      <div className="t-caption" style={gray}>{caption}</div>
+      <div className="t-body" style={{ color: 'var(--color-text-secondary)' }}>{value}</div>
+    </div>
+  );
+}
+
 export function CheckinCardClient({
   cohortId,
   sessionNo,
@@ -47,6 +59,7 @@ export function CheckinCardClient({
   alreadyOpened,
   submitted,
   closed,
+  prior,
 }: {
   cohortId: string;
   sessionNo: number;
@@ -56,7 +69,9 @@ export function CheckinCardClient({
   alreadyOpened: boolean;
   submitted: boolean;
   closed: boolean;
+  prior: PriorMirror | null;
 }) {
+  const copy = getCheckinSession(sessionNo); // 순수 모듈 — 클라 import 안전(직렬화 경계 넘지 않음)
   const [answers, setAnswers] = useState<Record<string, unknown>>(initialAnswers);
   const [flags, setFlags] = useState<Flags>(initialFlags);
   const [mode, setMode] = useState<'edit' | 'done'>(submitted ? 'done' : 'edit');
@@ -122,6 +137,8 @@ export function CheckinCardClient({
     />
   );
 
+  if (!copy) return null; // page 가 getCheckinSession 로 이미 가드 — 방어적 널체크
+
   if (mode === 'done') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', paddingTop: 'var(--space-4)' }}>
@@ -142,8 +159,13 @@ export function CheckinCardClient({
     );
   }
 
-  const filled = checkinFilledCount(answers);
-  const d = copy.today.desire;
+  const filled = copy.filledCount(answers);
+  const requiredTotal = copy.requiredTotal;
+  const desire = copy.today.desire;
+  const futureArea = copy.today.futureArea;
+  const identity = copy.today.identity;
+  const lastStep = copy.step.lastStep;
+  const share = copy.step.share;
   return (
     <div style={{ paddingTop: 'var(--space-2)' }}>
       {/* 표지 */}
@@ -152,27 +174,49 @@ export function CheckinCardClient({
         <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.cover.title}</div>
         <div className="t-caption" style={help}>{copy.cover.subtitle}</div>
         <p className="t-caption" style={{ ...help, marginTop: 'var(--space-2)' }}>{copy.cover.band}</p>
-        {!alreadyOpened ? <p className="t-caption" style={gray}>{copy.cover.firstVisitOnce}</p> : null}
+        {copy.cover.firstVisitOnce && !alreadyOpened ? <p className="t-caption" style={gray}>{copy.cover.firstVisitOnce}</p> : null}
         {closed ? <p className="t-caption" style={help}>마감이 지났지만 지금 적으셔도 됩니다.</p> : null}
       </div>
 
-      {/* 1면 · 오늘 — ① 바꿔 쓴 문장 한 쌍 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-        <div style={fieldLabel}>{d.label}</div>
-        <div className="t-caption" style={help}>{d.help}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{d.from.label}</span>
-          {textInput(d.from.key, d.from.placeholder)}
+      {/* 1면 · 오늘 — ① 바꿔 쓴 문장 한 쌍(1회차) */}
+      {desire ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+          <div style={fieldLabel}>{desire.label}</div>
+          <div className="t-caption" style={help}>{desire.help}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{desire.from.label}</span>
+            {textInput(desire.from.key, desire.from.placeholder)}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{desire.to.label}</span>
+            {textInput(desire.to.key, desire.to.placeholder)}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{d.to.label}</span>
-          {textInput(d.to.key, d.to.placeholder)}
-        </div>
-      </div>
+      ) : null}
 
-      {/* ② 존재가치 선언문 */}
-      <Field label={copy.today.identitySentence.label} helpText={copy.today.identitySentence.help}>
-        <TextArea value={str('identity_sentence')} onChange={(v) => setAnswer('identity_sentence', v)} placeholder={copy.today.identitySentence.placeholder} rows={2} ariaLabel={copy.today.identitySentence.label} />
+      {/* ① 가장 가슴 뛴 영역(2회차) — 칩 단일선택(문자열 저장) + 한 문장 */}
+      {futureArea ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+          <div style={fieldLabel}>{futureArea.label}</div>
+          <div className="t-caption" style={help}>{futureArea.help}</div>
+          <MultiChoiceChips
+            options={[...futureArea.options]}
+            value={str(futureArea.key) ? [str(futureArea.key)] : []}
+            max={1}
+            onChange={(v) => setAnswer(futureArea.key, v[0] ?? '')}
+            ariaLabel={futureArea.label}
+          />
+          <div style={{ marginTop: 'var(--space-2)' }}>
+            <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-1)' }}>{futureArea.line.label}</div>
+            {textInput(futureArea.line.key, futureArea.line.placeholder)}
+          </div>
+        </div>
+      ) : null}
+
+      {/* ② 정체성 문장 — 위에 지난 회차 문장 되비추기(mirror·prior 있을 때만) */}
+      {identity.mirror && prior?.identity ? <Mirror caption="지난 시간에 쓰신 문장" value={prior.identity} /> : null}
+      <Field label={identity.label} helpText={identity.help}>
+        <TextArea value={str(identity.key)} onChange={(v) => setAnswer(identity.key, v)} placeholder={identity.placeholder} rows={2} ariaLabel={identity.label} />
       </Field>
 
       {/* ③ 오늘의 마음 */}
@@ -210,20 +254,56 @@ export function CheckinCardClient({
         ) : null}
       </div>
 
-      {/* 2면 · 한 걸음 */}
-      <div style={{ marginBottom: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
-        <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.step.title}</div>
-        <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line' }}>{copy.step.help}</div>
+      {/* 2면 · 한 걸음 (지난 걸음 결산 → 다음 걸음) */}
+      <div style={{ paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
+        {/* ⑤ 지난 한 걸음(2회차부터) — 위에 지난 회차 한 걸음 되비추기(없으면 대체 문구) */}
+        {lastStep ? (
+          <div style={{ marginBottom: 'var(--space-5)' }}>
+            {prior?.stepWhat
+              ? <Mirror caption="지난 시간의 한 걸음" value={prior.stepWhen ? `${prior.stepWhat} · ${prior.stepWhen}` : prior.stepWhat} />
+              : <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{lastStep.mirrorEmpty}</p>}
+            <div style={fieldLabel}>{lastStep.label}</div>
+            <div style={{ marginTop: 'var(--space-2)' }}>
+              <MultiChoiceChips
+                options={[...lastStep.options]}
+                value={str(lastStep.key) ? [str(lastStep.key)] : []}
+                max={1}
+                onChange={(v) => setAnswer(lastStep.key, v[0] ?? '')}
+                ariaLabel={lastStep.label}
+              />
+            </div>
+            <div style={{ marginTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <div style={fieldLabel}>{lastStep.note.label}</div>
+              <div className="t-caption" style={help}>{lastStep.note.help}</div>
+              {textInput(lastStep.note.key)}
+            </div>
+          </div>
+        ) : null}
+
+        {/* ⑥ 다음 한 걸음 */}
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.step.title}</div>
+          <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line' }}>{copy.step.help}</div>
+        </div>
       </div>
-      <Field label={copy.step.what.label}>{textInput('step_what')}</Field>
-      <Field label={copy.step.when.label} helpText={copy.step.when.help}>{textInput('step_when', copy.step.when.placeholder)}</Field>
-      <Field label={copy.step.blocker.label} helpText={copy.step.blocker.help}>{textInput('step_blocker', copy.step.blocker.placeholder)}</Field>
+      <Field label={copy.step.what.label}>{textInput(copy.step.what.key)}</Field>
+      <Field label={copy.step.when.label} helpText={copy.step.when.help}>{textInput(copy.step.when.key, copy.step.when.placeholder)}</Field>
+      <Field label={copy.step.blocker.label} helpText={copy.step.blocker.help}>{textInput(copy.step.blocker.key, copy.step.blocker.placeholder)}</Field>
+
+      {/* 한 걸음 공개 토글(2회차부터) — step_private 컬럼. 기본 해제(공개). 이유를 묻지 않는다. */}
+      {share ? (
+        <div style={{ marginBottom: 'var(--space-5)' }}>
+          <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-2)' }}>{share.notice}</p>
+          <CheckRow label={share.toggleLabel} checked={flags.stepPrivate} onChange={(v) => setFlag('stepPrivate', v)} />
+        </div>
+      ) : null}
 
       {/* 3면 · 마무리 */}
       <div style={{ paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
         <Field label={copy.wrap.confidence.label} helpText={copy.wrap.confidence.help}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-            <input type="range" min={0} max={10} value={confidence ?? 5} onChange={(e) => setAnswer('confidence', Number(e.target.value))} onBlur={flushSave} aria-label={copy.wrap.confidence.label} style={{ flex: 1 }} />
+            {/* 미선택이면 트랙·손잡이를 흐리게(첫 조작에서 정상) — 손잡이 위치(5)와 숫자(—) 신호 불일치 완화(§3-5) */}
+            <input type="range" min={0} max={10} value={confidence ?? 5} onChange={(e) => setAnswer('confidence', Number(e.target.value))} onBlur={flushSave} aria-label={copy.wrap.confidence.label} style={{ flex: 1, opacity: confidence == null ? 0.45 : 1 }} />
             <span className="t-body-lg" style={{ color: confidence == null ? 'var(--color-text-muted)' : 'var(--color-primary)', minWidth: 24, textAlign: 'center' }}>{confidence ?? '—'}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-1)' }}>
@@ -254,8 +334,8 @@ export function CheckinCardClient({
 
       {/* 저장(단일 버튼) — 필수 미충족이어도 막지 않는다(소프트). 남은 필수 칸만 조용히 안내. */}
       <Button onClick={onSubmit} disabled={busy} style={{ width: '100%' }}>{busy ? '저장 중…' : copy.save.button}</Button>
-      {filled < CHECKIN_REQUIRED_TOTAL ? (
-        <p className="t-caption" style={{ ...gray, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>필수 {CHECKIN_REQUIRED_TOTAL - filled}칸 남음</p>
+      {filled < requiredTotal ? (
+        <p className="t-caption" style={{ ...gray, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>필수 {requiredTotal - filled}칸 남음</p>
       ) : null}
       <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>{copy.save.notice1}</p>
       <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 0 }}>{copy.save.notice2}</p>

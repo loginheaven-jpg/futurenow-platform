@@ -2,7 +2,7 @@
 // 회차 갈무리 카드 서버 액션(ADR-80). 코어 경유 — 쓰기는 전량 DEFINER RPC(checkin_*). 권한·게이트는 RPC 내부.
 import { createServerContext } from '@/core/supabase/server';
 
-type Flags = { suggestionAnon?: boolean; contactRequest?: boolean; deepOpened?: boolean };
+type Flags = { suggestionAnon?: boolean; contactRequest?: boolean; deepOpened?: boolean; stepPrivate?: boolean };
 
 // 자동 저장(upsert). has_content 는 서버(checkin_save)가 계산.
 export async function saveCheckinAction(
