@@ -17,6 +17,8 @@ const linkStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   padding: '0 var(--space-2)',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
 } as const;
 
 export function HeaderActions({ homeHref, navHref, navLabel }: { homeHref?: string; navHref?: string; navLabel?: string }) {

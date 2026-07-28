@@ -55,9 +55,9 @@ export function AppHeader({
 }) {
   // 제목 블록(sub·flow 공용): 제목 + 옅은 네이비 부제
   const titleBlock = (
-    <div>
-      <div className="t-h1" style={{ color: ON_ACCENT }}>{title}</div>
-      {subtitle ? <div className="t-caption" style={{ color: 'var(--navy-300)' }}>{subtitle}</div> : null}
+    <div style={{ minWidth: 0 }}>
+      <div className="t-h1" style={{ color: ON_ACCENT, whiteSpace: 'nowrap' }}>{title}</div>
+      {subtitle ? <div className="t-caption" style={{ color: 'var(--navy-300)', whiteSpace: 'nowrap' }}>{subtitle}</div> : null}
     </div>
   );
 

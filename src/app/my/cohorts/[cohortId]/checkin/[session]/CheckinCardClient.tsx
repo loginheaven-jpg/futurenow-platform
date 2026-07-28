@@ -151,7 +151,6 @@ export function CheckinCardClient({
         <div className="t-caption" style={{ color: 'var(--color-primary)' }}>{copy.cover.brand}</div>
         <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.cover.title}</div>
         <div className="t-caption" style={help}>{copy.cover.subtitle}</div>
-        <div className="t-caption" style={gray}>{copy.cover.counter(filled)}</div>
         <p className="t-caption" style={{ ...help, marginTop: 'var(--space-2)' }}>{copy.cover.band}</p>
         {!alreadyOpened ? <p className="t-caption" style={gray}>{copy.cover.firstVisitOnce}</p> : null}
         {closed ? <p className="t-caption" style={help}>마감이 지났지만 지금 적으셔도 됩니다.</p> : null}
@@ -184,9 +183,15 @@ export function CheckinCardClient({
 
       {/* 1면 하단 · 심화(접힘 기본 · 제목 클릭으로 펼침) */}
       <div style={{ marginBottom: 'var(--space-5)' }}>
-        <button type="button" onClick={() => { const n = !deepOpen; setDeepOpen(n); if (n && !flags.deepOpened) setFlag('deepOpened', true); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }} aria-expanded={deepOpen}>
+        {/* 펼침 컨트롤 — 테두리 박스 + 큰 화살표로 클릭 유도 */}
+        <button
+          type="button"
+          onClick={() => { const n = !deepOpen; setDeepOpen(n); if (n && !flags.deepOpened) setFlag('deepOpened', true); }}
+          aria-expanded={deepOpen}
+          style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-3) var(--space-4)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-surface-1)', cursor: 'pointer' }}
+        >
           <span className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{copy.deepen.title}</span>
-          <span aria-hidden className="t-caption" style={gray}>{deepOpen ? '▾' : '▸'}</span>
+          <span aria-hidden style={{ fontSize: 26, lineHeight: 1, color: 'var(--color-primary)', transform: deepOpen ? 'rotate(90deg)' : 'none', transition: 'transform .15s ease' }}>›</span>
         </button>
         {deepOpen ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
