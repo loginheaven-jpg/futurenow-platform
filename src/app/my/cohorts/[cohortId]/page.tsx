@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
+import { getCheckinSession } from '@/instruments/futurenow/checkin';
+import { PastSessionsClient } from './PastSessionsClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +30,14 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const openRow = c.openSessionNo != null ? sessions.find((s) => s.sessionNo === c.openSessionNo) : null;
-  const pastCount = sessions.filter((s) => new Date(s.closesAt).getTime() < now).length;
+  // 지난 회차 = 마감된 회차 중 '열어 볼 수 있는' 것(레지스트리에 문안이 등록된 회차).
+  //   미등록 회차(3~7회차 현재)를 링크로 내보내면 '준비 중' 안내에 부딪히므로 목록에서 뺀다(ADR-86).
+  //   캡션 문자열 '지난 회차 N개'는 불변 — N 의 의미만 좁아진다.
+  const pastSessionNos = sessions
+    .filter((s) => new Date(s.closesAt).getTime() < now && getCheckinSession(s.sessionNo) !== null)
+    .map((s) => s.sessionNo)
+    .sort((a, b) => b - a);
+  const pastCount = pastSessionNos.length;
 
   // 내 한 걸음(제출된 열린 회차의 step) — 열린 회차가 있을 때만 조회.
   const openCheckin = c.openSessionNo != null ? await ctx.getMyCheckin(cohortId, c.openSessionNo) : null;
@@ -36,10 +45,13 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   const stepWhen = typeof openCheckin?.answers?.step_when === 'string' ? (openCheckin.answers.step_when as string) : '';
 
   // 이번 주 갈무리 상태 문구
+  // 버튼 문구와 목적지를 일치시킨다(ADR-86) — 쓰러/이어 쓰러 가는 사람은 작성 폼으로(?edit=1),
+  //   이미 제출한 사람은 자기가 적은 것을 먼저 읽는 열람 화면으로.
   let checkinLine = '';
   let checkinBtn = '쓰러 가기';
+  let checkinEdit = true;
   if (c.openSessionNo != null) {
-    if (c.openSessionSubmitted) { checkinLine = '다 적으셨습니다'; checkinBtn = '고쳐 쓰기'; }
+    if (c.openSessionSubmitted) { checkinLine = '다 적으셨습니다'; checkinBtn = '적으신 것 보기'; checkinEdit = false; }
     else if (c.openSessionHasContent) { checkinLine = '쓰시던 자리가 남아 있어요'; checkinBtn = '이어 쓰기'; }
     else { checkinLine = openRow ? `${monthDay(openRow.closesAt)} 밤까지 열려 있어요` : ''; checkinBtn = '쓰러 가기'; }
   }
@@ -63,7 +75,7 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
     <div style={accentCard}>
       <div className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{c.openSessionNo}회차 갈무리</div>
       {checkinLine ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '2px 0 var(--space-3)' }}>{checkinLine}</div> : null}
-      <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}/checkin/${c.openSessionNo}`} style={{ width: '100%', textDecoration: 'none' }}>{checkinBtn}</a>
+      <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}/checkin/${c.openSessionNo}${checkinEdit ? '?edit=1' : ''}`} style={{ width: '100%', textDecoration: 'none' }}>{checkinBtn}</a>
     </div>
   ) : null;
 
@@ -97,7 +109,7 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   );
 
   const pastSection = pastCount > 0 ? (
-    <div className="t-caption" style={{ color: 'var(--color-text-muted)', padding: 'var(--space-2) var(--space-1)' }}>지난 회차 {pastCount}개</div>
+    <PastSessionsClient cohortId={cohortId} sessionNos={pastSessionNos} label={`지난 회차 ${pastCount}개`} />
   ) : null;
 
   // 상태별 순서: 사전 미완이면 진단 먼저, 진행 중이면 갈무리 먼저.

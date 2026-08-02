@@ -6,8 +6,10 @@ import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
+import { anonNoticeText, buildCheckinRead, readAnonSuggestion } from '@/instruments/futurenow/checkin/readModel';
 import { ScheduleSeedClient } from './ScheduleSeedClient';
 import { CoachPhotos } from './CoachPhotos';
+import { RosterDetail, type RosterEntry } from './RosterDetail';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +18,11 @@ export default async function CoachCheckinPage({
   searchParams,
 }: {
   params: Promise<{ cohortId: string }>;
-  searchParams: Promise<{ session?: string | string[] }>;
+  searchParams: Promise<{ session?: string | string[]; open?: string | string[] }>;
 }) {
   const { cohortId } = await params;
   const sp = await searchParams;
+  const openUserId = (Array.isArray(sp.open) ? sp.open[0] : sp.open) ?? null;
   const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
@@ -40,36 +43,77 @@ export default async function CoachCheckinPage({
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? '이름 미입력';
   const closesMs = row ? new Date(row.closesAt).getTime() : null;
 
-  const roster = members.map((m) => {
+  // 등록된 멤버의 갈무리만(이동/삭제된 사람의 checkins 는 DB에 남아도 현황에서 제외 — ADR-84)
+  const memberIds = new Set(members.map((m) => m.userId));
+  const enrolled = checkins.filter((c) => memberIds.has(c.userId));
+
+  // 편지 사진 — 회차당 1회 조회해 명단 펼침·문장 모아 보기가 함께 쓴다(추가 왕복 0).
+  const photoPairs = await Promise.all(
+    enrolled.map(async (c) => [c.userId, await ctx.listCheckinPhotos(cohortId, sessionNo, c.userId).catch(() => [])] as const),
+  );
+  const photosByUser = new Map(photoPairs);
+
+  // 명단 — 행을 펼치면 그 사람의 갈무리 전 항목(ADR-86). 데이터는 이미 서버 메모리에 있어 추가 조회 0.
+  const roster: RosterEntry[] = members.map((m) => {
     const ck = byUser.get(m.userId);
     const status = ck?.submittedAt ? '제출' : ck?.hasContent ? '작성 중' : '미작성';
     const late = ck?.submittedAt && closesMs != null && new Date(ck.submittedAt).getTime() > closesMs;
-    return { name: m.name ?? '이름 미입력', status, late: !!late, contact: !!ck?.contactRequest };
+    return {
+      userId: m.userId,
+      name: m.name ?? '이름 미입력',
+      status,
+      late: !!late,
+      contact: !!ck?.contactRequest,
+      hasRow: !!ck,
+      // 순수 데이터만 경계를 넘긴다 — copy 객체(함수 포함)는 절대 prop 에 싣지 않는다(ADR-85 직렬화 사고).
+      blocks: ck
+        ? buildCheckinRead(
+            sessionNo,
+            ck.answers,
+            { stepPrivate: ck.stepPrivate, suggestionAnon: ck.suggestionAnon, contactRequest: ck.contactRequest },
+            'facilitator',
+          )
+        : [],
+      photos: photosByUser.get(m.userId) ?? [],
+    };
   });
 
-  const steps = checkins
+  // 인도자에게 온 부탁(need) — 수신자가 문안에 인도자로 명시된 유일한 자유서술이라 실명으로 전달한다.
+  //   지금까지 읽는 경로가 0이어서 참여자에게 한 약속이 이행되지 않고 있었다(ADR-86).
+  const needKey = getCheckinSession(sessionNo)?.wrap.facilitatorBox.need.key ?? '';
+  const needs = enrolled
+    .map((c) => ({ name: nameOf(c.userId), text: typeof c.answers?.[needKey] === 'string' ? (c.answers[needKey] as string).trim() : '' }))
+    .filter((n) => n.text !== '');
+
+  // 이름 없이 온 말 — 참여자가 익명 토글을 켠 '바라는 점'만. 이름이 붙는 자리(명단 펼침)에는 절대 두지 않는다.
+  //   정렬키는 행 uuid(gen_random_uuid) — 명단 순서·userId·작성 시각과 무관해 회차마다 순열이 달라진다(재식별 완화).
+  const anonSuggestions = enrolled
+    .map((c) => ({ id: c.id, text: readAnonSuggestion(sessionNo, c.answers, { suggestionAnon: c.suggestionAnon }) }))
+    .filter((s) => s.text !== '')
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((s) => s.text);
+  const anonNotice = anonNoticeText(sessionNo);
+
+  const steps = enrolled
     .filter((c) => typeof c.answers?.step_what === 'string' && (c.answers.step_what as string).trim() !== '')
     .filter((c) => !c.stepPrivate)
     .map((c) => ({ name: nameOf(c.userId), what: c.answers.step_what as string, when: (c.answers.step_when as string) ?? '' }));
 
   // 문장 모아 보기(C2 §4.4) — 실명 + 회차별 요약 열(§5-6) + 편지 사진(ADR-83). 나눔 전 인도자가 개별 대면 동의.
   //   열 정의는 세션 레지스트리 summaryFields 에서(1회차 갈망·존재가치·기억 / 2회차 영역·인생의 한 문장·장면). 회차 키 하드코딩 제거(ADR-85).
+  //   ADR-86: 이 섹션은 '나눔 도구'로 성격을 유지한다 — 명단 펼침(목양 도구)과 합치지 않는다.
   const sstr = (c: (typeof checkins)[number], k: string) => (typeof c.answers?.[k] === 'string' ? (c.answers[k] as string) : '');
   const isAdmin = me.role === 'admin';
   const summaryFields = getCheckinSession(sessionNo)?.summaryFields ?? [];
-  // 등록된 멤버의 갈무리만(이동/삭제된 사람의 checkins 는 DB에 남아도 현황에서 제외 — ADR-84)
-  const memberIds = new Set(members.map((m) => m.userId));
-  const perMember = await Promise.all(
-    checkins.filter((c) => memberIds.has(c.userId)).map(async (c) => ({
-      name: nameOf(c.userId),
-      cells: summaryFields.map((f) =>
-        'from' in f
-          ? { label: f.label, text: `${sstr(c, f.from)} → ${sstr(c, f.to)}`, has: !!(sstr(c, f.from) || sstr(c, f.to)) }
-          : { label: f.label, text: sstr(c, f.key), has: !!sstr(c, f.key) },
-      ),
-      photos: await ctx.listCheckinPhotos(cohortId, sessionNo, c.userId).catch(() => []),
-    })),
-  );
+  const perMember = enrolled.map((c) => ({
+    name: nameOf(c.userId),
+    cells: summaryFields.map((f) =>
+      'from' in f
+        ? { label: f.label, text: `${sstr(c, f.from)} → ${sstr(c, f.to)}`, has: !!(sstr(c, f.from) || sstr(c, f.to)) }
+        : { label: f.label, text: sstr(c, f.key), has: !!sstr(c, f.key) },
+    ),
+    photos: photosByUser.get(c.userId) ?? [],
+  }));
   const sentences = perMember.filter((s) => s.cells.some((c) => c.has) || s.photos.length > 0);
 
   const sectionTitle = { color: 'var(--color-primary)', fontSize: 16, margin: '0 0 var(--space-2)' } as const;
@@ -88,7 +132,7 @@ export default async function CoachCheckinPage({
             {sessions.map((s) => (
               <a
                 key={s.sessionNo}
-                href={`/coach/cohort/${cohortId}/checkin?session=${s.sessionNo}`}
+                href={`/coach/cohort/${cohortId}/checkin?session=${s.sessionNo}${openUserId ? `&open=${openUserId}` : ''}`}
                 className="t-caption"
                 style={{
                   padding: '4px var(--space-3)', borderRadius: 'var(--radius)', textDecoration: 'none',
@@ -101,18 +145,30 @@ export default async function CoachCheckinPage({
             ))}
           </div>
 
-          {/* 명단 */}
+          {/* 인도자에게 온 부탁 — 돌봄 우선이라 명단 위. 0건이면 섹션째 미렌더. */}
+          {needs.length > 0 ? (
+            <section style={{ marginBottom: 'var(--space-6)' }}>
+              <h2 className="t-h2" style={sectionTitle}>부탁</h2>
+              <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                {needs.map((n, i) => (
+                  <div key={i} className="t-body" style={{ color: 'var(--color-text)' }}>{n.name} — {n.text}</div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 명단 — 행을 펼치면 그 사람의 갈무리 전 항목(ADR-86). */}
           <section style={{ marginBottom: 'var(--space-6)' }}>
             <h2 className="t-h2" style={sectionTitle}>명단</h2>
-            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {roster.map((r, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <span className="t-body" style={{ flex: 1, color: 'var(--color-text)' }}>{r.name}</span>
-                  <span className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{r.status}</span>
-                  {r.late ? <span className="t-caption" style={{ color: 'var(--color-care, var(--color-text-muted))' }}>지각</span> : null}
-                  {r.contact ? <span className="t-caption" style={{ color: 'var(--color-care, var(--color-primary))' }}>연락 요청</span> : null}
-                </div>
-              ))}
+            <div style={card}>
+              <RosterDetail
+                entries={roster}
+                openUserId={openUserId}
+                cohortId={cohortId}
+                sessionNos={sessions.map((s) => s.sessionNo)}
+                currentSession={sessionNo}
+                tabsLabel="다른 회차"
+              />
             </div>
           </section>
 
@@ -155,6 +211,20 @@ export default async function CoachCheckinPage({
               )}
             </div>
           </section>
+
+          {/* 이름 없이 온 말 — 익명 토글을 켠 '바라는 점'만. 명단과 최대한 떨어뜨려 이름과 붙지 않게 한다.
+              캡션은 참여자가 읽고 켠 고지 원문 그대로(신규 문안 0). 0건이면 섹션째 미렌더. */}
+          {anonSuggestions.length > 0 ? (
+            <section style={{ marginTop: 'var(--space-6)' }}>
+              <h2 className="t-h2" style={sectionTitle}>이름 없이 온 말</h2>
+              <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>{anonNotice}</p>
+              <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                {anonSuggestions.map((t, i) => (
+                  <div key={i} className="t-body" style={{ color: 'var(--color-text)' }}>· {t}</div>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </>
       )}
     </div>

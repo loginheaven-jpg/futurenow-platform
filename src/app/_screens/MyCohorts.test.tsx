@@ -46,10 +46,11 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('href="/my/cohorts/co1"');
   });
 
-  it('열린 회차 미제출 → [이번 주 갈무리] → /my/cohorts/[id]/checkin/[n] (2순위, ADR-80)', () => {
+  // ADR-86: 이 버튼은 미제출일 때만 나오므로 작성 의도가 확정 → ?edit=1 로 편집 폼 직행(열람 화면 경유 금지).
+  it('열린 회차 미제출 → [이번 주 갈무리] → /my/cohorts/[id]/checkin/[n]?edit=1 (2순위, ADR-80·86)', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: true, openSessionNo: 3, openSessionSubmitted: false })]} />);
     expect(html).toContain('이번 주 갈무리');
-    expect(html).toContain('href="/my/cohorts/co1/checkin/3"');
+    expect(html).toContain('href="/my/cohorts/co1/checkin/3?edit=1"');
   });
 
   it('사후 개시·미완(사전 완료) → [사후 진단하기]→/join?cohort=…&wave=post (B-2)', () => {

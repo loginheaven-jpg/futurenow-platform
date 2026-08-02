@@ -7,6 +7,7 @@ import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { CheckinCardClient } from './CheckinCardClient';
+import { resolveCheckinMode } from './mode';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +29,16 @@ function Notice({ text }: { text: string }) {
   return <p className="t-body" style={{ color: 'var(--color-text-secondary)', textAlign: 'center', padding: 'var(--space-8) 0' }}>{text}</p>;
 }
 
-export default async function CheckinCardPage({ params }: { params: Promise<{ cohortId: string; session: string }> }) {
+export default async function CheckinCardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ cohortId: string; session: string }>;
+  searchParams: Promise<{ edit?: string | string[] }>;
+}) {
   const { cohortId, session } = await params;
+  const sp = await searchParams;
+  const wantsEdit = (Array.isArray(sp.edit) ? sp.edit[0] : sp.edit) === '1';
   const sessionNo = Number(session);
   const self = `/my/cohorts/${cohortId}/checkin/${session}`;
 
@@ -58,11 +67,19 @@ export default async function CheckinCardPage({ params }: { params: Promise<{ co
 
   const existing = await ctx.getMyCheckin(cohortId, sessionNo);
 
+  // 모드 판정(ADR-86) — 규칙은 mode.ts 순수 함수에(단위테스트로 고정).
+  const initialMode = resolveCheckinMode({ wantsEdit, closed, existing });
+
+  // 편지 사진 — 열람에 필요하므로 서버에서 signed URL 로 만든다(브라우저 supabase 재구현 없음).
+  //   행이 없으면 사진도 있을 수 없다(업로드는 카드 안에서만 가능하고 그 시점에 행이 생긴다).
+  const photos = existing == null ? [] : await ctx.listCheckinPhotos(cohortId, sessionNo, me.id).catch(() => []);
+
   // 되비추기(§6·Phase 4) — 지난 회차 답 둘(존재가치 문장·한 걸음)을 읽기전용으로. 새 코어 메서드 없음.
   //   지난 회차 정체성 키는 그 회차 레지스트리에서 얻는다(1회차 identity_sentence). step 키는 전 회차 공통.
   //   미제출이어도 값이 있으면 보여 준다. 조회 실패는 조용히 넘긴다(되비추기 없다고 카드가 막히면 안 됨).
+  //   ADR-86: '지금 쓰는 것을 돕는' 작성 보조라 열람(read)에는 싣지 않는다 — 조회 자체를 건너뛴다(왕복 감소).
   let prior: { identity: string | null; stepWhat: string | null; stepWhen: string | null } | null = null;
-  if (sessionNo > 1) {
+  if (initialMode === 'edit' && sessionNo > 1) {
     const priorCopy = getCheckinSession(sessionNo - 1);
     const priorRow = await ctx.getMyCheckin(cohortId, sessionNo - 1).catch(() => null);
     if (priorCopy && priorRow) {
@@ -86,9 +103,10 @@ export default async function CheckinCardPage({ params }: { params: Promise<{ co
           stepPrivate: existing?.stepPrivate ?? false,
         }}
         alreadyOpened={existing?.firstOpenedAt != null}
-        submitted={existing?.submittedAt != null}
         closed={closed}
         prior={prior}
+        initialMode={initialMode}
+        photos={photos}
       />
     </Shell>
   );

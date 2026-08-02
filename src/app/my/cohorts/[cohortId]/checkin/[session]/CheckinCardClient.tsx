@@ -3,9 +3,14 @@
 //   copy 를 prop 으로 받지 않는다: copy 에 함수(filledCount·counter)가 있어 서버→클라 직렬화가 깨진다(레지스트리는 순수 모듈이라 클라 import 가능).
 //   자동저장(디바운스 2s/blur)·단일버튼(save→submit)·완료상태. 판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출·워크북' 미사용.
 //   되비추기(prior): 지난 회차 답을 읽기전용 회색으로 되비춘다(§6). 공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d).
+//   ADR-86: 모드 둘(read/edit)·URL 하나. read 는 적은 것 전부를 읽는 화면 — 서버 쓰기 0(계측 컬럼을 건드리지 않는다).
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { CheckinPhoto } from '@/contracts';
 import { Button, CheckRow, MultiChoiceChips, TextArea } from '@/core/ui';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
+import { buildCheckinRead, readSelfHighlights } from '@/instruments/futurenow/checkin/readModel';
+import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 import { LetterPhotos } from './LetterPhotos';
 
@@ -57,9 +62,10 @@ export function CheckinCardClient({
   initialAnswers,
   initialFlags,
   alreadyOpened,
-  submitted,
   closed,
   prior,
+  initialMode,
+  photos,
 }: {
   cohortId: string;
   sessionNo: number;
@@ -67,25 +73,35 @@ export function CheckinCardClient({
   initialAnswers: Record<string, unknown>;
   initialFlags: Flags;
   alreadyOpened: boolean;
-  submitted: boolean;
   closed: boolean;
   prior: PriorMirror | null;
+  initialMode: 'read' | 'edit';
+  photos: CheckinPhoto[];
 }) {
   const copy = getCheckinSession(sessionNo); // 순수 모듈 — 클라 import 안전(직렬화 경계 넘지 않음)
   const [answers, setAnswers] = useState<Record<string, unknown>>(initialAnswers);
   const [flags, setFlags] = useState<Flags>(initialFlags);
-  const [mode, setMode] = useState<'edit' | 'done'>(submitted ? 'done' : 'edit');
+  const router = useRouter();
+  const [mode, setMode] = useState<'edit' | 'read'>(initialMode);
+  // 완료 문구('갈무리를 저장했습니다')는 이번 화면에서 방금 제출했을 때만. 3주 전 갈무리에 띄우면 거짓말이다.
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [readOpen, setReadOpen] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deepOpen, setDeepOpen] = useState(initialFlags.deepOpened);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openMarked = useRef(false);
 
-  // 최초 진입 표식(계측) — 1회.
+  // 최초 진입 표식(계측) — '작성 카드에 처음 들어온 시각'이므로 edit 모드일 때만 1회.
+  //   지난 회차를 '읽으러' 들어온 진입이 섞이면 first_opened_at 이 영구 오염된다(ADR-80 1기 보정 근거).
+  //   read→edit 전환도 작성 진입이므로 그 시점에 찍는다.
   useEffect(() => {
-    if (!alreadyOpened) void markCheckinOpenedAction(cohortId, sessionNo);
+    if (mode !== 'edit' || alreadyOpened || openMarked.current) return;
+    openMarked.current = true;
+    void markCheckinOpenedAction(cohortId, sessionNo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode]);
 
   const str = (k: string) => (typeof answers[k] === 'string' ? (answers[k] as string) : '');
   const mood = Array.isArray(answers.mood) ? (answers.mood as string[]) : [];
@@ -122,8 +138,11 @@ export function CheckinCardClient({
     if (timer.current) clearTimeout(timer.current);
     const res = await submitCheckinAction(cohortId, sessionNo, answers, flags); // R2: save→submit 한 액션 내 순차
     setBusy(false);
-    if (res.ok) setMode('done');
-    else setSaveFailed(true);
+    if (res.ok) {
+      setJustSubmitted(true);
+      setMode('read');
+      router.refresh(); // 방금 올린 편지 사진이 read 화면에 바로 보이도록(서버 signed URL 재생성)
+    } else setSaveFailed(true);
   }
 
   const textInput = (key: string, placeholder?: string) => (
@@ -139,21 +158,70 @@ export function CheckinCardClient({
 
   if (!copy) return null; // page 가 getCheckinSession 로 이미 가드 — 방어적 널체크
 
-  if (mode === 'done') {
+  // ── 열람(read) ── 적은 것 전부를 읽는 화면. 서버 쓰기 0(save·submit·markOpened 미호출, deep_opened 미갱신).
+  if (mode === 'read') {
+    const highlights = readSelfHighlights(sessionNo, answers);
+    const blocks = buildCheckinRead(sessionNo, answers, flags, 'self');
+    const hasStep = !!(highlights?.stepWhat || highlights?.stepWhen);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', paddingTop: 'var(--space-4)' }}>
-        <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.done.title}</div>
-        <div style={{ padding: 'var(--space-5)', background: 'var(--color-accent-soft, var(--color-surface-2))', border: 'var(--border-hair) solid var(--color-accent)', borderRadius: 'var(--radius)' }}>
-          <div className="t-h2" style={{ color: 'var(--color-primary)', margin: 0 }}>“{str('self_note')}”</div>
-        </div>
-        <div>
-          <div className="t-caption" style={help}>{copy.done.stepHeading}</div>
-          <div className="t-body" style={{ color: 'var(--color-text)' }}>{str('step_what')}</div>
-          <div className="t-caption" style={help}>{str('step_when')}</div>
-        </div>
+        {/* 완료 문구는 방금 제출했을 때만. 재방문·지난 회차 진입에는 띄우지 않는다. */}
+        {justSubmitted ? <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.done.title}</div> : (
+          <div>
+            <div className="t-caption" style={{ color: 'var(--color-primary)' }}>{copy.cover.brand}</div>
+            <div className="t-caption" style={help}>{copy.cover.subtitle}</div>
+          </div>
+        )}
+
+        {highlights?.selfNote ? (
+          <div style={{ padding: 'var(--space-5)', background: 'var(--color-accent-soft, var(--color-surface-2))', border: 'var(--border-hair) solid var(--color-accent)', borderRadius: 'var(--radius)' }}>
+            <div className="t-h2" style={{ color: 'var(--color-primary)', margin: 0 }}>“{highlights.selfNote}”</div>
+          </div>
+        ) : null}
+
+        {hasStep ? (
+          <div>
+            <div className="t-caption" style={help}>{copy.done.stepHeading}</div>
+            <div className="t-body" style={{ color: 'var(--color-text)' }}>{highlights?.stepWhat}</div>
+            <div className="t-caption" style={help}>{highlights?.stepWhen}</div>
+          </div>
+        ) : null}
+
+        {/* 전체 열람 — 접힘 기본(자기 문장 강조가 긴 목록에 묻히지 않게). 조건부 언마운트가 아니라 display 토글. */}
+        {blocks.length > 0 || photos.length > 0 ? (
+          <section style={{ border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-surface-1)', padding: 'var(--space-4)' }}>
+            <button
+              type="button"
+              onClick={() => setReadOpen((o) => !o)}
+              aria-expanded={readOpen}
+              style={{ width: '100%', minHeight: 'var(--tap-min)', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            >
+              <span className="t-body" style={{ color: 'var(--color-text)' }}>적으신 것 모두 보기</span>
+              <span className="t-caption" style={help}>{readOpen ? '접기 ▲' : '펼치기 ▼'}</span>
+            </button>
+            <div style={{ display: readOpen ? 'block' : 'none', marginTop: 'var(--space-3)' }}>
+              <CheckinReadView blocks={blocks} photos={photos} />
+            </div>
+          </section>
+        ) : null}
+
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}`} style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>{copy.done.toHome}</a>
-          <Button variant="ghost" onClick={() => setMode('edit')} style={{ flex: 1 }}>{copy.done.edit}</Button>
+          {/* 상태 토글이 아니라 실제 이동이다 — 서버가 되비추기(prior)를 다시 계산해야 편집 폼이 지난 회차를
+              '남아 있지 않다'고 잘못 말하지 않는다(ADR-85 §6 보존). read 는 서버 쓰기 0이라 잃을 미저장 상태가 없다. */}
+          <a
+            className="ui-btn ui-btn--ghost"
+            href={`/my/cohorts/${cohortId}/checkin/${sessionNo}?edit=1`}
+            style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}
+          >
+            {copy.done.edit}
+          </a>
+        </div>
+
+        {/* '읽기 화면이 생겼으니 이제 못 고친다'는 오해 차단 — 마감 정책은 바뀌지 않았다(원문 인용). */}
+        <div>
+          {closed ? null : <div className="t-caption" style={gray}>{copy.save.notice1}</div>}
+          <div className="t-caption" style={gray}>{copy.save.notice2}</div>
         </div>
       </div>
     );

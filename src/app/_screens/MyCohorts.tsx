@@ -71,7 +71,8 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
             {!c.preDone ? (
               <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>진단 시작하기</a>
             ) : c.openSessionNo !== null && !c.openSessionSubmitted ? (
-              <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}`} style={full}>이번 주 갈무리</a>
+              // 이 분기는 미제출일 때만 걸리므로 작성 의도가 확정이다 → 편집으로 직행(ADR-86)
+              <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}?edit=1`} style={full}>이번 주 갈무리</a>
             ) : c.postOpened && !c.postDone ? (
               <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>사후 진단하기</a>
             ) : (
