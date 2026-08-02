@@ -1010,14 +1010,19 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // 편지 사진(ADR-83) — storage RLS(본인/코치/운영자)로 게이트. 만료 signed URL 반환.
+  // 경로 접두어로 훑지 않는다(ADR-87) — 갈무리가 다른 차수로 이동해도 사진 파일은 업로드 시점 차수 경로에
+  // 그대로 남기 때문이다(Storage 는 실제 저장 키에 name 을 포함해 DB 만 고치면 파일이 깨진다).
+  // checkin_photo_paths RPC 가 '그 회차 갈무리가 지금 이 차수에 있는가'로 게이트하고 이름을 돌려준다.
   async listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]> {
-    const prefix = `${cohortId}/${userId}/${sessionNo}`;
-    const { data: objs, error } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).list(prefix);
+    const { data, error } = await this.sb.rpc('checkin_photo_paths', {
+      p_cohort: cohortId,
+      p_user: userId,
+      p_session: sessionNo,
+    });
     if (error) throw new CoreError(`listCheckinPhotos 실패: ${error.message}`);
     const out: CheckinPhoto[] = [];
-    for (const o of objs ?? []) {
-      if (o.name.startsWith('.')) continue; // 폴더 플레이스홀더 제외
-      const path = `${prefix}/${o.name}`;
+    for (const row of (data ?? []) as { name: string }[]) {
+      const path = row.name;
       const { data: signed } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).createSignedUrl(path, 3600);
       if (signed?.signedUrl) out.push({ path, url: signed.signedUrl });
     }

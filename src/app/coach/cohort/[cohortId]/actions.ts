@@ -85,7 +85,20 @@ export async function openPostWaveAction(cohortId: string): Promise<{ ok: boolea
 //   권한(해당 차수 코치 OR 운영자)은 RPC 내부 is_cohort_coach/is_admin 게이트가 강제. 이 차수 한정 응답·참여 삭제.
 export async function removeCohortMemberAction(cohortId: string, userId: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    await (await ctx()).removeCohortMember(cohortId, userId);
+    const c = await ctx();
+    // 편지 사진 회수(ADR-87) — RPC 보다 먼저. Supabase 는 storage.objects 직접 DELETE 를 금지하므로
+    //   (storage.protect_delete) DB 로는 지울 수 없고, 갈무리를 먼저 지우면 어느 회차였는지 알 수 없어진다.
+    //   실패해도 삭제 자체는 진행한다 — 사진이 남는 것보다 참여자 데이터가 안 지워지는 쪽이 나쁘다.
+    try {
+      const sessions = await c.listCohortSessions(cohortId);
+      for (const s of sessions) {
+        const photos = await c.listCheckinPhotos(cohortId, s.sessionNo, userId).catch(() => []);
+        for (const p of photos) await c.deleteCheckinPhoto(p.path).catch(() => undefined);
+      }
+    } catch {
+      /* 사진 회수 실패는 삭제를 막지 않는다 */
+    }
+    await c.removeCohortMember(cohortId, userId);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : '참여자 삭제에 실패했습니다.' };
