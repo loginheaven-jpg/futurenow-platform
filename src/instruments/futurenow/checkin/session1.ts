@@ -57,6 +57,7 @@ export const CHECKIN_SESSION_1 = {
   deepen: {
     // 제목 자체를 클릭해 펼친다('선택' 태그·건너뛰기 안내 삭제 — 적극적 참여자 전제). 접힘 기본·두 칸 공백 허용.
     title: '깊은 생각 갈무리하기',
+    summary: '집에 남은 기억 · 과거에게 쓴 편지',
     fields: [
       { key: 'scene', label: '오늘 떠올린 기억 중에서, 수업이 끝난 뒤에도 계속 생각난 것은 무엇인가요?', help: '노트에 찍은 점 하나여도 좋습니다.' },
       { key: 'letter_line', label: '과거의 나에게 편지를 써 보세요.', help: '만약 종이에 이미 썼다면 그 내용 중 가장 해 주고 싶었던 말 한 줄만 옮겨 주세요. 종이에 쓴 편지는 아래에서 촬영해 첨부하셔도 됩니다. (책 59쪽)' },
@@ -94,6 +95,9 @@ export const CHECKIN_SESSION_1 = {
     // 공유 동의(share_consent·share_target) UI 삭제(C2-d) — 나눔 동의는 인도자 개별 대면 요청으로 대체.
     facilitatorBox: {
       title: '선택 · 하고 싶은 말이 있을 때만',
+      // 요약 줄은 안전장치다 — 이 상자 안의 '연락 요청'은 의견함이 아니라 돌봄 채널이라,
+      // 제목만 달면 그게 거기 있는 줄 모른 채 지나간다.
+      summary: '부탁 · 세미나 제안 · 연락 요청',
       need: { key: 'need', label: '인도자에게 부탁하고 싶은 것이 있나요?' },
       suggestion: { key: 'suggestion', label: '세미나에 대해 바라는 점이 있나요?' },
       suggestionAnon: { key: 'suggestion_anon', label: '이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.' },

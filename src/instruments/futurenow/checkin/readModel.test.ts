@@ -24,10 +24,13 @@ const ANSWERS_1 = {
   self_note: '괜찮아, 오늘은 여기까지만 해도 돼',
 };
 
-// 2회차 전 응답 키(16) — session2.ts 대조.
+// 2회차 전 응답 키(19) — session2.ts 대조.
 const ANSWERS_2 = {
   future_area: '일',
   future_line: '동네에서 꼭 들러야 하는 가게를 운영하고 있다',
+  purpose_alive: '누군가에게 설명해 줄 때',
+  purpose_ache: '기회를 못 만난 사람들',
+  purpose_fit: '작은 가게에서 사람을 만나는 자리',
   identity_statement: "나는 '상생'의 가치를 최우선으로 여긴다",
   mood: ['설렘'],
   mood_custom: '조금 얼떨떨함',
@@ -78,7 +81,7 @@ describe('buildCheckinRead — 응답 키 전량 노출(1·2회차 20키)', () =
     expect(readSelfHighlights(1, ANSWERS_1)?.selfNote).toBe(ANSWERS_1.self_note);
   });
 
-  it('2회차 본인 열람에 16키가 모두 나온다', () => {
+  it('2회차 본인 열람에 19키가 모두 나온다', () => {
     const b = buildCheckinRead(2, ANSWERS_2, OPEN, 'self');
     const values = Object.entries(ANSWERS_2)
       .filter(([k]) => k !== 'self_note' && k !== 'confidence' && k !== 'mood')
@@ -124,6 +127,37 @@ describe('라벨은 레지스트리 원문과 문자 단위로 일치한다(문�
     expect(l).toContain(c.today.identity.label);
     expect(l).toContain(c.step.lastStep.label);
     expect(l).toContain(c.step.lastStep.note.label);
+    // 목적 세 질문 — 묶음 제목 + 세 라벨
+    expect(l).toContain(c.today.purpose.title);
+    for (const f of c.today.purpose.fields) expect(l).toContain(f.label);
+  });
+
+  it('목적 세 질문은 본인·인도자 모두에게 보인다(save.notice2 고지 근거)', () => {
+    for (const audience of ['self', 'facilitator'] as const) {
+      const b = buildCheckinRead(2, ANSWERS_2, OPEN, audience);
+      expect(has(b, ANSWERS_2.purpose_alive), audience).toBe(true);
+      expect(has(b, ANSWERS_2.purpose_ache), audience).toBe(true);
+      expect(has(b, ANSWERS_2.purpose_fit), audience).toBe(true);
+    }
+  });
+
+  it('목적 세 질문은 1회차에 없다(2회차 전용)', () => {
+    const b = buildCheckinRead(1, { ...ANSWERS_1, purpose_alive: 'ZZ' }, OPEN, 'self');
+    expect(has(b, 'ZZ')).toBe(false);
+  });
+
+  it('목적 세 질문은 나눔 후보(summaryFields)에 들어가지 않는다 — 재료이지 대표문장이 아니다', () => {
+    const keys = CHECKIN_SESSION_2.summaryFields.flatMap((f) => Object.values(f));
+    for (const f of CHECKIN_SESSION_2.today.purpose.fields) expect(keys).not.toContain(f.key);
+  });
+
+  it('세 칸을 비워도 필수 개수는 6 그대로다(선택 블록)', () => {
+    const withoutPurpose = { ...ANSWERS_2 };
+    delete (withoutPurpose as Record<string, unknown>).purpose_alive;
+    delete (withoutPurpose as Record<string, unknown>).purpose_ache;
+    delete (withoutPurpose as Record<string, unknown>).purpose_fit;
+    expect(CHECKIN_SESSION_2.requiredTotal).toBe(6);
+    expect(CHECKIN_SESSION_2.filledCount(withoutPurpose)).toBe(CHECKIN_SESSION_2.filledCount(ANSWERS_2));
   });
 
   it('readModel.ts 에 한국어 문자열 리터럴이 없다', () => {

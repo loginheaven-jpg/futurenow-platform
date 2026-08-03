@@ -25,13 +25,19 @@ export type CheckinSession = {
     // ① 첫 블록 — 회차마다 형태가 다르다(둘 중 하나만 존재). 카드가 존재로 분기.
     desire?: { label: string; help: string; from: CheckinField; to: CheckinField };
     futureArea?: { key: string; label: string; help: string; options: readonly string[]; line: CheckinField };
+    // ①-b 목적을 찾는 세 질문(2회차~) — ② '인생을 이끌어갈 하나의 문장'의 재료.
+    //   기본 펼침이다: 수업 중 시간이 부족해 숙제로 나갈 가능성이 커, 접어 두면 존재를 모른 채 넘어간다.
+    //   대신 badge('선택')로 필수가 아님을 알린다 — 빈 입력칸 셋이 펼쳐져 있으면 필수로 읽히기 때문이다.
+    //   (ADR-82 는 '접힌' 블록의 선택 태그를 지웠다. 기본 펼침 블록은 그 판단의 사정권 밖 — 조건 추가.)
+    purpose?: { title: string; badge: string; help: string; fields: CheckinField[] };
     // ② 정체성 문장 — key·문안은 회차마다 다르나 형태 동일. mirror=지난 회차 문장을 위에 되비춘다.
     identity: CheckinField & { mirror?: boolean };
     // ③ 마음
     mood: { key: string; label: string; help: string; options: readonly string[]; exclusive: string; max: number };
     moodCustom: { key: string; placeholder: string };
   };
-  deepen: { title: string; fields: { key: string; label: string; help: string }[] };
+  // summary = 접힌 상태에서 안에 무엇이 있는지 보여 주는 한 줄. 문안이므로 레지스트리가 소유한다(컴포넌트에 박지 않는다).
+  deepen: { title: string; summary: string; fields: { key: string; label: string; help: string }[] };
   step: {
     // ⑤ 지난 한 걸음 결산 — 2회차부터. 이 블록 위에 지난 회차 한 걸음을 되비춘다(§6).
     lastStep?: { key: string; label: string; options: readonly string[]; note: CheckinField; mirrorEmpty: string };
@@ -48,6 +54,10 @@ export type CheckinSession = {
     confidence: { key: string; label: string; help: string; min: number; max: number; leftLabel: string; rightLabel: string };
     facilitatorBox: {
       title: string;
+      summary: string;
+      // 대부분 건너뛰는 칸이라 기본은 접힘. 다만 마지막 회차의 세미나 제안은 다음 기수 설계의 최대 수확처라
+      // 7회차만 true 로 연다 — 회차별 설정으로 두지 않으면 그때 하드코딩하게 된다.
+      defaultOpen?: boolean;
       need: CheckinField;
       suggestion: CheckinField;
       suggestionAnon: { key: string; label: string };

@@ -38,6 +38,19 @@ export const CHECKIN_SESSION_2 = {
       options: ['일', '재정', '관계', '건강', '기여'],
       line: { key: 'future_line', label: '5년 뒤 그 영역의 나는', placeholder: '동네에서 꼭 들러야 하는 가게를 운영하고 있다' },
     },
+    // ①-b 목적을 찾는 세 질문 (신규·선택·기본 펼침). 책의 논리 순서(세 질문 → 교차점 → 한 문장)대로 ② 앞에 둔다.
+    //   은사·부르심 해설은 카드에 넣지 않는다 — 그 대목은 책과 인도자 스크립트가 맡는다.
+    //   갈무리는 성찰 카드이지 묵상집이 아니고, 이 카드는 이틀 뒤 혼자 열린다.
+    purpose: {
+      title: '목적을 찾는 세 질문',
+      badge: '선택',
+      help: "세 질문이 겹치는 자리에, 나의 목적이 있습니다. 한 줄씩이면 충분해요.\n아래 '인생을 이끌어갈 하나의 문장'의 재료가 됩니다.",
+      fields: [
+        { key: 'purpose_alive', label: '내가 할 때 가장 살아 있다고 느끼는 것은 무엇인가?', placeholder: '누군가에게 설명해 줄 때' },
+        { key: 'purpose_ache', label: '내 마음이 가장 아파하는 문제는 무엇인가?', placeholder: '재능이 있는데 기회를 못 만난 사람들' },
+        { key: 'purpose_fit', label: '나의 경험과 재능이 가장 잘 쓰일 수 있는 곳은 어디인가?', help: '잘해온 일만 아니라, 실패했던 일도 재료가 됩니다.' },
+      ],
+    },
     // ② 인생을 이끌어갈 하나의 문장 (신규·필수). key 를 1회차 존재가치(identity_sentence)와 구분한다.
     identity: {
       key: 'identity_statement',
@@ -60,6 +73,7 @@ export const CHECKIN_SESSION_2 = {
   deepen: {
     // 제목·동작 1회차와 동일(접힘 기본). letter_line 키를 1회차와 같게 써 거울 구조를 보인다(행·사진경로가 회차별로 갈려 충돌 없음).
     title: '깊은 생각 갈무리하기',
+    summary: '5년 뒤의 한 장면 · 미래에게서 온 편지',
     fields: [
       { key: 'future_scene', label: '5년 뒤의 하루를 그려 볼 때, 가장 선명하게 보인 한 장면은 무엇이었나요? (책 74~77쪽)', help: '어떤 방, 누구의 얼굴, 어떤 소리여도 좋습니다.' },
       { key: 'letter_line', label: '미래의 내가 지금의 나에게 보낸 편지를 써 보세요.', help: '만약 종이에 이미 썼다면 그 내용 중 가장 마음에 남는 한 줄만 옮겨 주세요. 종이에 쓴 편지는 아래에서 촬영해 첨부하셔도 됩니다. (책 85~87쪽)' },
@@ -108,7 +122,9 @@ export const CHECKIN_SESSION_2 = {
       rightLabel: '완전 성공',
     },
     facilitatorBox: {
-      title: '선택 · 하고 싶은 말이 있을 때만',
+      title: '인도자에게 하고 싶은 말',
+      summary: '부탁 · 세미나 제안 · 연락 요청',
+      defaultOpen: false, // 7회차만 true — 마지막 회차의 세미나 제안은 다음 기수 설계의 최대 수확처다.
       need: { key: 'need', label: '인도자에게 부탁하고 싶은 것이 있나요?' },
       suggestion: { key: 'suggestion', label: '세미나에 대해 바라는 점이 있나요?' },
       suggestionAnon: { key: 'suggestion_anon', label: '이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.' },

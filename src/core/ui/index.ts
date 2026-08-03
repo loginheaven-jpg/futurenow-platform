@@ -13,3 +13,4 @@ export { StickyScaleHeader } from './StickyScaleHeader';
 export { OtpInput } from './OtpInput';
 export { Stepper } from './Stepper';
 export { ListRow } from './ListRow';
+export { Disclosure } from './Disclosure';

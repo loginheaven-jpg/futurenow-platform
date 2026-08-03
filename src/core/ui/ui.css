@@ -384,3 +384,92 @@
   color: var(--color-text-muted);
   flex: 0 0 auto;
 }
+
+/* ── Disclosure (접힘 블록) ────────────────────────────
+   CC_GUIDE_checkin_session2_spec §3-2. 줄 전체가 버튼 · 상태를 글자로 말한다.
+   여백은 위아래 대칭(--space-6) — 비대칭이면 다음 문항이 상자에 달라붙는다. */
+.ui-disc {
+  border: var(--border-hair) solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface-1);
+  overflow: hidden;
+  margin: var(--space-6) 0;
+}
+.ui-disc--last {
+  margin-bottom: 0;
+}
+.ui-disc__head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  /* 지휘부 규격 52px — --tap-min(44) 보다 크게 잡아 '누를 수 있는 줄'임을 몸으로 알리는 값 */
+  min-height: 52px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  background: var(--color-surface-2);
+  border: 0;
+  border-bottom: var(--border-hair) solid transparent;
+  color: var(--color-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.ui-disc__head:hover {
+  background: var(--color-surface-sunken);
+}
+.ui-disc__head:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+/* 본문과의 경계는 열렸을 때만 */
+.ui-disc[data-open='true'] .ui-disc__head {
+  border-bottom-color: var(--color-border);
+}
+.ui-disc__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.ui-disc__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.ui-disc__badge {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.ui-disc__summary {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.ui-disc__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+.ui-disc__caret {
+  display: inline-block;
+  transition: transform 0.18s ease;
+  font-size: 11px;
+}
+.ui-disc[data-open='true'] .ui-disc__caret {
+  transform: rotate(180deg);
+}
+.ui-disc__body {
+  padding: var(--space-4);
+}
+.ui-disc[data-open='false'] .ui-disc__body {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-disc__caret {
+    transition: none;
+  }
+}

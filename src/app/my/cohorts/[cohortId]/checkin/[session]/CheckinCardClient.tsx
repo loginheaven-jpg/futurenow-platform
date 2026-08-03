@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CheckinPhoto } from '@/contracts';
-import { Button, CheckRow, MultiChoiceChips, TextArea } from '@/core/ui';
+import { Button, CheckRow, Disclosure, MultiChoiceChips, TextArea } from '@/core/ui';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { buildCheckinRead, readSelfHighlights } from '@/instruments/futurenow/checkin/readModel';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
@@ -89,7 +89,6 @@ export function CheckinCardClient({
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [deepOpen, setDeepOpen] = useState(initialFlags.deepOpened);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openMarked = useRef(false);
 
@@ -231,6 +230,7 @@ export function CheckinCardClient({
   const requiredTotal = copy.requiredTotal;
   const desire = copy.today.desire;
   const futureArea = copy.today.futureArea;
+  const purpose = copy.today.purpose;
   const identity = copy.today.identity;
   const lastStep = copy.step.lastStep;
   const share = copy.step.share;
@@ -281,6 +281,23 @@ export function CheckinCardClient({
         </div>
       ) : null}
 
+      {/* ①-b 목적을 찾는 세 질문 — 기본 펼침. 필수가 아님은 '선택' 뱃지가 알린다(빈 칸 셋이 펼쳐져 있으면 필수로 읽힌다).
+          기본 펼침이라 열림 여부에 의미가 없으므로 계측하지 않는다. */}
+      {purpose ? (
+        <Disclosure title={purpose.title} badge={purpose.badge} defaultOpen>
+          <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line', marginBottom: 'var(--space-4)' }}>{purpose.help}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {purpose.fields.map((f) => (
+              <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div style={fieldLabel}>{f.label}</div>
+                {f.help ? <div className="t-caption" style={help}>{f.help}</div> : null}
+                <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} placeholder={f.placeholder} rows={2} ariaLabel={f.label} />
+              </div>
+            ))}
+          </div>
+        </Disclosure>
+      ) : null}
+
       {/* ② 정체성 문장 — 위에 지난 회차 문장 되비추기(mirror·prior 있을 때만) */}
       {identity.mirror && prior?.identity ? <Mirror caption="지난 시간에 쓰신 문장" value={prior.identity} /> : null}
       <Field label={identity.label} helpText={identity.help}>
@@ -293,34 +310,26 @@ export function CheckinCardClient({
         <input value={str('mood_custom')} onChange={(e) => setAnswer('mood_custom', e.target.value)} onBlur={flushSave} placeholder={copy.today.moodCustom.placeholder} aria-label={copy.today.moodCustom.placeholder} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
       </Field>
 
-      {/* 1면 하단 · 심화(접힘 기본 · 제목 클릭으로 펼침) */}
-      <div style={{ marginBottom: 'var(--space-5)' }}>
-        {/* 펼침 컨트롤 — 테두리 박스 + 큰 화살표로 클릭 유도 */}
-        <button
-          type="button"
-          onClick={() => { const n = !deepOpen; setDeepOpen(n); if (n && !flags.deepOpened) setFlag('deepOpened', true); }}
-          aria-expanded={deepOpen}
-          style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 'var(--space-1)', padding: 'var(--space-3) var(--space-4)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-surface-1)', cursor: 'pointer', textAlign: 'left' }}
-        >
-          <span className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{copy.deepen.title}</span>
-          {/* 우측방향 화살표 — 텍스트 바로 옆·두껍게(펼침 유도) */}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-primary)', flexShrink: 0 }} aria-hidden="true">
-            <polyline points="9 6 15 12 9 18" />
-          </svg>
-        </button>
-        {deepOpen ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
-            {copy.deepen.fields.map((f) => (
-              <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <div style={fieldLabel}>{f.label}</div>
-                <div className="t-caption" style={help}>{f.help}</div>
-                <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
-                {f.key === 'letter_line' ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
+      {/* 1면 하단 · 심화(접힘 기본). 공용 Disclosure — 줄 전체가 버튼이고 상태를 글자로 말한다.
+          접힘 블록이므로 '선택' 뱃지를 두지 않는다(ADR-82 유지 — 접혀 있다는 사실 자체가 신호). */}
+      <Disclosure
+        title={copy.deepen.title}
+        summary={copy.deepen.summary}
+        defaultOpen={initialFlags.deepOpened}
+        onToggle={(open) => { if (open && !flags.deepOpened) setFlag('deepOpened', true); }}
+        last
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          {copy.deepen.fields.map((f) => (
+            <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <div style={fieldLabel}>{f.label}</div>
+              <div className="t-caption" style={help}>{f.help}</div>
+              <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
+              {f.key === 'letter_line' ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}
+            </div>
+          ))}
+        </div>
+      </Disclosure>
 
       {/* 2면 · 한 걸음 (지난 걸음 결산 → 다음 걸음) */}
       <div style={{ paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
@@ -380,9 +389,13 @@ export function CheckinCardClient({
           </div>
         </Field>
 
-        {/* 인도자에게(선택) */}
-        <div style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-5)' }}>
-          <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{copy.wrap.facilitatorBox.title}</div>
+        {/* 인도자에게(선택) — 대부분 건너뛰는 칸이라 접는다. 접힘 블록이므로 뱃지 없음.
+            열림 여부는 계측하지 않는다(deep_opened 는 심화 전용). */}
+        <Disclosure
+          title={copy.wrap.facilitatorBox.title}
+          summary={copy.wrap.facilitatorBox.summary}
+          defaultOpen={copy.wrap.facilitatorBox.defaultOpen ?? false}
+        >
           <Field label={copy.wrap.facilitatorBox.need.label}>{textInput('need')}</Field>
           <Field label={copy.wrap.facilitatorBox.suggestion.label}>{textInput('suggestion')}</Field>
           <CheckRow label={copy.wrap.facilitatorBox.suggestionAnon.label} checked={flags.suggestionAnon} onChange={(v) => setFlag('suggestionAnon', v)} />
@@ -390,7 +403,7 @@ export function CheckinCardClient({
             <CheckRow label={copy.wrap.facilitatorBox.contactRequest.label} checked={flags.contactRequest} onChange={(v) => setFlag('contactRequest', v)} />
             <div className="t-caption" style={help}>{copy.wrap.facilitatorBox.contactRequest.help}</div>
           </div>
-        </div>
+        </Disclosure>
 
         {/* 마지막 칸(강조·accent) */}
         <div style={{ padding: 'var(--space-5)', background: 'var(--color-accent-soft, var(--color-surface-2))', borderRadius: 'var(--radius)', marginBottom: 'var(--space-5)' }}>

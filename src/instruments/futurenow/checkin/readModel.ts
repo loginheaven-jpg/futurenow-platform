@@ -98,6 +98,14 @@ export function buildCheckinRead(
     pushText(out, futureArea.line.label, text(answers, futureArea.line.key));
   }
 
+  // ①-b 목적을 찾는 세 질문(2회차~) — ② 의 재료라 ② 앞에 둔다. 카드 순서를 그대로 따른다.
+  const purpose = copy.today.purpose;
+  if (purpose) {
+    const purposeBlocks: ReadBlock[] = [];
+    for (const f of purpose.fields) pushText(purposeBlocks, f.label, text(answers, f.key));
+    if (purposeBlocks.length > 0) out.push({ kind: 'group', title: purpose.title, blocks: purposeBlocks });
+  }
+
   // ② 정체성 문장. 되비추기(mirror)는 '지금 쓰는 것을 돕는' 작성 보조라 열람에는 싣지 않는다(ADR-86).
   pushText(out, copy.today.identity.label, text(answers, copy.today.identity.key));
 
