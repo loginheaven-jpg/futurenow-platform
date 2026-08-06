@@ -74,28 +74,31 @@ describe('confidence 는 필수가 아니다 — 제출을 막지 않는다', ()
   }
 });
 
-describe('결측 라벨은 레지스트리 문안 원문이다 — 합성하지 않는다(새 문안 0)', () => {
-  it('1회차 라벨이 화면 문구와 문자 단위로 같다', () => {
-    const c = CHECKIN_SESSION_1;
-    const labels = c.missingLabels({});
-    expect(labels).toContain(c.today.pairText.from.label);
-    expect(labels).toContain(c.today.pairText.to.label);
-    expect(labels).toContain(c.today.identity.label);
-    expect(labels).toContain(c.today.mood.label);
-    expect(labels).toContain(c.step.what.label);
-    expect(labels).toContain(c.step.when.label);
-    expect(labels).toContain(c.wrap.selfNote.label);
-  });
+// required 선언에는 라벨이 **문자열로 다시 적혀 있다**. 그래서 문안 쪽 라벨만 고치고 선언을 안 고치면
+// 두 곳이 어긋나 이중 진실이 된다 — 리터럴 잠금(ADR-90)은 baseline 대비 '변경'만 보므로 이 어긋남은 못 잡는다.
+//
+// 슬롯 이름을 열거하면 회차가 늘 때마다 손으로 추가해야 하고 그러다 빠진다(실제로 2회차가 빠져 있었다).
+// 그래서 **'결측 라벨이 그 회차 문안 어딘가에 실제로 있는가'** 로 일반화한다 — 4~7회차가 자동으로 덮인다.
+function copyStrings(node: unknown, out = new Set<string>()): Set<string> {
+  if (typeof node === 'string') out.add(node);
+  else if (Array.isArray(node)) for (const v of node) copyStrings(v, out);
+  else if (node && typeof node === 'object') for (const v of Object.values(node)) copyStrings(v, out);
+  return out; // 함수(filledCount·counter)는 걸러진다
+}
 
-  it('3회차 라벨이 화면 문구와 문자 단위로 같다', () => {
-    const c = CHECKIN_SESSION_3;
-    const labels = c.missingLabels({});
-    expect(labels).toContain(c.today.areaPick.label);
-    expect(labels).toContain(c.today.areaPick.line.label);
-    expect(labels).toContain(c.today.pairText.from.label);
-    expect(labels).toContain(c.today.pairText.to.label);
-    expect(labels).toContain(c.step.lastStep.label);
-    expect(labels).toContain(c.wrap.selfNote.label);
+describe('결측 라벨은 레지스트리 문안 원문이다 — 합성하지 않는다(새 문안 0)', () => {
+  for (const c of ALL) {
+    it(`${c.sessionNo}회차: 모든 결측 라벨이 그 회차 문안에 실제로 있다`, () => {
+      const inCopy = copyStrings(c);
+      const orphans = c.missingLabels({}).filter((l) => !inCopy.has(l));
+      expect(orphans, `문안에 없는 라벨(이중 진실): ${JSON.stringify(orphans)}`).toEqual([]);
+    });
+  }
+
+  it('일반화가 실제로 동작한다 — 문안에 없는 라벨은 잡힌다', () => {
+    const inCopy = copyStrings(CHECKIN_SESSION_2);
+    expect(inCopy.has('오늘 그린 다섯 영역 중, 가장 가슴이 뛴 하나를 옮겨 주세요. (책 69~73쪽)')).toBe(true);
+    expect(inCopy.has('없는 문안')).toBe(false);
   });
 });
 
