@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { MemberHome } from '@/app/_screens/MemberHome';
+import { CheckinPrompt } from '@/app/_screens/CheckinPrompt';
 import { ConsentGate } from '@/app/_consent/ConsentGate';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
 import { createServerContext } from '@/core/supabase/server';
@@ -27,9 +28,34 @@ export default async function MemberHomePage() {
   // 운영자 로그인 알림(정합 마감): admin 은 /home 착지(loginOutcome 전원 /home)이므로 승인 대기 건수를 '본부' 카드에 노출(A3 배너를 홈에서도).
   const pendingCoachApps = me.role === 'admin' ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
 
+  // 복귀 안내(ADR-91 B) — 열린 회차가 있고 아직 제출 안 한 차수 하나에 대해서만.
+  //   노출 조건: 첫 진입(prompt_count 0) 또는 마감 6시간 전 이후(prompt_count 1). 상한 2는 RPC 가 강제.
+  //   비용: 대상이 있을 때만 getMyCheckin·listCohortSessions 각 1회가 는다(my_cohorts 가 prompt_count 를
+  //   반환하지 않아 불가피하다). 11명 규모라 감수한다 — 기수가 늘면 그때 RPC 에 얹는다(B3).
+  //   /my/cohorts 에는 두지 않는다: 차수가 하나면 차수 홈으로 리다이렉트하므로 실효 지점이 /home 이다.
+  const open = cohorts.find((c) => c.openSessionNo != null && !c.openSessionSubmitted);
+  let prompt: { cohortId: string; sessionNo: number; hasContent: boolean; shouldPrompt: boolean } | null = null;
+  if (open && open.openSessionNo != null) {
+    const [row, sessions] = await Promise.all([
+      ctx.getMyCheckin(open.cohortId, open.openSessionNo).catch(() => null),
+      ctx.listCohortSessions(open.cohortId).catch(() => []),
+    ]);
+    const closesAt = sessions.find((s) => s.sessionNo === open.openSessionNo)?.closesAt;
+    // eslint-disable-next-line react-hooks/purity
+    const finalWindow = closesAt ? Date.now() >= new Date(closesAt).getTime() - 6 * 60 * 60 * 1000 : false;
+    const count = row?.promptCount ?? 0;
+    prompt = {
+      cohortId: open.cohortId,
+      sessionNo: open.openSessionNo,
+      hasContent: open.openSessionHasContent,
+      shouldPrompt: count === 0 || (count === 1 && finalWindow),
+    };
+  }
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="퓨처나우" subtitle="내 자리" homeHref="/home" action={<HeaderActions homeHref="/home" />} />
+      {prompt ? <CheckinPrompt {...prompt} /> : null}
       <MemberHome greetingName={greetingName} cohorts={cohorts} role={me.role} pendingCoachApps={pendingCoachApps} />
     </div>
   );

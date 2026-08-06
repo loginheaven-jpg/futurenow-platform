@@ -3,20 +3,26 @@
 // 코어는 이 파일을 모른다(인스트루먼트 소유). 채점·AI 입력 미배선 — 화면 렌더용 문자열만.
 // ADR-85: 세션 레지스트리 형태(CheckinSession)로 통일. 필드명 identity(구 identitySentence)·판정 함수 내장.
 import type { CheckinSession } from './index';
+import { countFilled, missingIn, missingKeys, type RequiredGroup } from './required';
 
-// 필수 칸 판정(v2 · 5칸): identity_sentence · (desire_from 그리고 desire_to) · mood(1+) · (step_what 그리고 step_when) · self_note.
-// confidence 는 세지 않는다. 옮겨 적기라 창작 부담 아님.
-function filledCount1(answers: Record<string, unknown>): number {
-  const has = (k: string) => typeof answers[k] === 'string' && (answers[k] as string).trim() !== '';
-  const mood = Array.isArray(answers.mood) && (answers.mood as unknown[]).length > 0;
-  let n = 0;
-  if (has('identity_sentence')) n += 1;
-  if (has('desire_from') && has('desire_to')) n += 1;
-  if (mood) n += 1;
-  if (has('step_what') && has('step_when')) n += 1;
-  if (has('self_note')) n += 1;
-  return n;
-}
+// 필수 5칸(v2): 갈망 쌍 · 존재가치 · 마음 · 다음 걸음 쌍 · 나에게.
+//   confidence 는 세지 않는다(옮겨 적기가 아니라 판단이라 창작 부담이 다르다).
+//   라벨은 아래 문안과 **같은 문자열을 참조**한다 — 결측 안내가 이걸 그대로 읽어 주므로 새 문안이 생기지 않는다.
+//   ADR-91: filledCount·missingLabels·missingKeys 가 전부 이 선언에서 파생된다.
+const REQUIRED_1: RequiredGroup[] = [
+  // 쌍 문항은 비어 있는 쪽의 **라벨 원문**만 낸다(§8-5). 합성하면 새 문안이 생긴다.
+  { fields: [
+    { key: 'desire_from', label: '바꾸기 전' },
+    { key: 'desire_to', label: '바꾼 뒤' },
+  ] },
+  { fields: [{ key: 'identity_sentence', label: '오늘 완성한 존재가치 선언문을 그대로 옮겨 주세요. (책 53~58쪽)' }] },
+  { kind: 'list', fields: [{ key: 'mood', label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?' }] },
+  { fields: [
+    { key: 'step_what', label: '무엇을 하시겠어요?' },
+    { key: 'step_when', label: '언제, 어디서 하시겠어요?' },
+  ] },
+  { fields: [{ key: 'self_note', label: '오늘 여기까지 온 나에게, 한마디만 건네주세요.' }] },
+];
 
 export const CHECKIN_SESSION_1 = {
   sessionNo: 1,
@@ -88,7 +94,7 @@ export const CHECKIN_SESSION_1 = {
     confidence: {
       key: 'confidence',
       label: '이 한 걸음, 다음 시간까지 어느 정도로 해내실까요?',
-      help: '솔직하게요. 낮게 답하셔도 아무 일 없습니다.',
+      help: '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.',
       min: 0,
       max: 10,
       leftLabel: '아직 자신 없음',
@@ -113,7 +119,7 @@ export const CHECKIN_SESSION_1 = {
       key: 'self_note',
       label: '오늘 여기까지 온 나에게, 한마디만 건네주세요.',
       help: '꼭 칭찬이 아니어도 됩니다. 지금 나에게 필요한 말이면 됩니다.',
-      placeholder: '괜찮아, 오늘은 여기까지만 해도 돼',
+      placeholder: '오늘 꺼내길 잘했다',
     },
   },
   save: {
@@ -127,8 +133,10 @@ export const CHECKIN_SESSION_1 = {
     toHome: '차수 홈으로',
     edit: '고쳐 쓰기',
   },
-  filledCount: filledCount1,
-  requiredTotal: 5,
+  filledCount: (a) => countFilled(REQUIRED_1, a),
+  requiredTotal: REQUIRED_1.length,
+  missingLabels: (a) => missingIn(REQUIRED_1, a),
+  missingKeys: (a) => missingKeys(REQUIRED_1, a),
   // 인도자 문장 모아 보기 열(§5-6): 갈망(쌍) · 존재가치 · 기억.
   summaryFields: [
     { label: '갈망', from: 'desire_from', to: 'desire_to' },

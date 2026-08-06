@@ -168,3 +168,31 @@ describe('readModel — 신규 7키가 본인·인도자 모두에게 나온다'
     expect(t).toContain('6');
   });
 });
+
+// ADR-91 C — 마음 낱말은 3회차부터만 좁힌다.
+describe('마음 낱말 — 목록의 한계를 가리키는 낱말로(3회차부터)', () => {
+  it("6번째가 '딱 맞는 말이 없음'이고 배타를 유지한다", () => {
+    expect(c.today.mood.options[5]).toBe('딱 맞는 말이 없음');
+    expect(c.today.mood.exclusive).toBe('딱 맞는 말이 없음');
+    expect(c.today.mood.options).not.toContain('아직 모르겠음');
+  });
+
+  it('고르면 직접 쓰기 안내가 바뀐다(강제하지 않는다 — 비워도 필수 충족)', () => {
+    expect(c.today.moodCustom.promptPlaceholder).toBe('그럼, 지금 마음에 가까운 말을 한마디로 적어 주세요');
+    // 마음은 칩 하나만 있어도 필수가 충족된다 — 직접 쓰기는 세지 않는다.
+    expect(c.filledCount({ ...ANSWERS_3, mood: ['딱 맞는 말이 없음'], mood_custom: '' })).toBe(6);
+  });
+});
+
+// ADR-91 D — 3회차만 지난 걸음 보조문구에서 허락절을 뺀다(1·2회차는 그대로).
+describe('완충 문구 — 3회차 지난 걸음', () => {
+  it('허락절 없이 용도만 남는다', () => {
+    expect(c.step.lastStep.note.help).toBe('여기 정직하게 적는 것이 다음 한 주를 바꿉니다.');
+  });
+  it('실행 자신감은 용도 문법이다', () => {
+    expect(c.wrap.confidence.help).toContain('가장 쓸모 있습니다');
+  });
+  it('나에게 한마디 예시가 이 회차 것이다', () => {
+    expect(c.wrap.selfNote.placeholder).toBe('오늘 본 게 아프긴 했는데, 안 봤으면 몰랐겠지');
+  });
+});

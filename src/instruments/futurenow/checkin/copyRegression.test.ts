@@ -34,13 +34,50 @@ describe('1·2회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0',
   }
 
   // 증가분은 허용하되 눈에 보이게 남긴다 — 몰래 늘지 않도록.
-  it('추가된 문자열은 되비추기 캡션 이관분뿐이다', () => {
-    const added = [...koreanLiterals('session2')].filter((s) => !baseline.session2.includes(s));
-    expect(added.sort()).toEqual(['지난 시간에 쓰신 문장', '지난 시간의 한 걸음'].sort());
+  for (const file of ['session1', 'session2'] as const) {
+    it(`${file}: 스냅샷에 없는 문자열이 새로 생기지 않았다`, () => {
+      const added = [...koreanLiterals(file)].filter((s) => !baseline[file].includes(s));
+      expect(added).toEqual([]);
+    });
+  }
+});
+
+// ADR-91 D — 완충 문구를 '허락'에서 '용도'로 바꾼 교체. 실측이 근거를 지웠기 때문이다:
+//   실행 자신감 값은 2·5·7·8(평균 5.5)로 부풀림이 없었고, self_note placeholder 를 그대로 베낀 사람은 0명이었다.
+//   없애는 것이 아니라 문법을 바꾼다 — 정직성 확보 효과는 같고 자세가 반대다.
+//   이 교체가 baseline 을 깨뜨렸으므로 스냅샷을 재생성했고, 되돌아가지 않도록 여기서 못 박는다.
+describe('완충 문구 교체가 되돌아가지 않는다', () => {
+  const REPLACED = '솔직하게요. 낮게 답하셔도 아무 일 없습니다.';
+  const NOW = '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.';
+
+  for (const file of ['session1', 'session2'] as const) {
+    it(`${file}: 실행 자신감 보조문구가 용도 문법으로 바뀌었다`, () => {
+      const lits = koreanLiterals(file);
+      expect(lits.has(REPLACED)).toBe(false);
+      expect(lits.has(NOW)).toBe(true);
+    });
+  }
+
+  // self_note 예시는 회차마다 다르다 — label 은 이미 회차별인데 예시만 고정이었던 설계 누락을 메운다.
+  //   멈춤을 모델링하지 않고 정직을 모델링한다(강요된 밝음도 아니다).
+  it('self_note 예시가 회차마다 다르다', () => {
+    const old = '괜찮아, 오늘은 여기까지만 해도 돼';
+    expect(koreanLiterals('session1').has(old)).toBe(false);
+    expect(koreanLiterals('session2').has(old)).toBe(false);
+    expect(koreanLiterals('session1').has('오늘 꺼내길 잘했다')).toBe(true);
+    expect(koreanLiterals('session2').has('아직 흐릿해도, 방향은 잡았다')).toBe(true);
   });
 
-  it('1회차는 추가분도 없다', () => {
-    const added = [...koreanLiterals('session1')].filter((s) => !baseline.session1.includes(s));
-    expect(added).toEqual([]);
+  // §6-2: 완충을 일괄 제거하지 않는다. 5주차에 실제로 무너진 사람이 여는 문이라 여기까지 딱딱해지면 소수를 잃는다.
+  it('남겨 두기로 한 완충은 그대로다', () => {
+    for (const file of ['session1', 'session2'] as const) {
+      const lits = koreanLiterals(file);
+      expect(lits.has('꼭 칭찬이 아니어도 됩니다. 지금 나에게 필요한 말이면 됩니다.'), file).toBe(true);
+      expect(lits.has('짧은 안부 연락입니다. 코칭 세션이 아닙니다.'), file).toBe(true);
+      expect(lits.has('이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.'), file).toBe(true);
+    }
+    // 1·2회차 마음 낱말은 바꾸지 않는다(C는 3회차만) — 저장된 답이 화면에서 지워지지 않게.
+    expect(koreanLiterals('session1').has('아직 모르겠음')).toBe(true);
+    expect(koreanLiterals('session2').has('아직 모르겠음')).toBe(true);
   });
 });

@@ -100,6 +100,7 @@ export default async function CheckinCardPage({
           stepPrivate: existing?.stepPrivate ?? false,
         }}
         alreadyOpened={existing?.firstOpenedAt != null}
+        hasContent={(existing?.hasContent ?? false) && existing?.submittedAt == null}
         closed={closed}
         prior={prior}
         initialMode={initialMode}

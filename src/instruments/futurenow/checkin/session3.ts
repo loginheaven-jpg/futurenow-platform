@@ -6,23 +6,30 @@
 //     확정되면 이 파일의 label 문자열에 문장 끝 괄호로 더한다. 대상 다섯 곳:
 //     gap_area · stuck_named · identity_gap · pairText(습관 짝) · speech_habit
 import type { CheckinSession } from './index';
+import { countFilled, missingIn, missingKeys, type RequiredGroup } from './required';
 
 // 필수 6칸 — 영역쌍 · 습관짝 · 마음 · 지난걸음 · 다음걸음쌍 · 나에게.
 //   stuck_named(서술)·confidence·last_step_note·심화 두 칸은 세지 않는다.
 //   이중 STEP 이라 옮겨 적기가 둘이어서 필수가 하나 늘 자리인데, 그 증가분을 서술 질문에서 회수한다 —
 //   옮겨 적기는 이미 쓴 것의 이관이라 값이 싸고, 서술은 비싸기 때문이다.
-function filledCount3(answers: Record<string, unknown>): number {
-  const has = (k: string) => typeof answers[k] === 'string' && (answers[k] as string).trim() !== '';
-  const mood = Array.isArray(answers.mood) && (answers.mood as unknown[]).length > 0;
-  let n = 0;
-  if (has('gap_area') && has('gap_want')) n += 1;
-  if (has('habit_stop') && has('habit_start')) n += 1;
-  if (mood) n += 1;
-  if (has('last_step_result')) n += 1;
-  if (has('step_what') && has('step_when')) n += 1;
-  if (has('self_note')) n += 1;
-  return n;
-}
+//   ADR-91: filledCount·missingLabels·missingKeys 가 전부 이 선언에서 파생된다.
+const REQUIRED_3: RequiredGroup[] = [
+  { fields: [
+    { key: 'gap_area', label: '오늘 다섯 영역에 점수를 매기셨지요. 그중 지금 가장 간절한 영역 하나를 골라 주세요.' },
+    { key: 'gap_want', label: '그 영역에서 지금 가장 바라는 것 한 가지는' },
+  ] },
+  { fields: [
+    { key: 'habit_stop', label: '줄이거나 없애기로 한 것' },
+    { key: 'habit_start', label: '그 자리에 들이기로 한 것' },
+  ] },
+  { kind: 'list', fields: [{ key: 'mood', label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?' }] },
+  { fields: [{ key: 'last_step_result', label: '지난 한 걸음은 어떻게 되었나요?' }] },
+  { fields: [
+    { key: 'step_what', label: '무엇을 하시겠어요?' },
+    { key: 'step_when', label: '언제, 어디서 하시겠어요?' },
+  ] },
+  { fields: [{ key: 'self_note', label: '오늘 자기를 정직하게 들여다본 나에게, 한마디만 건네주세요.' }] },
+];
 
 export const CHECKIN_SESSION_3 = {
   sessionNo: 3,
@@ -81,11 +88,17 @@ export const CHECKIN_SESSION_3 = {
       key: 'mood',
       label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?',
       help: '두 개까지 고르실 수 있습니다.',
-      options: ['뜨끔함', '홀가분함', '조급함', '담담함', '해볼 만함', '아직 모르겠음'],
-      exclusive: '아직 모르겠음',
+      // ADR-91 C: 6번째를 '아직 모르겠음'→'딱 맞는 말이 없음'으로 좁힌다(3회차부터).
+      //   실측(제출된 1회차 6/7)에서 그 낱말이 압도적인데 직접 쓰기를 쓴 사람은 0명이었다.
+      //   '내 마음을 모르겠다'와 '이 목록에 맞는 게 없다'가 한데 담겨 **가장 싼 탈출구**로 쓰인 것으로 본다.
+      //   뒤엣것으로 좁히면 문장이 아니라 목록의 한계를 가리키므로 자연히 직접 쓰기로 눈이 간다.
+      //   1·2회차는 바꾸지 않는다 — 이미 저장된 답의 값이 옵션에서 사라지면 그 답이 화면에서 지워진다.
+      options: ['뜨끔함', '홀가분함', '조급함', '담담함', '해볼 만함', '딱 맞는 말이 없음'],
+      exclusive: '딱 맞는 말이 없음', // 목록이 안 맞는다면서 다른 낱말을 함께 고르는 것은 모순이라 배타 유지
       max: 2,
     },
-    moodCustom: { key: 'mood_custom', placeholder: '직접 쓰기 (선택)' },
+    // 6번째를 고르면 placeholder 가 바뀐다(강제하지 않는다 — 비워도 필수는 충족).
+    moodCustom: { key: 'mood_custom', placeholder: '직접 쓰기 (선택)', promptPlaceholder: '그럼, 지금 마음에 가까운 말을 한마디로 적어 주세요' },
   },
   deepen: {
     // 심화에는 묶음 이정표를 두지 않는다 — 요약 줄이 이미 두 갈래임을 말한다.
@@ -112,7 +125,7 @@ export const CHECKIN_SESSION_3 = {
       key: 'last_step_result',
       label: '지난 한 걸음은 어떻게 되었나요?',
       options: ['했습니다', '조금 했습니다', '잊고 지냈습니다', '하려다 막혔습니다'],
-      note: { key: 'last_step_note', label: '한 줄만 덧붙여 주세요', help: '지키지 못했어도 괜찮습니다. 여기 정직하게 적는 것이 다음 한 주를 바꿉니다.' },
+      note: { key: 'last_step_note', label: '한 줄만 덧붙여 주세요', help: '여기 정직하게 적는 것이 다음 한 주를 바꿉니다.' },
       mirror: {
         label: '지난 시간의 한 걸음',
         keys: ['step_what', 'step_when'],
@@ -146,7 +159,7 @@ export const CHECKIN_SESSION_3 = {
     confidence: {
       key: 'confidence',
       label: '이 한 걸음, 다음 시간까지 어느 정도로 해내실까요?',
-      help: '솔직하게요. 낮게 답하셔도 아무 일 없습니다.',
+      help: '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.',
       min: 0,
       max: 10,
       leftLabel: '아직 자신 없음',
@@ -170,7 +183,7 @@ export const CHECKIN_SESSION_3 = {
       key: 'self_note',
       label: '오늘 자기를 정직하게 들여다본 나에게, 한마디만 건네주세요.',
       help: '꼭 칭찬이 아니어도 됩니다. 지금 나에게 필요한 말이면 됩니다.',
-      placeholder: '괜찮아, 오늘은 여기까지만 해도 돼',
+      placeholder: '오늘 본 게 아프긴 했는데, 안 봤으면 몰랐겠지',
     },
   },
   save: {
@@ -184,8 +197,10 @@ export const CHECKIN_SESSION_3 = {
     toHome: '차수 홈으로',
     edit: '고쳐 쓰기',
   },
-  filledCount: filledCount3,
-  requiredTotal: 6,
+  filledCount: (a) => countFilled(REQUIRED_3, a),
+  requiredTotal: REQUIRED_3.length,
+  missingLabels: (a) => missingIn(REQUIRED_3, a),
+  missingKeys: (a) => missingKeys(REQUIRED_3, a),
   // 나눔 후보 열(지휘부 확정 2026-08-03) — **나눌 수 있는 문장만** 넣는다.
   //   범주 낱말(gap_area)과 자기개시가 깊은 문항(stuck_named·identity_gap)은 제외한다.
   //   비어 있을 가능성은 배제 사유가 아니다 — 인도자가 훑어 고르는 도구이므로 빈 칸은 그냥 빈 칸이다.

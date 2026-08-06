@@ -52,7 +52,13 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   let checkinEdit = true;
   if (c.openSessionNo != null) {
     if (c.openSessionSubmitted) { checkinLine = '다 적으셨습니다'; checkinBtn = '적으신 것 보기'; checkinEdit = false; }
-    else if (c.openSessionHasContent) { checkinLine = '쓰시던 자리가 남아 있어요'; checkinBtn = '이어 쓰기'; }
+    // ADR-91 B: '무엇이 남았는지'를 더한다. 실측의 미완성 제출은 '돌아올 이유'가 없어서 생겼다.
+    else if (c.openSessionHasContent) {
+      const copy = getCheckinSession(c.openSessionNo);
+      const left = copy ? copy.requiredTotal - copy.filledCount((openCheckin?.answers ?? {}) as Record<string, unknown>) : 0;
+      checkinLine = left > 0 ? `쓰시던 자리가 남아 있어요 · ${left}칸 남음` : '쓰시던 자리가 남아 있어요';
+      checkinBtn = '이어 쓰기';
+    }
     else { checkinLine = openRow ? `${monthDay(openRow.closesAt)} 밤까지 열려 있어요` : ''; checkinBtn = '쓰러 가기'; }
   }
 

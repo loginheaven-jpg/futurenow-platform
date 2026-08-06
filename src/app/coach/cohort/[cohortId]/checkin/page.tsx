@@ -64,7 +64,9 @@ export default async function CoachCheckinPage({
       status,
       late: !!late,
       contact: !!ck?.contactRequest,
-      hasRow: !!ck,
+      // ADR-91 B4: 복귀 안내(checkin_mark 'prompt')가 행을 만들 수 있으므로 '행 존재'로 판정하면
+      //   배너만 본 '미작성' 참여자에게 빈 펼침 화살표가 생긴다. 실제 내용이 있을 때만 펼친다.
+      hasRow: !!ck && (ck.hasContent || ck.submittedAt != null),
       // 순수 데이터만 경계를 넘긴다 — copy 객체(함수 포함)는 절대 prop 에 싣지 않는다(ADR-85 직렬화 사고).
       blocks: ck
         ? buildCheckinRead(

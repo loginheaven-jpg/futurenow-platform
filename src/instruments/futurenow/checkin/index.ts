@@ -62,7 +62,8 @@ export type CheckinSession = {
     identity?: BlockBase & CheckinField;
     // 마음 — order 에 넣는다. '언제나 마지막'을 특례로 두면 묶음의 끝을 데이터로 말할 수 없다.
     mood: BlockBase & { key: string; label: string; help: string; options: readonly string[]; exclusive: string; max: number };
-    moodCustom: { key: string; placeholder: string };
+    // promptPlaceholder — mood 의 exclusive(목록 한계) 낱말을 고르면 이 문구로 바뀐다(ADR-91 C).
+    moodCustom: { key: string; placeholder: string; promptPlaceholder?: string };
   };
   // summary = 접힌 상태에서 안에 무엇이 있는지 보여 주는 한 줄. 문안이므로 레지스트리가 소유한다(컴포넌트에 박지 않는다).
   deepen: { title: string; summary: string; fields: (CheckinField & { help: string; mirror?: Mirror })[] };
@@ -96,8 +97,14 @@ export type CheckinSession = {
   save: { button: string; notice1: string; notice2: string };
   done: { title: string; stepHeading: string; toHome: string; edit: string };
   // 필수 칸 판정(회차별). confidence·선택 항목은 세지 않는다.
+  //   ADR-91: 셋 다 하나의 `required` 선언에서 파생된다 — 손으로 따로 쓰면 서로 어긋날 수 있고,
+  //   어긋나면 '제출을 막았는데 무엇이 비었는지 못 알려 주는' 상태가 된다.
   filledCount: (answers: Record<string, unknown>) => number;
   requiredTotal: number;
+  /** 빈 필수 칸의 라벨(화면 문구 그대로). 쌍 문항은 비어 있는 쪽만. */
+  missingLabels: (answers: Record<string, unknown>) => string[];
+  /** 빈 필수 칸의 응답 키. missingLabels 와 순서가 같다('채우러 가기'가 첫 칸으로 옮겨 간다). */
+  missingKeys: (answers: Record<string, unknown>) => string[];
   summaryFields: SummaryField[];
 };
 

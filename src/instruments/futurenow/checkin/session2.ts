@@ -3,21 +3,25 @@
 // 2회차 신규 3: 가슴 뛴 영역(future_area 단일칩), 지난 한 걸음 결산(last_step_result), 한 걸음 공개 토글(step_private).
 // 되비추기(② 위·⑤ 위)는 page 가 getMyCheckin(sessionNo-1)로 넘긴다 — 이 문안 파일은 관여하지 않는다.
 import type { CheckinSession } from './index';
+import { countFilled, missingIn, missingKeys, type RequiredGroup } from './required';
 
-// 필수 칸 판정(§5-5 · 6칸): (future_area 그리고 future_line) · identity_statement · mood(1+) · last_step_result · (step_what 그리고 step_when) · self_note.
-// confidence·last_step_note·심화 두 칸은 세지 않는다. future_area·last_step_result 는 단일 문자열(칩 max=1).
-function filledCount2(answers: Record<string, unknown>): number {
-  const has = (k: string) => typeof answers[k] === 'string' && (answers[k] as string).trim() !== '';
-  const mood = Array.isArray(answers.mood) && (answers.mood as unknown[]).length > 0;
-  let n = 0;
-  if (has('future_area') && has('future_line')) n += 1;
-  if (has('identity_statement')) n += 1;
-  if (mood) n += 1;
-  if (has('last_step_result')) n += 1;
-  if (has('step_what') && has('step_when')) n += 1;
-  if (has('self_note')) n += 1;
-  return n;
-}
+// 필수 6칸(§5-5): 영역 쌍 · 인생의 한 문장 · 마음 · 지난 걸음 결산 · 다음 걸음 쌍 · 나에게.
+//   confidence·last_step_note·심화 두 칸은 세지 않는다. future_area·last_step_result 는 단일 문자열(칩 max=1).
+//   ADR-91: filledCount·missingLabels·missingKeys 가 전부 이 선언에서 파생된다.
+const REQUIRED_2: RequiredGroup[] = [
+  { fields: [
+    { key: 'future_area', label: '오늘 그린 다섯 영역 중, 가장 가슴이 뛴 하나를 옮겨 주세요. (책 69~73쪽)' },
+    { key: 'future_line', label: '5년 뒤 그 영역의 나는' },
+  ] },
+  { fields: [{ key: 'identity_statement', label: "오늘 완성한 '인생을 이끌어갈 하나의 문장'을 그대로 옮겨 주세요. (책 78~84쪽)" }] },
+  { kind: 'list', fields: [{ key: 'mood', label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?' }] },
+  { fields: [{ key: 'last_step_result', label: '지난 한 걸음은 어떻게 되었나요?' }] },
+  { fields: [
+    { key: 'step_what', label: '무엇을 하시겠어요?' },
+    { key: 'step_when', label: '언제, 어디서 하시겠어요?' },
+  ] },
+  { fields: [{ key: 'self_note', label: '그 미래를 처음 떠올려 본 오늘의 나에게, 한마디만 건네주세요.' }] },
+];
 
 export const CHECKIN_SESSION_2 = {
   sessionNo: 2,
@@ -124,7 +128,7 @@ export const CHECKIN_SESSION_2 = {
     confidence: {
       key: 'confidence',
       label: '이 한 걸음, 다음 시간까지 어느 정도로 해내실까요?',
-      help: '솔직하게요. 낮게 답하셔도 아무 일 없습니다.',
+      help: '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.',
       min: 0,
       max: 10,
       leftLabel: '아직 자신 없음',
@@ -147,7 +151,7 @@ export const CHECKIN_SESSION_2 = {
       key: 'self_note',
       label: '그 미래를 처음 떠올려 본 오늘의 나에게, 한마디만 건네주세요.',
       help: '꼭 칭찬이 아니어도 됩니다. 지금 나에게 필요한 말이면 됩니다.',
-      placeholder: '괜찮아, 오늘은 여기까지만 해도 돼',
+      placeholder: '아직 흐릿해도, 방향은 잡았다',
     },
   },
   // save·done 문안은 회차 공통(§5 미지정 → 1회차와 동일 문자열).
@@ -162,8 +166,10 @@ export const CHECKIN_SESSION_2 = {
     toHome: '차수 홈으로',
     edit: '고쳐 쓰기',
   },
-  filledCount: filledCount2,
-  requiredTotal: 6,
+  filledCount: (a) => countFilled(REQUIRED_2, a),
+  requiredTotal: REQUIRED_2.length,
+  missingLabels: (a) => missingIn(REQUIRED_2, a),
+  missingKeys: (a) => missingKeys(REQUIRED_2, a),
   // 인도자 문장 모아 보기 열(§5-6): 영역 · 인생의 한 문장 · 장면.
   summaryFields: [
     { label: '영역', key: 'future_area' },
