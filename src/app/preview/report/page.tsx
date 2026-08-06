@@ -1,4 +1,5 @@
 // 리포트(B③) 미리보기 (개발용) — 시각물·명명·의미색 절제 확인용. 운영 라우트 아님.
+// 게이트는 preview/layout.tsx(ADR-93). 리포트 구조와 명명(§9.4)이 본문에 그대로 나오는 화면이다.
 // report.tsx(@react-pdf 포함) 대신 ReportScreen·GroupView 를 직접 import → 클라이언트 번들 가벼움.
 import type { FuturenowScores } from '@/instruments/futurenow/scoring';
 import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';

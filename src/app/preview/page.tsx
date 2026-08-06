@@ -1,6 +1,8 @@
 'use client';
 // 디자인 시스템 미리보기 (개발용) — 색 토큰·위젯·러너 첫 화면 렌더 확인용. 운영 라우트 아님.
 // 색값 판정(첫 화면)에 사용. 실제 응답 흐름은 코어 러너 + 인스트루먼트 스키마로 동작.
+// **게이트는 preview/layout.tsx 가 건다(ADR-93).** 여기서 futurenowFlow 를 클라이언트로 import 하므로
+//   문항 원문 전량이 번들에 실린다 — 이 파일은 절대 공개 라우트가 되면 안 된다.
 import { useState } from 'react';
 import type { CoreContext } from '@/contracts';
 import {

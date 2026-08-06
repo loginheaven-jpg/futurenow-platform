@@ -1,5 +1,6 @@
 'use client';
-// 코치 콘솔 미리보기(개발용) — §8. 돌봄 우선·의미색 절제·정렬 확인용.
+// 코치 콘솔 미리보기(개발용) — §8. 돌봄 우선·의미색 절제·정렬 확인용. 운영 라우트 아님.
+// 게이트는 preview/layout.tsx(ADR-93).
 import type { ReactNode } from 'react';
 import { ConsoleHome } from '@/app/_screens/console/ConsoleHome';
 import { CreateCohort } from '@/app/_screens/console/CreateCohort';

@@ -132,7 +132,7 @@ export function CheckinCardClient({
   prior: Record<string, unknown> | null;
   initialMode: 'read' | 'edit';
   photos: CheckinPhoto[];
-  /** 미리보기(/preview/checkin) — 서버 쓰기를 전부 막는다. 계측·저장·제출 어느 것도 일어나지 않는다. */
+  /** 미리보기(인도자 콘솔 /coach/cohort/[cohortId]/checkin/preview·ADR-92) — 서버 쓰기를 전부 막는다. 계측·저장·제출 어느 것도 일어나지 않는다. */
   preview?: boolean;
 }) {
   const copy = getCheckinSession(sessionNo); // 순수 모듈 — 클라 import 안전(직렬화 경계 넘지 않음)

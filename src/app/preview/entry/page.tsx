@@ -1,5 +1,6 @@
 'use client';
-// 진입 흐름 미리보기(개발용) — §7. 색·정렬·존대체·경고색 배제 확인용.
+// 진입 흐름 미리보기(개발용) — §7. 색·정렬·존대체·경고색 배제 확인용. 운영 라우트 아님.
+// 게이트는 preview/layout.tsx(ADR-93).
 import type { ReactNode } from 'react';
 import { CodeInput } from '@/app/_screens/entry/CodeInput';
 import { CohortPreview } from '@/app/_screens/entry/CohortPreview';

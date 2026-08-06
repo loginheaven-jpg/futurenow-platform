@@ -22,16 +22,25 @@ describe('isProtectedPath (middleware 보호 경로 판정)', () => {
     }
   });
 
+  // ADR-93. 개발용 미리보기가 인증 없이 열려 사전진단 문항 원문 전량·리포트 구조가 공개돼 있었다.
+  // 네 라우트를 개별로 못 박는다 — 누가 하나를 빠뜨리고 되돌리면 여기서 깨진다.
+  it('보호: /preview 및 하위(개발용 미리보기 — 문항 원문·리포트 구조 노출 경로)', () => {
+    for (const p of ['/preview', '/preview/console', '/preview/entry', '/preview/report', '/preview/뭐가-늘어도']) {
+      expect(isProtectedPath(p)).toBe(true);
+    }
+  });
+
   it('공개(통과): /·/login·/signup·/join·/reset', () => {
     for (const p of ['/', '/login', '/signup', '/join', '/reset', '/reset/confirm']) {
       expect(isProtectedPath(p)).toBe(false);
     }
   });
 
-  it('접두 오매칭 방지(/homex·/coaching·/joinx 비보호)', () => {
+  it('접두 오매칭 방지(/homex·/coaching·/joinx·/previewer 비보호)', () => {
     expect(isProtectedPath('/homex')).toBe(false);
     expect(isProtectedPath('/coaching')).toBe(false);
     expect(isProtectedPath('/joinx')).toBe(false);
+    expect(isProtectedPath('/previewer')).toBe(false);
   });
 });
 
