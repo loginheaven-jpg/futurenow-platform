@@ -119,6 +119,7 @@ export function CheckinCardClient({
   prior,
   initialMode,
   photos,
+  preview = false,
 }: {
   cohortId: string;
   sessionNo: number;
@@ -131,6 +132,8 @@ export function CheckinCardClient({
   prior: Record<string, unknown> | null;
   initialMode: 'read' | 'edit';
   photos: CheckinPhoto[];
+  /** 미리보기(/preview/checkin) — 서버 쓰기를 전부 막는다. 계측·저장·제출 어느 것도 일어나지 않는다. */
+  preview?: boolean;
 }) {
   const copy = getCheckinSession(sessionNo); // 순수 모듈 — 클라 import 안전(직렬화 경계 넘지 않음)
   const [answers, setAnswers] = useState<Record<string, unknown>>(initialAnswers);
@@ -159,7 +162,7 @@ export function CheckinCardClient({
   //   지난 회차를 '읽으러' 들어온 진입이 섞이면 first_opened_at 이 영구 오염된다(ADR-80 1기 보정 근거).
   //   read→edit 전환도 작성 진입이므로 그 시점에 찍는다.
   useEffect(() => {
-    if (mode !== 'edit' || alreadyOpened || openMarked.current) return;
+    if (preview || mode !== 'edit' || alreadyOpened || openMarked.current) return;
     openMarked.current = true;
     void markCheckinOpenedAction(cohortId, sessionNo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -179,10 +182,12 @@ export function CheckinCardClient({
   const confidence = typeof answers.confidence === 'number' ? (answers.confidence as number) : null;
 
   function scheduleSave(nextAnswers: Record<string, unknown>, nextFlags: Flags) {
+    if (preview) return; // 미리보기는 아무것도 저장하지 않는다
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void doSave(nextAnswers, nextFlags), 2000);
   }
   async function doSave(a: Record<string, unknown>, f: Flags) {
+    if (preview) return;
     const res = await saveCheckinAction(cohortId, sessionNo, a, f);
     if (res.ok) {
       setSaveFailed(false);
@@ -208,6 +213,7 @@ export function CheckinCardClient({
   //   실측: 1회차 제출 8건 중 3건이 2·3면을 통째로 건너뛴 채 맨 아래 버튼만 눌렀다.
   //   버튼은 언제나 눌린다(눌리지 않는 버튼은 고장으로 읽힌다). 누른 뒤가 갈릴 뿐이다.
   async function doSubmit() {
+    if (preview) { setJustSubmitted(true); setMode('read'); return; } // 흐름만 보여 주고 서버는 건드리지 않는다
     setBusy(true);
     if (timer.current) clearTimeout(timer.current);
     const res = await submitCheckinAction(cohortId, sessionNo, answers, flags); // R2: save→submit 한 액션 내 순차
@@ -452,7 +458,8 @@ export function CheckinCardClient({
               <div style={fieldLabel}>{f.label}</div>
               <div className="t-caption" style={help}>{f.help}</div>
               <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
-              {f.key === 'letter_line' ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}
+              {/* 미리보기에서는 사진 위젯을 띄우지 않는다 — 실제 Storage 를 호출하는 부품이라 서버 쓰기 0 규율을 깬다. */}
+              {f.key === 'letter_line' && !preview ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}
             </div>
           ))}
         </div>
