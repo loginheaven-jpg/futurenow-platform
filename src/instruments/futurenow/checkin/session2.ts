@@ -30,8 +30,10 @@ export const CHECKIN_SESSION_2 = {
     // firstVisitOnce 없음 — 1회차에서 이미 안내(§5-1).
   },
   today: {
+    // 렌더 순서(ADR-90) — 영역 → 목적 세 질문 → 인생의 한 문장 → 마음. 단일 STEP 회차라 group 이 없다.
+    order: ['areaPick', 'purpose', 'identity', 'mood'],
     // ① 가장 가슴 뛴 영역 (신규·필수). 칩 단일선택(future_area 문자열) + 한 문장(future_line).
-    futureArea: {
+    areaPick: {
       key: 'future_area',
       label: '오늘 그린 다섯 영역 중, 가장 가슴이 뛴 하나를 옮겨 주세요. (책 69~73쪽)',
       help: '다섯 개를 다 적지 않으셔도 됩니다. 하나면 충분합니다.',
@@ -57,7 +59,9 @@ export const CHECKIN_SESSION_2 = {
       label: "오늘 완성한 '인생을 이끌어갈 하나의 문장'을 그대로 옮겨 주세요. (책 78~84쪽)",
       help: '다듬지 않으셔도 됩니다. 쓰신 그대로면 됩니다.',
       placeholder: "나는 '상생'의 가치를 최우선으로 여기며, 사람과 사물의 존재가치가 최상으로 빛나도록 돕는 사람이다",
-      mirror: true, // ② 위에 지난 회차 존재가치 문장을 되비춘다(§6)
+      // ② 위에 지난 회차 존재가치 문장을 되비춘다(§6). 캡션이 앱 레이어에 있던 것을 레지스트리로 옮겼다(ADR-90) —
+      //   렌더 문자열은 그대로다. empty 를 두지 않으므로 1회차를 안 쓴 사람에게는 블록 자체가 나오지 않는다(현행 동일).
+      mirror: { label: '지난 시간에 쓰신 문장', keys: ['identity_sentence'] },
     },
     // ③ 오늘의 마음
     mood: {
@@ -86,7 +90,12 @@ export const CHECKIN_SESSION_2 = {
       label: '지난 한 걸음은 어떻게 되었나요?',
       options: ['했습니다', '조금 했습니다', '잊고 지냈습니다', '하려다 막혔습니다'],
       note: { key: 'last_step_note', label: '한 줄만 덧붙여 주세요', help: '지키지 못했어도 괜찮습니다. 여기 정직하게 적는 것이 다음 한 주를 바꿉니다.' },
-      mirrorEmpty: '지난 한 걸음이 남아 있지 않아요. 이번 시간부터 시작해도 괜찮습니다.',
+      // ⑤ 위에 지난 회차 한 걸음을 되비춘다. 값이 둘 다 있으면 ' · ' 로 이어 붙는다(현행 렌더와 동일).
+      mirror: {
+        label: '지난 시간의 한 걸음',
+        keys: ['step_what', 'step_when'],
+        empty: '지난 한 걸음이 남아 있지 않아요. 이번 시간부터 시작해도 괜찮습니다.',
+      },
     },
     // ⑥ 다음 한 걸음 — 제목·보조·placeholder 전부 1회차 그대로.
     title: '다음 시간까지 할 작은 실천 하나를 정해 봅시다.',

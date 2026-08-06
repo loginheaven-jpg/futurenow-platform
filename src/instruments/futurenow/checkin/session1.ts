@@ -29,8 +29,10 @@ export const CHECKIN_SESSION_1 = {
     firstVisitOnce: '이건 진단이 아닙니다. 점수도, 정답도 없습니다.',
   },
   today: {
+    // 렌더 순서(ADR-90) — 1면은 갈망 쌍 → 존재가치 → 마음. 단일 STEP 회차라 group 이 없다.
+    order: ['pairText', 'identity', 'mood'],
     // ① 바꿔 쓴 문장 한 쌍 (신규·필수). 순서: 책 진행(재해석 → 존재가치)을 따른다.
-    desire: {
+    pairText: {
       label: '오늘 바꿔 쓴 문장 한 쌍을 옮겨 주세요. (책 49~52쪽)',
       help: '약점을 강점으로 바꾼 것도, 아픔을 갈망으로 바꾼 것도 좋습니다. 바꿔 쓰는 순간 가장 시원했던 하나만 고르시면 됩니다.',
       from: { key: 'desire_from', label: '바꾸기 전', placeholder: '나는 늘 소심했다' },

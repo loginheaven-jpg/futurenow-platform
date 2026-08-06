@@ -74,19 +74,16 @@ export default async function CheckinCardPage({
   //   행이 없으면 사진도 있을 수 없다(업로드는 카드 안에서만 가능하고 그 시점에 행이 생긴다).
   const photos = existing == null ? [] : await ctx.listCheckinPhotos(cohortId, sessionNo, me.id).catch(() => []);
 
-  // 되비추기(§6·Phase 4) — 지난 회차 답 둘(존재가치 문장·한 걸음)을 읽기전용으로. 새 코어 메서드 없음.
-  //   지난 회차 정체성 키는 그 회차 레지스트리에서 얻는다(1회차 identity_sentence). step 키는 전 회차 공통.
+  // 되비추기(§6·Phase 4) — 지난 회차 답을 읽기전용으로 되비춘다. 새 코어 메서드 없음.
+  //   ADR-90: 되비출 자리가 회차마다 달라(3회차는 세 곳) 3필드 다이제스트로는 표현할 수 없다.
+  //     레지스트리의 Mirror.keys 가 임의 키를 지목하므로 **지난 회차 answers 를 통째로** 넘긴다.
+  //     본인 자신의 지난 회차 답이라 노출 범위가 넓어지는 것이 아니다(RLS·화면 모두 동일 주체).
   //   미제출이어도 값이 있으면 보여 준다. 조회 실패는 조용히 넘긴다(되비추기 없다고 카드가 막히면 안 됨).
   //   ADR-86: '지금 쓰는 것을 돕는' 작성 보조라 열람(read)에는 싣지 않는다 — 조회 자체를 건너뛴다(왕복 감소).
-  let prior: { identity: string | null; stepWhat: string | null; stepWhen: string | null } | null = null;
+  let prior: Record<string, unknown> | null = null;
   if (initialMode === 'edit' && sessionNo > 1) {
-    const priorCopy = getCheckinSession(sessionNo - 1);
     const priorRow = await ctx.getMyCheckin(cohortId, sessionNo - 1).catch(() => null);
-    if (priorCopy && priorRow) {
-      const pa = (priorRow.answers ?? {}) as Record<string, unknown>;
-      const s = (k: string) => (typeof pa[k] === 'string' && (pa[k] as string).trim() !== '' ? (pa[k] as string) : null);
-      prior = { identity: s(priorCopy.today.identity.key), stepWhat: s('step_what'), stepWhen: s('step_when') };
-    }
+    if (priorRow) prior = (priorRow.answers ?? {}) as Record<string, unknown>;
   }
 
   return (

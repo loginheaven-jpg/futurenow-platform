@@ -54,8 +54,8 @@ describe('1회차 문안 v2 — 금지어·핵심 문자열', () => {
     expect(CHECKIN_SESSION_1.cover.firstVisitOnce).toBe('이건 진단이 아닙니다. 점수도, 정답도 없습니다.');
   });
   it('desire 쌍·letter_line·질문형 라벨·책 참조', () => {
-    expect(CHECKIN_SESSION_1.today.desire.from.key).toBe('desire_from');
-    expect(CHECKIN_SESSION_1.today.desire.to.key).toBe('desire_to');
+    expect(CHECKIN_SESSION_1.today.pairText.from.key).toBe('desire_from');
+    expect(CHECKIN_SESSION_1.today.pairText.to.key).toBe('desire_to');
     expect(CHECKIN_SESSION_1.deepen.fields[1].key).toBe('letter_line');
     expect(CHECKIN_SESSION_1.wrap.facilitatorBox.need.label).toContain('부탁하고 싶은');
     expect(CHECKIN_SESSION_1.today.identity.label).toContain('(책 53~58쪽)');

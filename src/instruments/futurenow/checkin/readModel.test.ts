@@ -103,7 +103,7 @@ describe('라벨은 레지스트리 원문과 문자 단위로 일치한다(문�
   it('1회차 라벨 전량', () => {
     const l = labels(buildCheckinRead(1, ANSWERS_1, OPEN, 'facilitator'));
     const c = CHECKIN_SESSION_1;
-    expect(l).toContain(c.today.desire.label);
+    expect(l).toContain(c.today.pairText.label);
     expect(l).toContain(c.today.identity.label);
     expect(l).toContain(c.today.mood.label);
     expect(l).toContain(c.deepen.title);
@@ -122,8 +122,8 @@ describe('라벨은 레지스트리 원문과 문자 단위로 일치한다(문�
   it('2회차 고유 라벨', () => {
     const l = labels(buildCheckinRead(2, ANSWERS_2, OPEN, 'facilitator'));
     const c = CHECKIN_SESSION_2;
-    expect(l).toContain(c.today.futureArea.label);
-    expect(l).toContain(c.today.futureArea.line.label);
+    expect(l).toContain(c.today.areaPick.label);
+    expect(l).toContain(c.today.areaPick.line.label);
     expect(l).toContain(c.today.identity.label);
     expect(l).toContain(c.step.lastStep.label);
     expect(l).toContain(c.step.lastStep.note.label);
@@ -289,10 +289,10 @@ describe('가시성 — 지휘부 결정 2026-08-02', () => {
 
 describe('회차 확장', () => {
   it('미등록 회차는 빈 배열(파손 아님)', () => {
-    expect(buildCheckinRead(3, ANSWERS_1, OPEN, 'self')).toEqual([]);
+    expect(buildCheckinRead(4, ANSWERS_1, OPEN, 'self')).toEqual([]);
     expect(buildCheckinRead(7, ANSWERS_2, OPEN, 'facilitator')).toEqual([]);
-    expect(readSelfHighlights(3, ANSWERS_1)).toBeNull();
-    expect(anonNoticeText(3)).toBe('');
+    expect(readSelfHighlights(4, ANSWERS_1)).toBeNull();
+    expect(anonNoticeText(4)).toBe('');
   });
 
   it('1회차에는 없는 블록(지난 걸음·공개 토글)을 만들지 않는다', () => {

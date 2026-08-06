@@ -65,10 +65,11 @@ describe('session2 문안 — 금지어·책 참조·구조', () => {
     expect(flat).toContain('(책 85~87쪽)');
   });
   it('신규 블록 키 — 영역 칩·지난 한 걸음·공개 토글·letter_line 공유', () => {
-    expect(CHECKIN_SESSION_2.today.futureArea.key).toBe('future_area');
-    expect(CHECKIN_SESSION_2.today.futureArea.line.key).toBe('future_line');
+    expect(CHECKIN_SESSION_2.today.areaPick.key).toBe('future_area');
+    expect(CHECKIN_SESSION_2.today.areaPick.line.key).toBe('future_line');
     expect(CHECKIN_SESSION_2.today.identity.key).toBe('identity_statement');
-    expect(CHECKIN_SESSION_2.today.identity.mirror).toBe(true);
+    // ADR-90: mirror 가 boolean 에서 블록 속성(label+keys)으로 일반화됐다. 렌더 결과는 동일하다.
+    expect(CHECKIN_SESSION_2.today.identity.mirror).toEqual({ label: '지난 시간에 쓰신 문장', keys: ['identity_sentence'] });
     expect(CHECKIN_SESSION_2.step.lastStep.key).toBe('last_step_result');
     expect(CHECKIN_SESSION_2.step.share.toggleLabel).toContain('나만 볼게요');
     expect(CHECKIN_SESSION_2.deepen.fields[1].key).toBe('letter_line');
@@ -84,10 +85,11 @@ describe('session2 문안 — 금지어·책 참조·구조', () => {
 
 // 레지스트리 — 회차 조회·미등록 null(§7-6).
 describe('getCheckinSession 레지스트리', () => {
-  it('1·2회차는 객체, 3회차는 null', () => {
+  it('1·2·3회차는 객체, 4회차는 null', () => {
     expect(getCheckinSession(1)?.sessionNo).toBe(1);
     expect(getCheckinSession(2)?.sessionNo).toBe(2);
-    expect(getCheckinSession(3)).toBe(null);
+    expect(getCheckinSession(3)).not.toBe(null); // ADR-90 에서 등록
+    expect(getCheckinSession(4)).toBe(null);
     expect(getCheckinSession(0)).toBe(null);
   });
 });

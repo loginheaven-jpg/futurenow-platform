@@ -8,15 +8,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CheckinPhoto } from '@/contracts';
 import { Button, CheckRow, Disclosure, MultiChoiceChips, TextArea } from '@/core/ui';
-import { getCheckinSession } from '@/instruments/futurenow/checkin';
+import { getCheckinSession, type Mirror as MirrorSpec, type SlotName } from '@/instruments/futurenow/checkin';
+import { orderedSlots, resolveMirror, slotBoundaries, type Boundary } from '@/instruments/futurenow/checkin/slots';
 import { buildCheckinRead, readSelfHighlights } from '@/instruments/futurenow/checkin/readModel';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 import { LetterPhotos } from './LetterPhotos';
 
 type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean; stepPrivate: boolean };
-// 되비추기 재료 — page 가 getMyCheckin(sessionNo-1)에서 뽑아 넘긴다(§6). 없으면 null.
-type PriorMirror = { identity: string | null; stepWhat: string | null; stepWhen: string | null };
+// 되비추기 재료 — page 가 getMyCheckin(sessionNo-1)의 answers 를 통째로 넘긴다(§6·ADR-90). 없으면 null.
+//   블록마다 Mirror.keys 로 필요한 키를 지목하므로 다이제스트가 아니라 원본이 온다.
 
 const gray = { color: 'var(--color-text-muted)' } as const;
 const help = { color: 'var(--color-text-secondary)' } as const;
@@ -35,10 +36,16 @@ const inputBox = {
   fontSize: 15,
 } as const;
 
-function Field({ label, helpText, children }: { label: string; helpText?: string; children: React.ReactNode }) {
+// badge — 묶음의 첫 칸이면서 선택인 문항에만 붙는다(ADR-90 규칙 확정).
+//   같은 묶음에 딸린 보조 칸(step_blocker·last_step_note)은 앞 칸의 부속이라 표기하지 않고,
+//   접힌 블록도 표기하지 않는다(접혀 있다는 사실이 이미 그 말을 한다 — ADR-82·88).
+function Field({ label, helpText, badge, children }: { label: string; helpText?: string; badge?: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-      <div style={fieldLabel}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
+        <span style={fieldLabel}>{label}</span>
+        {badge ? <span className="t-caption" style={gray}>{badge}</span> : null}
+      </div>
       {helpText ? <div className="t-caption" style={help}>{helpText}</div> : null}
       {children}
     </div>
@@ -46,11 +53,42 @@ function Field({ label, helpText, children }: { label: string; helpText?: string
 }
 
 // 되비추기 — 읽기전용 회색(테두리 없음, 입력칸으로 오해 방지 · §6). 기울임 없음.
-function Mirror({ caption, value }: { caption: string; value: string }) {
+function MirrorLine({ caption, value }: { caption: string; value: string }) {
   return (
     <div style={{ marginBottom: 'var(--space-3)' }}>
       <div className="t-caption" style={gray}>{caption}</div>
       <div className="t-body" style={{ color: 'var(--color-text-secondary)' }}>{value}</div>
+    </div>
+  );
+}
+
+// 블록 속성으로 일반화된 되비추기(ADR-90). 지난 회차 answers 에서 keys 를 읽어 값이 있는 것만 ' · ' 로 잇는다.
+//   값이 하나도 없으면 empty 문구(있을 때만). empty 도 없으면 블록 자체를 그리지 않는다.
+function MirrorOf({ mirror, prior }: { mirror?: MirrorSpec; prior: Record<string, unknown> | null }) {
+  const view = resolveMirror(mirror, prior);
+  if (!view) return null;
+  if (view.kind === 'value') return <MirrorLine caption={view.label} value={view.value} />;
+  return <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{view.text}</p>;
+}
+
+// 묶음 경계(ADR-90) — 현재 블록의 group 이 직전과 다르면 그린다.
+//   값이 있으면 hairline + 캡션, 없으면 hairline 만. 면의 첫 블록이면 hairline 을 생략하고 캡션만
+//   (바로 위가 표지라 선이 겹친다). 이 한 규칙이 네 전이를 모두 덮는다.
+//   단일 STEP 회차(1·2·6·7)는 group 이 전부 없어 전이가 없고 → 신규 hairline 0건.
+function GroupBoundary({ boundary }: { boundary: Boundary }) {
+  if (!boundary) return null;
+  return (
+    <div
+      style={{
+        borderTop: boundary.line ? 'var(--border-hair) solid var(--color-border)' : undefined,
+        // 캡션이 있을 때만 선과 캡션 사이를 띄운다. 캡션 없는 '닫는 선'에 위아래 여백을 다 주면
+        // 빈 띠 48px 이 생겨 선이 앞 블록의 밑줄처럼 붙어 보인다(두 묶음을 가르는 선이어야 한다).
+        paddingTop: boundary.line && boundary.caption ? 'var(--space-6)' : undefined,
+        marginBottom: boundary.caption ? 'var(--space-6)' : 'var(--space-5)',
+      }}
+    >
+      {/* 캡션은 제목이 아니라 이정표다 — 라벨(15)·보조문구(13)보다 한 칸 아래(12·t-micro). */}
+      {boundary.caption ? <div className="t-micro" style={{ color: 'var(--color-text-muted)' }}>{boundary.caption}</div> : null}
     </div>
   );
 }
@@ -74,7 +112,7 @@ export function CheckinCardClient({
   initialFlags: Flags;
   alreadyOpened: boolean;
   closed: boolean;
-  prior: PriorMirror | null;
+  prior: Record<string, unknown> | null;
   initialMode: 'read' | 'edit';
   photos: CheckinPhoto[];
 }) {
@@ -228,12 +266,105 @@ export function CheckinCardClient({
 
   const filled = copy.filledCount(answers);
   const requiredTotal = copy.requiredTotal;
-  const desire = copy.today.desire;
-  const futureArea = copy.today.futureArea;
-  const purpose = copy.today.purpose;
-  const identity = copy.today.identity;
   const lastStep = copy.step.lastStep;
   const share = copy.step.share;
+
+  // 1면 슬롯 — order 가 정한 순서대로 존재하는 것만. 회차 번호로 분기하지 않는다(ADR-90).
+  const t = copy.today;
+  const slots = orderedSlots(copy);
+  const boundaries = slotBoundaries(copy);
+
+  // 슬롯 본문 — 모양별로 그린다. copy.today 에서 타입 그대로 꺼내므로 캐스팅이 없다.
+  function renderSlot(name: SlotName): React.ReactNode {
+    switch (name) {
+      case 'pairText':
+        return t.pairText ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+            <div style={fieldLabel}>{t.pairText.label}</div>
+            <div className="t-caption" style={help}>{t.pairText.help}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{t.pairText.from.label}</span>
+              {textInput(t.pairText.from.key, t.pairText.from.placeholder)}
+            </div>
+            {t.pairText.connector ? (
+              <div className="t-caption" style={{ ...gray, textAlign: 'center' }}>{t.pairText.connector}</div>
+            ) : null}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{t.pairText.to.label}</span>
+              {textInput(t.pairText.to.key, t.pairText.to.placeholder)}
+            </div>
+            {t.pairText.to.help ? <div className="t-caption" style={help}>{t.pairText.to.help}</div> : null}
+          </div>
+        ) : null;
+
+      case 'areaPick':
+        return t.areaPick ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+            <div style={fieldLabel}>{t.areaPick.label}</div>
+            <div className="t-caption" style={help}>{t.areaPick.help}</div>
+            <MultiChoiceChips
+              options={[...t.areaPick.options]}
+              value={str(t.areaPick.key) ? [str(t.areaPick.key)] : []}
+              max={1}
+              onChange={(v) => setAnswer(t.areaPick!.key, v[0] ?? '')}
+              ariaLabel={t.areaPick.label}
+            />
+            <div style={{ marginTop: 'var(--space-2)' }}>
+              <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-1)' }}>{t.areaPick.line.label}</div>
+              {textInput(t.areaPick.line.key, t.areaPick.line.placeholder)}
+            </div>
+          </div>
+        ) : null;
+
+      // 기본 펼침. 필수가 아님은 '선택' 뱃지가 알린다(빈 칸 셋이 펼쳐져 있으면 필수로 읽힌다).
+      //   기본 펼침이라 열림 여부에 의미가 없으므로 계측하지 않는다.
+      case 'purpose':
+        return t.purpose ? (
+          <Disclosure title={t.purpose.title} badge={t.purpose.badge} defaultOpen>
+            <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line', marginBottom: 'var(--space-4)' }}>{t.purpose.help}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              {t.purpose.fields.map((f) => (
+                <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <div style={fieldLabel}>{f.label}</div>
+                  {f.help ? <div className="t-caption" style={help}>{f.help}</div> : null}
+                  <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} placeholder={f.placeholder} rows={2} ariaLabel={f.label} />
+                </div>
+              ))}
+            </div>
+          </Disclosure>
+        ) : null;
+
+      // 한 칸 서술. 접힘으로 감싸지 않는다 — 그 회차의 핵심 경험을 받는 자리라 눈에 보여야 한다.
+      case 'question':
+        return t.question ? (
+          <Field label={t.question.label} helpText={t.question.help} badge={t.question.badge}>
+            <TextArea value={str(t.question.key)} onChange={(v) => setAnswer(t.question!.key, v)} placeholder={t.question.placeholder} rows={3} ariaLabel={t.question.label} />
+          </Field>
+        ) : null;
+
+      case 'identity':
+        return t.identity ? (
+          <Field label={t.identity.label} helpText={t.identity.help}>
+            <TextArea value={str(t.identity.key)} onChange={(v) => setAnswer(t.identity!.key, v)} placeholder={t.identity.placeholder} rows={2} ariaLabel={t.identity.label} />
+          </Field>
+        ) : null;
+
+      case 'mood':
+        return (
+          <Field label={t.mood.label} helpText={t.mood.help}>
+            <MultiChoiceChips options={[...t.mood.options]} value={mood} max={t.mood.max} exclusive={t.mood.exclusive} onChange={(v) => setAnswer(t.mood.key, v)} ariaLabel={t.mood.label} />
+            <input value={str(t.moodCustom.key)} onChange={(e) => setAnswer(t.moodCustom.key, e.target.value)} onBlur={flushSave} placeholder={t.moodCustom.placeholder} aria-label={t.moodCustom.placeholder} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
+          </Field>
+        );
+
+      // 망라성 가드 — SlotName 에 슬롯이 늘면 여기서 컴파일이 깨진다(readModel 과 짝).
+      default: {
+        const _never: never = name;
+        void _never;
+        return null;
+      }
+    }
+  }
   return (
     <div style={{ paddingTop: 'var(--space-2)' }}>
       {/* 표지 */}
@@ -246,69 +377,14 @@ export function CheckinCardClient({
         {closed ? <p className="t-caption" style={help}>마감이 지났지만 지금 적으셔도 됩니다.</p> : null}
       </div>
 
-      {/* 1면 · 오늘 — ① 바꿔 쓴 문장 한 쌍(1회차) */}
-      {desire ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-          <div style={fieldLabel}>{desire.label}</div>
-          <div className="t-caption" style={help}>{desire.help}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{desire.from.label}</span>
-            {textInput(desire.from.key, desire.from.placeholder)}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{desire.to.label}</span>
-            {textInput(desire.to.key, desire.to.placeholder)}
-          </div>
+      {/* 1면 · 오늘 — order 가 정한 순서대로. 슬롯 사이 경계는 group 전이가 정한다(ADR-90). */}
+      {slots.map((s, i) => (
+        <div key={s.name}>
+          <GroupBoundary boundary={boundaries[i]} />
+          <MirrorOf mirror={s.block.mirror} prior={prior} />
+          {renderSlot(s.name)}
         </div>
-      ) : null}
-
-      {/* ① 가장 가슴 뛴 영역(2회차) — 칩 단일선택(문자열 저장) + 한 문장 */}
-      {futureArea ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-          <div style={fieldLabel}>{futureArea.label}</div>
-          <div className="t-caption" style={help}>{futureArea.help}</div>
-          <MultiChoiceChips
-            options={[...futureArea.options]}
-            value={str(futureArea.key) ? [str(futureArea.key)] : []}
-            max={1}
-            onChange={(v) => setAnswer(futureArea.key, v[0] ?? '')}
-            ariaLabel={futureArea.label}
-          />
-          <div style={{ marginTop: 'var(--space-2)' }}>
-            <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-1)' }}>{futureArea.line.label}</div>
-            {textInput(futureArea.line.key, futureArea.line.placeholder)}
-          </div>
-        </div>
-      ) : null}
-
-      {/* ①-b 목적을 찾는 세 질문 — 기본 펼침. 필수가 아님은 '선택' 뱃지가 알린다(빈 칸 셋이 펼쳐져 있으면 필수로 읽힌다).
-          기본 펼침이라 열림 여부에 의미가 없으므로 계측하지 않는다. */}
-      {purpose ? (
-        <Disclosure title={purpose.title} badge={purpose.badge} defaultOpen>
-          <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line', marginBottom: 'var(--space-4)' }}>{purpose.help}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            {purpose.fields.map((f) => (
-              <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <div style={fieldLabel}>{f.label}</div>
-                {f.help ? <div className="t-caption" style={help}>{f.help}</div> : null}
-                <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} placeholder={f.placeholder} rows={2} ariaLabel={f.label} />
-              </div>
-            ))}
-          </div>
-        </Disclosure>
-      ) : null}
-
-      {/* ② 정체성 문장 — 위에 지난 회차 문장 되비추기(mirror·prior 있을 때만) */}
-      {identity.mirror && prior?.identity ? <Mirror caption="지난 시간에 쓰신 문장" value={prior.identity} /> : null}
-      <Field label={identity.label} helpText={identity.help}>
-        <TextArea value={str(identity.key)} onChange={(v) => setAnswer(identity.key, v)} placeholder={identity.placeholder} rows={2} ariaLabel={identity.label} />
-      </Field>
-
-      {/* ③ 오늘의 마음 */}
-      <Field label={copy.today.mood.label} helpText={copy.today.mood.help}>
-        <MultiChoiceChips options={[...copy.today.mood.options]} value={mood} max={copy.today.mood.max} exclusive={copy.today.mood.exclusive} onChange={(v) => setAnswer('mood', v)} ariaLabel={copy.today.mood.label} />
-        <input value={str('mood_custom')} onChange={(e) => setAnswer('mood_custom', e.target.value)} onBlur={flushSave} placeholder={copy.today.moodCustom.placeholder} aria-label={copy.today.moodCustom.placeholder} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
-      </Field>
+      ))}
 
       {/* 1면 하단 · 심화(접힘 기본). 공용 Disclosure — 줄 전체가 버튼이고 상태를 글자로 말한다.
           접힘 블록이므로 '선택' 뱃지를 두지 않는다(ADR-82 유지 — 접혀 있다는 사실 자체가 신호). */}
@@ -322,6 +398,8 @@ export function CheckinCardClient({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {copy.deepen.fields.map((f) => (
             <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              {/* 심화 필드에도 되비추기를 붙일 수 있다(3회차 identity_gap · ADR-90) */}
+              <MirrorOf mirror={f.mirror} prior={prior} />
               <div style={fieldLabel}>{f.label}</div>
               <div className="t-caption" style={help}>{f.help}</div>
               <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
@@ -336,9 +414,7 @@ export function CheckinCardClient({
         {/* ⑤ 지난 한 걸음(2회차부터) — 위에 지난 회차 한 걸음 되비추기(없으면 대체 문구) */}
         {lastStep ? (
           <div style={{ marginBottom: 'var(--space-5)' }}>
-            {prior?.stepWhat
-              ? <Mirror caption="지난 시간의 한 걸음" value={prior.stepWhen ? `${prior.stepWhat} · ${prior.stepWhen}` : prior.stepWhat} />
-              : <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{lastStep.mirrorEmpty}</p>}
+            <MirrorOf mirror={lastStep.mirror} prior={prior} />
             <div style={fieldLabel}>{lastStep.label}</div>
             <div style={{ marginTop: 'var(--space-2)' }}>
               <MultiChoiceChips

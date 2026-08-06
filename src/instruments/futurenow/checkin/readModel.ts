@@ -76,45 +76,65 @@ export function buildCheckinRead(
   const out: ReadBlock[] = [];
   const isSelf = audience === 'self';
 
-  // ① 첫 블록 — 회차마다 형태가 다르다(둘 중 하나만 존재).
-  const desire = copy.today.desire;
-  if (desire) {
-    const from = text(answers, desire.from.key);
-    const to = text(answers, desire.to.key);
-    if (from !== '' || to !== '') {
-      out.push({
-        kind: 'pair',
-        label: desire.label,
-        fromLabel: desire.from.label,
-        fromValue: from,
-        toLabel: desire.to.label,
-        toValue: to,
-      });
+  // 1면 — 카드와 **같은 order** 를 훑는다(ADR-90). 열람 순서가 작성 순서와 어긋나면 안 된다.
+  //   되비추기(mirror)는 '지금 쓰는 것을 돕는' 작성 보조라 열람에는 싣지 않는다(ADR-86).
+  //   group(묶음 이정표)도 열람에는 싣지 않는다 — 작성 중 화제 전환을 알리는 장치이지 기록이 아니다.
+  const t = copy.today;
+  for (const name of t.order) {
+    switch (name) {
+      case 'pairText': {
+        const b = t.pairText;
+        if (!b) break;
+        const from = text(answers, b.from.key);
+        const to = text(answers, b.to.key);
+        if (from !== '' || to !== '') {
+          out.push({ kind: 'pair', label: b.label, fromLabel: b.from.label, fromValue: from, toLabel: b.to.label, toValue: to });
+        }
+        break;
+      }
+      case 'areaPick': {
+        const b = t.areaPick;
+        if (!b) break;
+        pushText(out, b.label, text(answers, b.key));
+        pushText(out, b.line.label, text(answers, b.line.key));
+        break;
+      }
+      case 'purpose': {
+        const b = t.purpose;
+        if (!b) break;
+        const purposeBlocks: ReadBlock[] = [];
+        for (const f of b.fields) pushText(purposeBlocks, f.label, text(answers, f.key));
+        if (purposeBlocks.length > 0) out.push({ kind: 'group', title: b.title, blocks: purposeBlocks });
+        break;
+      }
+      case 'question': {
+        const b = t.question;
+        if (b) pushText(out, b.label, text(answers, b.key));
+        break;
+      }
+      case 'identity': {
+        const b = t.identity;
+        if (b) pushText(out, b.label, text(answers, b.key));
+        break;
+      }
+      case 'mood': {
+        // 선택 항목 + 직접 쓰기를 한 줄로. moodCustom 은 레지스트리에 라벨이 없어(placeholder 뿐)
+        //   열람용 라벨을 새로 짓지 않고 mood 값에 이어 붙인다(카드도 같은 Field 안에 있다).
+        const moodValues = strList(answers, t.mood.key);
+        const moodCustom = text(answers, t.moodCustom.key);
+        const moodAll = moodCustom !== '' ? [...moodValues, moodCustom] : moodValues;
+        if (moodAll.length > 0) out.push({ kind: 'list', label: t.mood.label, values: moodAll });
+        break;
+      }
+      // 망라성 가드 — SlotName 에 슬롯이 늘면 여기서 컴파일이 깨진다.
+      //   없으면 새 슬롯이 조용히 누락돼 참여자가 쓴 답이 열람에서 사라진다(신호 0).
+      default: {
+        const _never: never = name;
+        void _never;
+        break;
+      }
     }
   }
-  const futureArea = copy.today.futureArea;
-  if (futureArea) {
-    pushText(out, futureArea.label, text(answers, futureArea.key));
-    pushText(out, futureArea.line.label, text(answers, futureArea.line.key));
-  }
-
-  // ①-b 목적을 찾는 세 질문(2회차~) — ② 의 재료라 ② 앞에 둔다. 카드 순서를 그대로 따른다.
-  const purpose = copy.today.purpose;
-  if (purpose) {
-    const purposeBlocks: ReadBlock[] = [];
-    for (const f of purpose.fields) pushText(purposeBlocks, f.label, text(answers, f.key));
-    if (purposeBlocks.length > 0) out.push({ kind: 'group', title: purpose.title, blocks: purposeBlocks });
-  }
-
-  // ② 정체성 문장. 되비추기(mirror)는 '지금 쓰는 것을 돕는' 작성 보조라 열람에는 싣지 않는다(ADR-86).
-  pushText(out, copy.today.identity.label, text(answers, copy.today.identity.key));
-
-  // ③ 마음 — 선택 항목 + 직접 쓰기를 한 줄로. moodCustom 은 레지스트리에 라벨이 없어(placeholder 뿐)
-  //    열람용 라벨을 새로 짓지 않고 mood 값에 이어 붙인다(카드도 같은 Field 안에 있다).
-  const moodValues = strList(answers, copy.today.mood.key);
-  const moodCustom = text(answers, copy.today.moodCustom.key);
-  const moodAll = moodCustom !== '' ? [...moodValues, moodCustom] : moodValues;
-  if (moodAll.length > 0) out.push({ kind: 'list', label: copy.today.mood.label, values: moodAll });
 
   // ④ 심화 — 열람에서는 항상 펼친다(카드의 접힘 토글은 계측 컬럼 deep_opened 를 세우므로 재현하지 않는다).
   const deepBlocks: ReadBlock[] = [];
