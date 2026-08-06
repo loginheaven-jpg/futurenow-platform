@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 참여자 실명·발언 원문 — 코드 저장소에 절대 커밋하지 않는다
+#   git 은 삭제가 사실상 불가능하므로 유입 자체를 막는다. 앞 슬래시로 저장소 루트에 앵커한다
+#   (없으면 하위 디렉터리의 다른 docs 까지 함께 막힌다).
+/docs/
