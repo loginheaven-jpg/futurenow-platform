@@ -54,8 +54,11 @@ function Row({ entry, initialOpen, tabs }: { entry: RosterEntry; initialOpen: bo
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', width: '100%' }}>
       <span className="t-body" style={{ flex: 1, color: 'var(--color-text)', textAlign: 'left' }}>{entry.name}</span>
       <span className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{entry.status}</span>
-      {entry.late ? <span className="t-caption" style={{ color: 'var(--color-care, var(--color-text-muted))' }}>지각</span> : null}
-      {entry.contact ? <span className="t-caption" style={{ color: 'var(--color-care, var(--color-primary))' }}>연락 요청</span> : null}
+      {/* ADR-94 §4-2: 두 표시가 돌봄 앰버 토큰 하나로 뭉개져 인도자가 구별하지 못했다. 그 참조를 걷어내
+          fallback 이 살아나면 지각=muted / 연락 요청=navy 로 갈린다. 연락 요청은 돌봄 채널이고 지각은 단순 사실이다.
+          이 두 줄에 의미색을 되돌리지 말 것 — rosterTokens.test.ts 가 잠근다. */}
+      {entry.late ? <span className="t-caption" style={{ color: 'var(--color-text-muted)' }}>지각</span> : null}
+      {entry.contact ? <span className="t-caption" style={{ color: 'var(--color-primary)' }}>연락 요청</span> : null}
       {expandable ? <span className="t-caption" style={{ color: 'var(--color-text-muted)' }} aria-hidden>{open ? '▲' : '▼'}</span> : null}
     </div>
   );

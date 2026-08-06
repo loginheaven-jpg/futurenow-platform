@@ -24,8 +24,11 @@ function koreanLiterals(file: string): Set<string> {
   return out;
 }
 
-describe('1·2회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0', () => {
-  for (const file of ['session1', 'session2'] as const) {
+// ADR-94(2026-08-07): session3 을 잠금에 넣었다. 그전까지 3회차 문안 전체가 회귀 보호 **밖**에 있었다 —
+//   '3회차는 baseline 대상이 아니므로 갱신이 필요 없다'는 사실이었으나, **필요 없다는 것과 안 하는 게 옳다는 것은 다르다.**
+//   session3 스냅샷은 책 페이지 참조 다섯을 **붙인 뒤** 뽑았다(먼저 뽑으면 참조 없는 상태를 잠그고 즉시 깨진다).
+describe('1·2·3회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0', () => {
+  for (const file of ['session1', 'session2', 'session3'] as const) {
     it(`${file}: 스냅샷의 모든 문자열이 그대로 남아 있다`, () => {
       const now = koreanLiterals(file);
       const missing = baseline[file].filter((s) => !now.has(s));
@@ -34,7 +37,7 @@ describe('1·2회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0',
   }
 
   // 증가분은 허용하되 눈에 보이게 남긴다 — 몰래 늘지 않도록.
-  for (const file of ['session1', 'session2'] as const) {
+  for (const file of ['session1', 'session2', 'session3'] as const) {
     it(`${file}: 스냅샷에 없는 문자열이 새로 생기지 않았다`, () => {
       const added = [...koreanLiterals(file)].filter((s) => !baseline[file].includes(s));
       expect(added).toEqual([]);
@@ -50,7 +53,7 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
   const REPLACED = '솔직하게요. 낮게 답하셔도 아무 일 없습니다.';
   const NOW = '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.';
 
-  for (const file of ['session1', 'session2'] as const) {
+  for (const file of ['session1', 'session2', 'session3'] as const) {
     it(`${file}: 실행 자신감 보조문구가 용도 문법으로 바뀌었다`, () => {
       const lits = koreanLiterals(file);
       expect(lits.has(REPLACED)).toBe(false);
@@ -70,7 +73,8 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
 
   // §6-2: 완충을 일괄 제거하지 않는다. 5주차에 실제로 무너진 사람이 여는 문이라 여기까지 딱딱해지면 소수를 잃는다.
   it('남겨 두기로 한 완충은 그대로다', () => {
-    for (const file of ['session1', 'session2'] as const) {
+    const koreanStrings3 = koreanLiterals('session3');
+    for (const file of ['session1', 'session2', 'session3'] as const) {
       const lits = koreanLiterals(file);
       expect(lits.has('꼭 칭찬이 아니어도 됩니다. 지금 나에게 필요한 말이면 됩니다.'), file).toBe(true);
       expect(lits.has('짧은 안부 연락입니다. 코칭 세션이 아닙니다.'), file).toBe(true);
@@ -79,5 +83,9 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
     // 1·2회차 마음 낱말은 바꾸지 않는다(C는 3회차만) — 저장된 답이 화면에서 지워지지 않게.
     expect(koreanLiterals('session1').has('아직 모르겠음')).toBe(true);
     expect(koreanLiterals('session2').has('아직 모르겠음')).toBe(true);
+    // 3회차는 반대다. 회차 간 낱말 차이는 사고가 아니라 ADR-91 C 의 의도된 차이다 — 양방향으로 못 박는다.
+    //   (2기 시작 전 1·2회차도 통일할 예정이며, 그때 이 단언 셋을 함께 고친다.)
+    expect(koreanStrings3.has('아직 모르겠음')).toBe(false);
+    expect(koreanStrings3.has('딱 맞는 말이 없음')).toBe(true);
   });
 });

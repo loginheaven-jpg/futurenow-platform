@@ -100,8 +100,33 @@ describe('문안 규율', () => {
     expect(allCopy).not.toContain('함정');
   });
 
-  it('책 페이지 참조를 붙이지 않았다 — 미확정 참조는 넣지 않는다(ADR-88·89 정책)', () => {
-    expect(allCopy).not.toMatch(/책 \d+/);
+  // ADR-94(2026-08-07): 지휘부가 다섯 값을 최종 조판 확정치로 선언해 ADR-88·89 의 '확정된 값만 카드에 오른다'
+  //   조건이 해소됐다. 그래서 이 자리의 단언은 '참조 0'(미확정 금지)에서 '확정 다섯 열거'로 **뒤집혔다**.
+  //   조용히 지우지 않고 뒤집은 것은, 가드를 삭제하면 승인된 정책을 코드에서 몰래 되돌리는 것이 되기 때문이다.
+  it('책 페이지 참조 다섯 곳 — 확정치(ADR-94)', () => {
+    expect(allCopy).toContain('(책 94~95쪽)');
+    expect(allCopy).toContain('(책 96~104쪽)');
+    expect(allCopy).toContain('(책 108~111쪽)');
+    expect(allCopy).toContain('(책 117~118쪽)');
+    expect(allCopy).toContain('(책 126~133쪽)');
+  });
+
+  // 표기 규칙(ADR-94 §3-1③) — 문장부호 뒤 + 반각 공백 1칸 + 문자열 맨 끝. 1·2회차 10건과 코드포인트 단위 일치.
+  //   allCopy 는 JSON.stringify 라 렌더 라벨 다섯만 잡힌다 — REQUIRED_3 는 missingLabels 클로저 안이라
+  //   직렬화에 안 나온다. 그래서 여섯 번째(gap_area 필수 선언)는 아래 별도 단언이 맡는다.
+  it('책 참조 표기가 관례를 따른다 — 부호 뒤·공백 1칸·문자열 맨 끝', () => {
+    const refs = [...allCopy.matchAll(/[^"]*?\(책 \d+(?:~\d+)?쪽\)/g)].map((m) => m[0]);
+    expect(refs).toHaveLength(5); // 렌더 경로 다섯
+    for (const r of [...refs, ...c.missingLabels({}).filter((l) => l.includes('(책 '))]) {
+      expect(r).toMatch(/[.?] \(책 \d+(?:~\d+)?쪽\)$/); // 부호 + 공백 1칸 + 참조로 끝난다
+    }
+  });
+
+  // gap_area 만 라벨이 두 벌이다(필수 선언 + 렌더). 한쪽만 고치면 결측 안내가 화면과 다른 문안을 읽어 준다.
+  it('gap_area 참조가 REQUIRED_3·areaPick 양쪽에 같이 붙었다', () => {
+    const label = c.today.areaPick.label;
+    expect(label).toContain('(책 94~95쪽)');
+    expect(c.missingLabels({})).toContain(label);
   });
 
   it('오늘의 질문에 선택 표기가 있다', () => {

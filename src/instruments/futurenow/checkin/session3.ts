@@ -2,9 +2,12 @@
 //   STEP 3(현재 직면) + STEP 4(습관 재구성)를 한 카드에 담는 **첫 이중 STEP 회차**다.
 //   1면 안에서 화제가 한 번 바뀌므로 표지 부제를 쪼개 묶음 이정표(group)로 쓴다 — 새 어휘도 STEP 용어 노출도 없다.
 //   되비추기 세 곳: ①(2회차 영역+문장) · 심화①(2회차 인생의 한 문장) · ⑤(2회차 한 걸음).
-//   책 페이지 참조는 **미확정이라 붙이지 않는다**(ADR-88·89 정책: 확정된 값만 카드에 오른다).
-//     확정되면 이 파일의 label 문자열에 문장 끝 괄호로 더한다. 대상 다섯 곳:
-//     gap_area · stuck_named · identity_gap · pairText(습관 짝) · speech_habit
+//   책 페이지 참조 **다섯이 최종 조판 확정치로 붙었다**(ADR-94 · 지휘부 선언 2026-08-07). ADR-88·89 의
+//     '확정된 값만 카드에 오른다' 조건이 이로써 해소됐다. 표기는 1·2회차 관례와 동일 —
+//     **문장부호 뒤 + 반각 공백 1칸 + 문자열 맨 끝**. gap_area 94~95 · stuck_named 96~104 ·
+//     identity_gap 108~111 · pairText(습관 짝) 117~118 · speech_habit 126~133.
+//     **gap_area 는 두 곳**(REQUIRED_3 선언 + areaPick.label)이다 — 결측 안내가 화면 문구를 그대로 읽으므로
+//     양쪽이 같아야 한다(ADR-91 일반화 테스트가 어긋남을 잡는다). 결측 패널에 쪽수가 함께 나오는 것은 의도다.
 import type { CheckinSession } from './index';
 import { countFilled, missingIn, missingKeys, type RequiredGroup } from './required';
 
@@ -15,7 +18,7 @@ import { countFilled, missingIn, missingKeys, type RequiredGroup } from './requi
 //   ADR-91: filledCount·missingLabels·missingKeys 가 전부 이 선언에서 파생된다.
 const REQUIRED_3: RequiredGroup[] = [
   { fields: [
-    { key: 'gap_area', label: '오늘 다섯 영역에 점수를 매기셨지요. 그중 지금 가장 간절한 영역 하나를 골라 주세요.' },
+    { key: 'gap_area', label: '오늘 다섯 영역에 점수를 매기셨지요. 그중 지금 가장 간절한 영역 하나를 골라 주세요. (책 94~95쪽)' },
     { key: 'gap_want', label: '그 영역에서 지금 가장 바라는 것 한 가지는' },
   ] },
   { fields: [
@@ -50,7 +53,7 @@ export const CHECKIN_SESSION_3 = {
     areaPick: {
       group: '현재를 직면하고',
       key: 'gap_area',
-      label: '오늘 다섯 영역에 점수를 매기셨지요. 그중 지금 가장 간절한 영역 하나를 골라 주세요.',
+      label: '오늘 다섯 영역에 점수를 매기셨지요. 그중 지금 가장 간절한 영역 하나를 골라 주세요. (책 94~95쪽)',
       help: '간격이 가장 크게 벌어진 자리입니다. 크다는 것은 그만큼 바라고 있다는 뜻이에요.',
       options: ['일', '재정', '관계', '건강', '기여'],
       line: { key: 'gap_want', label: '그 영역에서 지금 가장 바라는 것 한 가지는' },
@@ -61,7 +64,7 @@ export const CHECKIN_SESSION_3 = {
     question: {
       group: '현재를 직면하고',
       key: 'stuck_named',
-      label: '오늘 나를 제자리에 붙잡아 두고 있던 것은 무엇이었나요?',
+      label: '오늘 나를 제자리에 붙잡아 두고 있던 것은 무엇이었나요? (책 96~104쪽)',
       help: '이름을 붙여 보셨다면 그 이름을 그대로 적으셔도 좋습니다. 알아본 순간의 느낌을 함께 적으셔도 좋고요. 정확한 분석이 아니어도 됩니다.',
       badge: '선택',
     },
@@ -70,7 +73,7 @@ export const CHECKIN_SESSION_3 = {
     //   사분면 네 칸을 다 옮겨 적게 하지 않는다 — 다 옮기라 하면 성실 노동이 되고 대개 왼쪽만 길어진다.
     pairText: {
       group: '습관을 다시 짜다',
-      label: '오늘 다시 짠 습관 중에서, 짝 하나만 옮겨 주세요.',
+      label: '오늘 다시 짠 습관 중에서, 짝 하나만 옮겨 주세요. (책 117~118쪽)',
       help: '여러 개를 다 적지 않으셔도 됩니다. 짝이 맞는 한 쌍이면 충분합니다.',
       from: { key: 'habit_stop', label: '줄이거나 없애기로 한 것' },
       connector: '↓ 그 자리에',
@@ -107,13 +110,13 @@ export const CHECKIN_SESSION_3 = {
     fields: [
       {
         key: 'identity_gap',
-        label: '지금 내 하루 중에서, 지난 시간에 쓴 문장과 어긋난 채 반복되고 있는 것 하나는 무엇인가요?',
+        label: '지금 내 하루 중에서, 지난 시간에 쓴 문장과 어긋난 채 반복되고 있는 것 하나는 무엇인가요? (책 108~111쪽)',
         help: '고쳐야 할 것을 찾는 칸이 아닙니다. 어긋난 곳이 보이면 그것만으로 충분합니다.',
         mirror: { label: '지난 시간에 쓰신 문장', keys: ['identity_statement'] },
       },
       {
         key: 'speech_habit',
-        label: '요즘 내 입에서 가장 자주 나오는 말 한마디는 무엇인가요?',
+        label: '요즘 내 입에서 가장 자주 나오는 말 한마디는 무엇인가요? (책 126~133쪽)',
         help: '좋은 말이든 아니든 상관없습니다. 그냥 자주 나오는 말이면 됩니다.',
       },
     ],

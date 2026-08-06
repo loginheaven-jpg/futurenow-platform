@@ -10,6 +10,7 @@ import { anonNoticeText, buildCheckinRead, readAnonSuggestion } from '@/instrume
 import { ScheduleSeedClient } from './ScheduleSeedClient';
 import { CoachPhotos } from './CoachPhotos';
 import { RosterDetail, type RosterEntry } from './RosterDetail';
+import { defaultSessionNo } from './defaultSession';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export default async function CoachCheckinPage({
   ]);
   const hasSchedule = sessions.length > 0;
   const reqSession = typeof sp.session === 'string' ? Number(sp.session) : NaN;
-  const sessionNo = Number.isFinite(reqSession) ? reqSession : (sessions[0]?.sessionNo ?? 1);
+  const sessionNo = Number.isFinite(reqSession) ? reqSession : defaultSessionNo(sessions);
   const row = sessions.find((s) => s.sessionNo === sessionNo) ?? null;
   const checkins = hasSchedule ? await ctx.listCohortCheckins(cohortId, sessionNo) : [];
   const byUser = new Map(checkins.map((c) => [c.userId, c]));
