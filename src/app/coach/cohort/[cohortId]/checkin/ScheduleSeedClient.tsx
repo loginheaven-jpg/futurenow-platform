@@ -55,6 +55,15 @@ function LinkIcon() {
   );
 }
 
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 export function ScheduleSeedClient({ cohortId, code, sessions }: { cohortId: string; code: string; sessions: CohortSession[] }) {
   const router = useRouter();
   const hasSchedule = sessions.length > 0;
@@ -126,7 +135,7 @@ export function ScheduleSeedClient({ cohortId, code, sessions }: { cohortId: str
     );
   }
 
-  const grid = { display: 'grid', gridTemplateColumns: '46px 1fr 1fr var(--tap-min)', gap: 'var(--space-2)', alignItems: 'center' } as const;
+  const grid = { display: 'grid', gridTemplateColumns: '46px 1fr 1fr var(--tap-min) var(--tap-min)', gap: 'var(--space-2)', alignItems: 'center' } as const;
   return (
     <div style={{ padding: 'var(--space-4)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-5)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)' }}>
       <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-3)' }}>회차 일정 · 날짜 / 마감 / 링크</div>
@@ -135,6 +144,7 @@ export function ScheduleSeedClient({ cohortId, code, sessions }: { cohortId: str
         <span className="t-caption" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>날짜</span>
         <span className="t-caption" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>마감</span>
         <span className="t-caption" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>링크</span>
+        <span className="t-caption" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>미리</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         {rows.map((r, i) => (
@@ -145,6 +155,15 @@ export function ScheduleSeedClient({ cohortId, code, sessions }: { cohortId: str
             <button type="button" onClick={() => copyLink(r.sessionNo)} disabled={!code} aria-label={`${r.sessionNo}회차 갈무리 링크 복사`} title="갈무리 링크 복사" style={linkBtn}>
               {copied === r.sessionNo ? <span className="t-caption" style={{ color: 'var(--color-primary)' }}>✓</span> : <LinkIcon />}
             </button>
+            {/* 미리보기(ADR-92) — 아직 열리지 않은 회차도 여기서 본다. 카드 라우트는 opens_at 게이트가 막는다. */}
+            <a
+              href={`/coach/cohort/${cohortId}/checkin/preview?session=${r.sessionNo}`}
+              aria-label={`${r.sessionNo}회차 갈무리 카드 미리보기`}
+              title="갈무리 카드 미리보기"
+              style={{ ...linkBtn, textDecoration: 'none' }}
+            >
+              <EyeIcon />
+            </a>
           </div>
         ))}
       </div>

@@ -580,6 +580,12 @@ export function CheckinCardClient({
         </div>
       ) : null}
 
+      {/* 미리보기 고지를 저장 버튼 곁에 한 번 더 둔다 — 상단 배너는 스크롤하면 사라져,
+          여기서 적은 것이 남는 줄 알고 쓰다가 잃는 일이 없게 한다(ADR-92). */}
+      {preview ? (
+        <p className="t-caption" style={{ ...gray, textAlign: 'center', margin: '0 0 var(--space-2)' }}>미리보기 — 저장되지 않습니다</p>
+      ) : null}
+
       {/* 저장(단일 버튼) — 비활성으로 만들지 않는다. 눌리지 않는 버튼은 고장으로 읽힌다. */}
       <Button onClick={onSubmit} disabled={busy} style={{ width: '100%' }}>{busy ? '저장 중…' : copy.save.button}</Button>
       {filled < requiredTotal ? (
