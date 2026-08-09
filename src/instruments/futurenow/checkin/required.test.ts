@@ -66,6 +66,52 @@ describe('빈 값 판정', () => {
   });
 });
 
+// ADR-101 — 마음의 대체 칸. 칩(mood)과 직접 쓰기(mood_custom)는 서로 다른 칸이라,
+//   목록에 없는 감정을 상자에만 적은 사람이 mood 가 빈 배열이라 제출에서 막혔다.
+//   본인은 방금 적었는데 '마음이 비었다'는 안내를 받는 상태였다.
+describe('마음 — 직접 쓰기만 채워도 충족한다 (ADR-101)', () => {
+  const c = CHECKIN_SESSION_3;
+  const 나머지 = {
+    gap_area: '관계', gap_want: '아버지와 다시 대화하기',
+    habit_start: '자기 전 책 두 쪽', habit_stop: '자기 전 휴대폰',
+    last_step_result: '했습니다', step_what: '저녁에 전화', step_when: '수요일 저녁',
+    self_note: '오늘 도망가지 않았다',
+  };
+
+  it('칩은 비었고 직접 쓰기만 적었다 → 6칸 충족·결측 0', () => {
+    const a = { ...나머지, mood: [], mood_custom: '뭐라 해야 할지 모르겠는데, 후련하다' };
+    expect(c.filledCount(a)).toBe(6);
+    expect(c.missingKeys(a)).not.toContain('mood');
+  });
+
+  it('둘 다 비면 여전히 결측이다 — 느슨해진 것이 아니다', () => {
+    const a = { ...나머지, mood: [], mood_custom: '' };
+    expect(c.filledCount(a)).toBe(5);
+    expect(c.missingKeys(a)).toContain('mood');
+    // 결측 안내는 칩 라벨 하나만 가리킨다(상자는 바로 아래 있어 둘을 나열하면 오히려 헷갈린다).
+    expect(c.missingLabels(a).filter((l) => l.includes('마음은 어떤가요'))).toHaveLength(1);
+  });
+
+  it('공백만 적은 것은 빈 것으로 본다', () => {
+    expect(c.missingKeys({ ...나머지, mood: [], mood_custom: '   ' })).toContain('mood');
+  });
+
+  // 칩을 대신 눌러 주는 방식은 쓰지 않는다 — 참여자가 하지 않은 말을 저장하게 되기 때문이다.
+  //   판정만 인정하고 저장값은 건드리지 않는다는 사실을 못 박는다.
+  it('판정만 인정한다 — 저장값에 칩을 만들어 넣지 않는다', () => {
+    const a = { ...나머지, mood: [], mood_custom: '후련하다' };
+    expect(c.filledCount(a)).toBe(6);
+    expect(a.mood).toEqual([]); // 판정을 물어봐도 답이 바뀌지 않는다
+  });
+
+  // 1·2회차는 마감된 회차다. 판정을 바꾸면 이미 저장된 행의 '남은 칸 수'가 소급해서 달라진다(ADR-91 §2-4).
+  it('1·2회차는 그대로다 — 직접 쓰기만으로는 충족하지 않는다', () => {
+    for (const s of [CHECKIN_SESSION_1, CHECKIN_SESSION_2]) {
+      expect(s.missingKeys({ mood: [], mood_custom: '후련하다' }), `${s.sessionNo}회차`).toContain('mood');
+    }
+  });
+});
+
 describe('confidence 는 필수가 아니다 — 제출을 막지 않는다', () => {
   for (const c of ALL) {
     it(`${c.sessionNo}회차: 결측 목록에 confidence 가 없다`, () => {

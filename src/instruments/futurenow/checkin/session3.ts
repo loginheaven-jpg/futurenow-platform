@@ -27,7 +27,10 @@ const REQUIRED_3: RequiredGroup[] = [
     { key: 'habit_start', label: '이번 주에 새로 시작하거나 늘릴 것' },
     { key: 'habit_stop', label: '줄이거나 없앨 것' },
   ] },
-  { kind: 'list', fields: [{ key: 'mood', label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?' }] },
+  // ADR-101: 직접 쓰기(mood_custom)만 채워도 '마음'이 찬 것으로 본다. 칩과 직접 쓰기는 서로 다른 칸이라
+  //   목록에 없는 감정을 상자에만 적은 사람이 제출에서 막혔다. 3회차부터만 — 1·2회차는 마감된 회차라
+  //   판정을 바꾸면 이미 저장된 행의 '남은 칸 수'가 소급해서 달라진다(ADR-91 §2-4).
+  { kind: 'list', fields: [{ key: 'mood', label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?', altKey: 'mood_custom' }] },
   { fields: [{ key: 'last_step_result', label: '지난 한 걸음은 어떻게 되었나요?' }] },
   { fields: [
     { key: 'step_what', label: '무엇을 하시겠어요?' },

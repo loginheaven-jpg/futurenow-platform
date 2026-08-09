@@ -156,6 +156,7 @@ export function CheckinCardClient({
   const [gate, setGate] = useState<{ labels: string[]; keys: string[]; confidenceEmpty: boolean } | null>(null);
   const [gateSeen, setGateSeen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moodCustomRef = useRef<HTMLInputElement>(null); // ADR-101: 목록 한계 낱말을 고르면 여기로 커서를 옮긴다
   const openMarked = useRef(false);
 
   // 최초 진입 표식(계측) — '작성 카드에 처음 들어온 시각'이므로 edit 모드일 때만 1회.
@@ -197,6 +198,17 @@ export function CheckinCardClient({
       setSavedAt(`${ampm} ${h12}시 ${String(d.getMinutes()).padStart(2, '0')}분`);
     } else setSaveFailed(true);
   }
+  // ADR-101 — '딱 맞는 말이 없음'을 **새로 고른 순간**에만 커서를 직접 쓰기로 옮긴다.
+  //   ADR-91 C 는 그 낱말이 목록의 한계를 가리키게 좁혀 직접 쓰기로 눈이 가길 기대했으나,
+  //   1회차 실측에서 그 낱말을 고른 7명 중 직접 쓰기를 쓴 사람이 **0명**이었다. 안내 문구만으로는 닿지 않는다.
+  //   해제·재선택·다른 칩 선택에는 반응하지 않는다 — 이미 상자에 쓰고 있는 사람의 커서를 빼앗지 않기 위해서다.
+  //   포커스 이동은 화면 동작일 뿐이라 미리보기(preview)에서도 막지 않는다(서버 쓰기가 아니다).
+  function pickMood(key: string, exclusive: string | undefined, next: string[]) {
+    const newlyPicked = !!exclusive && next.includes(exclusive) && !mood.includes(exclusive);
+    setAnswer(key, next);
+    if (newlyPicked) requestAnimationFrame(() => moodCustomRef.current?.focus());
+  }
+
   function setAnswer(k: string, v: unknown) {
     const next = { ...answers, [k]: v };
     setAnswers(next);
@@ -410,9 +422,10 @@ export function CheckinCardClient({
       case 'mood':
         return (
           <Field label={t.mood.label} helpText={t.mood.help} fieldKey={t.mood.key} empty={isEmpty(t.mood.key)}>
-            <MultiChoiceChips options={[...t.mood.options]} value={mood} max={t.mood.max} exclusive={t.mood.exclusive} onChange={(v) => setAnswer(t.mood.key, v)} ariaLabel={t.mood.label} />
-            {/* 목록 한계 낱말을 고르면 직접 쓰기로 눈이 가도록 안내를 바꾼다(ADR-91 C). 강제하지 않는다. */}
-            <input value={str(t.moodCustom.key)} onChange={(e) => setAnswer(t.moodCustom.key, e.target.value)} onBlur={flushSave} placeholder={moodCustomHint} aria-label={moodCustomHint} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
+            <MultiChoiceChips options={[...t.mood.options]} value={mood} max={t.mood.max} exclusive={t.mood.exclusive} onChange={(v) => pickMood(t.mood.key, t.mood.exclusive, v)} ariaLabel={t.mood.label} />
+            {/* 목록 한계 낱말을 고르면 직접 쓰기로 눈이 가도록 안내를 바꾼다(ADR-91 C). 강제하지 않는다.
+                ADR-101: 안내만으로는 아무도 건너지 않아(1회차 7명 중 0명) 커서도 함께 옮긴다 — 위 pickMood. */}
+            <input ref={moodCustomRef} value={str(t.moodCustom.key)} onChange={(e) => setAnswer(t.moodCustom.key, e.target.value)} onBlur={flushSave} placeholder={moodCustomHint} aria-label={moodCustomHint} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
           </Field>
         );
 
