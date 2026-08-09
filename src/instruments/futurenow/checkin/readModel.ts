@@ -96,7 +96,8 @@ export function buildCheckinRead(
         const b = t.areaPick;
         if (!b) break;
         pushText(out, b.label, text(answers, b.key));
-        pushText(out, b.line.label, text(answers, b.line.key));
+        // ADR-98: 줄 수를 회차가 정한다(2회차 하나 · 3회차 둘).
+        for (const ln of b.lines) pushText(out, ln.label, text(answers, ln.key));
         break;
       }
       case 'purpose': {

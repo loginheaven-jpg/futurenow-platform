@@ -62,7 +62,24 @@ describe('3회차 등록·구조', () => {
   });
 
   it('습관 짝에 connector 가 있다(1회차 갈망 쌍에는 없다)', () => {
-    expect(c.today.pairText.connector).toBe('↓ 그 자리에');
+    expect(c.today.pairText.connector).toBe('↓ 그 자리를 만들려면');
+  });
+
+  // ADR-98 — 기입 순서 반전. 시작할 것이 위, 없앨 것이 아래다. 사분면 좌측 상단이 Eliminate 이고
+  //   사람은 위에서부터 채우므로, 짝 맞추기를 나중에 요구하면 이미 자책 목록이 완성된 뒤다.
+  //   **키는 바꾸지 않았다** — 저장된 답·결측 판정·나눔 열이 그대로 살아야 한다. 양쪽을 함께 못 박는다.
+  it('습관 짝 기입 순서가 시작 → 없앰이고, 키는 그대로다', () => {
+    expect(c.today.pairText.from.key).toBe('habit_start');
+    expect(c.today.pairText.to.key).toBe('habit_stop');
+    expect('help' in c.today.pairText.to).toBe(false); // connector 가 같은 논리를 지므로 지웠다
+  });
+
+  // 결측 안내는 화면 문구를 그대로 읽는다 — REQUIRED_3 와 렌더가 어긋나면 이중 진실이 된다.
+  it('결측 라벨 순서·문안이 화면과 같다', () => {
+    const missing = c.missingLabels({});
+    expect(missing).toContain(c.today.pairText.from.label);
+    expect(missing).toContain(c.today.pairText.to.label);
+    expect(missing.indexOf(c.today.pairText.from.label)).toBeLessThan(missing.indexOf(c.today.pairText.to.label));
   });
 });
 
@@ -135,11 +152,15 @@ describe('문안 규율', () => {
 });
 
 describe('나눔 후보 열 — 나눌 수 있는 문장만(지휘부 확정 2026-08-03)', () => {
-  it('세 열: 지금 가장 바라는 것 · 습관 바꾸기 · 입에 붙은 말', () => {
+  // ADR-98: 우당탕탕이 넷째로 붙었다. **마지막 자리**인 것이 중요하다 — 선택 항목이고 과제 시점이
+  //   '다음 주까지'라 빈 칸이 가장 많이 날 항목이라, 가운데 두면 빈 칸이 목록 한복판에 생긴다.
+  //   습관 짝의 from/to 는 화면 기입 순서가 뒤집혔어도 **의미 방향(없앤 것 → 들인 것)** 그대로다.
+  it('네 열: 지금 가장 바라는 것 · 습관 바꾸기 · 입에 붙은 말 · 우당탕탕', () => {
     expect(c.summaryFields).toEqual([
       { label: '지금 가장 바라는 것', key: 'gap_want' },
       { label: '습관 바꾸기', from: 'habit_stop', to: 'habit_start' },
       { label: '입에 붙은 말', key: 'speech_habit' },
+      { label: '우당탕탕 프로젝트', key: 'rough_project' },
     ]);
   });
 
@@ -176,10 +197,20 @@ describe('readModel — 신규 7키가 본인·인도자 모두에게 나온다'
     expect(idx(c.today.pairText.label)).toBeLessThan(idx(c.today.mood.label));
   });
 
-  it('습관 짝은 쌍으로 나온다', () => {
+  // ADR-98: 열람은 카드를 그대로 되비춘다 — 기입 순서가 뒤집혔으므로 여기도 시작 → 없앰이다.
+  //   나눔 열(summaryFields)만 의미 방향(없앤 것 → 들인 것)을 지킨다. 둘은 별개다.
+  it('습관 짝은 쌍으로 나오고 카드 순서를 따른다', () => {
     const pair = buildCheckinRead(3, ANSWERS_3, OPEN, 'facilitator').find((x) => x.kind === 'pair');
-    expect(pair?.kind === 'pair' && pair.fromValue).toBe(ANSWERS_3.habit_stop);
-    expect(pair?.kind === 'pair' && pair.toValue).toBe(ANSWERS_3.habit_start);
+    expect(pair?.kind === 'pair' && pair.fromValue).toBe(ANSWERS_3.habit_start);
+    expect(pair?.kind === 'pair' && pair.toValue).toBe(ANSWERS_3.habit_stop);
+  });
+
+  // ADR-98 신설 칸. 선택이라 필수 6칸에는 안 들어가지만 열람에는 나와야 한다(적은 것이 안 보이면 안 된다).
+  it('우당탕탕 프로젝트가 본인·인도자 모두에게 나온다', () => {
+    for (const who of ['self', 'facilitator'] as const) {
+      const t = texts(buildCheckinRead(3, { ...ANSWERS_3, rough_project: '하루 한 줄 쓰기 한 달' }, OPEN, who));
+      expect(t, who).toContain('하루 한 줄 쓰기 한 달');
+    }
   });
 
   it('비공개 토글을 켜면 인도자에게 ⑥ 블록 전체가 사라진다(ADR-86 정책 그대로)', () => {

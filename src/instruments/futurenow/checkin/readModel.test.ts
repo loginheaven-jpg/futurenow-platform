@@ -123,7 +123,7 @@ describe('라벨은 레지스트리 원문과 문자 단위로 일치한다(문�
     const l = labels(buildCheckinRead(2, ANSWERS_2, OPEN, 'facilitator'));
     const c = CHECKIN_SESSION_2;
     expect(l).toContain(c.today.areaPick.label);
-    expect(l).toContain(c.today.areaPick.line.label);
+    for (const ln of c.today.areaPick.lines) expect(l).toContain(ln.label); // ADR-98: 줄이 배열이다
     expect(l).toContain(c.today.identity.label);
     expect(l).toContain(c.step.lastStep.label);
     expect(l).toContain(c.step.lastStep.note.label);

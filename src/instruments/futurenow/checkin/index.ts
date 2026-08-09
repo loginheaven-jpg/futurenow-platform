@@ -51,7 +51,10 @@ export type CheckinSession = {
     //   connector = 두 칸 사이 문구(3회차 '↓ 그 자리에'). 없으면 그리지 않는다.
     pairText?: BlockBase & { label: string; help: string; from: CheckinField; to: CheckinField; connector?: string };
     // 칩 단일선택(문자열 저장) + 한 줄. 2회차 가슴 뛴 영역 · 3회차 간절한 영역.
-    areaPick?: BlockBase & { key: string; label: string; help: string; options: readonly string[]; line: CheckinField };
+    // lines 는 칩 아래 붙는 줄들이다. 단수 `line` 이었으나 3회차가 둘을 요구해 배열로 승격했다(ADR-98).
+    //   `line2` 같은 임시 필드를 더하지 않는 이유는 ADR-90 과 같다 — 슬롯을 회차마다 늘리면 7회차에 무너진다.
+    //   1·2회차는 한 줄짜리 배열이 될 뿐 문안이 바뀌지 않는다(리터럴 잠금 무영향).
+    areaPick?: BlockBase & { key: string; label: string; help: string; options: readonly string[]; lines: readonly CheckinField[] };
     // 목적을 찾는 세 질문(2회차~) — ② '인생을 이끌어갈 하나의 문장'의 재료.
     //   기본 펼침이다: 수업 중 시간이 부족해 숙제로 나갈 가능성이 커, 접어 두면 존재를 모른 채 넘어간다.
     //   대신 badge('선택')로 필수가 아님을 알린다 — 빈 입력칸 셋이 펼쳐져 있으면 필수로 읽히기 때문이다.

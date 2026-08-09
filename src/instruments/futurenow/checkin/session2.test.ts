@@ -66,7 +66,7 @@ describe('session2 문안 — 금지어·책 참조·구조', () => {
   });
   it('신규 블록 키 — 영역 칩·지난 한 걸음·공개 토글·letter_line 공유', () => {
     expect(CHECKIN_SESSION_2.today.areaPick.key).toBe('future_area');
-    expect(CHECKIN_SESSION_2.today.areaPick.line.key).toBe('future_line');
+    expect(CHECKIN_SESSION_2.today.areaPick.lines.map((l) => l.key)).toEqual(['future_line']); // ADR-98: 2회차는 한 줄
     expect(CHECKIN_SESSION_2.today.identity.key).toBe('identity_statement');
     // ADR-90: mirror 가 boolean 에서 블록 속성(label+keys)으로 일반화됐다. 렌더 결과는 동일하다.
     expect(CHECKIN_SESSION_2.today.identity.mirror).toEqual({ label: '지난 시간에 쓰신 문장', keys: ['identity_sentence'] });

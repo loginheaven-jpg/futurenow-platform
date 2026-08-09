@@ -363,10 +363,14 @@ export function CheckinCardClient({
               onChange={(v) => setAnswer(t.areaPick!.key, v[0] ?? '')}
               ariaLabel={t.areaPick.label}
             />
-            <div id={fieldId(t.areaPick.line.key)} style={{ marginTop: 'var(--space-2)' }}>
-              <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-1)' }}>{t.areaPick.line.label}{isEmpty(t.areaPick.line.key) ? ' · ' + EMPTY_MARK : ''}</div>
-              {textInput(t.areaPick.line.key, t.areaPick.line.placeholder)}
-            </div>
+            {/* 칩 아래 줄들(ADR-98) — 회차가 몇 줄을 붙이든 순회로 따라온다. help 는 있는 줄에만. */}
+            {t.areaPick.lines.map((ln) => (
+              <div key={ln.key} id={fieldId(ln.key)} style={{ marginTop: 'var(--space-2)' }}>
+                <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-1)' }}>{ln.label}{isEmpty(ln.key) ? ' · ' + EMPTY_MARK : ''}</div>
+                {ln.help ? <div className="t-caption" style={{ ...help, marginBottom: 'var(--space-1)' }}>{ln.help}</div> : null}
+                {textInput(ln.key, ln.placeholder)}
+              </div>
+            ))}
           </div>
         ) : null;
 
