@@ -69,7 +69,8 @@ export type CheckinSession = {
     moodCustom: { key: string; placeholder: string; promptPlaceholder?: string };
   };
   // summary = 접힌 상태에서 안에 무엇이 있는지 보여 주는 한 줄. 문안이므로 레지스트리가 소유한다(컴포넌트에 박지 않는다).
-  deepen: { title: string; summary: string; fields: (CheckinField & { help: string; mirror?: Mirror })[] };
+  // help 는 선택이다(ADR-100) — 라벨이 이미 두 가지를 묻는 문항에는 보조 문구가 군더더기가 된다.
+  deepen: { title: string; summary: string; fields: (CheckinField & { help?: string; mirror?: Mirror })[] };
   step: {
     // ⑤ 지난 한 걸음 결산 — 2회차부터. 이 블록 위에 지난 회차 한 걸음을 되비춘다(§6).
     lastStep?: { key: string; label: string; options: readonly string[]; note: CheckinField; mirror: Mirror };

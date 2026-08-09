@@ -457,10 +457,12 @@ export function CheckinCardClient({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {copy.deepen.fields.map((f) => (
             <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {/* 심화 필드에도 되비추기를 붙일 수 있다(3회차 identity_gap · ADR-90) */}
+              {/* 심화 필드에도 되비추기를 붙일 수 있다(ADR-90). 3회차가 쓰던 자리는 ADR-100 으로 사라졌으나
+                  4~7회차가 다시 쓸 수 있어 부품은 남긴다. */}
               <MirrorOf mirror={f.mirror} prior={prior} />
               <div style={fieldLabel}>{f.label}</div>
-              <div className="t-caption" style={help}>{f.help}</div>
+              {/* help 는 선택이다(ADR-100) — 없으면 줄을 그리지 않는다. 빈 줄이 남으면 간격이 어긋난다. */}
+              {f.help ? <div className="t-caption" style={help}>{f.help}</div> : null}
               <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
               {/* 미리보기에서는 사진 위젯을 띄우지 않는다 — 실제 Storage 를 호출하는 부품이라 서버 쓰기 0 규율을 깬다. */}
               {f.key === 'letter_line' && !preview ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}

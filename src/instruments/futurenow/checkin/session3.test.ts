@@ -13,7 +13,6 @@ const ANSWERS_3 = {
   stuck_named: '거절당할까 봐 먼저 연락하지 못하는 것',
   habit_stop: '자기 전 휴대폰 보기',
   habit_start: '자기 전 책 두 쪽 읽기',
-  identity_gap: '사람을 세운다면서 정작 집에서는 말을 아낀다',
   speech_habit: '바빠서요',
   mood: ['뜨끔함', '해볼 만함'],
   mood_custom: '조금 부끄러움',
@@ -97,9 +96,9 @@ describe('필수 6칸 — 짝은 둘 다 채워야 한 칸', () => {
     expect(c.filledCount({ ...ANSWERS_3, habit_start: '' })).toBe(5);
   });
 
-  it('오늘의 질문·심화 두 칸·자신감은 세지 않는다', () => {
+  it('오늘의 질문·심화 한 칸·자신감은 세지 않는다', () => {
     const without = { ...ANSWERS_3 };
-    for (const k of ['stuck_named', 'identity_gap', 'speech_habit', 'confidence', 'last_step_note']) {
+    for (const k of ['stuck_named', 'speech_habit', 'confidence', 'last_step_note']) {
       delete (without as Record<string, unknown>)[k];
     }
     expect(c.filledCount(without)).toBe(6);
@@ -120,11 +119,11 @@ describe('문안 규율', () => {
   // ADR-94(2026-08-07): 지휘부가 다섯 값을 최종 조판 확정치로 선언해 ADR-88·89 의 '확정된 값만 카드에 오른다'
   //   조건이 해소됐다. 그래서 이 자리의 단언은 '참조 0'(미확정 금지)에서 '확정 다섯 열거'로 **뒤집혔다**.
   //   조용히 지우지 않고 뒤집은 것은, 가드를 삭제하면 승인된 정책을 코드에서 몰래 되돌리는 것이 되기 때문이다.
-  it('책 페이지 참조 다섯 곳 — 확정치(ADR-94)', () => {
+  it('책 페이지 참조 네 곳 — 확정치(ADR-94 · ADR-100 으로 다섯에서 넷)', () => {
     expect(allCopy).toContain('(책 94~95쪽)');
     expect(allCopy).toContain('(책 96~104쪽)');
-    expect(allCopy).toContain('(책 108~111쪽)');
     expect(allCopy).toContain('(책 117~118쪽)');
+    expect(allCopy).not.toContain('(책 108~111쪽)'); // ADR-100 으로 identity_gap 과 함께 사라졌다
     expect(allCopy).toContain('(책 126~133쪽)');
   });
 
@@ -133,7 +132,7 @@ describe('문안 규율', () => {
   //   직렬화에 안 나온다. 그래서 여섯 번째(gap_area 필수 선언)는 아래 별도 단언이 맡는다.
   it('책 참조 표기가 관례를 따른다 — 부호 뒤·공백 1칸·문자열 맨 끝', () => {
     const refs = [...allCopy.matchAll(/[^"]*?\(책 \d+(?:~\d+)?쪽\)/g)].map((m) => m[0]);
-    expect(refs).toHaveLength(5); // 렌더 경로 다섯
+    expect(refs).toHaveLength(4); // 렌더 경로 넷(ADR-100 으로 identity_gap 소멸)
     for (const r of [...refs, ...c.missingLabels({}).filter((l) => l.includes('(책 '))]) {
       expect(r).toMatch(/[.?] \(책 \d+(?:~\d+)?쪽\)$/); // 부호 + 공백 1칸 + 참조로 끝난다
     }
@@ -173,23 +172,45 @@ describe('나눔 후보 열 — 나눌 수 있는 문장만(지휘부 확정 202
 
   it('범주 낱말과 자기개시가 깊은 문항은 제외한다', () => {
     const keys = c.summaryFields.flatMap((f) => Object.values(f));
-    for (const k of ['gap_area', 'stuck_named', 'identity_gap', 'self_note']) expect(keys).not.toContain(k);
+    for (const k of ['gap_area', 'stuck_named', 'self_note']) expect(keys).not.toContain(k);
   });
 });
 
-describe('되비추기 세 곳 — 전부 2회차를 읽는다', () => {
-  it('① 영역 · 심화① 정체성 문장 · ⑤ 한 걸음', () => {
+describe('되비추기 두 곳 — 전부 2회차를 읽는다(ADR-100 으로 심화① 소멸)', () => {
+  it('① 영역 · ⑤ 한 걸음', () => {
     expect(c.today.areaPick.mirror).toEqual({ label: '지난 시간에 가장 가슴이 뛴다고 고르신 영역', keys: ['future_area', 'future_line'] });
-    expect(c.deepen.fields[0].mirror).toEqual({ label: '지난 시간에 쓰신 문장', keys: ['identity_statement'] });
     expect(c.step.lastStep.mirror.keys).toEqual(['step_what', 'step_when']);
   });
+
+  // 잃은 것을 명시로 남긴다 — 2회차 정체성 문장을 3회차에서 되비추던 유일한 지점이었고,
+  //   갈망(1) → 원씽(4) → 정체성 선언(7) 종단 축의 중간 고리였다. 되살릴 때 여기를 본다.
+  it('심화에는 되비추기가 없다 — identity_statement 를 읽는 자리가 사라졌다', () => {
+    expect(c.deepen.fields.some((f) => 'mirror' in f)).toBe(false);
+    expect(JSON.stringify(c)).not.toContain('identity_statement');
+  });
 });
 
-describe('readModel — 신규 7키가 본인·인도자 모두에게 나온다', () => {
-  const NEW_KEYS = ['gap_area', 'gap_want', 'stuck_named', 'habit_stop', 'habit_start', 'identity_gap', 'speech_habit'] as const;
+describe('심화 한 칸 (ADR-100)', () => {
+  it('speech_habit 하나뿐이고 identity_gap 은 없다', () => {
+    expect(c.deepen.fields.map((f) => f.key)).toEqual(['speech_habit']);
+  });
+
+  // help 는 두지 않는다 — 라벨이 이미 두 가지(무엇을·어떻게)를 묻고 있어 보조 문구가 군더더기가 된다.
+  //   타입에서 help 를 선택으로 내린 것이 이 자리 때문이다(index.ts).
+  it('보조 문구가 없다', () => {
+    expect('help' in c.deepen.fields[0]).toBe(false);
+  });
+
+  it('요약 줄이 남은 한 칸만 말한다', () => {
+    expect(c.deepen.summary).toBe('내 입에 붙은 말');
+  });
+});
+
+describe('readModel — 신규 6키가 본인·인도자 모두에게 나온다', () => {
+  const NEW_KEYS = ['gap_area', 'gap_want', 'stuck_named', 'habit_stop', 'habit_start', 'speech_habit'] as const;
 
   for (const audience of ['self', 'facilitator'] as const) {
-    it(`${audience}: 7키 전량`, () => {
+    it(`${audience}: 6키 전량`, () => {
       const t = texts(buildCheckinRead(3, ANSWERS_3, OPEN, audience));
       for (const k of NEW_KEYS) expect(t, k).toContain(ANSWERS_3[k]);
     });
