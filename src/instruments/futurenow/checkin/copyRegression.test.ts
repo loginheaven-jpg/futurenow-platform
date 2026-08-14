@@ -110,6 +110,22 @@ describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => 
     }
   });
 
+  // '충분해요' 는 허락이고 '두 개를 적으면 대개 둘 다 하지 않거든요' 는 그 허락의 이유였다.
+  //   앞을 지우면 뒤가 가리킬 데가 없어지므로 **한 묶음으로** 지웠다. 한 걸음 help 에 남는 것은 용어 안내 한 줄이다.
+  //   Phase 2 의 '충분합니다' 둘(2회차 areaPick · 3회차 pairText)은 아직 남아 있다.
+  it('충분해요 계열과 그 이유 문장이 함께 사라졌다', () => {
+    for (const file of S) {
+      const lits = [...koreanLiterals(file)];
+      expect(lits.some((s) => s.includes('충분해요')), file).toBe(false);
+      expect(lits.some((s) => s.includes('두 개를 적으면')), file).toBe(false);
+    }
+    for (const file of ['session1', 'session2'] as const) {
+      expect(koreanLiterals(file).has("이 세미나에서는 이것을 '한 걸음'이라고 부릅니다."), file).toBe(true);
+    }
+    // 목적 세 질문은 뒤 문장(값)이 남는다 — 지운 것은 앞의 허락뿐이다.
+    expect([...koreanLiterals('session2')].some((s) => s.startsWith('세 질문이 겹치는 자리에, 나의 목적이 있습니다.') && s.includes('재료가 됩니다'))).toBe(true);
+  });
+
   it('심화 제목이 격상됐다 — 세 회차 공통', () => {
     for (const file of S) expect(koreanLiterals(file).has('여기서부터가 진짜입니다'), file).toBe(true);
   });
