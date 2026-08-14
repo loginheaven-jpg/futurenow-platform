@@ -458,15 +458,21 @@ export function CheckinCardClient({
         </div>
       ))}
 
-      {/* 1면 하단 · 심화(접힘 기본). 공용 Disclosure — 줄 전체가 버튼이고 상태를 글자로 말한다.
-          접힘 블록이므로 '선택' 뱃지를 두지 않는다(ADR-82 유지 — 접혀 있다는 사실 자체가 신호). */}
-      <Disclosure
-        title={copy.deepen.title}
-        summary={copy.deepen.summary}
-        defaultOpen={initialFlags.deepOpened}
-        onToggle={(open) => { if (open && !flags.deepOpened) setFlag('deepOpened', true); }}
-        last
-      >
+      {/* 1면 하단 · 심화 — **기본 펼침**(ADR-102 축4). 부록으로 두지 않는다: 8/11 이 펼쳤고,
+          이것은 부가가 아니라 값을 치른 이유에 가깝다. 공용 Disclosure — 줄 전체가 버튼이고 상태를 글자로 말한다.
+
+          **`onToggle` 을 뗐다 — `deep_opened` 계측의 동결이 이 전환과 한 몸이다.**
+          Disclosure 는 마운트 시 콜백을 부르지 않으므로, 기본 펼침으로 두고 콜백을 남기면
+          '접었다 다시 편 사람'만 집계되어 0 이 아닌 작은 수가 찍히고 **옛 지표와 구별되지 않는다.**
+          그래서 기록을 아예 멈춘다. 컬럼(`deep_opened`)은 지운다 — 1기 실측이 그 안에 있다.
+          앞으로의 지표는 **심화 칸 실제 작성률**로 읽는다(펼침은 의도이고 작성은 행동이다).
+          부수 효과: 접은 상태가 저장되지 않아 다시 열면 늘 펼쳐져 있다. 기본 펼침의 취지와 맞다.
+
+          '선택' 뱃지는 이번 범위에서 뺐다(지휘부 철회) — ADR-82·88 이 접힘 블록에서 지운 것이고,
+          되살리면 타입·문안 3건·baseline 이 따라온다. 기본 펼침 + 뱃지 없음이 ADR-88 의 근거
+          ('빈 칸이 펼쳐져 있으면 필수로 읽힌다')를 건드린다는 것은 알고 뺀다 — 이 개편이 요구를
+          올리는 방향이라 그 오독이 이번엔 손해가 아니다. */}
+      <Disclosure title={copy.deepen.title} summary={copy.deepen.summary} defaultOpen last>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {copy.deepen.fields.map((f) => (
             <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

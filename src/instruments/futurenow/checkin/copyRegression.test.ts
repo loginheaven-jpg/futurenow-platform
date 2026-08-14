@@ -88,6 +88,51 @@ describe('3회차 개정 1차가 되돌아가지 않는다 (ADR-98)', () => {
   });
 });
 
+// ADR-102 Phase 1 — 진취 전환. 전 회차 공통 문구 넷 + 심화 기본 펼침.
+//   완충이 막으려던 문제는 실측에서 하나도 관측되지 않았다(자신감 2·5·7·8 부풀림 0 · 예시 베낌 0명).
+//   반면 완충이 붙은 필수 칸(selfNote)은 4/8 이 비었다. 없는 위험에 대비하느라 있는 기회를 잃고 있었다.
+describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => {
+  const S = ['session1', 'session2', 'session3'] as const;
+
+  it('허락 문구 넷이 사라졌다', () => {
+    for (const file of S) {
+      const lits = koreanLiterals(file);
+      expect(lits.has('다듬지 않으셔도 됩니다. 쓰신 그대로면 됩니다.'), file).toBe(false);
+      expect(lits.has('꼭 칭찬이 아니어도 됩니다. 지금 나에게 필요한 말이면 됩니다.'), file).toBe(false);
+      expect(lits.has('깊은 생각 갈무리하기'), file).toBe(false);
+      expect(lits.has('지난 한 걸음이 남아 있지 않아요. 이번 시간부터 시작해도 괜찮습니다.'), file).toBe(false);
+    }
+  });
+
+  it('selfNote 가 값을 말한다 — 세 회차 공통', () => {
+    for (const file of S) {
+      expect(koreanLiterals(file).has('오늘의 나에게 지금 필요한 말을 적으십시오. 이 한 줄이 회차마다 쌓입니다.'), file).toBe(true);
+    }
+  });
+
+  it('심화 제목이 격상됐다 — 세 회차 공통', () => {
+    for (const file of S) expect(koreanLiterals(file).has('여기서부터가 진짜입니다'), file).toBe(true);
+  });
+
+  it('지난 걸음 없음 안내가 누적을 말한다 — 2·3회차', () => {
+    for (const file of ['session2', 'session3'] as const) {
+      expect(koreanLiterals(file).has('이번 회차부터 한 걸음이 쌓입니다.'), file).toBe(true);
+    }
+  });
+
+  // **1·2회차의 identity help 가 서로 다르다.** 사고가 아니라 의도다 —
+  //   1회차 키(identity_sentence)는 2회차가 되비추므로 '다음 회차의 출발점'이 참이지만,
+  //   2회차 키(identity_statement)를 읽는 자리는 ADR-100 이후 0곳이라 같은 문장이 거짓이 된다.
+  //   제품이 지금 이행할 수 있는 값만 말한다(ADR-102 규범). 되비추기가 4회차에 생기면 그때 붙인다.
+  it('identity help — 1회차만 값 문장을 갖는다', () => {
+    const s1 = koreanLiterals('session1');
+    const s2 = koreanLiterals('session2');
+    expect(s1.has('손본 문장이 아니라 오늘 쓴 그대로 옮기십시오. 이 문장이 다음 회차의 출발점이 됩니다.')).toBe(true);
+    expect(s2.has('손본 문장이 아니라 오늘 쓴 그대로 옮기십시오.')).toBe(true);
+    expect(s2.has('손본 문장이 아니라 오늘 쓴 그대로 옮기십시오. 이 문장이 다음 회차의 출발점이 됩니다.')).toBe(false);
+  });
+});
+
 // ADR-91 D — 완충 문구를 '허락'에서 '용도'로 바꾼 교체. 실측이 근거를 지웠기 때문이다:
 //   실행 자신감 값은 2·5·7·8(평균 5.5)로 부풀림이 없었고, self_note placeholder 를 그대로 베낀 사람은 0명이었다.
 //   없애는 것이 아니라 문법을 바꾼다 — 정직성 확보 효과는 같고 자세가 반대다.
@@ -147,7 +192,9 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
     const koreanStrings3 = koreanLiterals('session3');
     for (const file of ['session1', 'session2', 'session3'] as const) {
       const lits = koreanLiterals(file);
-      expect(lits.has('꼭 칭찬이 아니어도 됩니다. 지금 나에게 필요한 말이면 됩니다.'), file).toBe(true);
+      // ADR-102 가 이 목록에서 selfNote 완충 하나를 **뺐다**(판례 부분 파기). 남은 둘은 그대로다 —
+      //   연락 요청과 익명 안내는 '무너진 사람이 여는 문'이지만 self_note 는 자기에게 쓰는 말이라
+      //   도움을 청하는 통로가 아니다. 그리고 그 칸만 필수인데 4/8 이 비었다.
       expect(lits.has('짧은 안부 연락입니다. 코칭 세션이 아닙니다.'), file).toBe(true);
       expect(lits.has('이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.'), file).toBe(true);
     }
