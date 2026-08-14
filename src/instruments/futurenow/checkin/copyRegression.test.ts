@@ -153,6 +153,86 @@ describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => 
   });
 });
 
+// ADR-102 Phase 2 — 회차별 문안 여덟 자리. 여기서 허락 계열이 레지스트리에서 완전히 걷힌다.
+describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => {
+  const S = ['session1', 'session2', 'session3'] as const;
+
+  // 이 검사가 이 개편 전체의 잠금이다. 되돌아오면 톤 개편이 통째로 무너진다.
+  //   **범위는 session*.ts 로 한정한다** — 원칙 §3 의 다섯 자리(연락 요청·익명 안내·오해 방지·
+  //   사진 고지·결측 패널) 중 둘은 컴포넌트에 있어 여기 걸리지 않는다. 대신 아래에서 **존재**를 단언한다.
+  //   (주석은 koreanLiterals 가 걷어내므로 설명문에 금지어를 인용해도 걸리지 않는다.)
+  const BANNED = ['하셔도 됩니다', '않으셔도 됩니다', '괜찮습니다', '아니어도 됩니다', '충분합니다', '충분해요'];
+
+  it('허락 어휘가 세 회차 문안에서 0건', () => {
+    for (const file of S) {
+      const hits = [...koreanLiterals(file)].filter((s) => BANNED.some((b) => s.includes(b)));
+      expect(hits, `${file}: 허락 어휘가 살아 있다 → ${JSON.stringify(hits)}`).toEqual([]);
+    }
+  });
+
+  it('1회차 — 표지 띠와 편지 첨부', () => {
+    const l = koreanLiterals('session1');
+    expect(l.has('오늘 꺼낸 것을, 흐려지기 전에 붙잡아 둡니다. 7주 기록의 첫 장입니다.')).toBe(true);
+    expect([...l].some((s) => s.includes('촬영해 첨부하십시오. (책 59쪽)'))).toBe(true);
+  });
+
+  it('2회차 — 영역·지난 걸음·편지 첨부', () => {
+    const l = koreanLiterals('session2');
+    expect(l.has('다섯 중 가장 가슴이 뛴 하나만 고르십시오. 이 선택이 4회차 원씽의 재료가 됩니다.')).toBe(true);
+    expect(l.has('정직한 기록만이 다음 한 주를 바꿉니다.')).toBe(true);
+    expect([...l].some((s) => s.includes('촬영해 첨부하십시오. (책 85~87쪽)'))).toBe(true);
+  });
+
+  it('3회차 — 우당탕탕·오늘의 질문·습관 짝', () => {
+    const l = koreanLiterals('session3');
+    expect(l.has('완성이 아니라 시작이 목적입니다. 이름을 붙이는 순간 프로젝트가 됩니다.')).toBe(true);
+    expect(l.has('오늘 붙인 이름을 그대로 적으십시오. 알아본 순간의 느낌을 함께 적으면 더 좋습니다.')).toBe(true);
+    expect(l.has('짝이 맞는 한 쌍만 고르십시오. 없앨 것과 들일 것이 함께 있어야 습관이 바뀝니다.')).toBe(true);
+  });
+
+  // 압박 어휘·판정어는 진취적 어조와 다른 것이다(원칙 §4).
+  it('압박 어휘와 판정어가 0건', () => {
+    for (const file of S) {
+      const lits = [...koreanLiterals(file)];
+      for (const w of ['반드시', '절대', '놓치지', '지각', '미제출', '함정']) {
+        expect(lits.some((s) => s.includes(w)), `${file}: ${w}`).toBe(false);
+      }
+    }
+  });
+});
+
+// 원칙 §3 의 다섯 자리 — **BANNED 검사가 닿지 않는 곳까지 존재로 지킨다.**
+//   이 자리들은 허락 어휘를 그대로 쓰지만 지우면 안 되는 것들이다: 5주차에 무너진 사람이 여는 문(연락 요청·
+//   익명 안내), 오답을 막는 지시(오해 방지), 프라이버시 고지(사진), 채우게 만드는 장치(결측 패널).
+//   앞의 셋은 session*.ts 에 있어 BANNED 검사에 **걸리지 않을 뿐** 지워도 안 잡힌다. 뒤의 둘은 컴포넌트에 있다.
+describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
+  const src = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
+
+  it('연락 요청 · 익명 안내 — 세 회차', () => {
+    for (const file of ['session1', 'session2', 'session3'] as const) {
+      const l = koreanLiterals(file);
+      expect(l.has('짧은 안부 연락입니다. 코칭 세션이 아닙니다.'), file).toBe(true);
+      expect(l.has('이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.'), file).toBe(true);
+    }
+  });
+
+  it('오해 방지 — 1회차 첫 방문 안내', () => {
+    expect(koreanLiterals('session1').has('이건 진단이 아닙니다. 점수도, 정답도 없습니다.')).toBe(true);
+  });
+
+  it('사진 첨부 프라이버시 고지 — 컴포넌트', () => {
+    expect(src('../../../app/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx'))
+      .toContain('첨부한 사진은 인도자와 운영자가 볼 수 있습니다.');
+  });
+
+  it('결측 안내 패널 — 컴포넌트', () => {
+    const s = src('../../../app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx');
+    expect(s).toContain('비워 두셔도 제출됩니다.'); // 몰아세우면 이탈한다 — 여기만은 허락을 남긴다
+    expect(s).toContain('채우러 가기');
+    expect(s).toContain('나중에 이어 쓰기');
+  });
+});
+
 // ADR-91 D — 완충 문구를 '허락'에서 '용도'로 바꾼 교체. 실측이 근거를 지웠기 때문이다:
 //   실행 자신감 값은 2·5·7·8(평균 5.5)로 부풀림이 없었고, self_note placeholder 를 그대로 베낀 사람은 0명이었다.
 //   없애는 것이 아니라 문법을 바꾼다 — 정직성 확보 효과는 같고 자세가 반대다.
