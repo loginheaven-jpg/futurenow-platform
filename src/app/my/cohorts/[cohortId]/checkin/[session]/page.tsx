@@ -6,6 +6,7 @@ import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
+import { neededBacks, priorSessionNos, type Priors } from '@/instruments/futurenow/checkin/slots';
 import { CheckinCardClient } from './CheckinCardClient';
 import { resolveCheckinMode } from './mode';
 
@@ -63,7 +64,8 @@ export default async function CheckinCardPage({
   const closed = new Date(row.closesAt).getTime() < now;
 
   // 미등록 회차는 '준비 중'(레지스트리에 없음 · ADR-85). 회차 추가 = sessionN.ts + 레지스트리 한 줄.
-  if (getCheckinSession(sessionNo) === null) return <Shell cohortId={cohortId}><Notice text="이 회차 갈무리는 준비 중입니다." /></Shell>;
+  const copy = getCheckinSession(sessionNo);
+  if (copy === null) return <Shell cohortId={cohortId}><Notice text="이 회차 갈무리는 준비 중입니다." /></Shell>;
 
   const existing = await ctx.getMyCheckin(cohortId, sessionNo);
 
@@ -80,11 +82,17 @@ export default async function CheckinCardPage({
   //     본인 자신의 지난 회차 답이라 노출 범위가 넓어지는 것이 아니다(RLS·화면 모두 동일 주체).
   //   미제출이어도 값이 있으면 보여 준다. 조회 실패는 조용히 넘긴다(되비추기 없다고 카드가 막히면 안 됨).
   //   ADR-86: '지금 쓰는 것을 돕는' 작성 보조라 열람(read)에는 싣지 않는다 — 조회 자체를 건너뛴다(왕복 감소).
-  let prior: Record<string, unknown> | null = null;
-  if (initialMode === 'edit' && sessionNo > 1) {
-    const priorRow = await ctx.getMyCheckin(cohortId, sessionNo - 1).catch(() => null);
-    if (priorRow) prior = (priorRow.answers ?? {}) as Record<string, unknown>;
-  }
+  //   ADR-103: **어느 깊이를 부를지는 회차 번호가 아니라 문안이 정한다.** neededBacks 가 문안의 모든
+  //   mirror 를 훑어 필요한 깊이만 낸다(1·2·3회차 [1] · 4회차 [1,2]). 번호로 분기하면 5·6·7회차에서
+  //   다시 고쳐야 하고 그것이 ADR-90 이 없앤 특례다. 문안을 이미 읽고 있으므로 추가 비용은 0이다.
+  //   Promise.all 로 묶는다 — 직렬이면 응답 시간이 그만큼 는다.
+  const priorNos = priorSessionNos(sessionNo, initialMode, neededBacks(copy));
+  const priorRows = await Promise.all(priorNos.map((n) => ctx.getMyCheckin(cohortId, n).catch(() => null)));
+  const priors: Priors = {};
+  priorNos.forEach((n, i) => {
+    const pr = priorRows[i];
+    priors[sessionNo - n] = pr ? ((pr.answers ?? {}) as Record<string, unknown>) : null;
+  });
 
   return (
     <Shell cohortId={cohortId}>
@@ -102,7 +110,7 @@ export default async function CheckinCardPage({
         alreadyOpened={existing?.firstOpenedAt != null}
         hasContent={(existing?.hasContent ?? false) && existing?.submittedAt == null}
         closed={closed}
-        prior={prior}
+        priors={priors}
         initialMode={initialMode}
         photos={photos}
       />

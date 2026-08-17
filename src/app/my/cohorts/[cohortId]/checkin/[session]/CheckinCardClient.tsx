@@ -2,22 +2,23 @@
 // 회차 갈무리 카드(ADR-80·85). getCheckinSession(sessionNo)로 회차 문안을 직접 로드 — 회차번호로 분기하지 않고 '블록 존재'로 렌더.
 //   copy 를 prop 으로 받지 않는다: copy 에 함수(filledCount·counter)가 있어 서버→클라 직렬화가 깨진다(레지스트리는 순수 모듈이라 클라 import 가능).
 //   자동저장(디바운스 2s/blur)·단일버튼(save→submit)·완료상태. 판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출·워크북' 미사용.
-//   되비추기(prior): 지난 회차 답을 읽기전용 회색으로 되비춘다(§6). 공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d).
+//   되비추기(priors): 지난 회차 답을 읽기전용 회색으로 되비춘다(§6). 깊이별 봉투(ADR-103). 공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d).
 //   ADR-86: 모드 둘(read/edit)·URL 하나. read 는 적은 것 전부를 읽는 화면 — 서버 쓰기 0(계측 컬럼을 건드리지 않는다).
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CheckinPhoto } from '@/contracts';
 import { Button, CheckRow, Disclosure, MultiChoiceChips, TextArea } from '@/core/ui';
 import { getCheckinSession, type Mirror as MirrorSpec, type SlotName } from '@/instruments/futurenow/checkin';
-import { orderedSlots, resolveMirror, slotBoundaries, type Boundary } from '@/instruments/futurenow/checkin/slots';
+import { orderedSlots, resolveMirror, slotBoundaries, type Boundary, type Priors } from '@/instruments/futurenow/checkin/slots';
 import { buildCheckinRead, readSelfHighlights } from '@/instruments/futurenow/checkin/readModel';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 import { LetterPhotos } from './LetterPhotos';
 
 type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean; stepPrivate: boolean };
-// 되비추기 재료 — page 가 getMyCheckin(sessionNo-1)의 answers 를 통째로 넘긴다(§6·ADR-90). 없으면 null.
+// 되비추기 재료 — page 가 **깊이별 봉투**로 넘긴다(§6·ADR-90·103). 키가 '몇 회차 전'이고 값이 그 회차 answers.
 //   블록마다 Mirror.keys 로 필요한 키를 지목하므로 다이제스트가 아니라 원본이 온다.
+//   봉투를 병합하지 않는 이유는 slots.ts 의 Priors 주석 참조 — 공용 키가 다른 회차 값을 읽는 것을 막는다.
 
 const gray = { color: 'var(--color-text-muted)' } as const;
 const help = { color: 'var(--color-text-secondary)' } as const;
@@ -78,8 +79,8 @@ function MirrorLine({ caption, value }: { caption: string; value: string }) {
 
 // 블록 속성으로 일반화된 되비추기(ADR-90). 지난 회차 answers 에서 keys 를 읽어 값이 있는 것만 ' · ' 로 잇는다.
 //   값이 하나도 없으면 empty 문구(있을 때만). empty 도 없으면 블록 자체를 그리지 않는다.
-function MirrorOf({ mirror, prior }: { mirror?: MirrorSpec; prior: Record<string, unknown> | null }) {
-  const view = resolveMirror(mirror, prior);
+function MirrorOf({ mirror, priors }: { mirror?: MirrorSpec; priors: Priors }) {
+  const view = resolveMirror(mirror, priors);
   if (!view) return null;
   if (view.kind === 'value') return <MirrorLine caption={view.label} value={view.value} />;
   return <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{view.text}</p>;
@@ -116,7 +117,7 @@ export function CheckinCardClient({
   alreadyOpened,
   hasContent,
   closed,
-  prior,
+  priors,
   initialMode,
   photos,
   preview = false,
@@ -129,7 +130,7 @@ export function CheckinCardClient({
   alreadyOpened: boolean;
   hasContent: boolean;
   closed: boolean;
-  prior: Record<string, unknown> | null;
+  priors: Priors;
   initialMode: 'read' | 'edit';
   photos: CheckinPhoto[];
   /** 미리보기(인도자 콘솔 /coach/cohort/[cohortId]/checkin/preview·ADR-92) — 서버 쓰기를 전부 막는다. 계측·저장·제출 어느 것도 일어나지 않는다. */
@@ -453,7 +454,7 @@ export function CheckinCardClient({
       {slots.map((s, i) => (
         <div key={s.name}>
           <GroupBoundary boundary={boundaries[i]} />
-          <MirrorOf mirror={s.block.mirror} prior={prior} />
+          <MirrorOf mirror={s.block.mirror} priors={priors} />
           {renderSlot(s.name)}
         </div>
       ))}
@@ -478,7 +479,7 @@ export function CheckinCardClient({
             <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {/* 심화 필드에도 되비추기를 붙일 수 있다(ADR-90). 3회차가 쓰던 자리는 ADR-100 으로 사라졌으나
                   4~7회차가 다시 쓸 수 있어 부품은 남긴다. */}
-              <MirrorOf mirror={f.mirror} prior={prior} />
+              <MirrorOf mirror={f.mirror} priors={priors} />
               <div style={fieldLabel}>{f.label}</div>
               {/* help 는 선택이다(ADR-100) — 없으면 줄을 그리지 않는다. 빈 줄이 남으면 간격이 어긋난다. */}
               {f.help ? <div className="t-caption" style={help}>{f.help}</div> : null}
@@ -495,7 +496,7 @@ export function CheckinCardClient({
         {/* ⑤ 지난 한 걸음(2회차부터) — 위에 지난 회차 한 걸음 되비추기(없으면 대체 문구) */}
         {lastStep ? (
           <div style={{ marginBottom: 'var(--space-5)' }}>
-            <MirrorOf mirror={lastStep.mirror} prior={prior} />
+            <MirrorOf mirror={lastStep.mirror} priors={priors} />
             <div id={fieldId(lastStep.key)} style={fieldLabel}>{lastStep.label}{isEmpty(lastStep.key) ? <span className="t-caption" style={{ ...gray, marginLeft: 'var(--space-2)' }}>{EMPTY_MARK}</span> : null}</div>
             <div style={{ marginTop: 'var(--space-2)' }}>
               <MultiChoiceChips
@@ -613,9 +614,13 @@ export function CheckinCardClient({
 
       {/* 저장(단일 버튼) — 비활성으로 만들지 않는다. 눌리지 않는 버튼은 고장으로 읽힌다. */}
       <Button onClick={onSubmit} disabled={busy} style={{ width: '100%' }}>{busy ? '저장 중…' : copy.save.button}</Button>
-      {filled < requiredTotal ? (
-        <p className="t-caption" style={{ ...gray, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>아직 {requiredTotal - filled}칸이 비어 있어요</p>
-      ) : null}
+      {/* ADR-102 축3 — 잔여를 세던 것을 완료로 향하게 바꾼다. '완성'이 아니라 '완료'로 통일한다:
+          '완성'은 품질 판정처럼 읽히고 우리가 세는 것은 칸이 다 찼는지다.
+          '더 채우면'이 방향을 주므로 잔여인지 누적인지 묻지 않아도 되고, '남음'처럼 결핍을 가리키지도 않는다.
+          결측 0 일 때만 '완료'가 뜬다 — 그때는 게이트가 '이대로 제출'을 띄우지 않아 충돌이 없다. */}
+      <p className="t-caption" style={{ ...gray, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>
+        {filled < requiredTotal ? `${requiredTotal - filled}칸 더 채우면 완료` : `${sessionNo}회차 기록 완료`}
+      </p>
       <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>{copy.save.notice1}</p>
       <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 0 }}>{copy.save.notice2}</p>
       {saveFailed ? (

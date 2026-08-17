@@ -36,6 +36,38 @@ export function slotBoundaries(copy: CheckinSession): Boundary[] {
 /** 되비추기 판정 결과. null 이면 아무것도 그리지 않는다. */
 export type MirrorView = { kind: 'value'; label: string; value: string } | { kind: 'empty'; text: string } | null;
 
+// ── 되비추기 깊이(ADR-103) ─────────────────────────────────────────────────
+// 봉투를 깊이별로 나눈다. **병합하지 않는다** — step_what·step_when·mood·self_note 는 회차 공용 키라
+//   한 봉투에 합치면 지난 걸음 되비추기가 다른 회차 값을 읽고 참여자에게 **틀린 문장**이 보인다.
+//   키는 '몇 회차 전'이고 값은 그 회차의 answers(없으면 null).
+export type Priors = Record<number, Record<string, unknown> | null>;
+
+/**
+ * 이 회차 문안이 요구하는 되비추기 깊이 전부(중복 없는 오름차순).
+ *
+ * **회차 번호가 아니라 문안이 정한다.** 번호로 분기하면 5·6·7회차에서 다시 고쳐야 하고,
+ * 그것이 ADR-90 이 없앤 특례다. 1·2·3회차는 [1], 4회차는 [1, 2] 다.
+ */
+export function neededBacks(copy: CheckinSession): number[] {
+  const out = new Set<number>();
+  const take = (m: Mirror | undefined) => { if (m) out.add(m.back ?? 1); };
+  for (const s of orderedSlots(copy)) take(s.block.mirror);
+  for (const f of copy.deepen.fields) take(f.mirror);
+  take(copy.step.lastStep?.mirror);
+  return [...out].sort((a, b) => a - b);
+}
+
+/**
+ * 어느 회차를 조회할지. 페이지의 분기를 순수 함수로 뽑아 테스트 가능하게 둔다.
+ *
+ * 열람(read)에는 싣지 않는다 — 되비추기는 '지금 쓰는 것을 돕는' 작성 보조다(ADR-86).
+ * 존재하지 않는 회차(0 이하)는 거른다. **상한을 두지 않는다** — 7회차가 2회차를 되비추면 5 다.
+ */
+export function priorSessionNos(sessionNo: number, mode: 'edit' | 'read', backs: number[]): number[] {
+  if (mode !== 'edit') return [];
+  return backs.map((b) => sessionNo - b).filter((n) => n >= 1);
+}
+
 /**
  * 되비추기 값 판정(ADR-90).
  *
@@ -47,8 +79,9 @@ export type MirrorView = { kind: 'value'; label: string; value: string } | { kin
  *
  * 존재 판정만 trim 하고, 출력에는 원문을 쓴다(현행 렌더와 바이트 동일).
  */
-export function resolveMirror(mirror: Mirror | undefined, prior: Record<string, unknown> | null): MirrorView {
+export function resolveMirror(mirror: Mirror | undefined, priors: Priors): MirrorView {
   if (!mirror) return null;
+  const prior = priors[mirror.back ?? 1] ?? null;
   const raw = (k: string) => (prior && typeof prior[k] === 'string' ? (prior[k] as string) : '');
   const present = (k: string) => raw(k).trim() !== '';
   const anchor = mirror.keys[0];

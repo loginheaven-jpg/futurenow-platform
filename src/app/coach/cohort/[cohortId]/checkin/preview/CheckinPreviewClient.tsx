@@ -11,13 +11,22 @@ import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { CheckinCardClient } from '@/app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
 
 // 되비추기 표본 — 지난 회차를 쓴 참여자를 가정한다. 실제로는 그 사람의 지난 회차 답이 들어간다.
-const SAMPLE_PRIOR: Record<string, unknown> = {
+//   ADR-103 이후 봉투가 깊이별이라 표본도 깊이별이다. 1 = 직전 회차, 2 = 두 회차 전.
+const SAMPLE_BACK1: Record<string, unknown> = {
   identity_sentence: '나는 성장의 가치를 최우선으로 여기며, 사람을 세우는 삶을 살기를 갈망하는 사람이다',
   identity_statement: "나는 '상생'의 가치를 최우선으로 여기며, 사람과 사물의 존재가치가 최상으로 빛나도록 돕는 사람이다",
   future_area: '관계',
   future_line: '주말마다 아버지와 한 시간씩 걷고 있다',
+  gap_area: '관계',
+  gap_want: '아버지와 다시 대화하기',
+  rough_project: '하루 한 줄 쓰기 한 달',
   step_what: '아버지께 안부 문자 보내기',
   step_when: '수요일 저녁, 퇴근길에',
+};
+// 두 회차 전 봉투 — 4회차 심화가 2회차 '인생을 이끌어갈 하나의 문장'을 읽는다(back: 2).
+//   **back1 과 같은 값을 넣지 않는다** — 봉투가 분리돼 있음을 미리보기에서도 눈으로 확인할 수 있어야 한다.
+const SAMPLE_BACK2: Record<string, unknown> = {
+  identity_statement: '나는 사람의 가능성이 가장 늦게 피는 자리에서 그것을 알아보는 사람이다',
 };
 
 const READY = [1, 2, 3, 4, 5, 6, 7].filter((n) => getCheckinSession(n) !== null);
@@ -85,7 +94,7 @@ export function CheckinPreviewClient({ cohortId, initialSession }: { cohortId: s
         alreadyOpened
         hasContent={false}
         closed={false}
-        prior={withPrior ? SAMPLE_PRIOR : null}
+        priors={withPrior ? { 1: SAMPLE_BACK1, 2: SAMPLE_BACK2 } : {}}
         initialMode="edit"
         photos={[]}
         preview
