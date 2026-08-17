@@ -73,10 +73,15 @@ describe('3회차 개정 1차가 되돌아가지 않는다 (ADR-98)', () => {
     ]) expect(lits.has(old), old).toBe(false);
   });
 
+  // ADR-102 가 이 문장의 **어미만** 요구형으로 바꿨다(하나면 됩니다 → 하나를 적으십시오).
+  //   ADR-98 이 세운 것은 '한 걸음을 우당탕탕으로 대체하지 않고 보조 문구로 잇는다'이고 그 연결은 그대로다.
+  //   옛 문안 부재는 계속 지키고, 새 문안 존재는 '연결이 살아 있는가'로 확인한다.
   it('우당탕탕 신설 + 한 걸음이 그것을 잇는다(두 개정은 묶음)', () => {
     expect(lits.has("그 영역에서 시작할 '우당탕탕 프로젝트'의 이름")).toBe(true);
     expect(lits.has('오늘 마지막에 정하신 그 하나를 그대로 옮기시면 됩니다.')).toBe(false);
-    expect(lits.has('오늘 정하신 것 하나면 됩니다. 위에 우당탕탕 프로젝트를 적으셨다면, 그 첫 걸음이어도 좋습니다.')).toBe(true);
+    const stepHelp = [...lits].find((s) => s.includes('우당탕탕 프로젝트를 적으셨다면'));
+    expect(stepHelp, '한 걸음이 우당탕탕을 가리키는 연결이 끊겼다').toBeTruthy();
+    expect(stepHelp).toContain('그 첫 걸음이어도 좋습니다');
   });
 
   // 1·2회차는 이 개정의 대상이 아니다 — 한 글자도 건드리지 않았음을 양방향으로 확인한다.
@@ -190,6 +195,28 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
     expect(l.has('짝이 맞는 한 쌍만 고르십시오. 없앨 것과 들일 것이 함께 있어야 습관이 바뀝니다.')).toBe(true);
   });
 
+  // 어미 교체 둘 — BANNED 로는 못 잡는 자리다('고르시면 됩니다'·'하나면 됩니다'는 어휘 잠금 밖).
+  //   대신 여기서 명시로 못 박는다.
+  it('어미가 요구형이다 — 1회차 갈망 쌍 · 3회차 한 걸음', () => {
+    const s1 = [...koreanLiterals('session1')].find((s) => s.includes('바꿔 쓰는 순간'));
+    expect(s1).toContain('하나만 고르십시오');
+    expect(s1).not.toContain('고르시면 됩니다');
+    const s3 = [...koreanLiterals('session3')].find((s) => s.includes('우당탕탕 프로젝트를 적으셨다면'));
+    expect(s3).toContain('하나를 적으십시오');
+    expect(s3).not.toContain('하나면 됩니다');
+  });
+
+  // **범위 예시는 남긴다**(원칙 §1 축1 네 번째 갈래). 허락이 아니라 답의 폭을 알려 주는 문장이라
+  //   지우면 '무엇을 적어야 하는가'가 좁아진다. BANNED 에 넣지 않은 이유이기도 하다 —
+  //   어휘로 막으면 이 셋이 즉시 걸리고 예외 목록이 길어져 잠금이 자기 예외로 무너진다.
+  it('범위 예시 셋과 실행 사실 하나는 그대로다', () => {
+    expect(koreanLiterals('session1').has('노트에 찍은 점 하나여도 좋습니다.')).toBe(true);
+    expect([...koreanLiterals('session2')].some((s) => s.includes('어떤 소리여도 좋습니다'))).toBe(true);
+    expect([...koreanLiterals('session3')].some((s) => s.includes('그 첫 걸음이어도 좋습니다'))).toBe(true);
+    // 실행에 관한 사실 — 한 걸음 뒷문장과 같은 성격이다(위로가 아니라 정보).
+    expect(koreanLiterals('session3').has('사흘쯤 뒤에 한 번 무너지는 것이 보통입니다. 그때 다시 시작하시면 됩니다.')).toBe(true);
+  });
+
   // 압박 어휘·판정어는 진취적 어조와 다른 것이다(원칙 §4).
   it('압박 어휘와 판정어가 0건', () => {
     for (const file of S) {
@@ -230,6 +257,59 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
     expect(s).toContain('비워 두셔도 제출됩니다.'); // 몰아세우면 이탈한다 — 여기만은 허락을 남긴다
     expect(s).toContain('채우러 가기');
     expect(s).toContain('나중에 이어 쓰기');
+  });
+});
+
+// ADR-102 Phase 3 — 진행·상태 표시. **이 구간은 session*.ts 밖이라 리터럴 잠금이 닿지 않는다.**
+//   Phase 2 에서 컴포넌트 존재 단언이 실제로 작동함이 음성 대조로 증명됐으므로 같은 방식으로 건다.
+describe('진행·상태 문구가 되돌아가지 않는다 (ADR-102 Phase 3)', () => {
+  const card = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/page.tsx', import.meta.url), 'utf8');
+  // 금지어 검사는 **주석을 걷어내고** 본다. 규율을 설명하는 주석이 금지어를 인용하는 것은 정상이고
+  //   (CheckinCardClient.tsx:4 가 '설문·진단·지각·미제출·워크북 미사용'이라 적어 둔 것이 그렇다),
+  //   그것까지 잡으면 검사가 자기 문서를 때린다. koreanLiterals 와 같은 사고다.
+  const noComments = (s: string) => s.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n');
+
+  // '완성'을 버리고 '완료'로 통일했다 — '완성'은 품질 판정처럼 읽히고 우리가 세는 것은 칸이 다 찼는지다.
+  //   두 화면이 **같은 문장**을 쓴다: 화면을 옮겨도 같은 것을 세고 있음이 보인다.
+  it('카드 하단·차수 홈이 같은 문장을 쓴다', () => {
+    expect(card).toContain('칸 더 채우면 완료');
+    expect(home).toContain('칸 더 채우면 완료');
+  });
+
+  it('완료 표기가 붙었다 — 카드는 회차 번호와, 홈은 번호 없이', () => {
+    expect(card).toContain('회차 기록 완료');
+    expect(home).toContain("'기록 완료'"); // 바로 위에 '{N}회차 갈무리'가 있어 번호를 겹치지 않는다(원칙 §2-6)
+  });
+
+  // 결핍·판정 어휘를 되돌리지 않는다. '아직 완성되지 않았습니다'는 미제출과 명제가 같아 판정 금지에 저촉했다.
+  it('옛 문구와 결핍·판정 어휘가 0건', () => {
+    for (const [name, src] of [['card', noComments(card)], ['home', noComments(home)]] as const) {
+      for (const w of ['칸이 비어 있어요', '칸 남음', '쓰시던 자리가 남아 있어요', '다 적으셨습니다', '아직 완성되지 않', '미제출']) {
+        expect(src.includes(w), `${name}: ${w}`).toBe(false);
+      }
+    }
+  });
+
+  // 7 로 박으면 5주·6주 편성에서 깨진다. 회차 수는 cohort_sessions 가 정한다(progress.ts 가 순수 함수로 잠근다).
+  it('일곱 칸 표시가 AppHeader 바로 아래 고정이고 회차 수를 하드코딩하지 않는다', () => {
+    expect(home).toContain('7주 기록');
+    expect(home).toContain('완료</span>');
+    expect(home).toContain('buildProgress');
+    // ordered 배열 밖에 있어야 상태 무관이다 — 사전진단 미완이면 밀리는 자리에 두면 앵커가 못 된다.
+    const headerAt = home.indexOf('<AppHeader');
+    const progressAt = home.indexOf("<span>7주 기록</span>");
+    const orderedAt = home.indexOf('{ordered.map(');
+    expect(headerAt).toBeLessThan(progressAt);
+    expect(progressAt).toBeLessThan(orderedAt);
+  });
+
+  // 판정·색을 두지 않는다. 안 쓴 회차는 결핍이 아니라 아직 안 온 주다.
+  it('진행 표시에 경고색이 없다', () => {
+    const block = home.slice(home.indexOf("<span>7주 기록</span>"), home.indexOf('{ordered.map('));
+    for (const t of ['--color-danger', '--color-care', '--care-', '--color-warning']) {
+      expect(block.includes(t), t).toBe(false);
+    }
   });
 });
 

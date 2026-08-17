@@ -7,6 +7,7 @@ import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { PastSessionsClient } from './PastSessionsClient';
+import { buildProgress, openedSessionNos } from './progress';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,16 +52,37 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   let checkinBtn = '쓰러 가기';
   let checkinEdit = true;
   if (c.openSessionNo != null) {
-    if (c.openSessionSubmitted) { checkinLine = '다 적으셨습니다'; checkinBtn = '적으신 것 보기'; checkinEdit = false; }
+    // ADR-102 축3 — 카드 하단과 **같은 문장**을 쓴다. 화면을 옮겨도 같은 것을 세고 있음이 보인다.
+    //   '완성'이 아니라 '완료'로 통일하고(품질 판정처럼 읽히지 않게), 회차 번호는 붙이지 않는다 —
+    //   이 줄 바로 위에 '{N}회차 갈무리'가 이미 있어 중복이 된다(원칙 §2-6).
+    if (c.openSessionSubmitted) { checkinLine = '기록 완료'; checkinBtn = '적으신 것 보기'; checkinEdit = false; }
     // ADR-91 B: '무엇이 남았는지'를 더한다. 실측의 미완성 제출은 '돌아올 이유'가 없어서 생겼다.
     else if (c.openSessionHasContent) {
       const copy = getCheckinSession(c.openSessionNo);
       const left = copy ? copy.requiredTotal - copy.filledCount((openCheckin?.answers ?? {}) as Record<string, unknown>) : 0;
-      checkinLine = left > 0 ? `쓰시던 자리가 남아 있어요 · ${left}칸 남음` : '쓰시던 자리가 남아 있어요';
+      checkinLine = left > 0 ? `${left}칸 더 채우면 완료` : '기록 완료';
       checkinBtn = '이어 쓰기';
     }
     else { checkinLine = openRow ? `${monthDay(openRow.closesAt)} 밤까지 열려 있어요` : ''; checkinBtn = '쓰러 가기'; }
   }
+
+  // ADR-102 축3 — 7주 기록 누적. 회차별 제출 여부를 주는 경로가 없어(my_cohorts 는 '지금 열린 회차' 하나만
+  //   조인하고 getMyCheckin 은 session_no 를 필수로 받는다) getMyCheckin 을 팬아웃한다. 계약·DB 델타 0.
+  //   **이미 열린 회차만** 묻는다 — 미래 회차는 카드 라우트가 진입을 막아 제출이 있을 수 없다.
+  //   열린 회차분은 위에서 이미 뽑았으므로(openCheckin) 재사용해 왕복을 하나 줄인다.
+  //   기수가 커지면 ADR-91 B 가 예고한 대로 my_cohorts 확장으로 흡수한다. 지금은 '계약 0'이 우선이다.
+  const opened = openedSessionNos(sessions, now);
+  const submittedNos = new Set(
+    (
+      await Promise.all(
+        opened.map(async (n) => {
+          const row = n === c.openSessionNo ? openCheckin : await ctx.getMyCheckin(cohortId, n).catch(() => null);
+          return row?.submittedAt != null ? n : null;
+        }),
+      )
+    ).filter((n): n is number => n != null),
+  );
+  const progress = buildProgress(sessions, submittedNos);
 
   const accentCard = {
     padding: 'var(--space-4)',
@@ -126,6 +148,23 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title={c.name} backHref="/home" homeHref="/home" action={<HeaderActions />} />
+      {/* ADR-102 축3 — 7주 기록 누적. **AppHeader 바로 아래 고정**이고 ordered 배열 밖이다.
+          '이번 주 갈무리' 블록은 사전진단 미완이면 밀리고 openSessionNo 가 없으면 아예 안 그려져
+          앵커가 될 수 없다. 반면 이 표시는 '일정만 있으면 그린다'라 상태 무관 규칙이어야 한다.
+          카드보다 먼저 전체를 보게 한다. */}
+      {progress ? (
+        <div className="t-caption" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>
+          <span>7주 기록</span>
+          {/* 캡션급 위계 — 카드도 테두리도 두지 않는다(ADR-81 3단에 넷째가 끼는 자리라 강조하면 accent CTA 가 밀린다).
+              색은 채움=본문색 / 비움=muted 뿐이다. 경고색을 쓰지 않는다 — 안 쓴 회차는 결핍이 아니라 아직 안 온 주다. */}
+          <span aria-hidden="true" style={{ letterSpacing: '0.15em', color: 'var(--color-text-muted)' }}>
+            {progress.cells.map((on, i) => (
+              <span key={i} style={on ? { color: 'var(--color-text)' } : undefined}>{on ? '●' : '○'}</span>
+            ))}
+          </span>
+          <span>{progress.done} / {progress.total} 완료</span>
+        </div>
+      ) : null}
       {ordered.map((s, i) => (s ? <div key={i}>{s}</div> : null))}
     </div>
   );
