@@ -47,6 +47,7 @@ export const futurenowAnswersSchema = z.object({
   INTRO: z.string().optional(), // 들어가며 조감도 한 문장
   CARE: z.boolean().optional(), // 돌봄 체크
   COMMIT: z.boolean().optional(), // 마지막 다짐
+  PLEDGE: z.boolean().optional(), // 이행 약속(사전 전용) — 기존 사전 응답에는 없는 키라 optional 이 아니면 과거 행이 경계에서 튕긴다
 });
 export type FuturenowAnswers = z.infer<typeof futurenowAnswersSchema>;
 

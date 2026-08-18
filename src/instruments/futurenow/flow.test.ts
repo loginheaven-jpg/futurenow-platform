@@ -57,10 +57,19 @@ describe('B① flow 구조', () => {
     expect(prompts).not.toMatch(/시들음|원씽|languish|STEP/i);
   });
 
-  it('wave 분기: 같은 코드, intro 서사만 다르다', () => {
-    const preCodes = allItems('pre').map((i) => i.code);
-    const postCodes = allItems('post').map((i) => i.code);
-    expect(postCodes).toEqual(preCodes);
+  // 이 단언이 지키던 것은 '사전·사후가 같은 자를 써야 변화를 잰다'이고, 그것은 **채점 코드**에 대한 말이다.
+  //   PLEDGE 가 사전에만 서면서 전체 코드 목록은 갈렸지만, 채점 코드는 한 자도 안 갈렸다.
+  //   그래서 단언을 지우지 않고 지키려던 것으로 좁힌다 — 넓은 단언을 통째로 버리면
+  //   내일 누가 A1 을 사후에서 빼도 아무도 못 잡는다. 대신 갈라진 자리를 **이름으로** 못 박아
+  //   여기가 늘어나는 순간 테스트가 먼저 말하게 한다.
+  it('wave 분기: 채점 코드는 완전히 같고, 갈리는 것은 다짐 하나뿐이다', () => {
+    const codes = (w: 'pre' | 'post') => allItems(w).map((i) => i.code);
+    const measured = (w: 'pre' | 'post') => codes(w).filter((c) => SPEC_CODES.includes(c));
+    expect(measured('post')).toEqual(measured('pre'));
+
+    const extras = (w: 'pre' | 'post') => codes(w).filter((c) => !SPEC_CODES.includes(c));
+    expect(extras('pre').filter((c) => !extras('post').includes(c))).toEqual(['PLEDGE']);
+    expect(extras('post').filter((c) => !extras('pre').includes(c))).toEqual([]);
     const preNow = futurenowFlow.getSchema('pre').blocks.find((b) => b.id === 'now') as StandardBlock;
     const postNow = futurenowFlow.getSchema('post').blocks.find((b) => b.id === 'now') as StandardBlock;
     expect(preNow.intro).not.toEqual(postNow.intro);
@@ -95,6 +104,44 @@ describe('B① flow 구조', () => {
   it('E1 prompt 는 wave별로 다르다', () => {
     expect(itemByCode('pre', 'E1')?.prompt).not.toEqual(itemByCode('post', 'E1')?.prompt);
     expect(itemByCode('pre', 'E1')?.prompt).toContain('이 세미나가 끝났을 때');
+  });
+
+  // 이행 약속 — 다짐 체크가 둘로 늘었다. 늘어난 쪽이 사전에만 서는 것을 못 박는다.
+  //   사후에 새면 참여자가 이미 끝난 5주를 두고 '참석하겠습니다'를 읽게 된다.
+  describe('PLEDGE — 이행 약속은 사전 전용이다', () => {
+    const labelOf = (w: 'pre' | 'post', code: string) => {
+      const i = itemByCode(w, code);
+      return i?.scale.kind === 'check' ? i.scale.label : null;
+    };
+
+    it('사전 마지막 한 걸음에 다짐이 둘, 사후에는 하나다', () => {
+      const commitOf = (w: 'pre' | 'post') =>
+        (futurenowFlow.getSchema(w).blocks.find((b) => b.id === 'commit') as StandardBlock).items;
+      expect(commitOf('pre').map((i) => i.code)).toEqual(['COMMIT', 'PLEDGE']);
+      expect(commitOf('post').map((i) => i.code)).toEqual(['COMMIT']);
+    });
+
+    it('진술 원문이 그대로 선다', () => {
+      expect(labelOf('pre', 'PLEDGE')).toBe(
+        '매주 모임시간을 잘 지켜 참석하고, 사전 과제와 사후 갈무리를 충실히 하겠습니다.',
+      );
+    });
+
+    it('CheckScale 이고 prompt 는 비어 있다 — 진술 자체가 라벨이다', () => {
+      const i = itemByCode('pre', 'PLEDGE');
+      expect(i?.scale.kind).toBe('check');
+      expect(i?.prompt).toBe('');
+    });
+
+    it('선택이다 — 체크를 강제하면 다짐이 아니고 제출이 막힌다', () => {
+      expect(itemByCode('pre', 'PLEDGE')?.required).toBe(false);
+      expect(itemByCode('pre', 'COMMIT')?.required).toBe(false);
+    });
+
+    it('채점 코드가 아니다 — polarity 중립, §9.1 스펙 코드 밖', () => {
+      expect(itemByCode('pre', 'PLEDGE')?.polarity).toBe('neutral');
+      expect(SPEC_CODES).not.toContain('PLEDGE');
+    });
   });
 
   it('CARE 진술은 CheckScale.label, wave별로 다르다', () => {

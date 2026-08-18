@@ -114,6 +114,12 @@ export const commitLabel: Record<WaveKey, string> = {
   post: "나는 이 5주에서 만난 '미래의 나'를, 오늘 이후의 삶에서 계속 살아내겠습니다.",
 };
 
+// 이행 약속(PLEDGE) — **사전 wave 전용.** commitLabel 이 마음의 다짐이라면 이것은 행동의 약속이다.
+//   Record<WaveKey, string> 로 두지 않은 이유: 이 문장은 '앞으로의 5주'를 두고 하는 약속이라
+//   세미나가 끝난 자리(post)에서는 성립하지 않는다. 사후에 억지로 과거형을 지어 넣으면
+//   지휘부가 주지 않은 문안을 코드가 만들어 내는 셈이 된다 — 그래서 회차가 아니라 wave 로 가른다.
+export const pledgeLabel = '매주 모임시간을 잘 지켜 참석하고, 사전 과제와 사후 갈무리를 충실히 하겠습니다.';
+
 // subjectProfile 계정 복사 4필드(사양 상수 — ADR-32/44 규범 참조). 실수집·프리필·라벨은 ProfileForm/AuthGate(@/contracts/vocab·profileVocab)가 소유.
 export const profileFieldsByWave: Record<WaveKey, string[]> = {
   pre: ['birthYear', 'gender', 'religion', 'faithYears'],

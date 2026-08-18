@@ -43,6 +43,18 @@ describe('futurenowAnswersSchema', () => {
   it('선택 항목(F1·CARE) 채워도 통과', () => {
     expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), F1: 4, CARE: true }).success).toBe(true);
   });
+
+  // 이행 약속(PLEDGE)은 뒤늦게 붙은 키다. 이미 제출된 사전 응답에는 없다 —
+  //   optional 이 아니면 그 행들이 경계에서 전부 튕긴다(ADR-91 §2-4: 제출된 행을 소급 처리하지 않는다).
+  it('PLEDGE — 없어도 통과하고(기존 응답) 있어도 통과한다', () => {
+    expect(futurenowAnswersSchema.safeParse(validAnswers()).success).toBe(true);
+    expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), PLEDGE: true }).success).toBe(true);
+    expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), PLEDGE: false }).success).toBe(true);
+  });
+
+  it('PLEDGE 는 불리언이다 — 체크 값이 문자열로 들어오면 거부', () => {
+    expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), PLEDGE: 'true' }).success).toBe(false);
+  });
 });
 
 describe('futurenowProfileSchema (계정 복사 스냅샷 — birthYear·gender NULL 가능, 관찰 하나)', () => {

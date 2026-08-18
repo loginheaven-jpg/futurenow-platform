@@ -142,11 +142,19 @@ function buildBlocks(wave: Wave): Block[] {
       ordering: { mode: 'fixed' },
     },
     // 6. 마지막 한 걸음 — 다짐 체크. label 은 wave별.
+    //    두 줄의 층이 다르다: COMMIT 은 마음의 다짐(이 시간을 끝까지 걷겠다),
+    //    PLEDGE 는 그 다짐이 실제로 무엇을 뜻하는지를 행동으로 적은 약속이다.
+    //    큰 다짐이 먼저 오고 구체가 뒤따른다 — 순서를 뒤집으면 약속만 하고 이유를 못 읽는다.
+    //    PLEDGE 는 사전 전용(copy.pledgeLabel 주석 참조). 둘 다 required:false —
+    //    체크를 강제하면 그것은 더 이상 다짐이 아니고, 제출까지 막힌다.
     {
       id: 'commit',
       kind: 'standard',
       title: '마지막 한 걸음',
-      items: [checkItem('COMMIT', copy.commitLabel[wk])],
+      items: [
+        checkItem('COMMIT', copy.commitLabel[wk]),
+        ...(wk === 'pre' ? [checkItem('PLEDGE', copy.pledgeLabel)] : []),
+      ],
       ordering: { mode: 'fixed' },
     },
   ];
