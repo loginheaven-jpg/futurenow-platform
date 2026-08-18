@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { CHECKIN_SESSION_1 } from './session1';
 import { CHECKIN_SESSION_2 } from './session2';
 import { CHECKIN_SESSION_3 } from './session3';
+import { CHECKIN_SESSION_4 } from './session4';
 
-const ALL = [CHECKIN_SESSION_1, CHECKIN_SESSION_2, CHECKIN_SESSION_3];
+const ALL = [CHECKIN_SESSION_1, CHECKIN_SESSION_2, CHECKIN_SESSION_3, CHECKIN_SESSION_4];
 
 // 실측(1기 1회차 제출 8건 중 3건)이 2·3면을 통째로 건너뛴 채 제출됐다. 제출 게이트가 그걸 막는데,
 // 게이트가 서려면 '몇 칸 비었나'(filledCount)와 '무엇이 비었나'(missingLabels)가 절대 어긋나면 안 된다.

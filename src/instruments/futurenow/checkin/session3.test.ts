@@ -43,9 +43,10 @@ function texts(blocks: ReadBlock[]): string[] {
 }
 
 describe('3회차 등록·구조', () => {
-  it('레지스트리에 등록됐고 4회차는 아직 없다', () => {
+  it('레지스트리에 등록됐고 미등록 회차(5)는 아직 없다', () => {
     expect(getCheckinSession(3)).toBe(c);
-    expect(getCheckinSession(4)).toBeNull();
+    // ADR-104 로 4회차가 등록됐다. 가드를 다음 미등록 회차로 이어 쓴다(지우지 않는다).
+    expect(getCheckinSession(5)).toBeNull();
   });
 
   it('정체성 문장 슬롯이 없다 — 3회차에는 그 문항이 없다', () => {

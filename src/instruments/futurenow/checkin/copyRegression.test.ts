@@ -27,8 +27,8 @@ function koreanLiterals(file: string): Set<string> {
 // ADR-94(2026-08-07): session3 을 잠금에 넣었다. 그전까지 3회차 문안 전체가 회귀 보호 **밖**에 있었다 —
 //   '3회차는 baseline 대상이 아니므로 갱신이 필요 없다'는 사실이었으나, **필요 없다는 것과 안 하는 게 옳다는 것은 다르다.**
 //   session3 스냅샷은 책 페이지 참조 다섯을 **붙인 뒤** 뽑았다(먼저 뽑으면 참조 없는 상태를 잠그고 즉시 깨진다).
-describe('1·2·3회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0', () => {
-  for (const file of ['session1', 'session2', 'session3'] as const) {
+describe('1~4회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0', () => {
+  for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
     it(`${file}: 스냅샷의 모든 문자열이 그대로 남아 있다`, () => {
       const now = koreanLiterals(file);
       const missing = baseline[file].filter((s) => !now.has(s));
@@ -37,7 +37,7 @@ describe('1·2·3회차 문안 회귀 — 리터럴 집합에서 삭제·변경 
   }
 
   // 증가분은 허용하되 눈에 보이게 남긴다 — 몰래 늘지 않도록.
-  for (const file of ['session1', 'session2', 'session3'] as const) {
+  for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
     it(`${file}: 스냅샷에 없는 문자열이 새로 생기지 않았다`, () => {
       const added = [...koreanLiterals(file)].filter((s) => !baseline[file].includes(s));
       expect(added).toEqual([]);
@@ -97,7 +97,7 @@ describe('3회차 개정 1차가 되돌아가지 않는다 (ADR-98)', () => {
 //   완충이 막으려던 문제는 실측에서 하나도 관측되지 않았다(자신감 2·5·7·8 부풀림 0 · 예시 베낌 0명).
 //   반면 완충이 붙은 필수 칸(selfNote)은 4/8 이 비었다. 없는 위험에 대비하느라 있는 기회를 잃고 있었다.
 describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => {
-  const S = ['session1', 'session2', 'session3'] as const;
+  const S = ['session1', 'session2', 'session3', 'session4'] as const;
 
   it('허락 문구 넷이 사라졌다', () => {
     for (const file of S) {
@@ -160,7 +160,7 @@ describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => 
 
 // ADR-102 Phase 2 — 회차별 문안 여덟 자리. 여기서 허락 계열이 레지스트리에서 완전히 걷힌다.
 describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => {
-  const S = ['session1', 'session2', 'session3'] as const;
+  const S = ['session1', 'session2', 'session3', 'session4'] as const;
 
   // 이 검사가 이 개편 전체의 잠금이다. 되돌아오면 톤 개편이 통째로 무너진다.
   //   **범위는 session*.ts 로 한정한다** — 원칙 §3 의 다섯 자리(연락 요청·익명 안내·오해 방지·
@@ -236,7 +236,7 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
   const src = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
   it('연락 요청 · 익명 안내 — 세 회차', () => {
-    for (const file of ['session1', 'session2', 'session3'] as const) {
+    for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
       const l = koreanLiterals(file);
       expect(l.has('짧은 안부 연락입니다. 코칭 세션이 아닙니다.'), file).toBe(true);
       expect(l.has('이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.'), file).toBe(true);
@@ -313,6 +313,36 @@ describe('진행·상태 문구가 되돌아가지 않는다 (ADR-102 Phase 3)',
   });
 });
 
+// ADR-104 — 4회차 문안. baseline 은 '변경'만 보므로 재생성 뒤에는 무엇이 왜 그렇게 쓰였는지가 사라진다.
+//   설계가 걸린 네 자리를 여기서 못 박는다.
+describe('4회차 문안이 되돌아가지 않는다 (ADR-104)', () => {
+  const l = koreanLiterals('session4');
+
+  // 아래 칸이 검산기 노릇을 한다 — 함께 넘어갈 것을 못 적으면 그것은 첫 도미노가 아니라
+  //   그냥 해야 할 일 중 하나다. 인도자가 판정하지 않고 참여자가 스스로 안다.
+  it('첫 도미노 짝 — 검산 구조', () => {
+    expect(l.has('↓ 그것이 넘어지면')).toBe(true);
+    expect(l.has('함께 넘어갈 것은')).toBe(true);
+  });
+
+  // STEP 5 의 유일한 판별 기준이 '끝나는 날'이다. 이 문장을 지우면 마감일 칸이 단순 서식이 된다.
+  it('마감일 — STEP 5 원리', () => {
+    expect(l.has('이름만 있으면 결심이고, 끝나는 날이 붙으면 프로젝트가 됩니다.')).toBe(true);
+  });
+
+  // 세션 안에서만 통하는 내부 용어다. 강의 어휘를 못 들은 사람도 문장만으로 무엇을 쓸지 알아야 한다.
+  it("'대기열' 을 참여자 문안에 쓰지 않는다", () => {
+    expect([...l].some((s) => s.includes('대기열'))).toBe(false);
+  });
+
+  // STEP 7 이 환경 설계이고 여기 적힌 방해 요인이 그대로 그 시간의 재료가 된다.
+  //   이 회차에서는 방해에 대한 답을 주지 않는 것이 설계다.
+  it('방해 요인 보조 문구는 5회차 인계다', () => {
+    expect(l.has('여기 적어 두신 것이 다음 시간의 재료가 됩니다.')).toBe(true);
+    expect([...l].some((s) => s.includes('사흘쯤 뒤에'))).toBe(false);
+  });
+});
+
 // ADR-91 D — 완충 문구를 '허락'에서 '용도'로 바꾼 교체. 실측이 근거를 지웠기 때문이다:
 //   실행 자신감 값은 2·5·7·8(평균 5.5)로 부풀림이 없었고, self_note placeholder 를 그대로 베낀 사람은 0명이었다.
 //   없애는 것이 아니라 문법을 바꾼다 — 정직성 확보 효과는 같고 자세가 반대다.
@@ -349,7 +379,7 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
   const REPLACED = '솔직하게요. 낮게 답하셔도 아무 일 없습니다.';
   const NOW = '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.';
 
-  for (const file of ['session1', 'session2', 'session3'] as const) {
+  for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
     it(`${file}: 실행 자신감 보조문구가 용도 문법으로 바뀌었다`, () => {
       const lits = koreanLiterals(file);
       expect(lits.has(REPLACED)).toBe(false);
@@ -370,7 +400,7 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
   // §6-2: 완충을 일괄 제거하지 않는다. 5주차에 실제로 무너진 사람이 여는 문이라 여기까지 딱딱해지면 소수를 잃는다.
   it('남겨 두기로 한 완충은 그대로다', () => {
     const koreanStrings3 = koreanLiterals('session3');
-    for (const file of ['session1', 'session2', 'session3'] as const) {
+    for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
       const lits = koreanLiterals(file);
       // ADR-102 가 이 목록에서 selfNote 완충 하나를 **뺐다**(판례 부분 파기). 남은 둘은 그대로다 —
       //   연락 요청과 익명 안내는 '무너진 사람이 여는 문'이지만 self_note 는 자기에게 쓰는 말이라

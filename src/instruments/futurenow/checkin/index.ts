@@ -4,6 +4,7 @@
 import { CHECKIN_SESSION_1 } from './session1';
 import { CHECKIN_SESSION_2 } from './session2';
 import { CHECKIN_SESSION_3 } from './session3';
+import { CHECKIN_SESSION_4 } from './session4';
 
 // 단일행/여러행 공통 필드. help·placeholder 는 회차·필드마다 선택.
 export type CheckinField = { key: string; label: string; help?: string; placeholder?: string };
@@ -130,5 +131,6 @@ export function getCheckinSession(n: number): CheckinSession | null {
   if (n === 1) return CHECKIN_SESSION_1;
   if (n === 2) return CHECKIN_SESSION_2;
   if (n === 3) return CHECKIN_SESSION_3;
+  if (n === 4) return CHECKIN_SESSION_4;
   return null;
 }
