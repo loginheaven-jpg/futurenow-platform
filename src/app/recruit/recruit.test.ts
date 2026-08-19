@@ -20,6 +20,16 @@ const SIAN = readFileSync(
 /** 시안 HTML 안에 이 문자열이 그대로 있는가. 마크업(<br>·<strong>)이 끼는 자리는 조각으로 나눠 확인한다. */
 const inSian = (s: string) => SIAN.includes(s);
 
+// 원고 .md — 셋째 사본이다. 이미지(시안) · 웹(copy.ts) · 원고 셋이 일치해야 한다는 것이 지휘부 요구다.
+//   원고는 참여자가 읽는 화면이 아니지만 3기 준비에 다시 열어 보는 문서이고, 옛 문구가 남아 있으면
+//   그때 어느 쪽이 맞는지 매번 대조해야 한다. 그래서 대조 범위에 넣는다.
+//   원고는 마크다운이라 **강조**와 줄바꿈이 시안의 <strong>·<br> 자리에 온다 — 그것만 맞춰 비교한다.
+const WONGO = readFileSync(
+  resolve(process.cwd(), 'docs/tasks/예봄2기_모집카드뉴스_원고_확정 (1).md'),
+  'utf-8',
+).replace(/\*\*/g, '');
+const inWongo = (s: string) => WONGO.includes(s.replace(/<br>/g, '\n').replace(/<\/?strong>/g, ''));
+
 describe('시안 HTML 이 문구의 최종 기준이다', () => {
   it('시안 파일을 읽었다 — 경로가 바뀌면 여기서 먼저 멈춘다', () => {
     expect(SIAN.length).toBeGreaterThan(10000);
@@ -225,5 +235,91 @@ describe('공개 라우트다 — 로그인 벽 뒤에 갇히면 모집이 통�
   // 보호 목록에 넣는 것은 지금 구조에서 한 줄이라, 실수로 들어가도 눈에 안 띈다. 그 한 줄을 여기서 막는다.
   it('보호 목록에 recruit 접두사가 생기지 않았다', () => {
     expect(isProtectedPath('/recruit/anything')).toBe(false);
+  });
+});
+
+// 지휘부 요구(2026-08-19): "이미지, 원고, 웹 모두 일치되도록 하세요."
+//   위 '시안 HTML 이 문구의 최종 기준이다' 블록이 시안 ↔ 웹을 잠갔다. 여기서 원고 ↔ 웹을 잠근다.
+//   둘을 합치면 셋이 한자리에 묶인다 — 어느 하나만 고치면 반드시 레드가 난다.
+//   웹(copy.ts)을 가운데 두고 양쪽을 확인하는 이유: copy.ts 는 이미 시안과 동일함이 증명됐으므로
+//   원고 ⊇ copy.ts 이면 원고 == 시안이다. 대조를 두 번 쓰지 않아도 된다.
+describe('원고 .md 가 시안·웹과 일치한다', () => {
+  it('원고 파일을 읽었다 — 경로가 바뀌면 여기서 먼저 멈춘다', () => {
+    expect(WONGO.length).toBeGreaterThan(5000);
+    expect(WONGO).toContain('모집 카드뉴스');
+  });
+
+  it('원고는 더 이상 자기가 최신이라고 말하지 않는다 — 서열이 뒤집힌 것을 문서가 안다', () => {
+    expect(WONGO).toContain('문구의 최종 기준은 이 파일이 아니라');
+    expect(WONGO).not.toContain('이 파일이 최신이며');
+  });
+
+  it('카드 1~4 문안', () => {
+    expect(inWongo(HERO.title.join('<br>'))).toBe(true);
+    expect(inWongo(HERO.sub)).toBe(true);
+    expect(inWongo(PROBLEM.title.join('<br>'))).toBe(true);
+    expect(inWongo(PROBLEM.emph)).toBe(true);
+    expect(inWongo(PROBLEM.title2.join('<br>'))).toBe(true);
+    for (const m of PROBLEM.marks) expect(inWongo(m), m).toBe(true);
+    expect(inWongo(PROBLEM.closing)).toBe(true);
+    expect(inWongo(PROBLEM.closingGold)).toBe(true);
+    expect(inWongo(WHAT.title.join('<br>'))).toBe(true);
+    for (const d of WHAT.defs) expect(inWongo(`${d.term} : ${d.text}`), d.term).toBe(true);
+    expect(inWongo(WHAT.leadEmph)).toBe(true);
+    expect(inWongo(WHAT.foot)).toBe(true);
+  });
+
+  it('카드 5~9 문안', () => {
+    for (const r of JOURNEY.rows) expect(inWongo(r.what), r.what).toBe(true);
+    expect(inWongo(JOURNEY.foot)).toBe(true);
+    for (const m of RESULT.marks) expect(inWongo(`${m.pre}${m.strong}${m.post}`), m.strong).toBe(true);
+    expect(inWongo(RESULT.foot)).toBe(true);
+    for (const q of VOICES.quotes) expect(inWongo(q.text), q.text.slice(0, 16)).toBe(true);
+    for (const b of ONLINE.blocks) {
+      expect(inWongo(b.head), b.head).toBe(true);
+      expect(inWongo(b.body), b.head).toBe(true);
+    }
+    expect(inWongo(ONLINE.foot)).toBe(true);
+    for (const m of AUDIENCE.marks) expect(inWongo(m), m).toBe(true);
+  });
+
+  it('카드 10~13 문안 — 일정·금액·계좌까지', () => {
+    expect(inWongo(SCHEDULE.title)).toBe(true);
+    for (const r of CURRENT_INTAKE.schedule) {
+      expect(inWongo(r.date), r.date).toBe(true);
+      expect(inWongo(r.place), r.place).toBe(true);
+      if (r.area) expect(inWongo(`(${r.area})`), r.area).toBe(true);
+    }
+    expect(inWongo(CURRENT_INTAKE.fee)).toBe(true);
+    expect(inWongo(CURRENT_INTAKE.scholarship)).toBe(true);
+    expect(inWongo(FEE.motto)).toBe(true);
+    expect(inWongo(FEE.foot)).toBe(true);
+    expect(inWongo(CURRENT_INTAKE.accountText)).toBe(true);
+    for (const p of TEAM.people) expect(inWongo(p.name), p.name).toBe(true);
+    expect(inWongo(APPLY.body)).toBe(true);
+    expect(inWongo(APPLY.deadlineNote)).toBe(true);
+    expect(inWongo(CURRENT_INTAKE.deadlineLine)).toBe(true);
+  });
+
+  it('옛 문구가 원고에 남아 있지 않다 — 동기화 이전 판본의 흔적', () => {
+    const 옛것 = [
+      '의지가 약해서가 아니다.',
+      '왜 하는지가 흐리다',
+      '설계의 문제다.',
+      '조감도는 짓기 전에 그리는 그림이다',
+      '흐릿한 5년 뒤를 도면 수준으로',
+      '건너뛰면 힘을 잃는다',
+      '6주 뒤에 다시 펴 볼 물건이 남습니다',
+      '잘 보이려는 답이 나오지 않도록',
+      '인도자 한 사람만',
+      '방향이 흐린 분',
+      '다른 기준을 찾는 분',
+      '재지 않은 변화는 없던 일이 된다',
+      '첫 작업에서 시작한다',
+      '여기 적은 것이 1회차의 첫 재료가 된다',
+      '정원이 차면 조기 마감된다.',
+      '한국상담대학원대학교',
+    ];
+    for (const o of 옛것) expect(WONGO, o).not.toContain(o);
   });
 });
