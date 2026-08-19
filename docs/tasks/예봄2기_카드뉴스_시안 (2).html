@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>퓨처나우 예봄 2기 — 카드뉴스 검토 시안</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  /* 원천 팔레트 — design_system.md §1.1 */
+  --navy-900:#0F1B2D; --navy-700:#1B2A41; --navy-500:#34466A; --navy-300:#5B6B8C;
+  --gold-700:#B8923D; --gold-500:#C9A24B; --gold-300:#D9B96E; --gold-100:#EFE2C2;
+  --gray-0:#FFFFFF; --gray-100:#EEECE8; --gray-400:#A8A29A; --gray-600:#6B655C; --gray-900:#211E1A;
+
+  --card:1080px;
+  --scale:0.46;
+  --pad:88px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  background:var(--gray-100);
+  color:var(--gray-900);
+  padding:32px 24px 96px;
+}
+
+/* ───────── 검토용 껍데기 (인쇄·배포물 아님) ───────── */
+.sheet{max-width:1240px;margin:0 auto}
+
+.sheet-head{
+  border-bottom:1px solid var(--gray-400);
+  padding-bottom:20px;margin-bottom:28px;
+}
+.sheet-head h1{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.sheet-head p{margin-top:8px;font-size:14px;line-height:1.7;color:var(--gray-600)}
+.sheet-head b{color:var(--gray-900)}
+
+.controls{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  margin-bottom:28px;font-size:13px;
+}
+.controls span.lbl{color:var(--gray-600);margin-right:2px}
+.controls button{
+  font:inherit;font-weight:600;
+  padding:8px 14px;min-height:38px;
+  border:1px solid var(--gray-400);border-radius:999px;
+  background:var(--gray-0);color:var(--gray-900);cursor:pointer;
+}
+.controls button[aria-pressed="true"]{
+  background:var(--navy-700);border-color:var(--navy-700);color:var(--gray-0);
+}
+.controls button:focus-visible{outline:2px solid var(--gold-700);outline-offset:2px}
+
+.legend{
+  font-size:13px;line-height:1.7;color:var(--gray-600);
+  margin-bottom:28px;padding:14px 16px;
+  background:var(--gray-0);border:1px solid var(--gray-400);border-radius:10px;
+}
+.legend b{color:var(--gray-900)}
+
+.deck{display:flex;flex-wrap:wrap;gap:36px 28px}
+
+.slot{position:relative}
+.slot-cap{
+  font-size:12px;font-weight:700;letter-spacing:.02em;
+  color:var(--gray-600);margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.flag{
+  display:none;font-size:11px;font-weight:800;letter-spacing:.02em;
+  padding:3px 8px;border-radius:999px;
+  background:#B23B3B;color:#fff;
+}
+.slot.over .flag{display:inline-block}
+.slot.over .frame{outline:3px solid #B23B3B;outline-offset:3px}
+
+.frame{
+  width:calc(var(--card) * var(--scale));
+  height:calc(var(--card) * var(--scale));
+  overflow:hidden;border-radius:6px;
+  box-shadow:0 6px 22px rgba(15,27,45,.18);
+}
+
+/* ───────── 카드 본체 ───────── */
+.card{
+  width:var(--card);height:var(--card);
+  transform:scale(var(--scale));transform-origin:top left;
+  background:var(--navy-900);
+  color:var(--gold-100);
+  padding:var(--pad);
+  position:relative;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* 시그니처 — 도면 격자 + 모서리 등록표 */
+.card::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(to right, rgba(201,162,75,.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201,162,75,.055) 1px, transparent 1px);
+  background-size:60px 60px;
+}
+body.nogrid .card::before{display:none}
+
+.ticks{position:absolute;inset:44px;pointer-events:none}
+.ticks i{position:absolute;width:26px;height:26px;border:0 solid rgba(201,162,75,.5)}
+.ticks i:nth-child(1){top:0;left:0;border-top-width:2px;border-left-width:2px}
+.ticks i:nth-child(2){top:0;right:0;border-top-width:2px;border-right-width:2px}
+.ticks i:nth-child(3){bottom:0;left:0;border-bottom-width:2px;border-left-width:2px}
+.ticks i:nth-child(4){bottom:0;right:0;border-bottom-width:2px;border-right-width:2px}
+
+.head{
+  position:relative;z-index:1;
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:20px;margin-bottom:44px;
+  border-bottom:1px solid rgba(201,162,75,.32);
+}
+.eyebrow{
+  font-size:26px;font-weight:700;letter-spacing:.22em;
+  color:var(--gold-500);
+}
+.num{
+  font-size:24px;font-weight:700;letter-spacing:.08em;
+  color:rgba(217,185,110,.55);
+  font-variant-numeric:tabular-nums;
+}
+
+.body{position:relative;z-index:1;flex:1;min-height:0}
+.foot{
+  position:relative;z-index:1;
+  padding-top:22px;margin-top:26px;
+  border-top:1px solid rgba(201,162,75,.22);
+  font-size:29px;line-height:1.6;color:rgba(239,226,194,.62);
+}
+
+/* 타이포 스케일 (1080 캔버스 기준) */
+h2.d{font-size:104px;font-weight:800;line-height:1.14;letter-spacing:-.035em;color:var(--gray-0)}
+h2.d.sm{font-size:82px}
+h2.d em{font-style:normal;color:var(--gold-500)}
+
+p.lead{font-size:43px;line-height:1.62;margin-top:40px;color:rgba(239,226,194,.92)}
+p.body{font-size:39px;line-height:1.68;margin-top:30px;color:rgba(239,226,194,.86)}
+p.tight{margin-top:18px}
+strong{color:var(--gray-0);font-weight:700}
+.gold{color:var(--gold-500)}
+
+ul.marks{list-style:none;margin-top:40px}
+ul.marks li{
+  font-size:39px;line-height:1.5;padding:0 0 0 46px;margin-bottom:26px;
+  position:relative;color:rgba(239,226,194,.9);
+}
+ul.marks li::before{
+  content:"";position:absolute;left:0;top:.62em;
+  width:22px;height:2px;background:var(--gold-500);
+}
+
+/* 표 */
+table{width:100%;border-collapse:collapse;margin-top:36px}
+td{
+  font-size:36px;line-height:1.45;padding:19px 0;
+  border-bottom:1px solid rgba(201,162,75,.18);
+  color:rgba(239,226,194,.9);vertical-align:top;
+}
+td.k{
+  width:120px;color:var(--gold-500);font-weight:700;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+td.dt{width:290px;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.tm{width:170px;white-space:nowrap;color:rgba(239,226,194,.72)}
+td.pl{white-space:nowrap}
+td small{font-size:28px;color:rgba(239,226,194,.6);margin-left:6px;white-space:nowrap}
+
+/* 인용 */
+blockquote{margin-top:34px;padding-left:32px;border-left:3px solid var(--gold-500)}
+blockquote p{font-size:38px;line-height:1.5;color:var(--gray-0)}
+blockquote cite{
+  display:block;margin-top:12px;font-style:normal;
+  font-size:29px;color:rgba(217,185,110,.75);
+}
+
+/* 블록 소제목 */
+h3.blk{
+  font-size:34px;font-weight:800;color:var(--gold-500);
+  margin-top:36px;letter-spacing:-.01em;
+}
+h3.blk:first-child{margin-top:0}
+h3.blk + p{margin-top:14px;font-size:35px;line-height:1.55}
+
+/* 가격 */
+.price{font-size:96px;font-weight:800;color:var(--gray-0);letter-spacing:-.03em;line-height:1.15}
+.scholar{
+  display:inline-block;margin-top:22px;
+  font-size:44px;font-weight:800;line-height:1.3;
+  color:var(--navy-900);background:var(--gold-500);
+  padding:16px 26px;border-radius:8px;
+}
+.acct{
+  margin-top:30px;padding:22px 26px;
+  border:1px solid rgba(201,162,75,.4);border-radius:8px;
+  font-size:35px;line-height:1.5;font-variant-numeric:tabular-nums;
+}
+.acct b{display:block;font-size:29px;color:var(--gold-500);margin-bottom:8px;letter-spacing:.06em}
+
+.motto{
+  margin-top:34px;font-size:43px;line-height:1.5;
+  font-weight:700;color:var(--gray-0);
+}
+
+/* 카드 11 전용 — 요소가 많아 한 단계 낮춘 스케일 */
+.c11 .head{margin-bottom:32px}
+.c11 .foot{margin-top:22px}
+.c11 .price{font-size:84px}
+.c11 .scholar{margin-top:20px;font-size:40px;padding:14px 24px}
+.c11 .sub{margin-top:12px;font-size:31px;line-height:1.5;color:rgba(239,226,194,.72)}
+.c11 .blk{margin-top:34px;font-size:32px}
+.c11 .crit{margin-top:12px;font-size:33px;line-height:1.5;color:rgba(239,226,194,.88)}
+.c11 .motto{margin-top:32px;font-size:39px;line-height:1.45}
+.c11 .acct{margin-top:32px;padding:18px 24px;font-size:33px;line-height:1.45}
+.c11 .acct b{font-size:27px;margin-bottom:6px}
+
+h2.d.c10t{font-size:70px}  /* 카드 10 — '현장 3회 + 온라인 3회' 를 한 줄에 담으라는 지시. 82px 로는 폭이 모자란다 */
+
+/* 진행자 */
+.person{margin-top:34px}
+.person:first-child{margin-top:0}
+.person h4{font-size:44px;font-weight:800;color:var(--gray-0);letter-spacing:-.02em}
+.person h4 span{font-size:33px;font-weight:600;color:var(--gold-500);margin-left:14px;letter-spacing:0}
+.person p{font-size:32px;line-height:1.58;margin-top:12px;color:rgba(239,226,194,.82)}
+.person .paren{color:inherit}  /* 지휘부 2026-08-19 — 골드가 아니라 본문색으로 통일 */
+
+/* 표지 */
+.cover{display:flex;flex-direction:column;justify-content:center;height:100%}
+.cover h2{font-size:130px;font-weight:800;line-height:1.1;letter-spacing:-.04em;color:var(--gray-0)}
+.cover .sub{margin-top:56px;font-size:41px;line-height:1.6;color:rgba(239,226,194,.88)}
+.cover .sub b{display:block;font-size:52px;color:var(--gold-500);margin-top:12px;letter-spacing:-.01em}
+.ribbon{
+  position:absolute;right:0;bottom:0;z-index:2;
+  background:var(--gold-500);color:var(--navy-900);
+  font-size:40px;font-weight:800;letter-spacing:-.01em;
+  padding:26px 56px 26px 44px;
+}
+
+/* QR 자리 */
+.qrwrap{display:flex;align-items:center;gap:36px;margin-top:34px}
+.qr{
+  width:250px;height:250px;flex:none;
+  background:#fff;border-radius:10px;
+  padding:0;image-rendering:pixelated;
+}
+.url{
+  font-size:36px;line-height:1.45;font-weight:700;
+  color:var(--gray-0);word-break:break-all;
+}
+.url span{display:block;color:var(--gold-500);font-weight:800}
+.deadline{
+  margin-top:32px;font-size:40px;font-weight:800;color:var(--gold-500);
+}
+.deadline span{display:block;font-size:32px;font-weight:500;color:rgba(239,226,194,.72);margin-top:10px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="sheet-head">
+    <h1>퓨처나우 예봄 2기 — 모집 카드뉴스 검토 시안</h1>
+    <p>
+      13장 · 1:1 정사각 · 실측 1080×1080px 렌더.<br>
+      기준선 원고 : <b>예봄2기_모집카드뉴스_원고_확정.md</b> — 문구는 원고와 일치한다.<br>
+      이 파일은 <b>글자량과 밀도를 판정하기 위한 검토용</b>이다. 최종 디자인이 아니다.
+    </p>
+  </div>
+
+  <div class="controls">
+    <span class="lbl">배율</span>
+    <button data-scale="0.32">32%</button>
+    <button data-scale="0.46" aria-pressed="true">46%</button>
+    <button data-scale="0.64">64%</button>
+    <button data-scale="1">100%</button>
+    <span class="lbl" style="margin-left:12px">격자</span>
+    <button id="gridBtn" aria-pressed="true">표시</button>
+  </div>
+
+  <div class="legend">
+    <b>넘침 검사</b> — 내용이 카드 밖으로 나가는 장은 붉은 테두리와 <b>넘침</b> 표시가 붙는다.
+    표시가 없으면 1080×1080 안에 들어간다. 폰트 로딩이 끝난 뒤 자동으로 재검사한다.
+  </div>
+
+  <div class="deck" id="deck">
+
+    <!-- 01 표지 -->
+    <div class="slot"><div class="slot-cap">카드 1 · 표지 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="body cover">
+        <h2>꿈꾸는 미래를<br>지금 살자</h2>
+        <div class="sub">
+          퓨처나우 셀프코칭 세미나
+          <b>예봄 2기 · 6주 · 회당 140분</b>
+        </div>
+      </div>
+      <div class="ribbon">선착순 10명</div>
+    </div></div></div>
+
+    <!-- 02 -->
+    <div class="slot"><div class="slot-cap">카드 2 · 문제제기 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">퓨처나우</div><div class="num">02 / 13</div></div>
+      <div class="body">
+        <h2 class="d">계획은<br>매년 세웠다</h2>
+        <p class="lead">새해마다 목표를 적는다.<br>3월이면 사라진다.</p>
+        <p class="body">작년에도 그랬고,<br>올해도 그러고 있다.</p>
+        <p class="body"><strong>의지가 약해서가 아닙니다.</strong></p>
+      </div>
+    </div></div></div>
+
+    <!-- 03 -->
+    <div class="slot"><div class="slot-cap">카드 3 · 문제제기 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">퓨처나우</div><div class="num">03 / 13</div></div>
+      <div class="body">
+        <h2 class="d sm">방향이 없으면<br>속도는 의미가 없다</h2>
+        <ul class="marks">
+          <li>무엇을 할지는 알겠는데, 왜 하는지가 흐릿하다</li>
+          <li>하루가 바쁜데 손에 남는 것이 없다</li>
+          <li>"5년 뒤에 어떻게 되고 싶으세요" 앞에서 말이 막힌다</li>
+        </ul>
+        <p class="body">게으름의 문제가 아니라<br><strong class="gold">설계의 문제입니다.</strong></p>
+      </div>
+    </div></div></div>
+
+    <!-- 04 -->
+    <div class="slot"><div class="slot-cap">카드 4 · 이것은 무엇인가 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">무엇을 하는가</div><div class="num">04 / 13</div></div>
+      <div class="body">
+        <h2 class="d sm">인생의 조감도와 설계도를<br>다시 그린다</h2>
+        <p class="body"><span class="gold">조감도</span> : 내 삶을 이끌어갈 분명한 목적<br><span class="gold">설계도</span> : 삶의 5대 영역에 대한 구체적인 목표</p>
+        <p class="body">6주 동안 하는 일은 하나다.<br><strong>흐릿했던 5년 후를 가슴 뛰는 선명한 미래로 바꾸는 것.</strong></p>
+        <p class="body"><span class="gold">코칭 모델 GROW + F</span><br>과거 · 미래 · 현재 · 선택 · 실행 · 믿음</p>
+      </div>
+      <div class="foot">기반 도서 『퓨처나우』(이승은) · 『퓨처셀프』(벤자민 하디)</div>
+    </div></div></div>
+
+    <!-- 05 -->
+    <div class="slot"><div class="slot-cap">카드 5 · 6주 여정 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">여섯 번의 작업</div><div class="num">05 / 13</div></div>
+      <div class="body">
+        <h2 class="d sm">여섯 번의 작업</h2>
+        <table>
+          <tr><td class="k">1회</td><td>과거의 나를 만난다</td></tr>
+          <tr><td class="k">2회</td><td>5년 뒤의 나를 만난다</td></tr>
+          <tr><td class="k">3회</td><td>현재를 직면하고, 습관을 다시 짠다</td></tr>
+          <tr><td class="k">4회</td><td>삶의 옵션을 펼치고, 단 하나를 고른다</td></tr>
+          <tr><td class="k">5회</td><td>의지 대신 환경을 설계한다</td></tr>
+          <tr><td class="k">6회</td><td>성공이 아니라 형통으로</td></tr>
+        </table>
+      </div>
+      <div class="foot">변화는 불편을 동반합니다. 그러나 함께 동행하면 그 불편도 즐겁습니다.</div>
+    </div></div></div>
+
+    <!-- 06 -->
+    <div class="slot"><div class="slot-cap">카드 6 · 무엇이 남는가 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">6주 뒤</div><div class="num">06 / 13</div></div>
+      <div class="body">
+        <h2 class="d sm">손에 남는 것</h2>
+        <ul class="marks">
+          <li>나를 한 문장으로 압축한 <strong>존재가치 선언문</strong></li>
+          <li>5년 뒤 삶의 <strong>인생 조감도</strong></li>
+          <li>나를 붙잡아 온 것에 내가 직접 붙인 <strong>이름</strong></li>
+          <li>인생을 바꿀 <strong>단 하나</strong> — 첫 번째 도미노</li>
+          <li>의지 없이도 굴러가는 <strong>환경 설계도</strong></li>
+          <li>결심이 아니라 <strong>행동으로 남은 6주</strong></li>
+        </ul>
+      </div>
+      <div class="foot">워크북은 증정합니다. 6주 뒤에 다시 펴 볼 물건이 남습니다.</div>
+    </div></div></div>
+
+    <!-- 07 -->
+    <div class="slot"><div class="slot-cap">카드 7 · 1기 참여자의 말 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">1기가 지나간 자리</div><div class="num">07 / 13</div></div>
+      <div class="body">
+        <h2 class="d sm">1기 참여자의 말</h2>
+        <blockquote>
+          <p>"준비를 잘하는 사람인데, 준비만 잘해서 문제였다. 그것도 하나의 준비로 놔두고 있었다."</p>
+          <cite>남 · 30대</cite>
+        </blockquote>
+        <blockquote>
+          <p>"없애는 것만 생각했는데, 채울 걸 먼저 정하니까 처음으로 될 것 같더라."</p>
+          <cite>여 · 20대</cite>
+        </blockquote>
+        <blockquote>
+          <p>"감동적인 명강을 들어도 그때뿐이었다. 변화는 고통스러운 것이었으니까. 이제 나는 변화의 기쁨을 체험하고 있다."</p>
+          <cite>남 · 30대</cite>
+        </blockquote>
+      </div>
+    </div></div></div>
+
+    <!-- 08 -->
+    <div class="slot"><div class="slot-cap">카드 8 · 온라인 동행 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">온라인 동행</div><div class="num">08 / 13</div></div>
+      <div class="body">
+        <h2 class="d sm">혼자 걷게 두지 않는다</h2>
+        <h3 class="blk" style="margin-top:44px">시작 전 · 사전 체크</h3>
+        <p class="body tight">편안히 마음을 나누도록 설계된 질문들. 인도자가 당신이 지금 어디에 서 있는지 먼저 읽고 시작한다. 10명만 받는 이유가 여기에 있다.</p>
+        <h3 class="blk">매 회차 뒤 · 갈무리</h3>
+        <p class="body tight">모임에서 만든 것을 온라인에 남긴다. 지난주에 정한 한 걸음이 이번 주 화면에 다시 올라온다.</p>
+        <h3 class="blk">6주 뒤 · 마무리 체크</h3>
+        <p class="body tight">시작과 마무리를 나란히 놓는다. 느낌이 아니라 기록으로 확인한다.</p>
+      </div>
+      <div class="foot">적으신 내용은 세미나 인도자만 봅니다.</div>
+    </div></div></div>
+
+    <!-- 09 -->
+    <div class="slot"><div class="slot-cap">카드 9 · 이런 분께 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">대상</div><div class="num">09 / 13</div></div>
+      <div class="body">
+        <h2 class="d">이런 분께<br>권한다</h2>
+        <ul class="marks" style="margin-top:56px">
+          <li>열심히는 사는데 방향이 흐린 분</li>
+          <li>결심이 매번 3월에 끝나는 분</li>
+          <li>세상식 성공 말고 다른 기준을 찾는 분</li>
+          <li>보람과 성과가 풍성한 1막을 갈구하는 분</li>
+          <li>분주했던 1막을 뒤로 하고 2막의 삶을 재설계하는 분</li>
+        </ul>
+      </div>
+    </div></div></div>
+
+    <!-- 10 -->
+    <div class="slot"><div class="slot-cap">카드 10 · 일정 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">일정</div><div class="num">10 / 13</div></div>
+      <div class="body">
+        <h2 class="d sm c10t">현장 3회 + 온라인 3회</h2>
+        <table>
+          <tr><td class="k">1회</td><td class="dt">9월 20일 (일)</td><td class="tm">오후 3시</td><td class="pl">예봄교회 <small>(판교)</small></td></tr>
+          <tr><td class="k">2회</td><td class="dt">9월 29일 (화)</td><td class="tm">저녁 8시</td><td class="pl">ZOOM</td></tr>
+          <tr><td class="k">3회</td><td class="dt">10월 6일 (화)</td><td class="tm">저녁 8시</td><td class="pl">ZOOM</td></tr>
+          <tr><td class="k">4회</td><td class="dt">10월 13일 (화)</td><td class="tm">저녁 8시</td><td class="pl">ZOOM</td></tr>
+          <tr><td class="k">5회</td><td class="dt">10월 18일 (일)</td><td class="tm">오후 3시</td><td class="pl">예봄교회 <small>(판교)</small></td></tr>
+          <tr><td class="k">6회</td><td class="dt">10월 25일 (일)</td><td class="tm">오후 4시</td><td class="pl">로벤하임 <small>(동대문)</small></td></tr>
+        </table>
+      </div>
+      <div class="foot">회당 140분</div>
+    </div></div></div>
+
+    <!-- 11 -->
+    <div class="slot"><div class="slot-cap">카드 11 · 참가비 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card c11">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">참가비</div><div class="num">11 / 13</div></div>
+      <div class="body">
+        <div class="price">25만원</div>
+        <div class="scholar">6회차 개근하시면 장학금 20만원!</div>
+        <p class="sub">예봄 2기 한정 · 6회차 종료 후 지급</p>
+
+        <h3 class="blk">개근 기준</h3>
+        <p class="crit">해당 회차 참석 + 갈무리 기록 완료<br>결석은 2회까지 녹음 청취와 추가 과제·리포트로 대체 가능</p>
+
+        <div class="motto">기록하지 않은 변화는 사라진다.</div>
+
+        <div class="acct">
+          <b>입금 계좌</b>
+          우리은행 176-179666-02-001 (예금주 이승은)
+        </div>
+      </div>
+      <div class="foot">워크북 증정 · 도서 『퓨처나우』는 별도 구입</div>
+    </div></div></div>
+
+    <!-- 12 -->
+    <div class="slot"><div class="slot-cap">카드 12 · 기획 및 진행 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">기획 및 진행</div><div class="num">12 / 13</div></div>
+      <div class="body">
+        <div class="person">
+          <h4>이승은 <span>『퓨처나우』 저자</span></h4>
+          <p>서울대학교 건축학과 졸업. 대우건설, 네패스ENC 사장, 스타리치 부사장을 거쳐 현재 청년주택 '청계로벤하임' 대표, 한국청년주택협회 회장, 유튜브 〈동묘아저씨〉 운영</p>
+        </div>
+        <div class="person" style="margin-top:52px">
+          <h4>최철영 <span>성장특훈전문 코치</span></h4>
+          <p>고려대학교 법학과 졸업, 상담학 석사<br>삼성전자 30년 재직하며 신사업 전략기획과 임직원 교육·코칭을 하다 전업 코치로 활동 중 <span class="paren">(한국코치협회 전문코치, 전략국장)</span></p>
+        </div>
+      </div>
+    </div></div></div>
+
+    <!-- 13 -->
+    <div class="slot"><div class="slot-cap">카드 13 · 신청 <span class="flag">넘침</span></div>
+    <div class="frame"><div class="card">
+      <div class="ticks"><i></i><i></i><i></i><i></i></div>
+      <div class="head"><div class="eyebrow">신청</div><div class="num">13 / 13</div></div>
+      <div class="body">
+        <div class="qrwrap">
+          <img class="qr" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAOEAQMAAADDgG14AAAABlBMVEUPGy3///8R5/x4AAAD4klEQVR42u3dQW7bMBBAUaEX4P1vqRu4QGOHFGdGTTcmCz8vgsiW9RbefIgUeTze/DoPIpFIJBKJRCKRSCQSiUQikUgkEolEIpFIJBKJRCLxE8VjfrWvM47np6/DP/89/7xe03n5pb7EX8e7X0QikUgkEj9TvHROGxOoH045M6VLD5sfXErnEIlEIpFIXNY5PWKy+znTN3oFPc/L7vY0nUMkEolEInHbzukl0z/9Hvc6xv+ywSudQyQSiUQiccvO6adMw1hjAD1ubv7oHCKRSCQSibt0Tjh8DUWVp5ifQyQSiUQi8T/onOnVriXzT3/ipXQOkUgkEonEZZ2TvfLzijk7oWnSJ9n9jkQikUgkEtd0Tn8vnHeZcxyGrM4ke5rOIRKJRCKRuEnnXObihMPibk943uoMF9U5RCKRSCQSd5mHHKYWn/nXxqespifMs8TROUQikUgkEhd1zpQz2TBWmJrT/r5dRH9P5xCJRCKRSFzUOVOr5NXS8oez8gDKVlDWOUQikUgkEld0Tisn1SSTb85kbnJsJOsEEolEIpFI3KBzsiWOpyeqsoGqcmVB93OIRCKRSCTu0jnPN1oyK+cRhrGyKcjj9cpllHUOkUgkEonE93dONgpV7vGQT+E5b59T1zlEIpFIJBIXdU45UBWq5bzJo3JGss4hEolEIpG4rHOyncuLvRu+++UY22c6LBYf9DsSiUQikUhc0znZjg29X8ZPi9s74fLWQyYSiUQikbi8c8bDS8SMnXPkayRnt4GmD3QOkUgkEonEhZ1zNz8nO7mctJxPS9Y5RCKRSCQSl3VOf+9+Bs4xfpp3TjEEpnOIRCKRSCQu65yyWrKZxmGFnB9seK5ziEQikUgkruicYr/ycqbOWEYtnBfKSOcQiUQikUhc1Dn5I1RxSZywAHK20UMc5NI5RCKRSCQSN+ic/LzLZp5jv5zZY1Wl4XckEolEIpH49s6Zxp6mEawpbMbvFssjh6k5OodIJBKJROKizslu6pRDVuOdnRbGt6bLG7ciEolEIpG4y74P+Q4QZ3gaa3rKanqQfFR0DpFIJBKJxJWdEz6aEudxUzxhocF6N1C/I5FIJBKJxAWd08KtnKxupiGrfM+rR7URqM4hEolEIpG4qHOe704zkqcVcuL2Dvlo1WEfTyKRSCQSidt2Tm+VbLHA7Nmq8F33c4hEIpFIJG7aOfFB8vG7Z3LFdhs7OodIJBKJROKizgmH2YJ/5cKALU8mnUMkEolEInG/563CDZx4OL5nfysikUgkEolbds57XieRSCQSiUQikUgkEolEIpFIJBKJRCKRSCQSiUQikfg54m+H0bTabIhhewAAAABJRU5ErkJggg==" alt="신청 페이지 QR 코드">
+          <div class="url">future.yebom.org<span>/join?code=ZR4KB</span></div>
+        </div>
+        <p class="body">QR이나 링크를 열면 신청 페이지로 이어집니다. 가입 후 사전체크를 마치면 신청이 완료됩니다. <strong>(약10분)</strong></p>
+        <div class="deadline">선착순 10명 · 9월 6일(일) 마감
+          <span>정원이 차면 조기 마감됩니다.</span>
+        </div>
+      </div>
+    </div></div></div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+
+  // 배율
+  var btns = document.querySelectorAll('.controls button[data-scale]');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      btns.forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+      b.setAttribute('aria-pressed','true');
+      root.style.setProperty('--scale', b.dataset.scale);
+    });
+  });
+
+  // 격자
+  var g = document.getElementById('gridBtn');
+  g.addEventListener('click', function(){
+    var on = g.getAttribute('aria-pressed') === 'true';
+    g.setAttribute('aria-pressed', on ? 'false' : 'true');
+    g.textContent = on ? '숨김' : '표시';
+    document.body.classList.toggle('nogrid', on);
+  });
+
+  // 넘침 검사 — 카드 내용 총높이가 1080 - 패딩*2 를 넘는지
+  function check(){
+    document.querySelectorAll('.slot').forEach(function(slot){
+      var card = slot.querySelector('.card');
+      var over = card.scrollHeight > card.clientHeight + 1;
+      if(!over){
+        var inner = 0;
+        card.querySelectorAll(':scope > .head, :scope > .body, :scope > .foot').forEach(function(el){
+          inner += el.offsetHeight;
+          var cs = getComputedStyle(el);
+          inner += parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
+        });
+        over = inner > (1080 - 88*2) + 1;
+      }
+      slot.classList.toggle('over', over);
+    });
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function(){ check(); setTimeout(check, 250); });
+  }
+  window.addEventListener('load', check);
+  setTimeout(check, 600);
+})();
+</script>
+</body>
+</html>
