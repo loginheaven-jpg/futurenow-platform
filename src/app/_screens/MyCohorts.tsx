@@ -3,6 +3,7 @@
 // 다음 행동: 사전 미완→[진단 시작하기] · 사후 개시·미완→[사후 진단하기](B-2) · 그 외→[내 리포트](순화 뷰, 라우트 구현 완료).
 import type { CSSProperties } from 'react';
 import type { MyCohortSummary } from '@/contracts';
+import { TOOL } from '@/app/_vocab/tool';
 
 const full: CSSProperties = { width: '100%', textDecoration: 'none' };
 
@@ -61,20 +62,20 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
             </div>
             {/* 배지는 진단 둘만(갈무리는 배지로 만들지 않는다 — 죄책감 장치·480px 줄바꿈 방지, ADR-80) */}
             <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-              <ProgressBadge label="사전 진단" done={c.preDone} pendingText="미완" />
-              <ProgressBadge label="사후 진단" done={c.postDone} pendingText="대기" />
+              <ProgressBadge label={TOOL.pre} done={c.preDone} pendingText="미완" />
+              <ProgressBadge label={TOOL.post} done={c.postDone} pendingText="대기" />
             </div>
           </div>
 
           {/* 우선순위 버튼(카드 링크 위 — 자기 목적지). 사전 미완 → 진단 · 열린 회차 미제출 → 이번 주 갈무리 · 사후 개시·미완 → 사후 · 그 외 → 차수 열기 */}
           <div style={{ position: 'relative', zIndex: 1 }}>
             {!c.preDone ? (
-              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>진단 시작하기</a>
+              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>{TOOL.pre} 시작하기</a>
             ) : c.openSessionNo !== null && !c.openSessionSubmitted ? (
               // 이 분기는 미제출일 때만 걸리므로 작성 의도가 확정이다 → 편집으로 직행(ADR-86)
               <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}?edit=1`} style={full}>이번 주 갈무리</a>
             ) : c.postOpened && !c.postDone ? (
-              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>사후 진단하기</a>
+              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>{TOOL.post} 하기</a>
             ) : (
               <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>차수 열기</a>
             )}

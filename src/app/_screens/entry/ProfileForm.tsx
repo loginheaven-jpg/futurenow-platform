@@ -9,6 +9,7 @@ import { GENDERS } from '@/contracts/vocab';
 import { RELIGIONS, CURRENT_YEAR } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
+import { TOOL } from '@/app/_vocab/tool';
 
 export type ProfileStepResult = {
   motivation?: string;
@@ -119,7 +120,7 @@ export function ProfileForm({ accountProfile, onSubmit, busy }: { accountProfile
 
         {/* 참여계기(선택) — 사전 wave 스냅샷에만 담김(진단 소유) */}
         <label className="t-caption" style={labelStyle}>
-          이 진단에 참여하게 된 계기가 있나요? (선택)
+          이 {TOOL.short}에 참여하게 된 계기가 있나요? (선택)
           <textarea
             style={{ ...inputStyle, minHeight: 72, padding: 'var(--space-3)', resize: 'vertical' }}
             placeholder="떠오르는 대로 편하게 적어 주세요"

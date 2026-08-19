@@ -27,7 +27,7 @@ export function ReportPrintHeader({
     <header className="print-only" style={wrap}>
       <div>
         <div className="t-caption" style={{ color: 'var(--color-accent)', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>퓨처나우</div>
-        <div className="t-display" style={{ color: 'var(--color-primary)', fontSize: 26, marginTop: 2 }}>개인 진단 리포트</div>
+        <div className="t-display" style={{ color: 'var(--color-primary)', fontSize: 26, marginTop: 2 }}>개인 체크 리포트</div>
       </div>
       <div className="t-caption" style={{ textAlign: 'right', lineHeight: 1.7 }}>
         <div style={{ color: 'var(--color-text)', fontWeight: 600 }}>{participantName}</div>

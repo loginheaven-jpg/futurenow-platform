@@ -50,7 +50,7 @@ export function RawAnswers({ answers, wave }: { answers: Record<string, unknown>
         aria-expanded={open}
         style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
-        <span className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17 }}>참여자 원응답 (문항별)</span>
+        <span className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17 }}>참여자 원응답 (질문별)</span>
         <span className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{open ? '접기 ▲' : '펼치기 ▼'}</span>
       </button>
 

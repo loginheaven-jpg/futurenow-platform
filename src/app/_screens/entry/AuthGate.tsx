@@ -245,7 +245,7 @@ export function AuthGate({
         {busy ? '처리 중…' : mode === 'signup' ? (coachOn ? '인도자로 신청하고 가입' : '가입하고 들어가기') : '로그인'}
       </Button>
       <p className="t-caption" style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-4)', textAlign: 'center' }}>
-        {coachOn ? '신청은 운영자 승인 후 인도자로 활동합니다.' : '진단에 필요한 것만 묻습니다.'}
+        {coachOn ? '신청은 운영자 승인 후 인도자로 활동합니다.' : '체크에 필요한 것만 묻습니다.'}
       </p>
     </div>
   );

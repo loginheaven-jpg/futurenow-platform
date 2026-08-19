@@ -11,6 +11,7 @@ import { createServerContext } from '@/core/supabase/server';
 import { participantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { latestPerUser } from '@/app/_lib/latestPerUser';
+import { TOOL } from '@/app/_vocab/tool';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +41,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
             세미나 전과 후, 당신의 마음이 어떻게 움직였는지 나란히 놓아봤어요.
           </p>
           <section style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-6)', borderBottom: 'var(--border-hair) solid var(--color-border)' }}>
-            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', fontWeight: 600, margin: '0 0 var(--space-3)' }}>세미나 전 · 사전 진단</p>
+            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', fontWeight: 600, margin: '0 0 var(--space-3)' }}>세미나 전 · {TOOL.pre}</p>
             <MirrorView mirror={preMirror!} />
           </section>
           <section>
@@ -54,7 +55,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
       ) : single ? (
         <div>
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
-            지난 진단에서 당신의 마음이 향한 곳이에요.
+            지난 {TOOL.short}에서 당신의 마음이 향한 곳이에요.
           </p>
           <div style={{ marginBottom: 'var(--space-5)' }}>
             <MirrorView mirror={single} />
@@ -66,7 +67,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
       ) : (
         <div>
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>
-            아직 진단 결과가 없어요. 받은 코드로 참여하면 결과를 볼 수 있어요.
+            아직 {TOOL.short} 결과가 없어요. 받은 코드로 참여하면 결과를 볼 수 있어요.
           </p>
           <a className="ui-btn ui-btn--primary" href="/join" style={{ width: '100%', textDecoration: 'none' }}>
             받은 코드로 참여

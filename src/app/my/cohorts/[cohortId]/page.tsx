@@ -8,6 +8,7 @@ import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { PastSessionsClient } from './PastSessionsClient';
 import { buildProgress, openedSessionNos } from './progress';
+import { TOOL } from '@/app/_vocab/tool';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,11 +126,11 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
 
   const diagnosisSection = (
     <div style={neutralCard}>
-      <div className="t-body" style={{ color: 'var(--color-text)', marginBottom: 'var(--space-2)' }}>진단</div>
+      <div className="t-body" style={{ color: 'var(--color-text)', marginBottom: 'var(--space-2)' }}>{TOOL.short}</div>
       {!c.preDone ? (
-        <a className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}`} style={{ width: '100%', textDecoration: 'none' }}>진단 시작하기</a>
+        <a className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}`} style={{ width: '100%', textDecoration: 'none' }}>{TOOL.pre} 시작하기</a>
       ) : c.postOpened && !c.postDone ? (
-        <a className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}&wave=post`} style={{ width: '100%', textDecoration: 'none' }}>사후 진단하기</a>
+        <a className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}&wave=post`} style={{ width: '100%', textDecoration: 'none' }}>{TOOL.post} 하기</a>
       ) : (
         <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/report`} style={{ width: '100%', textDecoration: 'none' }}>내 리포트 보기</a>
       )}

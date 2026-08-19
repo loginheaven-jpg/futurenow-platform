@@ -20,7 +20,7 @@ describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
     expect(html).toContain('어떤 시간인가요');
     expect(html).toContain('무엇이 달라지나요');
     expect(html).toContain('어떻게 진행되나요');
-    expect(html).toContain('사전 진단'); // 진행 본문
+    expect(html).toContain('사전 체크'); // 진행 본문
   });
 
   it('로그인·인도자 진입(보조) → /login·/signup + 재방문 로그인', () => {

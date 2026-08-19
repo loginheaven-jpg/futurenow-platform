@@ -14,6 +14,7 @@ import { InterpretationPanel } from './InterpretationPanel';
 import { MemberProfileButton } from './MemberProfileButton';
 import { ReportPrintButton } from './ReportPrintButton';
 import { ReportPrintHeader } from './ReportPrintHeader';
+import { toolName } from '@/app/_vocab/tool';
 
 export const dynamic = 'force-dynamic';
 // 비차단(B③-A): 서버 렌더는 existing 해석(getInterpretation·빠름)만 조회 — aiChat 동기 await 제거(첫 열람 26s 블랭크 회피).
@@ -44,7 +45,7 @@ export default async function CoachReportPage({
   ]);
   const participantName = members.find((m) => m.userId === resp.userId)?.name ?? '참여자';
   const cohortName = cohort?.name ?? '';
-  const waveLabel = resp.wave === 'post' ? '사후 진단' : '사전 진단';
+  const waveLabel = toolName(resp.wave);
   const [ry, rm, rd] = resp.createdAt.slice(0, 10).split('-');
   const dateStr = `${ry}년 ${Number(rm)}월 ${Number(rd)}일`;
 

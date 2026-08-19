@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MyCohorts } from './MyCohorts';
 import type { MyCohortSummary } from '@/contracts';
+import { TOOL } from '@/app/_vocab/tool';
 
 const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
   cohortId: 'co1',
@@ -30,13 +31,13 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('2026 봄 1기');
     expect(html).toContain('김코치');
     expect(html).toContain('진행 중');
-    expect(html).toContain('사전 진단');
-    expect(html).toContain('사후 진단');
+    expect(html).toContain(TOOL.pre);
+    expect(html).toContain(TOOL.post);
   });
 
-  it('사전 미완(가입자) → [진단 시작하기]→/join?cohort=… (코드 재입력 없이 러너 재진입)', () => {
+  it('사전 미완(가입자) → [사전 체크 시작하기]→/join?cohort=… (코드 재입력 없이 러너 재진입)', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: false })]} />);
-    expect(html).toContain('진단 시작하기');
+    expect(html).toContain(`${TOOL.pre} 시작하기`);
     expect(html).toContain('href="/join?cohort=co1"');
   });
 
@@ -53,11 +54,11 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('href="/my/cohorts/co1/checkin/3?edit=1"');
   });
 
-  it('사후 개시·미완(사전 완료) → [사후 진단하기]→/join?cohort=…&wave=post (B-2)', () => {
+  it('사후 개시·미완(사전 완료) → [마무리 체크 하기]→/join?cohort=…&wave=post (B-2)', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: true, postOpened: true, postDone: false })]} />);
-    expect(html).toContain('사후 진단하기');
+    expect(html).toContain(`${TOOL.post} 하기`);
     expect(html).toContain('wave=post'); // href 는 &amp; escape — wave=post 존재로 확인
-    expect(html).not.toContain('내 리포트'); // 사후 미완이면 리포트 대신 사후 진단 CTA
+    expect(html).not.toContain('내 리포트'); // 사후 미완이면 리포트 대신 마무리 체크 CTA
   });
 
   it('참여자 화면 — 의미색 토큰 0', () => {

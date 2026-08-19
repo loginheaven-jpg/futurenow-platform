@@ -15,7 +15,7 @@ export interface InterpretationContent {
 }
 
 // ── system_prompt (★ 최박사 검토·고정 지점) ──────────────────────────────
-export const INTERPRETATION_SYSTEM_PROMPT = `당신은 자기발견 세미나의 진단 결과를 인도자에게 설명하는 조력자입니다.
+export const INTERPRETATION_SYSTEM_PROMPT = `당신은 자기발견 세미나의 체크 결과를 인도자에게 설명하는 조력자입니다.
 아래 규칙을 반드시 지킵니다.
 
 [데이터 범위]
@@ -67,12 +67,12 @@ export function buildInterpretationInput(scores: FuturenowScores): string {
   if (subj.length) lines.push(`[참여자가 쓴 말]\n${subj.join('\n')}`);
 
   return [
-    '다음은 한 참여자의 자기발견 진단 결과입니다. 위 규칙에 따라 인도자용 해석 초안을 JSON 으로 작성해 주세요.',
+    '다음은 한 참여자의 자기발견 체크 결과입니다. 위 규칙에 따라 인도자용 해석 초안을 JSON 으로 작성해 주세요.',
     '',
     ...lines,
     '',
     banner
-      ? 'caution 키를 포함해, 점수·문항을 드러내지 말고 따뜻한 안부를 권하는 한 문장을 적어 주세요.'
+      ? 'caution 키를 포함해, 점수·질문을 드러내지 말고 따뜻한 안부를 권하는 한 문장을 적어 주세요.'
       : 'caution 키는 넣지 마세요(돌봄 신호 없음).',
   ].join('\n');
 }

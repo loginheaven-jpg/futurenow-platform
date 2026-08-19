@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemberHome } from './MemberHome';
 import type { MyCohortSummary } from '@/contracts';
+import { TOOL } from '@/app/_vocab/tool';
 
 const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
   cohortId: 'co1',
@@ -19,18 +20,18 @@ const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
 });
 
 describe('MemberHome (멤버 홈 본문 — 진입-3)', () => {
-  it('진행 중 진단(pre_done=false) → 골드 카드 + [이어서 진단하기]→/join?cohort=', () => {
+  it('진행 중 체크(pre_done=false) → 골드 카드 + [이어서 체크하기]→/join?cohort=', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'co1', preDone: false })]} />);
     expect(html).toContain('이멤버님');
-    expect(html).toContain('진행 중인 진단');
-    expect(html).toContain('이어서 진단하기');
+    expect(html).toContain(`진행 중인 ${TOOL.short}`);
+    expect(html).toContain(`이어서 ${TOOL.short}하기`);
     expect(html).toContain('href="/join?cohort=co1"');
     expect(html).toContain('--color-text-on-gold'); // 골드 버튼 네이비 글자
   });
 
   it('진행 중 없으면(전부 완료) 카드 생략 + 내 리포트 활성(완료 1건 직접)', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'c2', preDone: true })]} />);
-    expect(html).not.toContain('진행 중인 진단');
+    expect(html).not.toContain(`진행 중인 ${TOOL.short}`);
     expect(html).toContain('내 리포트');
     expect(html).toContain('href="/my/cohorts/c2/report"');
   });
@@ -48,22 +49,22 @@ describe('MemberHome (멤버 홈 본문 — 진입-3)', () => {
 
   it('빈 상태(차수 0) — 카드 생략·참여 0/완료 0·내 리포트 비활성 안내', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[]} />);
-    expect(html).not.toContain('진행 중인 진단');
+    expect(html).not.toContain(`진행 중인 ${TOOL.short}`);
     expect(html).toContain('참여 중 0 · 완료 0');
-    expect(html).toContain('진단을 마치면 거울이 생겨요');
+    expect(html).toContain(`${TOOL.short}를 마치면 거울이 생겨요`);
   });
 
-  it('사후 개시·미완 → 사후 진단하기 카드(B-2, pre 없을 때)', () => {
+  it('사후 개시·미완 → 마무리 체크 카드(B-2, pre 없을 때)', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'cp', preDone: true, postOpened: true, postDone: false })]} />);
-    expect(html).toContain('사후 진단이 열렸어요');
-    expect(html).toContain('사후 진단하기');
+    expect(html).toContain(`${TOOL.post}가 열렸어요`);
+    expect(html).toContain(`${TOOL.post} 하기`);
     expect(html).toContain('wave=post'); // /join?cohort=cp&(amp;)wave=post
   });
 
   it('사전 미완 우선 — 사후 개시돼도 pre 카드', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'a', preDone: false, postOpened: true, postDone: false })]} />);
-    expect(html).toContain('사전 진단을 아직 마치지'); // pre 카드 우선
-    expect(html).not.toContain('사후 진단이 열렸어요');
+    expect(html).toContain(`${TOOL.pre}를 아직 마치지`); // pre 카드 우선
+    expect(html).not.toContain(`${TOOL.post}가 열렸어요`);
   });
 
   it('참여자 화면 — 의미색 토큰 0', () => {

@@ -160,7 +160,7 @@ export function CohortDetailClient({
         onRename={renameOptimistic}
         onSetDescription={(description) => run(() => setCohortDescriptionAction(summary.id, description), '소개를 저장했어요.')}
         onReopen={() => run(() => reopenCohortAction(summary.id), '차수를 다시 열었어요.')}
-        onOpenPost={() => run(() => openPostWaveAction(summary.id), '사후 진단을 개시했어요.')}
+        onOpenPost={() => run(() => openPostWaveAction(summary.id), '마무리 체크를 개시했어요.')}
         onDelete={onDelete}
       />
 

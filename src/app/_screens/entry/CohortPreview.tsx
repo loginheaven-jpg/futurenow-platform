@@ -5,6 +5,7 @@ import { Button } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
 import { SeminarIntro } from '../SeminarIntro';
 import { instrumentDisplay } from '../types';
+import { TOOL } from '@/app/_vocab/tool';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -20,7 +21,7 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
   return (
     <div>
       {/* 출구(홈) 제공 — sub 우상단 홈 아이콘(/home). 뒤로는 아래 '아니에요'(→코드)로. */}
-      <AppHeader variant="sub" title={isGeneral ? '체험 진단' : '이 모임에 들어갑니다'} />
+      <AppHeader variant="sub" title={isGeneral ? TOOL.trial : '이 모임에 들어갑니다'} />
       <div
         style={{
           background: 'var(--color-surface-2)',
@@ -37,7 +38,7 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
         {/* general 체험: 인도자·인원은 무의미(공개·운영자 소유) → 체험 문구로 대체. 진단·예상 시간은 유지. */}
         {isGeneral ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
-            세미나 코드 없이 누구나 해볼 수 있는 체험 진단이에요.
+            세미나 코드 없이 누구나 해볼 수 있는 {TOOL.trial}예요.
           </p>
         ) : (
           <>
@@ -45,7 +46,7 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
             <Row label="현재 인원" value={`${meta.memberCount}명`} />
           </>
         )}
-        <Row label="진단" value={inst.label} />
+        <Row label={TOOL.short} value={inst.label} />
         <Row label="예상 시간" value={`약 ${inst.minutes}분`} />
       </div>
 

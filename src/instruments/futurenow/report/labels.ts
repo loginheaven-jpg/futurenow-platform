@@ -65,7 +65,7 @@ export function careBanner(scores: FuturenowScores): { title: string; body: stri
   if (scores.redFlag.byVitality) {
     return {
       title: '돌봄 권장 · 개별 안부를 권합니다',
-      body: '활력 신호가 낮습니다. 점수나 문항은 보이지 말고, 따뜻한 1:1로 먼저 안부를 건네 주세요.',
+      body: '활력 신호가 낮습니다. 점수나 질문은 보이지 말고, 따뜻한 1:1로 먼저 안부를 건네 주세요.',
     };
   }
   if (scores.redFlag.byCareCheck) {

@@ -14,7 +14,7 @@ export async function deleteCohortAction(cohortId: string): Promise<{ ok: boolea
   try {
     const c = await ctx();
     const cohort = await c.getCohort(cohortId); // RLS 미달/부재 → throw → catch
-    if (cohort.code === GENERAL_CODE) return { ok: false, error: '예약된 체험 진단 차수는 삭제할 수 없어요.' };
+    if (cohort.code === GENERAL_CODE) return { ok: false, error: '예약된 체험 체크 차수는 삭제할 수 없어요.' };
     await c.deleteCohort(cohortId);
     return { ok: true };
   } catch (e) {
@@ -77,7 +77,7 @@ export async function openPostWaveAction(cohortId: string): Promise<{ ok: boolea
     await (await ctx()).openPostWave(cohortId);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : '사후 진단 개시에 실패했습니다.' };
+    return { ok: false, error: e instanceof Error ? e.message : '마무리 체크 개시에 실패했습니다.' };
   }
 }
 

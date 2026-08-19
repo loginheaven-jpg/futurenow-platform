@@ -7,6 +7,7 @@ import { AppHeader } from '../AppHeader';
 import { GENERAL_CODE } from '../entry/general';
 import type { CohortSummary, RosterMember } from '../types';
 import { RosterRow } from './RosterRow';
+import { TOOL } from '@/app/_vocab/tool';
 
 const nameInputStyle: CSSProperties = {
   flex: 1,
@@ -163,10 +164,10 @@ export function CohortDetail({
   async function shareInvite() {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const url = `${origin}/join?code=${cohort.code}`;
-    const text = `미래의 나 진단에 초대합니다. 코드 ${cohort.code} 를 입력하고 5분만 시간 내 주세요.`;
+    const text = `미래의 나 체크에 초대합니다. 코드 ${cohort.code} 를 입력하고 5분만 시간 내 주세요.`;
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: '미래의 나 진단 초대', text, url });
+        await navigator.share({ title: '미래의 나 체크 초대', text, url });
       } catch {
         // 사용자 취소·공유 실패 — 조용히(코드가 화면에 노출됨).
       }
@@ -251,18 +252,18 @@ export function CohortDetail({
               <Button variant="ghost" onClick={saveCap} disabled={busy || cap === maxMembers}>저장</Button>
             </div>
           </div>
-          {/* 사후 진단 개시 — 세미나 종료 후 코치가 수동 개시(단방향·멱등). 참여자 홈에 '사후 진단하기' 노출(B-2). ADR-55 */}
+          {/* 마무리 체크 개시 — 세미나 종료 후 코치가 수동 개시(단방향·멱등). 참여자 홈에 '마무리 체크 하기' 노출(B-2). ADR-55 */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
             <div style={{ minWidth: 0 }}>
-              <span className="t-body" style={{ color: 'var(--color-text)' }}>사후 진단</span>
+              <span className="t-body" style={{ color: 'var(--color-text)' }}>{TOOL.post}</span>
               <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
-                {postOpened ? '개시됨 — 참여자가 사후 진단에 참여할 수 있어요' : '세미나를 마친 뒤 열어 주세요'}
+                {postOpened ? `개시됨 — 참여자가 ${TOOL.post}에 참여할 수 있어요` : '세미나를 마친 뒤 열어 주세요'}
               </div>
             </div>
             {postOpened ? (
               <span className="t-caption" style={{ color: 'var(--color-accent)', whiteSpace: 'nowrap', fontWeight: 600 }}>개시됨</span>
             ) : (
-              <Button variant="ghost" onClick={doOpenPost} disabled={busy}>사후 진단 개시</Button>
+              <Button variant="ghost" onClick={doOpenPost} disabled={busy}>{TOOL.post} 개시</Button>
             )}
           </div>
           {archived ? (

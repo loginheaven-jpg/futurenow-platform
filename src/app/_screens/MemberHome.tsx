@@ -3,6 +3,7 @@
 // role: 코치·운영자에게만 '운영' 카드(→/coach·/admin) 노출(A′-1 역할 감금 해제 — 홈은 전원 개방·카드는 자격자만).
 import type { CSSProperties } from 'react';
 import type { MyCohortSummary, Role } from '@/contracts';
+import { TOOL } from '@/app/_vocab/tool';
 
 const cta: CSSProperties = { width: '100%', textDecoration: 'none' };
 const rowBase: CSSProperties = {
@@ -61,22 +62,22 @@ export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachA
       {/* 진행 중 진단 — 조건부 최상단(골드 틴트 블록). 사전 미완 우선, 없으면 사후 개시·미완(B-2). */}
       {inProgress ? (
         <section style={{ background: 'var(--color-accent-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
-          <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>진행 중인 진단</p>
+          <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>진행 중인 {TOOL.short}</p>
           <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-4)' }}>
-            {inProgress.name} · 사전 진단을 아직 마치지 않았어요.
+            {inProgress.name} · {TOOL.pre}를 아직 마치지 않았어요.
           </p>
           <a className="ui-btn" href={`/join?cohort=${inProgress.cohortId}`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
-            이어서 진단하기
+            이어서 {TOOL.short}하기
           </a>
         </section>
       ) : postPending ? (
         <section style={{ background: 'var(--color-accent-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
-          <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>사후 진단이 열렸어요</p>
+          <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>{TOOL.post}가 열렸어요</p>
           <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-4)' }}>
             {postPending.name} · 세미나를 마친 지금의 나를 담아 주세요.
           </p>
           <a className="ui-btn" href={`/join?cohort=${postPending.cohortId}&wave=post`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
-            사후 진단하기
+            {TOOL.post} 하기
           </a>
         </section>
       ) : null}
@@ -87,7 +88,7 @@ export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachA
         {done.length > 0 ? (
           <ActivityRow href={reportHref} title="내 리포트" subtitle="내 마음의 거울 다시 보기" />
         ) : (
-          <ActivityRow title="내 리포트" subtitle="진단을 마치면 거울이 생겨요" disabled />
+          <ActivityRow title="내 리포트" subtitle={`${TOOL.short}를 마치면 거울이 생겨요`} disabled />
         )}
       </div>
 

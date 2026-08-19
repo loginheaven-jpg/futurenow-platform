@@ -10,6 +10,7 @@ import { createServerContext } from '@/core/supabase/server';
 import { GroupView } from '@/instruments/futurenow/report/GroupView';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { latestPerUser } from '@/app/_lib/latestPerUser';
+import { TOOL } from '@/app/_vocab/tool';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,25 +35,25 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title="그룹 리포트" subtitle={hasComparison ? '사전·사후 비교 · 차수 평균' : '사전 진단 · 차수 평균'} backHref={backTo} homeHref="/home" action={<HeaderActions />} />
+      <AppHeader variant="sub" title="그룹 리포트" subtitle={hasComparison ? `${TOOL.pre}·${TOOL.post} 비교 · 차수 평균` : `${TOOL.pre} · 차수 평균`} backHref={backTo} homeHref="/home" action={<HeaderActions />} />
       <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
         {preScores.length === 0 && postScores.length === 0 ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>
-            아직 제출된 응답이 없어요. 참여자가 사전 진단을 마치면 그룹 평균이 나타나요.
+            아직 제출된 응답이 없어요. 참여자가 {TOOL.pre}를 마치면 그룹 평균이 나타나요.
           </p>
         ) : (
           <>
             {preScores.length > 0 ? (
               <section>
                 {hasComparison ? (
-                  <h2 className="t-h2" style={{ color: 'var(--color-text-secondary)', fontSize: 15, margin: '0 0 var(--space-3)' }}>사전 진단 — 그룹 평균</h2>
+                  <h2 className="t-h2" style={{ color: 'var(--color-text-secondary)', fontSize: 15, margin: '0 0 var(--space-3)' }}>{TOOL.pre} — 그룹 평균</h2>
                 ) : null}
                 <GroupView all={preScores} />
               </section>
             ) : null}
             {hasComparison ? (
               <section>
-                <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 15, margin: '0 0 var(--space-3)' }}>사후 진단 — 그룹 평균</h2>
+                <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 15, margin: '0 0 var(--space-3)' }}>{TOOL.post} — 그룹 평균</h2>
                 <GroupView all={postScores} />
               </section>
             ) : null}

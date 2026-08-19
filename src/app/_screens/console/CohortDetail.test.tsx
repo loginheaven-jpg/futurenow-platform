@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CohortDetail } from './CohortDetail';
 import type { CohortSummary, RosterMember } from '../types';
+import { TOOL } from '@/app/_vocab/tool';
 
 const cohort: CohortSummary = {
   id: 'co1',
   name: '봄 1기',
-  instrumentLabel: '퓨처나우 진단',
+  instrumentLabel: TOOL.productLabel,
   responded: 1,
   total: 2,
   careCount: 0,

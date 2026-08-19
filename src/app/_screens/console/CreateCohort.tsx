@@ -57,10 +57,10 @@ export function CreateCohort({
 
   async function shareInvite() {
     const url = inviteUrl();
-    const text = `미래의 나 진단에 초대합니다. 코드 ${shownCode} 를 입력하고 5분만 시간 내 주세요.`;
+    const text = `미래의 나 체크에 초대합니다. 코드 ${shownCode} 를 입력하고 5분만 시간 내 주세요.`;
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: '미래의 나 진단 초대', text, url });
+        await navigator.share({ title: '미래의 나 체크 초대', text, url });
       } catch {
         // 사용자 취소 또는 공유 실패 — 조용히(폴백 강요하지 않음).
       }
@@ -149,7 +149,7 @@ export function CreateCohort({
           </div>
           <div style={{ background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', padding: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
             <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 0, whiteSpace: 'pre-line' }}>
-              {`이렇게 전해 보세요 ↓\n"미래의 나 진단에 초대합니다. 코드 ${shownCode} 를 입력하고 5분만 시간 내 주세요."`}
+              {`이렇게 전해 보세요 ↓\n"미래의 나 체크에 초대합니다. 코드 ${shownCode} 를 입력하고 5분만 시간 내 주세요."`}
             </p>
           </div>
           <Button onClick={onDone} style={{ width: '100%' }}>완료</Button>

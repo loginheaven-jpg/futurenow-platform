@@ -165,7 +165,7 @@ export function ResponseRunner({ schema, context, cohortId, wave, onComplete, su
 
       {!blockDone && (
         <p className="t-caption" style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-4)' }}>
-          남은 문항을 채워 주세요.
+          남은 질문을 채워 주세요.
         </p>
       )}
 

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button, OtpInput } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
+import { TOOL } from '@/app/_vocab/tool';
 
 export function CodeInput({ onSubmit, onExperience }: { onSubmit?: (code: string) => void; onExperience?: () => void }) {
   const [code, setCode] = useState('');
@@ -23,10 +24,10 @@ export function CodeInput({ onSubmit, onExperience }: { onSubmit?: (code: string
       {onExperience ? (
         <div style={{ marginTop: 'var(--space-6)', textAlign: 'center' }}>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
-            세미나 코드가 없으신가요? 체험 진단을 해보실 수 있어요.
+            세미나 코드가 없으신가요? {TOOL.trial}를 해보실 수 있어요.
           </p>
           <Button variant="ghost" onClick={onExperience} style={{ width: '100%' }}>
-            체험 진단 시작하기
+            {TOOL.trial} 시작하기
           </Button>
         </div>
       ) : null}

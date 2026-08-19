@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AllCohorts } from './AllCohorts';
 import type { CohortSummary } from '../types';
+import { TOOL } from '@/app/_vocab/tool';
 
 const cohorts: CohortSummary[] = [
-  { id: 'c1', name: '봄 1기', instrumentLabel: '퓨처나우 진단', responded: 3, total: 5, careCount: 1, code: 'RSTUV' },
-  { id: 'c2', name: '청년부 2기', instrumentLabel: '퓨처나우 진단', responded: 12, total: 12, careCount: 0, code: 'KMNPQ' },
+  { id: 'c1', name: '봄 1기', instrumentLabel: TOOL.productLabel, responded: 3, total: 5, careCount: 1, code: 'RSTUV' },
+  { id: 'c2', name: '청년부 2기', instrumentLabel: TOOL.productLabel, responded: 12, total: 12, careCount: 0, code: 'KMNPQ' },
 ];
 const noop = () => {};
 
