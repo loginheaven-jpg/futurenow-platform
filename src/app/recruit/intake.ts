@@ -63,9 +63,9 @@ export const CURRENT_INTAKE: Intake = {
 
   schedule: [
     { no: '1회', date: '9월 20일 (일)', time: '오후 3시', place: '예봄교회', area: '판교' },
-    { no: '2회', date: '9월 29일 (화)', time: '저녁 8시', place: 'ZOOM' },
-    { no: '3회', date: '10월 6일 (화)', time: '저녁 8시', place: 'ZOOM' },
-    { no: '4회', date: '10월 13일 (화)', time: '저녁 8시', place: 'ZOOM' },
+    { no: '2회', date: '9월 28일 (월)', time: '저녁 8시', place: 'ZOOM' },
+    { no: '3회', date: '10월 5일 (월)', time: '저녁 8시', place: 'ZOOM' },
+    { no: '4회', date: '10월 12일 (월)', time: '저녁 8시', place: 'ZOOM' },
     { no: '5회', date: '10월 18일 (일)', time: '오후 3시', place: '예봄교회', area: '판교' },
     { no: '6회', date: '10월 25일 (일)', time: '오후 4시', place: '로벤하임', area: '동대문' },
   ],
