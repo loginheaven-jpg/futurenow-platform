@@ -287,16 +287,8 @@ describe('가시성 — 지휘부 결정 2026-08-02', () => {
   });
 });
 
+// 미등록 회차 가드(읽기 경로 넷 · 모드 둘)는 registry.guard.test.ts 로 옮겼다(ADR-108).
 describe('회차 확장', () => {
-  it('미등록 회차는 빈 배열(파손 아님)', () => {
-    // ADR-104 로 4회차가 등록됐다. 이 단언은 '미등록 회차에서 파손되지 않는다'는 가드이지
-    //   4회차 부재의 기록이 아니다 — 다음 미등록 회차(5)로 이어 쓴다.
-    expect(buildCheckinRead(5, ANSWERS_1, OPEN, 'self')).toEqual([]);
-    expect(buildCheckinRead(7, ANSWERS_2, OPEN, 'facilitator')).toEqual([]);
-    expect(readSelfHighlights(5, ANSWERS_1)).toBeNull();
-    expect(anonNoticeText(5)).toBe('');
-  });
-
   it('1회차에는 없는 블록(지난 걸음·공개 토글)을 만들지 않는다', () => {
     const b = buildCheckinRead(1, { ...ANSWERS_1, last_step_result: '했습니다' }, OPEN, 'self');
     expect(has(b, '했습니다')).toBe(false);

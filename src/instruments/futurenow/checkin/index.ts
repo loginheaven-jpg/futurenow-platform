@@ -5,12 +5,16 @@ import { CHECKIN_SESSION_1 } from './session1';
 import { CHECKIN_SESSION_2 } from './session2';
 import { CHECKIN_SESSION_3 } from './session3';
 import { CHECKIN_SESSION_4 } from './session4';
+import { CHECKIN_SESSION_5 } from './session5';
 
 // 단일행/여러행 공통 필드. help·placeholder 는 회차·필드마다 선택.
 export type CheckinField = { key: string; label: string; help?: string; placeholder?: string };
 
 // 인도자 '문장 모아 보기' 열 정의 — 단일 키 또는 한 쌍(1회차 갈망 A→B). 회차별로 열이 바뀐다(§5-6).
-//   쌍(from→to)은 **교체·변화**를 뜻한다. 나란한 두 값(영역+바람)에는 쓰지 않는다 — 화살표가 거짓말을 한다.
+//   쌍(from→to)은 **방향이 참인 관계**에 쓴다 — 교체(3회차 습관 짝)·인과(4회차 도미노)·조건(5회차 트리거).
+//   나란한 두 값(영역+바람)에는 쓰지 않는다 — 화살표가 거짓말을 한다.
+//   원래 '교체·변화'로만 적혀 있었으나 4·5회차가 실제로 넓혔다. 규칙과 실제가 어긋난 채 두면
+//   6·7회차에서 또 판단이 필요해지므로 실제에 맞춘다(ADR-108).
 export type SummaryField = { label: string; key: string } | { label: string; from: string; to: string };
 
 // 되비추기(ADR-90) — 지난 회차 answers 에서 읽어 블록 위에 회색으로 보여 준다.
@@ -132,5 +136,6 @@ export function getCheckinSession(n: number): CheckinSession | null {
   if (n === 2) return CHECKIN_SESSION_2;
   if (n === 3) return CHECKIN_SESSION_3;
   if (n === 4) return CHECKIN_SESSION_4;
+  if (n === 5) return CHECKIN_SESSION_5;
   return null;
 }

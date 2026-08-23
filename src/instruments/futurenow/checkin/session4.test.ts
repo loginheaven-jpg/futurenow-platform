@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { getCheckinSession } from './index';
 import { CHECKIN_SESSION_1 } from './session1';
 import { CHECKIN_SESSION_2 } from './session2';
 import { CHECKIN_SESSION_3 } from './session3';
@@ -48,12 +47,6 @@ function texts(blocks: ReadBlock[]): string[] {
 }
 
 describe('4회차 등록·구조', () => {
-  it('레지스트리에 등록됐고 미등록 회차(5)는 아직 없다', () => {
-    expect(getCheckinSession(4)).toBe(c);
-    // 미등록 회차가 링크로 새어 나가지 않는다는 가드. 5회차가 등록되면 6으로 이어 쓴다.
-    expect(getCheckinSession(5)).toBeNull();
-  });
-
   // 3회차는 areaPick → question → pairText → mood 였다. 4회차는 pairText 가 question 앞이다 —
   //   두 옮겨 적기(펼친 것 하나 · 고른 것 하나)가 붙어 있어야 묶음 경계가 화제 전환과 일치한다.
   it('1면 순서가 3회차와 다르다 — 옮겨 적기 둘이 붙어 있다', () => {

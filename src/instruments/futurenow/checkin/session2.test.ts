@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { CHECKIN_SESSION_2 } from './session2';
-import { getCheckinSession } from './index';
 
 const filledCount = CHECKIN_SESSION_2.filledCount;
 
@@ -83,16 +82,4 @@ describe('session2 문안 — 금지어·책 참조·구조', () => {
   });
 });
 
-// 레지스트리 — 회차 조회·미등록 null(§7-6).
-describe('getCheckinSession 레지스트리', () => {
-  it('1~4회차는 객체, 미등록(5)은 null', () => {
-    expect(getCheckinSession(1)?.sessionNo).toBe(1);
-    expect(getCheckinSession(2)?.sessionNo).toBe(2);
-    expect(getCheckinSession(3)).not.toBe(null); // ADR-90 에서 등록
-    expect(getCheckinSession(4)?.sessionNo).toBe(4); // ADR-104 에서 등록
-    // ADR-104 로 4회차가 등록됐다. 이 단언은 '4회차 부재'의 기록이 아니라 **미등록 회차가 링크로 새어
-    //   나가지 않는다**는 가드다 — 조용히 지우지 않고 다음 미등록 회차로 이어 쓴다.
-    expect(getCheckinSession(5)).toBe(null);
-    expect(getCheckinSession(0)).toBe(null);
-  });
-});
+// 레지스트리 가드는 registry.guard.test.ts 로 옮겼다(ADR-108) — 넷에 흩어져 있어 4·5회차에서 연속으로 누락됐다.

@@ -27,8 +27,8 @@ function koreanLiterals(file: string): Set<string> {
 // ADR-94(2026-08-07): session3 을 잠금에 넣었다. 그전까지 3회차 문안 전체가 회귀 보호 **밖**에 있었다 —
 //   '3회차는 baseline 대상이 아니므로 갱신이 필요 없다'는 사실이었으나, **필요 없다는 것과 안 하는 게 옳다는 것은 다르다.**
 //   session3 스냅샷은 책 페이지 참조 다섯을 **붙인 뒤** 뽑았다(먼저 뽑으면 참조 없는 상태를 잠그고 즉시 깨진다).
-describe('1~4회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0', () => {
-  for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
+describe('1~5회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0', () => {
+  for (const file of ['session1', 'session2', 'session3', 'session4', 'session5'] as const) {
     it(`${file}: 스냅샷의 모든 문자열이 그대로 남아 있다`, () => {
       const now = koreanLiterals(file);
       const missing = baseline[file].filter((s) => !now.has(s));
@@ -37,7 +37,7 @@ describe('1~4회차 문안 회귀 — 리터럴 집합에서 삭제·변경 0', 
   }
 
   // 증가분은 허용하되 눈에 보이게 남긴다 — 몰래 늘지 않도록.
-  for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
+  for (const file of ['session1', 'session2', 'session3', 'session4', 'session5'] as const) {
     it(`${file}: 스냅샷에 없는 문자열이 새로 생기지 않았다`, () => {
       const added = [...koreanLiterals(file)].filter((s) => !baseline[file].includes(s));
       expect(added).toEqual([]);
@@ -97,7 +97,7 @@ describe('3회차 개정 1차가 되돌아가지 않는다 (ADR-98)', () => {
 //   완충이 막으려던 문제는 실측에서 하나도 관측되지 않았다(자신감 2·5·7·8 부풀림 0 · 예시 베낌 0명).
 //   반면 완충이 붙은 필수 칸(selfNote)은 4/8 이 비었다. 없는 위험에 대비하느라 있는 기회를 잃고 있었다.
 describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => {
-  const S = ['session1', 'session2', 'session3', 'session4'] as const;
+  const S = ['session1', 'session2', 'session3', 'session4', 'session5'] as const;
 
   it('허락 문구 넷이 사라졌다', () => {
     for (const file of S) {
@@ -160,7 +160,7 @@ describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => 
 
 // ADR-102 Phase 2 — 회차별 문안 여덟 자리. 여기서 허락 계열이 레지스트리에서 완전히 걷힌다.
 describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => {
-  const S = ['session1', 'session2', 'session3', 'session4'] as const;
+  const S = ['session1', 'session2', 'session3', 'session4', 'session5'] as const;
 
   // 이 검사가 이 개편 전체의 잠금이다. 되돌아오면 톤 개편이 통째로 무너진다.
   //   **범위는 session*.ts 로 한정한다** — 원칙 §3 의 다섯 자리(연락 요청·익명 안내·오해 방지·
@@ -236,7 +236,7 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
   const src = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
   it('연락 요청 · 익명 안내 — 세 회차', () => {
-    for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
+    for (const file of ['session1', 'session2', 'session3', 'session4', 'session5'] as const) {
       const l = koreanLiterals(file);
       expect(l.has('짧은 안부 연락입니다. 코칭 세션이 아닙니다.'), file).toBe(true);
       expect(l.has('이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.'), file).toBe(true);
@@ -379,7 +379,7 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
   const REPLACED = '솔직하게요. 낮게 답하셔도 아무 일 없습니다.';
   const NOW = '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.';
 
-  for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
+  for (const file of ['session1', 'session2', 'session3', 'session4', 'session5'] as const) {
     it(`${file}: 실행 자신감 보조문구가 용도 문법으로 바뀌었다`, () => {
       const lits = koreanLiterals(file);
       expect(lits.has(REPLACED)).toBe(false);
@@ -400,7 +400,7 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
   // §6-2: 완충을 일괄 제거하지 않는다. 5주차에 실제로 무너진 사람이 여는 문이라 여기까지 딱딱해지면 소수를 잃는다.
   it('남겨 두기로 한 완충은 그대로다', () => {
     const koreanStrings3 = koreanLiterals('session3');
-    for (const file of ['session1', 'session2', 'session3', 'session4'] as const) {
+    for (const file of ['session1', 'session2', 'session3', 'session4', 'session5'] as const) {
       const lits = koreanLiterals(file);
       // ADR-102 가 이 목록에서 selfNote 완충 하나를 **뺐다**(판례 부분 파기). 남은 둘은 그대로다 —
       //   연락 요청과 익명 안내는 '무너진 사람이 여는 문'이지만 self_note 는 자기에게 쓰는 말이라
@@ -415,5 +415,46 @@ describe('완충 문구 교체가 되돌아가지 않는다', () => {
     //   (2기 시작 전 1·2회차도 통일할 예정이며, 그때 이 단언 셋을 함께 고친다.)
     expect(koreanStrings3.has('아직 모르겠음')).toBe(false);
     expect(koreanStrings3.has('딱 맞는 말이 없음')).toBe(true);
+  });
+});
+
+// ADR-108 — 5회차. 이 회차의 판단이 문안에서 되돌아가지 않는다.
+//   금지 어휘 검사는 **5회차 문안으로 스코프한다** — 3회차에 '점수'가 리터럴로 둘 있고(워크북에서
+//   참여자가 실제로 점수를 매긴 활동을 가리킨다) 그것은 측정 도구의 이름이 아니라 남긴 것이다.
+//   공용 BANNED(허락 어휘 여섯)에는 손대지 않는다 — 그것은 전 회차 공통 규범이다.
+describe('5회차 문안이 되돌아가지 않는다 (ADR-108)', () => {
+  const l = koreanLiterals('session5');
+
+  it('트리거 짝 — 신호 강제 구조', () => {
+    expect(l.has('→ 그러면')).toBe(true);
+  });
+
+  it('결산 다섯째 — 조정은 실패가 아니다', () => {
+    expect(l.has('크기나 내용을 바꿨습니다')).toBe(true);
+  });
+
+  it('환경 한 줄이 책 참조와 함께 선다', () => {
+    expect(l.has('오늘 바꾸기로 하신 환경 하나를 그대로 옮겨 적어 주세요. (책 210~213쪽)')).toBe(true);
+  });
+
+  it('방해 요인 보조 문구가 3회차 위로로 돌아왔다 — 4회차가 넘긴 재료를 여기서 받는다', () => {
+    expect(l.has('미리 적어 두면 그 순간에 덜 무너집니다.')).toBe(true);
+    expect([...l].some((s) => s.includes('다음 시간의 재료가 됩니다'))).toBe(false);
+  });
+
+  it('되비추기가 한 걸음과 첫 도미노를 한 상자에서 대조하게 한다', () => {
+    expect(l.has('지난 시간의 한 걸음과 첫 도미노')).toBe(true);
+  });
+
+  it('금지 낱말 — 5회차 신규 여섯 포함', () => {
+    const banned = ['의지력', '게으름', '원씽', '스프린트', '전두엽', '도파민', '단톡방', '체크', '대기열'];
+    banned.forEach((w) => expect([...l].some((s) => s.includes(w)), w).toBe(false));
+  });
+
+  it('마음 낱말이 원안의 겹치던 둘에서 바뀌었다', () => {
+    expect(l.has('가뿐함')).toBe(true);
+    expect(l.has('단단함')).toBe(true);
+    expect(l.has('홀가분함')).toBe(false); // 3회차와 문자열이 같았다
+    expect(l.has('든든함')).toBe(false);   // 4회차와 문자열이 같았다
   });
 });
