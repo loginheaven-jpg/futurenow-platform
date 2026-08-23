@@ -483,7 +483,10 @@ export function CheckinCardClient({
               <div style={fieldLabel}>{f.label}</div>
               {/* help 는 선택이다(ADR-100) — 없으면 줄을 그리지 않는다. 빈 줄이 남으면 간격이 어긋난다. */}
               {f.help ? <div className="t-caption" style={help}>{f.help}</div> : null}
-              <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
+              {/* placeholder 는 CheckinField 의 정식 속성인데 이 자리만 넘기지 않고 있었다 — 같은 파일의 다른 호출부는 전부 넘긴다.
+                  1~4회차 심화에 선언이 0건이라 필요한 적이 없었고 **5회차 심화 ②가 처음 값을 선언하면서 드러났다**(ADR-109).
+                  회차 번호로 분기하지 않는다 — 문안이 선언한 회차에만 뜬다(ADR-90). 선언이 없는 회차는 출력이 바이트 동일하다. */}
+              <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} placeholder={f.placeholder} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
               {/* 미리보기에서는 사진 위젯을 띄우지 않는다 — 실제 Storage 를 호출하는 부품이라 서버 쓰기 0 규율을 깬다. */}
               {f.key === 'letter_line' && !preview ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}
             </div>

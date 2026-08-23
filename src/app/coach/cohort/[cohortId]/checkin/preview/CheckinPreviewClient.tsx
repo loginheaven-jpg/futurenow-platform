@@ -12,7 +12,13 @@ import { CheckinCardClient } from '@/app/my/cohorts/[cohortId]/checkin/[session]
 
 // 되비추기 표본 — 지난 회차를 쓴 참여자를 가정한다. 실제로는 그 사람의 지난 회차 답이 들어간다.
 //   ADR-103 이후 봉투가 깊이별이라 표본도 깊이별이다. 1 = 직전 회차, 2 = 두 회차 전.
-const SAMPLE_BACK1: Record<string, unknown> = {
+//   **회차 문안이 되비추는 키를 하나도 빠뜨리지 않는다.** 앵커 키가 없으면 되비추기 상자가 통째로 사라지고,
+//   뒤따르는 키가 없으면 값이 조용히 짧아진다 — 인도자가 그것을 결함으로 오해한다.
+//   5회차가 4회차 step_blocker·domino_what 을 읽는데 표본에 없어 실제로 그 일이 났다(ADR-109).
+//   실측으로도 표본이 실제보다 빈약했다 — 4회차 10행 중 step_blocker 7행 · domino_what 8행(후자는 4회차 필수).
+export const SAMPLE_BACK1: Record<string, unknown> = {
+  step_blocker: '야근이 늦게 끝나는 수요일',
+  domino_what: '아버지와 매주 한 번 통화하기',
   identity_sentence: '나는 성장의 가치를 최우선으로 여기며, 사람을 세우는 삶을 살기를 갈망하는 사람이다',
   identity_statement: "나는 '상생'의 가치를 최우선으로 여기며, 사람과 사물의 존재가치가 최상으로 빛나도록 돕는 사람이다",
   future_area: '관계',
@@ -25,7 +31,7 @@ const SAMPLE_BACK1: Record<string, unknown> = {
 };
 // 두 회차 전 봉투 — 4회차 심화가 2회차 '인생을 이끌어갈 하나의 문장'을 읽는다(back: 2).
 //   **back1 과 같은 값을 넣지 않는다** — 봉투가 분리돼 있음을 미리보기에서도 눈으로 확인할 수 있어야 한다.
-const SAMPLE_BACK2: Record<string, unknown> = {
+export const SAMPLE_BACK2: Record<string, unknown> = {
   identity_statement: '나는 사람의 가능성이 가장 늦게 피는 자리에서 그것을 알아보는 사람이다',
 };
 

@@ -67,8 +67,10 @@ describe('회차 레지스트리 가드', () => {
     expect(getCheckinSession(NEXT + 2)).toBeNull();
   });
 
-  // 읽기 경로는 넷이다. 둘만 지키면 나머지 둘이 미등록 회차에서 어떻게 되는지 아무도 안 본다.
-  it('읽기 경로 넷이 미등록 회차에서 파손되지 않는다', () => {
+  // 읽기 경로 **넷**(전수 아님 — readModel 이 회차번호를 받는 내보내기는 다섯이고 readAnonSuggestion·needLabel 이 밖이다.
+  //   기존 넷도 그 둘을 지키지 않았으므로 커버리지가 준 것은 아니나, '한 곳에 모은다'는 취지에 구멍이 남는다.
+  //   **6회차 착수 때 다섯으로 넓힌다.**) 둘만 지키면 나머지가 미등록 회차에서 어떻게 되는지 아무도 안 본다.
+  it('읽기 경로 넷이 미등록 회차에서 파손되지 않는다 (전수 아님 — 6회차에 다섯으로)', () => {
     expect(buildCheckinRead(NEXT, ANY_ANSWERS, OPEN, 'self')).toEqual([]);
     expect(buildCheckinRead(NEXT + 2, ANY_ANSWERS, OPEN, 'facilitator')).toEqual([]);
     expect(readSelfHighlights(NEXT, ANY_ANSWERS)).toBeNull();

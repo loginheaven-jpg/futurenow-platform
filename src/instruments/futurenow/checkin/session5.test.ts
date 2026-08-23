@@ -254,7 +254,7 @@ describe('심화 — 방 밖의 한 사람 · 첫 도미노에 거는 신호', (
   // 심화 필드의 placeholder 를 **5회차가 처음 쓴다.** 이 단언은 선언만 본다 —
   //   그 값이 실제로 화면에 닿는지는 CheckinPreviewClient.test.tsx 가 렌더로 증명한다
   //   (선언 대조만 있던 동안 렌더가 placeholder 를 통째로 버리고 있었고 아무 테스트도 그것을 못 잡았다).
-  it('심화 ②의 placeholder 가 선언돼 있다 — 렌더는 아직 넘기지 않는다', () => {
+  it('심화 ②의 placeholder 가 선언돼 있다 (배달은 CheckinPreviewClient.test.tsx 가 본다)', () => {
     expect(c.deepen.fields[1].placeholder).toBe('월요일 아침 사무실에 앉으면');
     expect(c.deepen.fields[2].placeholder).toBe('그 자료를 30분 먼저 연다');
     // 1~4회차 심화에는 placeholder 가 없다 — 그래서 렌더 한 줄로 그 회차 출력이 바뀌지 않는다.
