@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { vitalityZone, VITALITY_ZONES, GROW_AXES, GAP_AXES, COMPASS_AXES, careBanner, CARE_TONE, CARE_VAR } from './labels';
+import { vitalityZone, VITALITY_ZONES, GROW_AXES, GAP_AXES, COMPASS_AXES, careBanner, CARE_TONE, CARE_VAR, growEmphasis, GROW_TONE } from './labels';
 import type { FuturenowScores } from '../scoring';
 
 describe('vitalityZone (활력 명명 — 측정→강의는 리포트에서만)', () => {
@@ -27,6 +27,55 @@ describe('리포트 축 명명(구인 → 강의 어휘, B③ 전용)', () => {
     expect(GAP_AXES.map((a) => a.code)).toEqual(['B1', 'B2', 'B3', 'B4', 'B5']);
     expect(COMPASS_AXES.map((a) => a.code)).toEqual(['NAV1', 'NAV2', 'NAV3', 'NAV4']);
     expect(GROW_AXES.find((a) => a.key === 'O')?.label).toBe('원씽'); // 강의 어휘는 리포트에서만
+  });
+});
+
+// 준비도 강조 판정 — 시안 docs/tasks/readiness_growf_badges.html.
+describe('growEmphasis (준비도 — 지렛대·바닥 판정)', () => {
+  const g = (G: number, R: number, O: number, W: number, F: number) =>
+    growEmphasis({ G, R, O, W, F, faithAux: { F1: null, F2: null } });
+
+  it('최고점 하나 → 그 축만 지렛대, F 는 바닥, 나머지는 평범', () => {
+    expect(g(2, 4, 2.5, 3, 2)).toEqual({ G: 'plain', R: 'lever', O: 'plain', W: 'plain', F: 'floor' });
+  });
+
+  it('동점이면 해당 축 모두 지렛대', () => {
+    expect(g(4, 4, 2, 3, 1)).toMatchObject({ G: 'lever', R: 'lever', O: 'plain' });
+  });
+
+  it('F 가 최고점이면 지렛대가 바닥을 이긴다', () => {
+    expect(g(2, 3, 2, 3, 5).F).toBe('lever');
+    // F 가 다른 축과 공동 최고여도 마찬가지다.
+    expect(g(2, 5, 2, 3, 5)).toMatchObject({ R: 'lever', F: 'lever' });
+  });
+
+  it('최고점은 런타임 계산 — 값이 옮겨 가면 지렛대도 옮겨 간다', () => {
+    expect(g(5, 1, 1, 1, 1).G).toBe('lever');
+    expect(g(1, 1, 1, 5, 1).W).toBe('lever');
+    expect(g(1, 1, 1, 5, 1).G).toBe('plain');
+  });
+
+  it('전부 같으면 다섯 다 지렛대 — 지시서 §3.2 동점 규칙 그대로', () => {
+    // 평평한 응답(전 축 3.0)에서 나오는 결과다. 강조가 사라지는 셈이라 지휘부 판단 대상으로 보고했다.
+    expect(Object.values(g(3, 3, 3, 3, 3))).toEqual(['lever', 'lever', 'lever', 'lever', 'lever']);
+  });
+
+  it('세 강조색이 서로 다르고, 금색 위 글자만 네이비다(대비)', () => {
+    const fills = Object.values(GROW_TONE).map((t) => t.css.fill);
+    expect(new Set(fills).size).toBe(3);
+    expect(GROW_TONE.floor.css.ink).toBe('var(--color-text-on-gold)'); // 흰 글자는 2.79:1 미달
+    expect(GROW_TONE.lever.css.ink).toBe('var(--color-text-on-accent)');
+    expect(GROW_TONE.plain.css.ink).toBe('var(--color-text-on-accent)');
+    // 화면·PDF 가 같은 표를 본다 — 양쪽 다 세 종류가 채워져 있다.
+    for (const t of Object.values(GROW_TONE)) {
+      expect(t.pdf.fill).toMatch(/^#[0-9A-F]{6}$/);
+      expect(t.pdf.ink).toMatch(/^#[0-9A-F]{6}$/);
+    }
+  });
+
+  it('돌봄 톤과 겹치지 않는다 — 강조색이 돌봄 신호로 오독되지 않도록', () => {
+    const care = new Set(Object.values(CARE_TONE).flatMap((t) => [t.fill, t.line, t.text]));
+    for (const t of Object.values(GROW_TONE)) expect(care.has(t.pdf.fill.toLowerCase())).toBe(false);
   });
 });
 

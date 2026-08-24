@@ -10,14 +10,11 @@
 import { useState, type ReactNode } from 'react';
 import type { Wave } from '@/contracts';
 import { itemPrompts, bipolarLabels, askPrompts, likertLabels, likertCenterLabel, waveKey } from '../copy';
-import { GROW_AXES } from './labels';
+import { GROW_AXES, MONO_STACK } from './labels';
 
 // 리커트 1~5 문구화 — copy.ts 앵커(min/center/max) 사용, 2·4는 코치용 중간 표기(참여자 노출 아님).
 const likertText = (v: number): string =>
   [likertLabels.minLabel, '약간 아니다', likertCenterLabel, '약간 그렇다', likertLabels.maxLabel][v - 1] ?? String(v);
-
-// 코드 라벨용 모노 스택 — 전용 토큰이 없어 스택을 직접 쓴다(돌봄 배너 시안과 같은 스택).
-const MONO = '"SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 
 // 활력 — 생기(A1·A3) 뒤 마모(A2·A5·A4).
 //   마모 셋이 역채점 문항이지만 그 표기는 하지 않는다 — 원응답은 원문+응답만이다(ORDER §2.4).
@@ -43,7 +40,7 @@ function CodeTag({ code }: { code: string }) {
     <span
       className="t-caption"
       style={{
-        fontFamily: MONO,
+        fontFamily: MONO_STACK,
         color: 'var(--color-text-secondary)',
         border: 'var(--border-hair) solid var(--color-border)',
         borderRadius: 4,

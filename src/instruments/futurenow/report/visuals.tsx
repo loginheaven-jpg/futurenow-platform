@@ -7,9 +7,12 @@ import {
   COMPASS_AXES,
   GAP_AXES,
   GROW_AXES,
+  GROW_TONE,
+  MONO_STACK,
   VITALITY_RANGE,
   VITALITY_ZONES,
   careBanner,
+  growEmphasis,
   vitalityZone,
 } from './labels';
 
@@ -184,28 +187,61 @@ function Bar({ widthPct, color }: { widthPct: number; color: string }) {
     </div>
   );
 }
+// 이니셜 배지 — GROW 모델과 항목명의 대응을 한눈에 보이게 한다(시안 readiness_growf_badges.html).
+//   색이 지렛대(최고점)·바닥(F)을 말한다. 글자색은 배경마다 다르다 — 대비 때문이다(labels.ts GROW_TONE 주석).
+function Badge({ letter, tone }: { letter: string; tone: { fill: string; ink: string } }) {
+  return (
+    <span
+      style={{
+        flex: '0 0 30px',
+        width: 30,
+        height: 30,
+        borderRadius: 9,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: tone.fill,
+        color: tone.ink,
+        fontFamily: MONO_STACK,
+        fontWeight: 800,
+        fontSize: 15,
+        lineHeight: 1,
+      }}
+    >
+      {letter}
+    </span>
+  );
+}
+
 export function GrowBars({ scores, prev }: { scores: FuturenowScores; prev?: FuturenowScores }) {
   const w = (v: number) => (v / 5) * 100;
+  // 최고점은 런타임 계산 — 값이 바뀌면 지렛대도 따라 옮겨 간다. 판정은 사후(post) 값으로만 한다.
+  const emphasis = growEmphasis(scores.grow);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
       {GROW_AXES.map((ax) => {
         const post = scores.grow[ax.key as 'G' | 'R' | 'O' | 'W' | 'F'];
         const pre = prev ? prev.grow[ax.key as 'G' | 'R' | 'O' | 'W' | 'F'] : null;
+        const tone = GROW_TONE[emphasis[ax.key]].css;
         return (
-          <div key={ax.key}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
-              <span className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{ax.label}</span>
-              <span className="t-micro tnum" style={{ color: 'var(--color-text-muted)' }}>
-                {post.toFixed(1)}
-                {pre !== null ? ` ← ${pre.toFixed(1)}` : ''}
-              </span>
-            </div>
-            <Bar widthPct={w(post)} color="var(--color-primary)" />
-            {pre !== null && (
-              <div style={{ marginTop: 'var(--space-1)' }}>
-                <Bar widthPct={w(pre)} color="var(--color-border-strong)" />
+          <div key={ax.key} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Badge letter={ax.key} tone={tone} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
+                <span className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{ax.label}</span>
+                <span className="t-micro tnum" style={{ color: 'var(--color-text-muted)' }}>
+                  {post.toFixed(1)}
+                  {pre !== null ? ` ← ${pre.toFixed(1)}` : ''}
+                </span>
               </div>
-            )}
+              <Bar widthPct={w(post)} color={tone.fill} />
+              {/* 사전 막대는 회색 그대로 — 지렛대는 지금 값의 판정이라 '그때'까지 물들이면 무엇을 본 판정인지 흐려진다. */}
+              {pre !== null && (
+                <div style={{ marginTop: 'var(--space-1)' }}>
+                  <Bar widthPct={w(pre)} color="var(--color-border-strong)" />
+                </div>
+              )}
+            </div>
           </div>
         );
       })}

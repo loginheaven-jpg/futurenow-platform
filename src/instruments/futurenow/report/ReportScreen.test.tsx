@@ -47,4 +47,67 @@ describe('ReportScreen (개인 리포트 — 코치 라우트 렌더 경로)', (
     const html = renderToStaticMarkup(<ReportScreen scores={scores} />);
     expect(html.indexOf('숨은 층')).toBeGreaterThan(html.indexOf('한 문장 성찰'));
   });
+
+  // ── ORDER report_cards_v1 §4 인수 기준 ──────────────────────────────
+  const varied: FuturenowScores = { ...scores, grow: { G: 2, R: 4, O: 2.5, W: 3, F: 2, faithAux: { F1: null, F2: null } } };
+  // 배지는 <span style="…">G</span> 형태다. 글자 → 스타일로 뒤집어 본다.
+  const badges = (html: string) => {
+    const out: Record<string, string> = {};
+    for (const m of html.matchAll(/<span style="([^"]*)"[^>]*>([GROWF])<\/span>/g)) out[m[2]] = m[1];
+    return out;
+  };
+
+  it('§4-1 아래 행이 준비도(좌) · 간격(우) — 가이드 해석 순서', () => {
+    const html = renderToStaticMarkup(<ReportScreen scores={scores} />);
+    expect(html.indexOf('나침반')).toBeLessThan(html.indexOf('준비도 (GROW+F)'));
+    expect(html.indexOf('준비도 (GROW+F)')).toBeLessThan(html.indexOf('다섯 영역의 간격'));
+  });
+
+  it('§4-2 다섯 축에 G·R·O·W·F 배지가 항목명 왼쪽에 순서대로', () => {
+    const html = renderToStaticMarkup(<ReportScreen scores={varied} />);
+    const order = ['G', 'R', 'O', 'W', 'F'];
+    const at = order.map((k) => html.indexOf(`>${k}</span>`));
+    expect(at.every((i) => i >= 0)).toBe(true);
+    expect(at).toEqual([...at].sort((a, b) => a - b));
+    // 배지가 항목명보다 앞이다(같은 행 안에서 왼쪽).
+    for (const [k, label] of [['G', '조감도'], ['R', '현실인식'], ['O', '원씽'], ['W', '피드백'], ['F', '정체성']]) {
+      expect(html.indexOf(`>${k}</span>`)).toBeLessThan(html.indexOf(label));
+    }
+  });
+
+  it('§4-3 최고점 축이 지렛대색 — 배지와 막대 둘 다', () => {
+    const html = renderToStaticMarkup(<ReportScreen scores={varied} />); // R=4 단독 최고
+    const b = badges(html);
+    expect(b.R).toContain('var(--color-success)');
+    for (const k of ['G', 'O', 'W']) expect(b[k]).toContain('var(--color-primary)');
+    // 막대도 같은 색(지렛대 축의 fill).
+    const growCard = html.slice(html.indexOf('준비도 (GROW+F)'), html.indexOf('다섯 영역의 간격'));
+    expect(growCard).toContain('width:80%;background:var(--color-success)'); // R=4 → 80%
+  });
+
+  it('§4-3 동점이면 복수 축이 지렛대', () => {
+    const tie: FuturenowScores = { ...scores, grow: { G: 4, R: 4, O: 2, W: 3, F: 1, faithAux: { F1: null, F2: null } } };
+    const b = badges(renderToStaticMarkup(<ReportScreen scores={tie} />));
+    expect(b.G).toContain('var(--color-success)');
+    expect(b.R).toContain('var(--color-success)');
+    expect(b.O).toContain('var(--color-primary)');
+  });
+
+  it('§4-4 F는 바닥(금색), 단 F가 최고점이면 지렛대(초록)가 이긴다', () => {
+    const floor = badges(renderToStaticMarkup(<ReportScreen scores={varied} />)); // F=2, 최고 아님
+    expect(floor.F).toContain('var(--color-accent)');
+    expect(floor.F).toContain('var(--color-text-on-gold)'); // 흰 글자는 금색 위 2.79:1 미달
+
+    const fTop: FuturenowScores = { ...scores, grow: { G: 2, R: 3, O: 2, W: 3, F: 5, faithAux: { F1: null, F2: null } } };
+    const won = badges(renderToStaticMarkup(<ReportScreen scores={fTop} />));
+    expect(won.F).toContain('var(--color-success)');
+    expect(won.F).not.toContain('var(--color-accent)');
+  });
+
+  it('§4-5 불변 — 축 순서·값이 그대로다', () => {
+    const html = renderToStaticMarkup(<ReportScreen scores={varied} />);
+    const labels = ['조감도', '현실인식', '원씽', '피드백', '정체성'].map((l) => html.indexOf(l));
+    expect(labels).toEqual([...labels].sort((a, b) => a - b)); // 순서 불변
+    for (const v of ['2.0', '4.0', '2.5', '3.0']) expect(html).toContain(v); // 값 불변
+  });
 });

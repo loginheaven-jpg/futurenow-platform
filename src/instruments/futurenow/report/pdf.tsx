@@ -9,9 +9,11 @@ import {
   COMPASS_AXES,
   GAP_AXES,
   GROW_AXES,
+  GROW_TONE,
   SUBJECTIVE_LABELS,
   VITALITY_RANGE,
   careBanner,
+  growEmphasis,
   vitalityZone,
 } from './labels';
 
@@ -79,6 +81,7 @@ export function FuturenowPdf({
 }) {
   const zone = vitalityZone(scores.vitality.score);
   const banner = careBanner(scores);
+  const emphasis = growEmphasis(scores.grow);
   const gapPost = GAP_AXES.map((a) => scores.gap[a.code as keyof FuturenowScores['gap']]);
   const gapPre = prev ? GAP_AXES.map((a) => prev.gap[a.code as keyof FuturenowScores['gap']]) : null;
 
@@ -127,7 +130,36 @@ export function FuturenowPdf({
           </View>
         </View>
 
+        {/* 준비도가 간격보다 앞이다 — 화면과 같은 해석 순서다(ORDER report_cards_v1 §3.1).
+            인쇄물만 옛 순서로 두면 인도자가 화면과 종이를 오갈 때 동선이 어긋난다. */}
         <View style={s.twoCol}>
+          <View style={[s.panel, s.col]}>
+            <Text style={s.h}>준비도 (GROW+F)</Text>
+            {GROW_AXES.map((ax) => {
+              const post = scores.grow[ax.key as 'G' | 'R' | 'O' | 'W' | 'F'];
+              const pre = prev ? prev.grow[ax.key as 'G' | 'R' | 'O' | 'W' | 'F'] : null;
+              const tone = GROW_TONE[emphasis[ax.key]].pdf;
+              return (
+                <View key={ax.key} style={{ marginBottom: 6 }}>
+                  <View style={s.row}>
+                    {/* 이니셜 배지 — 화면과 같은 판정·같은 색표(GROW_TONE). */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: tone.fill, alignItems: 'center', justifyContent: 'center', marginRight: 5 }}>
+                        <Text style={{ color: tone.ink, fontFamily: 'Helvetica-Bold', fontSize: 8 }}>{ax.key}</Text>
+                      </View>
+                      <Text style={s.cap}>{ax.label}</Text>
+                    </View>
+                    <Text style={{ color: C.textMuted, fontSize: 9 }}>
+                      {post.toFixed(1)}
+                      {pre !== null ? ` ← ${pre.toFixed(1)}` : ''}
+                    </Text>
+                  </View>
+                  <Bar value={post} max={5} color={tone.fill} />
+                </View>
+              );
+            })}
+          </View>
+
           <View style={[s.panel, s.col]}>
             <Text style={s.h}>다섯 영역의 간격</Text>
             <Svg width={180} height={180} viewBox="0 0 180 180">
@@ -140,26 +172,6 @@ export function FuturenowPdf({
             <Text style={{ color: C.textMuted, fontSize: 8, textAlign: 'center', marginTop: 4 }}>
               {GAP_AXES.map((a) => a.label).join(' · ')}
             </Text>
-          </View>
-
-          <View style={[s.panel, s.col]}>
-            <Text style={s.h}>준비도 (GROW+F)</Text>
-            {GROW_AXES.map((ax) => {
-              const post = scores.grow[ax.key as 'G' | 'R' | 'O' | 'W' | 'F'];
-              const pre = prev ? prev.grow[ax.key as 'G' | 'R' | 'O' | 'W' | 'F'] : null;
-              return (
-                <View key={ax.key} style={{ marginBottom: 6 }}>
-                  <View style={s.row}>
-                    <Text style={s.cap}>{ax.label}</Text>
-                    <Text style={{ color: C.textMuted, fontSize: 9 }}>
-                      {post.toFixed(1)}
-                      {pre !== null ? ` ← ${pre.toFixed(1)}` : ''}
-                    </Text>
-                  </View>
-                  <Bar value={post} max={5} color={C.navy} />
-                </View>
-              );
-            })}
           </View>
         </View>
 

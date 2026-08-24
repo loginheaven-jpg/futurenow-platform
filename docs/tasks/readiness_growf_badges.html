@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>준비도 차트 - GROWF 이니셜 시안</title>
+<style>
+  :root{
+    --navy:#1f3352; --ink:#233045; --sub:#6b7688;
+    --line:#e3e7ee; --track:#eef2f7;
+    --barfill:#284166; --gold:#b8893a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    background:#eef1f5; color:var(--ink);
+    padding:48px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start}
+
+  .card{
+    width:430px;background:#fff;border:1px solid var(--line);
+    border-radius:18px;padding:26px 28px;
+    box-shadow:0 1px 3px rgba(31,51,82,.05);
+  }
+  .card h2{font-size:19px;color:var(--navy);font-weight:800;margin-bottom:22px;letter-spacing:-.01em}
+
+  .rowlist{display:flex;flex-direction:column;gap:18px}
+  .arow{display:flex;align-items:center;gap:14px}
+
+  /* 이니셜 배지 */
+  .badge{
+    flex:0 0 30px;width:30px;height:30px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"SF Mono",Menlo,monospace;font-weight:800;font-size:15px;
+    background:var(--navy);color:#fff;letter-spacing:0;
+  }
+  .badge.f{background:var(--gold)}   /* F만 강조색: Future Self가 나머지를 떠받치는 바닥 */
+  .badge.lever{background:#2f8f6b}   /* 최고점=지렛대: F(금색)와도 다른 초록 계열 */
+  .fill.lever{background:#2f8f6b}    /* 지렛대 항목은 막대도 같은 색으로 */
+
+  .barcol{flex:1;min-width:0}
+  .barhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .barhead .name{font-size:14.5px;font-weight:600;color:var(--ink)}
+  .barhead .val{font-size:14px;font-weight:700;color:var(--navy)}
+  .track{height:9px;border-radius:6px;background:var(--track);overflow:hidden}
+  .fill{height:100%;border-radius:6px;background:var(--barfill)}
+
+  .legend{margin-top:18px;display:flex;flex-direction:column;gap:7px}
+  .legend .lg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub)}
+  .legend .sw{width:13px;height:13px;border-radius:4px;flex:0 0 13px}
+  .cap{margin-top:14px;font-size:11.5px;color:var(--sub);line-height:1.6;border-top:1px solid var(--line);padding-top:14px}
+  .cap b{color:var(--navy)}
+
+  .label{font-size:12px;color:var(--sub);margin:0 0 14px}
+  h1{font-size:15px;color:var(--sub);font-weight:600;width:100%;margin-bottom:4px}
+  .variant-note{width:100%;font-size:12px;color:var(--sub);margin:8px 0 20px}
+</style>
+</head>
+<body>
+  <h1>준비도 (GROW+F) - A안 확정 · 값은 예시 리포트(박민서) 기준</h1>
+  <div class="wrap">
+
+    <!-- 시안 A: 배지 + 항목명 -->
+    <div class="card">
+      <h2>준비도 (GROW+F)</h2>
+      <div class="rowlist">
+        <div class="arow">
+          <div class="badge">G</div>
+          <div class="barcol">
+            <div class="barhead"><span class="name">조감도</span><span class="val">2.0</span></div>
+            <div class="track"><div class="fill" style="width:40%"></div></div>
+          </div>
+        </div>
+        <div class="arow">
+          <div class="badge lever">R</div>
+          <div class="barcol">
+            <div class="barhead"><span class="name">현실인식</span><span class="val">4.0</span></div>
+            <div class="track"><div class="fill lever" style="width:80%"></div></div>
+          </div>
+        </div>
+        <div class="arow">
+          <div class="badge">O</div>
+          <div class="barcol">
+            <div class="barhead"><span class="name">원씽</span><span class="val">2.5</span></div>
+            <div class="track"><div class="fill" style="width:50%"></div></div>
+          </div>
+        </div>
+        <div class="arow">
+          <div class="badge">W</div>
+          <div class="barcol">
+            <div class="barhead"><span class="name">피드백</span><span class="val">3.0</span></div>
+            <div class="track"><div class="fill" style="width:60%"></div></div>
+          </div>
+        </div>
+        <div class="arow">
+          <div class="badge f">F</div>
+          <div class="barcol">
+            <div class="barhead"><span class="name">정체성</span><span class="val">2.0</span></div>
+            <div class="track"><div class="fill" style="width:40%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="lg"><span class="sw" style="background:#2f8f6b"></span>최고점 = 지렛대 (여기선 R 4.0) - 강점에서 대화를 연다</span>
+        <span class="lg"><span class="sw" style="background:var(--gold)"></span>F 정체성 - 나머지 넷을 떠받치는 바닥</span>
+        <span class="lg"><span class="sw" style="background:var(--navy)"></span>나머지 축</span>
+      </div>
+      <p class="cap">각 축은 1~5. 최고점은 <b>지렛대</b>(초록), <b>F(정체성)</b>는 <b>바닥</b>(금색)으로 구분한다. 최고점이 여러 개면 모두 초록, F가 최고점이면 초록이 우선한다.</p>
+    </div>
+
+    </div>
+</body>
+</html>

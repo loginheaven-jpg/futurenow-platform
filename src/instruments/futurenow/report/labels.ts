@@ -38,6 +38,45 @@ export const GROW_AXES = [
   { key: 'F', label: '정체성' },
 ] as const;
 
+/** 코드 라벨·이니셜 배지용 모노 스택. 전용 토큰이 없어 스택을 직접 쓴다(시안들과 같은 스택). */
+export const MONO_STACK = '"SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
+
+export type GrowKey = (typeof GROW_AXES)[number]['key'];
+
+/**
+ * 준비도 축의 강조 — 지렛대(최고점) · 바닥(F 정체성) · 나머지.
+ *
+ * `lever`(지렛대)는 **강점에서 대화를 연다**는 코칭 동선이고, `floor`(바닥)는 F 가 나머지 넷을
+ * 떠받친다는 뜻이다. 둘이 겹치면 지렛대가 이긴다 — F 가 최고점이면 그 축은 이미 강점이다.
+ */
+export type GrowEmphasis = 'lever' | 'floor' | 'plain';
+
+/**
+ * 최고점은 **런타임 계산**이다(하드코딩 금지 · ORDER report_cards_v1 §3.2).
+ * 동점이면 해당 축 모두 지렛대다.
+ */
+export function growEmphasis(grow: FuturenowScores['grow']): Record<GrowKey, GrowEmphasis> {
+  const keys = GROW_AXES.map((a) => a.key);
+  const top = Math.max(...keys.map((k) => grow[k]));
+  const out = {} as Record<GrowKey, GrowEmphasis>;
+  // 지렛대를 먼저 본다 — 그래야 F 가 최고점일 때 초록이 금색을 이긴다.
+  for (const k of keys) out[k] = grow[k] === top ? 'lever' : k === 'F' ? 'floor' : 'plain';
+  return out;
+}
+
+/**
+ * 강조별 색. 화면(CSS 변수)과 PDF(react-pdf, var 미지원)가 **한 표**를 본다 — CARE_TONE 과 같은 이유다.
+ *
+ * 시안(`docs/tasks/readiness_growf_badges.html`)의 하드코딩 색 대신 **디자인 토큰**을 쓴다(ORDER §3.2 지시).
+ * 글자색이 배경마다 다른 이유는 대비다 — 흰 글자는 금색 위에서 2.79:1 로 미달하고(globals.css §1.2 기록),
+ * 시안 초록(#2f8f6b) 위에서도 3.99:1 로 미달한다. 토큰 초록(#2e7d6b)은 4.93:1, 금색+네이비는 5.18:1 이다.
+ */
+export const GROW_TONE: Record<GrowEmphasis, { css: { fill: string; ink: string }; pdf: { fill: string; ink: string } }> = {
+  lever: { css: { fill: 'var(--color-success)', ink: 'var(--color-text-on-accent)' }, pdf: { fill: '#2E7D6B', ink: '#FFFFFF' } },
+  floor: { css: { fill: 'var(--color-accent)', ink: 'var(--color-text-on-gold)' }, pdf: { fill: '#C8911F', ink: '#1A3A5C' } },
+  plain: { css: { fill: 'var(--color-primary)', ink: 'var(--color-text-on-accent)' }, pdf: { fill: '#1B2A41', ink: '#FFFFFF' } },
+};
+
 // 다섯 영역의 간격(B1~B5) — 각 0~10
 export const GAP_AXES = [
   { code: 'B1', label: '일' },

@@ -38,11 +38,14 @@ export function ReportScreen({ scores, prev }: { scores: FuturenowScores; prev?:
         <Panel title="나침반 — 바늘의 이동">
           <CompassDumbbell scores={scores} prev={prev} />
         </Panel>
-        <Panel title="다섯 영역의 간격">
-          <GapRadar scores={scores} prev={prev} />
-        </Panel>
+        {/* 준비도가 간격보다 **앞**이다 — 가이드 해석 순서(활력 → 나침반 → 준비도 → 간격)와
+            카드를 왼→오·위→아래로 읽는 동선을 맞춘다(ORDER report_cards_v1 §3.1).
+            그리드가 auto-fit 이라 열 수가 폭에 따라 1·2·4 로 변하는데, DOM 순서를 바꾸면 셋 다 옳아진다. */}
         <Panel title="준비도 (GROW+F)">
           <GrowBars scores={scores} prev={prev} />
+        </Panel>
+        <Panel title="다섯 영역의 간격">
+          <GapRadar scores={scores} prev={prev} />
         </Panel>
       </div>
       {hasSubjective && (
