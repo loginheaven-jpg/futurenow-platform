@@ -28,17 +28,12 @@ export type Intake = {
   /** 정원(숫자). capacity 문자열과 어긋나지 않도록 recruit.test.ts 가 둘을 묶는다. */
   seats: number;
   /**
-   * 신청 확정 인원(**참여자만**). 발주서 §4.2 — 사전 체크 완료 시각을 신청 확정으로 본다.
+   * 남은 자리를 **몇 명부터 보여 줄 것인가.** 신청이 이 수에 못 미치면 그 줄을 그리지 않는다.
    *
-   * **자동 집계하지 않는다.** 세 가지가 사람의 판단을 필요로 한다:
-   *   ① 운영자·진행자 계정이 문안 확인용으로 사전 체크를 마친다(2기의 최철영·이승은이 그렇다).
-   *      기계는 그것을 신청과 구분하지 못한다.
-   *   ② 중복 계정·취소·환불 정리 때마다 숫자가 흔들린다. **틀린 적이 있는 숫자는 다음부터 아무도 안 믿는다.**
-   *   ③ DB 를 읽으면 랜딩이 요청마다 동적이 된다 — 발주서 §3.1 이 못 박은 '정적 페이지'가 깨진다.
-   *
-   * **null 이면 표시하지 않는다.** 모집 첫날의 `남은 자리 9` 는 없느니만 못하다.
+   * 모집 첫날의 `남은 자리 9` 는 없느니만 못하다 — 사회적 증거가 되라고 붙인 줄이
+   * 오히려 '아무도 안 하네'를 말한다. 0 으로 두면 처음부터 보인다.
    */
-  filled: number | null;
+  showSeatsFrom: number;
   deadlineLine: string;
   fee: string;
   scholarship: string;
@@ -62,9 +57,11 @@ export const CURRENT_INTAKE: Intake = {
   coverLine: '예봄 2기 · 6주 · 회당 140분',
   capacity: '선착순 10명',
   seats: 10,
-  // 2026-08-24 실측: 2기 등록 7명 중 사전 체크 완료 6명, 그중 최철영(coach)은 세미나 운영자다.
-  //   이승은(admin)도 운영자이고 사전 체크 미완이라 애초에 세지 않는다.
-  filled: 5,
+  // 인원은 손으로 적지 않는다 — DB 가 센다(seats.ts · cohort_seats_taken).
+  //   운영자 제외는 role='user' 로 걸러진다: 2026-08-24 실측에서 2기 등록 7명 중 완료 6명이나
+  //   최철영(coach)·이승은(admin)이 세미나 운영자여서 실제 신청자는 5명이다.
+  //   **이름이 아니라 역할로 거른다** — 이름 목록은 운영자가 바뀔 때마다 낡는다.
+  showSeatsFrom: 3,
   deadlineLine: '선착순 10명 · 9월 6일(일) 마감',
 
   fee: '25만원',
@@ -89,6 +86,19 @@ export const CURRENT_INTAKE: Intake = {
   ],
   sessionLength: '회당 140분',
 };
+
+/**
+ * 남은 자리 — 화면에 그릴 수 있으면 숫자를, 아니면 null.
+ * DB 호출과 분리된 **순수 함수**라 경계 조건을 테스트로 잠글 수 있다.
+ *
+ * 정원이 차도 0 밑으로 내려가지 않고 CTA 도 막지 않는다(발주서 §4.3 — 자동 마감을 넣지 않는다).
+ * 마감·종료 상태에서는 아예 그리지 않는다 — 그때는 무의미한 정보다.
+ */
+export function seatsRemaining(taken: number | null, open: boolean, intake: Intake = CURRENT_INTAKE): number | null {
+  if (taken == null || !open) return null;
+  if (taken < intake.showSeatsFrom) return null;
+  return Math.max(0, intake.seats - taken);
+}
 
 /** 신청 흐름 진입 주소. 랜딩은 이 링크만 밖으로 내보낸다 — 사전 체크로 직행하는 주소를 따로 배포하지 않는다. */
 export function joinHref(intake: Intake = CURRENT_INTAKE): string {

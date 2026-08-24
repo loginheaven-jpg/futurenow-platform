@@ -11,9 +11,15 @@
 //   'use client' 는 클립보드를 쓰는 계좌 복사 버튼 하나에만 붙였다.
 import type { Metadata } from 'next';
 import { AccountCopy } from './AccountCopy';
-import { CURRENT_INTAKE, STATUS_COPY, joinHref } from './intake';
+import { CURRENT_INTAKE, STATUS_COPY, joinHref, seatsRemaining } from './intake';
+import { seatsTaken } from './seats';
 import { APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SEATS_LEFT, TEAM, VOICES, WHAT } from './copy';
 import './recruit.css';
+
+// 남은 자리를 DB 에서 읽으므로 완전 정적은 아니다. 대신 **ISR** 로 캐시를 지킨다 —
+//   CDN 이 계속 캐시를 내주고 5분마다 다시 만든다. 카톡으로 수십 명이 동시에 여는 링크라
+//   요청마다 DB 를 때리는 동적 렌더는 쓰지 않는다. 남은 자리에 몇 분의 지연은 문제가 아니다.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: META.title,
@@ -23,14 +29,13 @@ export const metadata: Metadata = {
   openGraph: { title: META.title, description: META.description, type: 'website' },
 };
 
-export default function RecruitPage() {
+export default async function RecruitPage() {
   const intake = CURRENT_INTAKE;
   const status = STATUS_COPY[intake.status];
   const href = joinHref(intake);
 
-  // 남은 자리 — 모집 중이고 filled 가 있을 때만. 0 밑으로 내려가지 않게 자른다.
-  //   정원이 차도 CTA 를 막지 않는다(발주서 §4.3 — 자동 마감을 넣지 않는다). 마감은 status 를 손으로 넘긴다.
-  const remaining = intake.filled == null || !status.enabled ? null : Math.max(0, intake.seats - intake.filled);
+  // 남은 자리 — 집계는 DB, 판정은 순수 함수. 집계가 실패하면 null 이고 그 줄을 안 그린다.
+  const remaining = seatsRemaining(await seatsTaken(intake.code), status.enabled, intake);
 
   const cta = status.enabled ? (
     <a className="rc-cta" href={href}>

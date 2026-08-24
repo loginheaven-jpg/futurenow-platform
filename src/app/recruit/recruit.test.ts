@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { isProtectedPath } from '@/proxy.guard';
-import { CURRENT_INTAKE, STATUS_COPY, joinHref, type Intake } from './intake';
+import { CURRENT_INTAKE, STATUS_COPY, joinHref, seatsRemaining, type Intake } from './intake';
 import {
   APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SEATS_LEFT, SITE_ORIGIN, TEAM, VOICES, WHAT,
 } from './copy';
@@ -170,18 +170,41 @@ describe('기수 교체 — 상수 하나로 갈린다', () => {
 });
 
 // 정원 표시는 **두 표현**(문자열 capacity · 숫자 seats)을 갖는다 — 둘이 어긋나면 화면이 자기와 모순된다.
-//   자동 집계를 쓰지 않는 이유는 intake.ts 주석에 있다: 운영자 계정이 사전 체크를 마치고,
-//   중복·취소 정리 때마다 숫자가 흔들리며, DB 를 읽으면 랜딩이 동적이 된다.
-describe('남은 자리 (2026-08-24)', () => {
+//   인원은 손으로 적지 않는다: DB 의 cohort_seats_taken 이 세고(등록 + 사전 체크 완료 + role='user'),
+//   판정만 순수 함수로 떼어 여기서 잠근다. 집계와 판정을 나눠야 경계 조건을 테스트할 수 있다.
+describe('남은 자리 (ADR-110)', () => {
   it('정원 숫자와 정원 문구가 어긋나지 않는다', () => {
     expect(CURRENT_INTAKE.capacity).toContain(String(CURRENT_INTAKE.seats));
     expect(STATUS_COPY.open.badge).toContain(String(CURRENT_INTAKE.seats));
   });
 
-  // 2기 등록 7명 중 사전 체크 완료 6명이나 최철영(coach)은 세미나 운영자다. 이승은(admin)도 운영자이고 미완이다.
-  it('신청 확정은 참여자만 센다 — 운영자를 빼서 5다', () => {
-    expect(CURRENT_INTAKE.filled).toBe(5);
-    expect(CURRENT_INTAKE.filled!).toBeLessThanOrEqual(CURRENT_INTAKE.seats);
+  it('신청 수를 빼서 남은 자리를 낸다', () => {
+    expect(seatsRemaining(5, true)).toBe(5);
+    expect(seatsRemaining(9, true)).toBe(1);
+  });
+
+  // 집계가 실패하면 그 줄을 안 그린다 — 카운터 때문에 모집 페이지를 잃지 않는다.
+  it('집계 실패(null)면 그리지 않는다', () => {
+    expect(seatsRemaining(null, true)).toBeNull();
+  });
+
+  // 모집 첫날의 '남은 자리 9' 는 없느니만 못하다 — 사회적 증거가 되라고 붙인 줄이 반대로 말한다.
+  it('임계 미만이면 감춘다', () => {
+    expect(CURRENT_INTAKE.showSeatsFrom).toBe(3);
+    expect(seatsRemaining(2, true)).toBeNull();
+    expect(seatsRemaining(3, true)).toBe(7);
+  });
+
+  // 정원이 차도 CTA 는 막지 않는다(발주서 §4.3 — 자동 마감 없음). 0 밑으로도 내려가지 않는다.
+  it('정원을 넘겨도 0 에서 멈춘다', () => {
+    expect(seatsRemaining(10, true)).toBe(0);
+    expect(seatsRemaining(12, true)).toBe(0);
+  });
+
+  it('마감·종료 상태에서는 아예 그리지 않는다 — 그때는 무의미한 정보다', () => {
+    expect(seatsRemaining(5, false)).toBeNull();
+    expect(STATUS_COPY.closed.enabled).toBe(false);
+    expect(STATUS_COPY.ended.enabled).toBe(false);
   });
 
   it('남은 자리 문구는 줄어드는 방향으로 적는다', () => {
@@ -189,10 +212,10 @@ describe('남은 자리 (2026-08-24)', () => {
     expect(SEATS_LEFT(0)).toBe('남은 자리 0');
   });
 
-  // null 이면 표시하지 않는다 — 모집 첫날의 '남은 자리 9' 는 없느니만 못하다.
-  it('filled 는 null 을 받을 수 있다 — 감출 수 있어야 한다', () => {
-    const 초기: Intake = { ...CURRENT_INTAKE, filled: null };
-    expect(초기.filled).toBeNull();
+  // 3기가 오면 정원이 달라질 수 있다 — 상수를 갈아 끼우면 판정이 따라온다.
+  it('정원이 바뀌면 남은 자리도 따라 바뀐다', () => {
+    const 삼기: Intake = { ...CURRENT_INTAKE, seats: 12 };
+    expect(seatsRemaining(5, true, 삼기)).toBe(7);
   });
 });
 
