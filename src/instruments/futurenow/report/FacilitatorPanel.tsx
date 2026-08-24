@@ -4,6 +4,7 @@
 import type { CSSProperties } from 'react';
 import type { FuturenowScores } from '../scoring';
 import { TRAP_AXES, FAITH_LABELS } from './labels';
+import { FLAGS_CAPTION, NO_FLAGS_TEXT, profileFlags } from './profileFlags';
 
 const panelStyle: CSSProperties = {
   background: 'var(--color-surface-2)',
@@ -14,6 +15,7 @@ const panelStyle: CSSProperties = {
 
 export function FacilitatorPanel({ scores }: { scores: FuturenowScores }) {
   const { trap, faith } = scores;
+  const flags = profileFlags(scores);
   return (
     <section style={panelStyle}>
       {/* 헤더 — 인도자 전용 고지(중립색) */}
@@ -72,6 +74,36 @@ export function FacilitatorPanel({ scores }: { scores: FuturenowScores }) {
         </div>
         <div className="t-caption" style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
           점수화하지 않는 목회적 신호입니다.
+        </div>
+      </div>
+
+      {/* 프로파일 특징 — 원형 판단의 **재료**만. 원형 이름은 코드에 없다(profileFlags.ts 머리말).
+          코드가 사실을 모아 주고 인도자가 식별표로 가설을 세운다 — 그 분리가 이 구획의 전부다. */}
+      <div style={{ marginTop: 'var(--space-4)' }}>
+        <div className="t-body" style={{ color: 'var(--color-text)', fontWeight: 600, marginBottom: 'var(--space-2)' }}>프로파일 특징 (원형 참고)</div>
+        {flags.length === 0 ? (
+          <div className="t-body" style={{ color: 'var(--color-text-muted)' }}>{NO_FLAGS_TEXT}</div>
+        ) : (
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+            {flags.map((f) => (
+              <span
+                key={f.id}
+                className="t-caption"
+                style={{
+                  padding: 'var(--space-1) var(--space-2)',
+                  borderRadius: 'var(--radius-pill)',
+                  background: 'var(--color-surface-1)',
+                  border: 'var(--border-hair) solid var(--color-border)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                {f.text}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="t-caption" style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+          {FLAGS_CAPTION}
         </div>
       </div>
 

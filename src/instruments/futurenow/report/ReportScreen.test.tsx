@@ -104,6 +104,38 @@ describe('ReportScreen (개인 리포트 — 코치 라우트 렌더 경로)', (
     expect(won.F).not.toContain('var(--color-accent)');
   });
 
+  // ── ADR-114 프로파일 특징(원형 재료) — 인도자 박스 실렌더 ──────────
+  it('프로파일 특징이 인도자 박스에, 믿음의 자리 다음 · 주의 문구 앞에 온다', () => {
+    const html = renderToStaticMarkup(<ReportScreen scores={varied} />);
+    expect(html.indexOf('믿음의 자리')).toBeLessThan(html.indexOf('프로파일 특징 (원형 참고)'));
+    expect(html.indexOf('프로파일 특징 (원형 참고)')).toBeLessThan(html.indexOf('그대로 쓰지 않습니다'));
+    // varied = G2·R4·O2.5·W3·F2 → 현실인식 두드러짐 · 원씽 낮음 · 편차 큼
+    expect(html).toContain('현실인식이 준비도 중 두드러지게 높음');
+    expect(html).toContain('원씽 낮음');
+    expect(html).toContain('원형은 코드가 판정하지 않습니다'); // 캡션 필수
+  });
+
+  it('원형 이름이 최종 렌더 어디에도 없다(§5-2 실렌더 확인)', () => {
+    const loud: FuturenowScores = {
+      ...scores,
+      vitality: { score: 8, low: true },
+      grow: { G: 2, R: 4, O: 2, W: 3, F: 1, faithAux: { F1: null, F2: null } },
+      gap: { B1: 1, B2: 8, B3: 8, B4: 8, B5: 8 },
+      compass: { NAV1: 1, NAV2: 2, NAV3: 3, NAV4: 3 },
+    };
+    const html = renderToStaticMarkup(<ReportScreen scores={loud} />);
+    for (const name of ['명료한 정체형', '조용한 시들음형', '질주하는 회피형', '준비된 도약형', '따뜻한 표류형']) {
+      expect(html, `${name} 이 화면에 있다`).not.toContain(name);
+    }
+    expect(html).toContain('활력 시들음 구간'); // 가드가 헛돌지 않았음
+  });
+
+  it('플래그가 하나도 없으면 「두드러진 특징 없음」', () => {
+    const html = renderToStaticMarkup(<ReportScreen scores={scores} />); // 전 축 중립
+    expect(html).toContain('프로파일 특징 (원형 참고)');
+    expect(html).toContain('두드러진 특징 없음');
+  });
+
   it('§4-5 불변 — 축 순서·값이 그대로다', () => {
     const html = renderToStaticMarkup(<ReportScreen scores={varied} />);
     const labels = ['조감도', '현실인식', '원씽', '피드백', '정체성'].map((l) => html.indexOf(l));

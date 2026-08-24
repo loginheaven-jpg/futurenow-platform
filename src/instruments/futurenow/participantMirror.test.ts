@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { participantMirror } from './participantMirror';
+import { profileFlags } from './report/profileFlags';
 import type { FuturenowScores } from './scoring';
 
 const baseScores = (over: Partial<FuturenowScores> = {}): FuturenowScores => ({
@@ -58,5 +59,20 @@ describe('participantMirror (갈망 거울 — 측정 미노출)', () => {
     expect(s).not.toMatch(/관성|준비|안주/); // 함정 라벨(TRAP_AXES)
     expect(s).not.toMatch(/D1|D2|D3|F1|F2/); // 구인 코드
     expect(s).not.toContain('제자리걸음'); // 원응답 문항 원문(A2) 미노출
+  });
+
+  // ADR-114 §5.3 — 프로파일 특징(원형 재료)도 인도자 전용이다. 미러에 새지 않음.
+  it('§5.3 회귀가드: 미러에 프로파일 특징 문구가 없음', () => {
+    // 플래그가 잔뜩 뜨는 프로파일로 흔들어 본다.
+    const loud = baseScores({
+      vitality: { score: 8, low: true },
+      grow: { G: 2, R: 4, O: 2, W: 3, F: 1, faithAux: { F1: null, F2: null } },
+      gap: { B1: 1, B2: 8, B3: 8, B4: 8, B5: 8 },
+      compass: { NAV1: 1, NAV2: 2, NAV3: 3, NAV4: 3 },
+    });
+    const s = JSON.stringify(participantMirror(loud));
+    for (const f of profileFlags(loud)) expect(s, `${f.text} 가 미러에 있다`).not.toContain(f.text);
+    expect(s).not.toContain('프로파일 특징');
+    expect(profileFlags(loud).length).toBeGreaterThan(3); // 가드가 헛돌지 않았음
   });
 });
