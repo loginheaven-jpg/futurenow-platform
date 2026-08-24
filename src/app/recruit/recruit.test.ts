@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { isProtectedPath } from '@/proxy.guard';
 import { CURRENT_INTAKE, STATUS_COPY, joinHref, type Intake } from './intake';
 import {
-  APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SITE_ORIGIN, TEAM, VOICES, WHAT,
+  APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SEATS_LEFT, SITE_ORIGIN, TEAM, VOICES, WHAT,
 } from './copy';
 
 // 시안 HTML 이 최종 기준이다(지휘부 확정 2026-08-19). 랜딩 문구가 그것과 갈리면 같은 사람이 카드 이미지와
@@ -166,6 +166,33 @@ describe('기수 교체 — 상수 하나로 갈린다', () => {
     expect(문구).not.toContain('9월 6일');
     expect(문구).not.toContain('25만원');
     for (const r of CURRENT_INTAKE.schedule) expect(문구, r.date).not.toContain(r.date);
+  });
+});
+
+// 정원 표시는 **두 표현**(문자열 capacity · 숫자 seats)을 갖는다 — 둘이 어긋나면 화면이 자기와 모순된다.
+//   자동 집계를 쓰지 않는 이유는 intake.ts 주석에 있다: 운영자 계정이 사전 체크를 마치고,
+//   중복·취소 정리 때마다 숫자가 흔들리며, DB 를 읽으면 랜딩이 동적이 된다.
+describe('남은 자리 (2026-08-24)', () => {
+  it('정원 숫자와 정원 문구가 어긋나지 않는다', () => {
+    expect(CURRENT_INTAKE.capacity).toContain(String(CURRENT_INTAKE.seats));
+    expect(STATUS_COPY.open.badge).toContain(String(CURRENT_INTAKE.seats));
+  });
+
+  // 2기 등록 7명 중 사전 체크 완료 6명이나 최철영(coach)은 세미나 운영자다. 이승은(admin)도 운영자이고 미완이다.
+  it('신청 확정은 참여자만 센다 — 운영자를 빼서 5다', () => {
+    expect(CURRENT_INTAKE.filled).toBe(5);
+    expect(CURRENT_INTAKE.filled!).toBeLessThanOrEqual(CURRENT_INTAKE.seats);
+  });
+
+  it('남은 자리 문구는 줄어드는 방향으로 적는다', () => {
+    expect(SEATS_LEFT(5)).toBe('남은 자리 5');
+    expect(SEATS_LEFT(0)).toBe('남은 자리 0');
+  });
+
+  // null 이면 표시하지 않는다 — 모집 첫날의 '남은 자리 9' 는 없느니만 못하다.
+  it('filled 는 null 을 받을 수 있다 — 감출 수 있어야 한다', () => {
+    const 초기: Intake = { ...CURRENT_INTAKE, filled: null };
+    expect(초기.filled).toBeNull();
   });
 });
 

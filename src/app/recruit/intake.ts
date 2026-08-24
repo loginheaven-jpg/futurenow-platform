@@ -25,6 +25,20 @@ export type Intake = {
   status: IntakeStatus;
   coverLine: string;
   capacity: string;
+  /** 정원(숫자). capacity 문자열과 어긋나지 않도록 recruit.test.ts 가 둘을 묶는다. */
+  seats: number;
+  /**
+   * 신청 확정 인원(**참여자만**). 발주서 §4.2 — 사전 체크 완료 시각을 신청 확정으로 본다.
+   *
+   * **자동 집계하지 않는다.** 세 가지가 사람의 판단을 필요로 한다:
+   *   ① 운영자·진행자 계정이 문안 확인용으로 사전 체크를 마친다(2기의 최철영·이승은이 그렇다).
+   *      기계는 그것을 신청과 구분하지 못한다.
+   *   ② 중복 계정·취소·환불 정리 때마다 숫자가 흔들린다. **틀린 적이 있는 숫자는 다음부터 아무도 안 믿는다.**
+   *   ③ DB 를 읽으면 랜딩이 요청마다 동적이 된다 — 발주서 §3.1 이 못 박은 '정적 페이지'가 깨진다.
+   *
+   * **null 이면 표시하지 않는다.** 모집 첫날의 `남은 자리 9` 는 없느니만 못하다.
+   */
+  filled: number | null;
   deadlineLine: string;
   fee: string;
   scholarship: string;
@@ -47,6 +61,10 @@ export const CURRENT_INTAKE: Intake = {
 
   coverLine: '예봄 2기 · 6주 · 회당 140분',
   capacity: '선착순 10명',
+  seats: 10,
+  // 2026-08-24 실측: 2기 등록 7명 중 사전 체크 완료 6명, 그중 최철영(coach)은 세미나 운영자다.
+  //   이승은(admin)도 운영자이고 사전 체크 미완이라 애초에 세지 않는다.
+  filled: 5,
   deadlineLine: '선착순 10명 · 9월 6일(일) 마감',
 
   fee: '25만원',

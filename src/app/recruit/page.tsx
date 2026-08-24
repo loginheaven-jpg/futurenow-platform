@@ -12,7 +12,7 @@
 import type { Metadata } from 'next';
 import { AccountCopy } from './AccountCopy';
 import { CURRENT_INTAKE, STATUS_COPY, joinHref } from './intake';
-import { APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, TEAM, VOICES, WHAT } from './copy';
+import { APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SEATS_LEFT, TEAM, VOICES, WHAT } from './copy';
 import './recruit.css';
 
 export const metadata: Metadata = {
@@ -27,6 +27,10 @@ export default function RecruitPage() {
   const intake = CURRENT_INTAKE;
   const status = STATUS_COPY[intake.status];
   const href = joinHref(intake);
+
+  // 남은 자리 — 모집 중이고 filled 가 있을 때만. 0 밑으로 내려가지 않게 자른다.
+  //   정원이 차도 CTA 를 막지 않는다(발주서 §4.3 — 자동 마감을 넣지 않는다). 마감은 status 를 손으로 넘긴다.
+  const remaining = intake.filled == null || !status.enabled ? null : Math.max(0, intake.seats - intake.filled);
 
   const cta = status.enabled ? (
     <a className="rc-cta" href={href}>
@@ -54,6 +58,8 @@ export default function RecruitPage() {
             {intake.coverLine}
           </p>
           {status.badge ? <p className="rc-badge">{status.badge}</p> : null}
+          {/* 배지 안이 아니라 아래 한 줄로 둔다 — 골드 배지에 숫자를 얹으면 한 덩어리로 뭉쳐 둘 다 안 읽힌다. */}
+          {remaining != null ? <p className="rc-seats">{SEATS_LEFT(remaining)}</p> : null}
           <div style={{ marginTop: 'var(--space-7)' }}>
             {cta}
             <p className="rc-cta-note">{status.note}</p>

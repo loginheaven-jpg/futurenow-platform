@@ -241,6 +241,15 @@
   border-radius: var(--radius);
 }
 
+/* 남은 자리 — 배지 아래 작은 한 줄. 배지의 무게를 건드리지 않는다. */
+.rc-seats {
+  margin: var(--space-3) 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--rc-ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── 참가비 ────────────────────────────────────────── */
 .rc-price {
   font-size: 40px;

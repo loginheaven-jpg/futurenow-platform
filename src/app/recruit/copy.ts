@@ -155,6 +155,12 @@ export const TEAM = {
   ],
 } as const;
 
+/**
+ * 남은 자리 한 줄. `10명 중 5명` 이 아니라 **줄어드는 방향**으로 적는다 —
+ * 선착순의 결에 맞고, 읽는 사람이 계산하지 않아도 남은 수가 바로 보인다.
+ */
+export const SEATS_LEFT = (n: number): string => `남은 자리 ${n}`;
+
 /** 카드 13 — 신청. QR 은 랜딩에 두지 않는다(발주서 §3.1.2 — 이미 그 주소에 도착한 사람에게 같은 주소의 QR 은 무의미하다). */
 export const APPLY = {
   eyebrow: '신청',
