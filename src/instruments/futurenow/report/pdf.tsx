@@ -5,6 +5,7 @@
 import { Document, Page, StyleSheet, Svg, Polygon, Text, View } from '@react-pdf/renderer';
 import type { FuturenowScores } from '../scoring';
 import {
+  CARE_TONE,
   COMPASS_AXES,
   GAP_AXES,
   GROW_AXES,
@@ -89,10 +90,11 @@ export function FuturenowPdf({
           <Text style={s.headerSub}>사전·사후 비교 · 인도자 전용</Text>
         </View>
 
+        {/* 색이 트리거를 말한다 — 화면과 같은 표(CARE_TONE)를 본다. react-pdf 는 CSS var 미지원이라 리터럴이 온다. */}
         {banner && (
-          <View style={[s.panel, { backgroundColor: C.careFill, borderLeftWidth: 3, borderLeftColor: C.careLine }]}>
-            <Text style={{ color: C.careText, fontFamily: 'Helvetica-Bold', fontSize: 12 }}>{banner.title}</Text>
-            <Text style={{ color: C.careText, marginTop: 4 }}>{banner.body}</Text>
+          <View style={[s.panel, { backgroundColor: CARE_TONE[banner.kind].fill, borderWidth: 1, borderColor: CARE_TONE[banner.kind].line }]}>
+            <Text style={{ color: CARE_TONE[banner.kind].text, fontFamily: 'Helvetica-Bold', fontSize: 12 }}>{banner.title}</Text>
+            <Text style={{ color: CARE_TONE[banner.kind].body, marginTop: 4 }}>{banner.body}</Text>
           </View>
         )}
 

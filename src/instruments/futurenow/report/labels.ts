@@ -59,26 +59,52 @@ export const TRAP_AXES = [
 // 믿음의 자리(F1·F2) — 점수화하지 않는 목회적 신호. 무응답 가능(null). ADR-77
 export const FAITH_LABELS = { F1: '의미', F2: '실행' } as const;
 
+/**
+ * 어느 트리거로 배너가 켜졌는가. 셋이 겹쳐도 하나만 뜨므로(우선순위) 화면에서는 이유가 안 보인다.
+ * 그 이유를 **색으로** 되돌려 주려고 종류를 함께 내보낸다(시안: docs/tasks/care_banner_types.html).
+ *
+ * `byVitality` 와 `languish` 는 다르다 — 앞은 마모 세 문항이 모두 높은 상태(총점 무관, Red Flag),
+ * 뒤는 활력 **총점**이 낮은 상태(Red Flag 아님)다. 제목이 같아 섞이기 쉬운 자리라 종류로 갈라 둔다.
+ */
+export type CareKind = 'byVitality' | 'byCareCheck' | 'languish';
+
 // 돌봄 신호 배너(§5.5) — 활력 시들음 OR Red Flag OR 돌봄 체크 시에만. 없으면 null(배너 미렌더).
-// 경보·낙인 아님 — 우선순위 안내. 의미색 저채도(--care-*).
-export function careBanner(scores: FuturenowScores): { title: string; body: string } | null {
+// 경보·낙인 아님 — 우선순위 안내. 의미색 저채도(--care-vit/req/lang-*).
+export function careBanner(scores: FuturenowScores): { kind: CareKind; title: string; body: string } | null {
   if (scores.redFlag.byVitality) {
     return {
+      kind: 'byVitality',
       title: '돌봄 권장 · 개별 안부를 권합니다',
       body: '활력 신호가 낮습니다. 점수나 질문은 보이지 말고, 따뜻한 1:1로 먼저 안부를 건네 주세요.',
     };
   }
   if (scores.redFlag.byCareCheck) {
     return {
+      kind: 'byCareCheck',
       title: '돌봄 권장 · 1:1 코칭을 요청했습니다',
       body: '참여자가 개별 연결을 원합니다. 편한 때 먼저 연락해 주세요.',
     };
   }
   if (scores.vitality.low) {
     return {
+      kind: 'languish',
       title: '돌봄 권장 · 개별 안부를 권합니다',
       body: '활력이 시들음 구간입니다. 낙인이 아니라 돌봄 신호입니다 — 가벼운 안부를 권합니다.',
     };
   }
   return null;
 }
+
+/** 트리거별 배너 색. 화면(CSS 변수)과 PDF(리터럴)가 같은 표를 보도록 여기 한 곳에 둔다. */
+export const CARE_TONE: Record<CareKind, { fill: string; line: string; text: string; body: string }> = {
+  byVitality: { fill: '#fbf4e9', line: '#e6cfa6', text: '#8a6a2f', body: '#7a6134' },
+  byCareCheck: { fill: '#eef3fb', line: '#c6d6ee', text: '#345088', body: '#42588a' },
+  languish: { fill: '#f2f4f7', line: '#d9dee7', text: '#5a6472', body: '#5a6472' },
+};
+
+/** 화면용 CSS 변수 접두어. globals.css 의 --care-{vit|req|lang}-* 과 짝이다. */
+export const CARE_VAR: Record<CareKind, string> = {
+  byVitality: 'vit',
+  byCareCheck: 'req',
+  languish: 'lang',
+};

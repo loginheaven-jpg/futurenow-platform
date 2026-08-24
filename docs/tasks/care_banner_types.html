@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>돌봄 배너 세 유형</title>
+<style>
+  :root{
+    --navy:#1f3352; --ink:#233045; --sub:#6b7688;
+    --line:#e3e7ee; --surface:#f6f8fb; --surface2:#eef2f7;
+    --gold:#b8893a;
+    --amber-bg:#fbf4e9; --amber-line:#e6cfa6; --amber-ink:#8a6a2f;
+    --blue-bg:#eef3fb; --blue-line:#c6d6ee; --blue-ink:#345088;
+    --gray-bg:#f2f4f7; --gray-line:#d9dee7; --gray-ink:#5a6472;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    background:#fff; color:var(--ink);
+    padding:40px; width:860px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .head{margin-bottom:26px;padding-bottom:18px;border-bottom:2px solid var(--navy)}
+  .kicker{font-size:13px;letter-spacing:.14em;color:var(--gold);font-weight:700;margin-bottom:6px}
+  h1{font-size:25px;color:var(--navy);font-weight:800;letter-spacing:-.01em}
+  .lead{font-size:14.5px;color:var(--sub);margin-top:10px;line-height:1.6}
+  .lead b{color:var(--ink);font-weight:700}
+
+  .row{display:flex;align-items:stretch;gap:16px;margin-bottom:16px}
+  .rank{
+    flex:0 0 54px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-radius:12px;background:var(--surface2);
+  }
+  .rank .n{font-size:26px;font-weight:800;color:var(--navy);line-height:1}
+  .rank .p{font-size:10.5px;color:var(--sub);margin-top:4px;letter-spacing:.06em}
+
+  .card{flex:1;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .card .top{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;padding:14px 18px 10px}
+  .trig{font-size:12px;font-weight:700;font-family:"SF Mono",Menlo,monospace;color:var(--navy);
+        background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+  .cond{font-size:13px;color:var(--sub)}
+  .cond b{color:var(--ink)}
+  .banner{margin:0 18px 16px;border-radius:11px;padding:13px 15px}
+  .banner .btitle{font-size:14px;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+  .banner .bbody{font-size:13px;line-height:1.6}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
+
+  .b-amber{background:var(--amber-bg);border:1px solid var(--amber-line)}
+  .b-amber .btitle{color:var(--amber-ink)} .b-amber .bbody{color:#7a6134} .b-amber .dot{background:#d79a3c}
+  .b-blue{background:var(--blue-bg);border:1px solid var(--blue-line)}
+  .b-blue .btitle{color:var(--blue-ink)} .b-blue .bbody{color:#42588a} .b-blue .dot{background:#5578c0}
+  .b-gray{background:var(--gray-bg);border:1px solid var(--gray-line)}
+  .b-gray .btitle{color:var(--gray-ink)} .b-gray .bbody{color:#5a6472} .b-gray .dot{background:#8b95a4}
+
+  .note{margin-top:22px;padding:15px 18px;background:var(--surface);border-radius:12px;
+        font-size:12.5px;color:var(--sub);line-height:1.7}
+  .note b{color:var(--navy)}
+  .flag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;
+        background:#fdecec;color:#b4433d;border:1px solid #f0c9c6;margin-left:2px}
+  .flagno{background:var(--surface2);color:var(--sub);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="kicker">퓨처나우 진단 인도자 가이드</div>
+    <h1>돌봄 배너 — 세 유형과 판정</h1>
+    <p class="lead">돌봄 배너는 세 트리거로 켜진다. 세 조건이 겹쳐도 <b>우선순위가 높은 하나만</b> 뜬다. 배너는 점수·문항을 감추고, 인도자만 그 뒤를 안다.</p>
+  </div>
+
+  <!-- 1 -->
+  <div class="row">
+    <div class="rank"><div class="n">1</div><div class="p">우선</div></div>
+    <div class="card">
+      <div class="top">
+        <span class="trig">byVitality</span>
+        <span class="cond">마모 세 문항(A2·A5·A4)이 <b>모두 원점수 4~5</b> <span class="flag">Red Flag</span></span>
+      </div>
+      <div class="banner b-amber">
+        <div class="btitle"><span class="dot"></span>돌봄 권장 · 개별 안부를 권합니다</div>
+        <div class="bbody">활력 신호가 낮습니다. 점수나 문항은 보이지 말고, 따뜻한 1:1로 먼저 안부를 건네 주세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="row">
+    <div class="rank"><div class="n">2</div><div class="p">다음</div></div>
+    <div class="card">
+      <div class="top">
+        <span class="trig">byCareCheck</span>
+        <span class="cond">참여자가 <b>1:1 코칭을 요청</b>(진단지 CARE 체크) <span class="flag">Red Flag</span></span>
+      </div>
+      <div class="banner b-blue">
+        <div class="btitle"><span class="dot"></span>돌봄 권장 · 1:1 코칭을 요청했습니다</div>
+        <div class="bbody">참여자가 개별 연결을 원합니다. 편한 때 먼저 연락해 주세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="row">
+    <div class="rank"><div class="n">3</div><div class="p">마지막</div></div>
+    <div class="card">
+      <div class="top">
+        <span class="trig">시들음</span>
+        <span class="cond">활력 <b>총점 10 이하</b> <span class="flag flagno">Red Flag 아님</span></span>
+      </div>
+      <div class="banner b-gray">
+        <div class="btitle"><span class="dot"></span>돌봄 권장 · 개별 안부를 권합니다</div>
+        <div class="bbody">활력이 시들음 구간입니다. 낙인이 아니라 돌봄 신호입니다 - 가벼운 안부를 권합니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>byVitality ≠ 시들음.</b> 시들음은 활력 <b>총점</b>이 낮은 상태이고, byVitality는 마모 세 문항이 <b>모두 높은</b> 상태다(총점과 무관). 그래서 총점이 중간이어도 byVitality가 뜰 수 있다. 배너가 왜 떴는지는 로스터에서 확인한다.
+  </div>
+</body>
+</html>

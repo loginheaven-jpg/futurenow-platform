@@ -3,6 +3,7 @@
 // --*-soft)과 전역 타이포 클래스(t-*)만 사용. **본문 시각물은 네이비·회색 차분 톤, 의미색은 돌봄 배너에만**(§5).
 import type { FuturenowScores } from '../scoring';
 import {
+  CARE_VAR,
   COMPASS_AXES,
   GAP_AXES,
   GROW_AXES,
@@ -50,22 +51,25 @@ function MoveLine({ a, b }: { a: number; b: number }) {
 }
 
 // ── 돌봄 신호 배너 (조건부 최상단, 저채도 의미색) ─────────
+//   색이 트리거를 말한다: 마모(앰버) · 요청(블루) · 시들음(그레이). 시안 docs/tasks/care_banner_types.html.
+//   테두리를 왼쪽 3px 이 아니라 전체 1px 로 두른다 — 시안 색이 옅어 왼쪽 막대로는 형태가 잡히지 않는다.
 export function CareSignal({ scores }: { scores: FuturenowScores }) {
   const banner = careBanner(scores);
   if (!banner) return null;
+  const v = CARE_VAR[banner.kind];
   return (
     <div
       style={{
-        background: 'var(--care-fill)',
-        borderLeft: '3px solid var(--care-line)',
+        background: `var(--care-${v}-fill)`,
+        border: `1px solid var(--care-${v}-line)`,
         borderRadius: 'var(--radius)',
         padding: 'var(--space-4)',
       }}
     >
-      <div className="t-h2" style={{ color: 'var(--care-text)', fontSize: 17, margin: 0 }}>
+      <div className="t-h2" style={{ color: `var(--care-${v}-text)`, fontSize: 17, margin: 0 }}>
         {banner.title}
       </div>
-      <p className="t-body" style={{ color: 'var(--care-text)', margin: 'var(--space-2) 0 0', opacity: 0.85 }}>
+      <p className="t-body" style={{ color: `var(--care-${v}-body)`, margin: 'var(--space-2) 0 0' }}>
         {banner.body}
       </p>
     </div>
