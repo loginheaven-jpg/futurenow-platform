@@ -17,17 +17,20 @@ export function ReportPrintHeader({
   cohortName,
   waveLabel,
   dateStr,
+  title = '개인 체크 리포트',
 }: {
   participantName: string;
   cohortName: string;
   waveLabel: string;
   dateStr: string;
+  /** 문서 종류. 갈무리 세로 보기(ADR-118)가 같은 헤더를 쓰되 표제만 다르다 — 사본을 만들지 않는다. */
+  title?: string;
 }) {
   return (
     <header className="print-only" style={wrap}>
       <div>
         <div className="t-caption" style={{ color: 'var(--color-accent)', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>퓨처나우</div>
-        <div className="t-display" style={{ color: 'var(--color-primary)', fontSize: 26, marginTop: 2 }}>개인 체크 리포트</div>
+        <div className="t-display" style={{ color: 'var(--color-primary)', fontSize: 26, marginTop: 2 }}>{title}</div>
       </div>
       <div className="t-caption" style={{ textAlign: 'right', lineHeight: 1.7 }}>
         <div style={{ color: 'var(--color-text)', fontWeight: 600 }}>{participantName}</div>

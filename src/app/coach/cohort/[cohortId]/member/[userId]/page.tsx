@@ -9,6 +9,8 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
+import { ReportPrintButton } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintButton';
+import { ReportPrintHeader } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintHeader';
 import { MemberJourney } from './MemberJourney';
 
 export const dynamic = 'force-dynamic';
@@ -46,14 +48,30 @@ export default async function CoachMemberJourneyPage({ params }: { params: Promi
     .catch(() => []);
   const reportId = responses[0]?.id ?? null;
 
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader
-        variant="sub"
+    <div className="journey-print-root" style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
+      {/* 앱 크롬 — 화면 전용. PDF 본문에는 브랜드 문서 헤더가 대신 온다(리포트와 같은 선례). */}
+      <div className="no-print">
+        <AppHeader
+          variant="sub"
+          title="갈무리 기록"
+          backHref={`/coach/cohort/${cohortId}/checkin`}
+          homeHref="/home"
+          action={<HeaderActions />}
+        />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
+          <ReportPrintButton />
+        </div>
+      </div>
+      <ReportPrintHeader
         title="갈무리 기록"
-        backHref={`/coach/cohort/${cohortId}/checkin`}
-        homeHref="/home"
-        action={<HeaderActions />}
+        participantName={member.name ?? '이름 미입력'}
+        cohortName={cohort?.name ?? ''}
+        waveLabel="인도자 전용"
+        dateStr={dateStr}
       />
       <MemberJourney
         cohortId={cohortId}
@@ -64,7 +82,7 @@ export default async function CoachMemberJourneyPage({ params }: { params: Promi
         rows={rows}
         photos={Object.fromEntries(photoPairs)}
         reportId={reportId}
-        nowIso={new Date().toISOString()}
+        nowIso={now.toISOString()}
       />
     </div>
   );

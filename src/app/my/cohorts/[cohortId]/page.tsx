@@ -134,6 +134,8 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
       ) : (
         <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/report`} style={{ width: '100%', textDecoration: 'none' }}>내 리포트 보기</a>
       )}
+      {/* 나의 기록(ADR-118) — 회차 창과 무관하게 7주 내내 열어 둔다. 자기 점검이 목적이다. */}
+      <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/journey`} style={{ width: '100%', textDecoration: 'none', marginTop: 'var(--space-2)' }}>나의 기록 보기</a>
     </div>
   );
 

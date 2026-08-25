@@ -1,9 +1,10 @@
 // 화면 A 본문(ADR-118) — 한 사람의 전 회차를 여섯 블록으로 세운다.
-//   서버 컴포넌트다. 접힘은 네이티브 <details> 라 클라이언트 JS 가 없다.
+//   서버 컴포넌트다. 접힘만 클라이언트(JourneyCollapsible) — 인쇄에서 펼친 채 나오게 하려면 display 토글이어야 한다.
 //
 // 표시 규율(ADR-86·80 유지): 막대·게이지·색·백분위·평균·정렬키를 쓰지 않는다. 자신감은 **숫자만** 적는다.
 //   의미색(care)은 연락 요청에만. 주 신호는 굵기·테두리로 가른다.
 import type { CheckinPhoto, CheckinRecord, CohortSession } from '@/contracts';
+import { JourneyCollapsible } from '@/app/_screens/JourneyCollapsible';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
 import { buildCheckinRead } from '@/instruments/futurenow/checkin/readModel';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
@@ -222,14 +223,9 @@ export function MemberJourney({
             'facilitator',
           );
           return (
-            <details key={s.sessionNo} className="journey-full" style={{ borderTop: 'var(--border-hair) solid var(--color-border)', padding: 'var(--space-3) 0' }}>
-              <summary className="t-caption" style={{ ...sub, cursor: 'pointer' }}>
-                {s.sessionNo}회차 전문 {STATE_TEXT[state]}
-              </summary>
-              <div style={{ marginTop: 'var(--space-3)' }}>
-                <CheckinReadView blocks={blocks} photos={photos[s.sessionNo] ?? []} />
-              </div>
-            </details>
+            <JourneyCollapsible key={s.sessionNo} label={`${s.sessionNo}회차 전문 ${STATE_TEXT[state]}`.trim()}>
+              <CheckinReadView blocks={blocks} photos={photos[s.sessionNo] ?? []} />
+            </JourneyCollapsible>
           );
         })}
       </Section>

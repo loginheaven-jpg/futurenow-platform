@@ -128,6 +128,17 @@ export default async function CoachCheckinPage({
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="회차 갈무리 현황" backHref={`/coach/cohort/${cohortId}`} homeHref="/home" action={<HeaderActions />} />
 
+      {/* 격자(ADR-118) — 명단 × 회차를 한 화면에. 이탈 조기 발견·소그룹 편성·연락 대상 고르기. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
+        <a
+          className="t-caption"
+          href={`/coach/cohort/${cohortId}/matrix`}
+          style={{ padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
+        >
+          격자로 보기
+        </a>
+      </div>
+
       <ScheduleSeedClient cohortId={cohortId} code={cohort?.code ?? ''} sessions={sessions} />
 
       {!hasSchedule ? null : (
