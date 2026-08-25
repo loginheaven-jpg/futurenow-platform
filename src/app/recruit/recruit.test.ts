@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { isProtectedPath } from '@/proxy.guard';
+import { CHECKIN_SESSION_1 } from '@/instruments/futurenow/checkin/session1';
 import { CURRENT_INTAKE, STATUS_COPY, joinHref, seatsRemaining, type Intake } from './intake';
 import {
   APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SEATS_LEFT, SITE_ORIGIN, TEAM, VOICES, WHAT,
@@ -12,9 +13,13 @@ import {
 //   시안이 고쳐지면 이 테스트가 먼저 레드가 되고, 문안을 함께 옮기라고 말한다.
 //   (갈무리 쪽 copyRegression.test.ts 가 baseline JSON 을 쓰는 것과 다른 선택이다. 거기는 원본이 코드 안에 있고
 //    여기는 코드 밖 문서가 원본이라, 사본을 하나 더 만들면 진실이 셋이 된다.)
-const SIAN = readFileSync(
-  resolve(process.cwd(), 'docs/tasks/예봄2기_카드뉴스_시안 (2).html'),
-  'utf-8',
+// **줄끝을 정규화한다.** 이 저장소는 `core.autocrlf=true` 라 Windows 에서 클론하면 문서가 CRLF 로 풀린다.
+//   Node 는 원본 바이트를 그대로 읽으므로, 여러 줄 문구(`title.join('<br>')` 이 만드는 개행)를
+//   CRLF 문서에서 찾으면 **문구가 맞는데도 레드가 난다.** 지휘부가 매 단계 클론해 감리하므로 그 자리에서 먼저 터진다.
+const LF = (s: string) => s.split('\r\n').join('\n');
+
+const SIAN = LF(
+  readFileSync(resolve(process.cwd(), 'docs/tasks/예봄2기_카드뉴스_시안 (2).html'), 'utf-8'),
 );
 
 /** 시안 HTML 안에 이 문자열이 그대로 있는가. 마크업(<br>·<strong>)이 끼는 자리는 조각으로 나눠 확인한다. */
@@ -24,9 +29,8 @@ const inSian = (s: string) => SIAN.includes(s);
 //   원고는 참여자가 읽는 화면이 아니지만 3기 준비에 다시 열어 보는 문서이고, 옛 문구가 남아 있으면
 //   그때 어느 쪽이 맞는지 매번 대조해야 한다. 그래서 대조 범위에 넣는다.
 //   원고는 마크다운이라 **강조**와 줄바꿈이 시안의 <strong>·<br> 자리에 온다 — 그것만 맞춰 비교한다.
-const WONGO = readFileSync(
-  resolve(process.cwd(), 'docs/tasks/예봄2기_모집카드뉴스_원고_확정 (1).md'),
-  'utf-8',
+const WONGO = LF(
+  readFileSync(resolve(process.cwd(), 'docs/tasks/예봄2기_모집카드뉴스_원고_확정 (1).md'), 'utf-8'),
 ).replace(/\*\*/g, '');
 const inWongo = (s: string) => WONGO.includes(s.replace(/<br>/g, '\n').replace(/<\/?strong>/g, ''));
 
@@ -371,5 +375,35 @@ describe('원고 .md 가 시안·웹과 일치한다', () => {
       '한국상담대학원대학교',
     ];
     for (const o of 옛것) expect(WONGO, o).not.toContain(o);
+  });
+});
+
+// ── 열람 범위 고지 — 모집 자료와 앱을 묶는다 ──────────────────────────────
+//
+// 네 번 보고된 드리프트다. 모집 자료가 `세미나 인도자만 봅니다` 라고 하는 동안 앱은
+//   `인도자와 운영자만 봅니다` 라고 말하고 있었다(ADR-77 §4.3 이 열람 범위를 운영자 포함으로
+//   확정하며 StartGuide·ResponseRunner·갈무리 notice2·동의서를 **정직하게 갱신한** 결과다).
+//   **가입 전에 본 약속이 가입 시 동의서보다 좁았다.**
+//
+// 원인은 둘을 묶는 것이 아무것도 없었다는 데 있다. 모집 삼중 잠금(시안·원고·웹)은 서로만 봤고
+//   앱 문안은 그 바깥이었다. 그래서 여기서 **앱의 갈무리 고지를 직접 읽어** 대조한다 —
+//   한쪽이 바뀌면 다른 쪽을 함께 옮기라고 이 테스트가 먼저 말한다.
+describe('열람 범위 고지가 앱 문안과 어긋나지 않는다 (ADR-77)', () => {
+  const APP_NOTICE = CHECKIN_SESSION_1.save.notice2; // '적으신 내용은 인도자와 운영자가 읽습니다.'
+
+  it('앱이 운영자를 명시한다 — 기준이 실재하는지 먼저 본다', () => {
+    expect(APP_NOTICE).toContain('인도자');
+    expect(APP_NOTICE).toContain('운영자');
+  });
+
+  it('모집 고지도 운영자를 명시한다', () => {
+    expect(ONLINE.foot).toContain('인도자');
+    expect(ONLINE.foot, '앱은 운영자도 본다고 말하는데 모집 자료가 인도자만이라 하면 약속이 두 곳에서 다르다').toContain('운영자');
+  });
+
+  it('옛 문구가 시안·원고·웹 어디에도 없다', () => {
+    for (const src of [SIAN, WONGO, ONLINE.foot]) {
+      expect(src).not.toContain('세미나 인도자만 봅니다');
+    }
   });
 });
