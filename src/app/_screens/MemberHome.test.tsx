@@ -96,4 +96,12 @@ describe('MemberHome (멤버 홈 본문 — 진입-3)', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="관리자" cohorts={[]} role="admin" pendingCoachApps={3} />);
     expect(html).toContain('승인 대기 3건');
   });
+
+  // 성능 감사 2026-08-25 — /my/cohorts 는 차수가 하나면 즉시 리다이렉트한다(page.tsx:20).
+  //   목록을 경유하면 서버 렌더가 한 번 더 돈다. 대다수 참여자가 단일 차수라 이 한 줄이 매번 걸린다.
+  it('차수가 하나면 내 세미나가 목록을 건너뛰고 차수 홈으로 직결한다', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'only1', preDone: true })]} />);
+    expect(html).toContain('href="/my/cohorts/only1"');
+    expect(html).not.toContain('href="/my/cohorts"');
+  });
 });

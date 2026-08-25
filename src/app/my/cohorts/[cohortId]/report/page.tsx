@@ -2,6 +2,7 @@
 // B-3: 사전·사후가 모두 있으면 비교(지난 사전 ↔ 지금 사후 미러 나란히), 하나면 단독, 없으면 빈 상태.
 //   listResponses(본인 wave별, RLS self-read) → latestPerUser(각 wave 최신 1건, 재진단 dedup ADR-33) → score → participantMirror.
 // 하드룰 불변: severity·점수·활력 버킷·돌봄 0건(순화 유지 — 측정은 코치 리얼 리포트 몫). scores 저장 안 함(재채점).
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { AppHeader } from '@/app/_screens/AppHeader';
@@ -69,9 +70,9 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>
             아직 {TOOL.short} 결과가 없어요. 받은 코드로 참여하면 결과를 볼 수 있어요.
           </p>
-          <a className="ui-btn ui-btn--primary" href="/join" style={{ width: '100%', textDecoration: 'none' }}>
+          <Link className="ui-btn ui-btn--primary" href="/join" style={{ width: '100%', textDecoration: 'none' }}>
             받은 코드로 참여
-          </a>
+          </Link>
         </div>
       )}
     </div>

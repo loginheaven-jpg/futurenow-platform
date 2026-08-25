@@ -1,6 +1,7 @@
 // 루트 현관(/) — 공개 소개 현관(진입-1). 스크롤 마케팅: 권유부+CTA(첫 화면) → 소개 3단락 → 인도자 진입(하단).
 // 참여자 대상 — 큰 골드 CTA(초대) + 작은 코드 보조 링크(지름길), 둘 다 /join 합류. AppHeader 미사용(권유 문구가 h1).
 // 참여자 팔레트·디자인 토큰, 의미색 0. 정적(env·라우터 컨텍스트 불요). 계약·DB 무변경.
+import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { SeminarIntro } from '@/app/_screens/SeminarIntro';
 
@@ -27,14 +28,14 @@ export default function Home() {
       </p>
 
       {/* 골드 CTA(초대) — 골드 면 + 네이비 글자(--color-text-on-gold) */}
-      <a className="ui-btn" href="/join" style={{ ...full, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
+      <Link className="ui-btn" href="/join" style={{ ...full, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
         함께 시작해 볼까요?
-      </a>
+      </Link>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0', textAlign: 'center' }}>
-        코드가 있으신가요? <a href="/join" style={{ color: 'var(--color-primary)' }}>코드로 입장</a>
+        코드가 있으신가요? <Link href="/join" style={{ color: 'var(--color-primary)' }}>코드로 입장</Link>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-1) 0 0', textAlign: 'center' }}>
-        이미 참여하셨나요? <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인</a>
+        이미 참여하셨나요? <Link href="/login" style={{ color: 'var(--color-primary)' }}>로그인</Link>
       </p>
 
       {/* 소개 세 단락 — 스크롤(공통 소개, SeminarIntro 단일 출처 — 코드 미리보기와 공유) */}
@@ -43,11 +44,11 @@ export default function Home() {
 
       {/* 로그인·인도자 진입 — 보조(하단·ghost, 참여자 현관이라 우선순위 낮게). 로그인은 전 역할 공용. */}
       <div style={{ ...divider, margin: 'var(--space-8) 0 var(--space-6)' }} />
-      <a className="ui-btn ui-btn--ghost" href="/login" style={full}>
+      <Link className="ui-btn ui-btn--ghost" href="/login" style={full}>
         로그인
-      </a>
+      </Link>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0', textAlign: 'center' }}>
-        인도자로 활동하실 분은 <a href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</a>
+        인도자로 활동하실 분은 <Link href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</Link>
       </p>
     </main>
   );

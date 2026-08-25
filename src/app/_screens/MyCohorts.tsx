@@ -1,6 +1,7 @@
 // 내 차수 목록 본문(프레젠테이션 — 부수효과 없음). 멤버 시점: 내가 속한 차수 + 진행 상태.
 // 참여자 팔레트·중립. danger/warning/care 의미색 0(§0.4). 완료 배지만 accent(골드=진행 흔적).
 // 다음 행동: 사전 미완→[진단 시작하기] · 사후 개시·미완→[사후 진단하기](B-2) · 그 외→[내 리포트](순화 뷰, 라우트 구현 완료).
+import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import type { MyCohortSummary } from '@/contracts';
 import { TOOL } from '@/app/_vocab/tool';
@@ -32,7 +33,7 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
         <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>
           아직 참여한 세미나가 없어요. 인도자에게 받은 코드로 참여해 보세요.
         </p>
-        <a className="ui-btn ui-btn--primary" href="/join" style={full}>코드로 참여</a>
+        <Link className="ui-btn ui-btn--primary" href="/join" style={full}>코드로 참여</Link>
       </div>
     );
   }
@@ -70,14 +71,14 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
           {/* 우선순위 버튼(카드 링크 위 — 자기 목적지). 사전 미완 → 진단 · 열린 회차 미제출 → 이번 주 갈무리 · 사후 개시·미완 → 사후 · 그 외 → 차수 열기 */}
           <div style={{ position: 'relative', zIndex: 1 }}>
             {!c.preDone ? (
-              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>{TOOL.pre} 시작하기</a>
+              <Link className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>{TOOL.pre} 시작하기</Link>
             ) : c.openSessionNo !== null && !c.openSessionSubmitted ? (
               // 이 분기는 미제출일 때만 걸리므로 작성 의도가 확정이다 → 편집으로 직행(ADR-86)
-              <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}?edit=1`} style={full}>이번 주 갈무리</a>
+              <Link className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}?edit=1`} style={full}>이번 주 갈무리</Link>
             ) : c.postOpened && !c.postDone ? (
-              <a className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>{TOOL.post} 하기</a>
+              <Link className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>{TOOL.post} 하기</Link>
             ) : (
-              <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>차수 열기</a>
+              <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>차수 열기</Link>
             )}
           </div>
         </div>

@@ -1,6 +1,7 @@
 // 차수 홈(ADR-80 · Phase 2). 카드 하나에 진단 둘 + 갈무리 일곱을 담는 본체.
 //   시각 위계 세 단: 이번 주 갈무리(accent·primary) · 진단(중립·ghost) · 지난 회차(접힌 줄).
 //   진단과 갈무리를 같은 위계로 두지 않는다("매주 진단받는다" 오인 방지).
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
@@ -104,7 +105,7 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
     <div style={accentCard}>
       <div className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{c.openSessionNo}회차 갈무리</div>
       {checkinLine ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '2px 0 var(--space-3)' }}>{checkinLine}</div> : null}
-      <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}/checkin/${c.openSessionNo}${checkinEdit ? '?edit=1' : ''}`} style={{ width: '100%', textDecoration: 'none' }}>{checkinBtn}</a>
+      <Link className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}/checkin/${c.openSessionNo}${checkinEdit ? '?edit=1' : ''}`} style={{ width: '100%', textDecoration: 'none' }}>{checkinBtn}</Link>
     </div>
   ) : null;
 
@@ -128,14 +129,14 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
     <div style={neutralCard}>
       <div className="t-body" style={{ color: 'var(--color-text)', marginBottom: 'var(--space-2)' }}>{TOOL.short}</div>
       {!c.preDone ? (
-        <a className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}`} style={{ width: '100%', textDecoration: 'none' }}>{TOOL.pre} 시작하기</a>
+        <Link className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}`} style={{ width: '100%', textDecoration: 'none' }}>{TOOL.pre} 시작하기</Link>
       ) : c.postOpened && !c.postDone ? (
-        <a className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}&wave=post`} style={{ width: '100%', textDecoration: 'none' }}>{TOOL.post} 하기</a>
+        <Link className="ui-btn ui-btn--ghost" href={`/join?cohort=${cohortId}&wave=post`} style={{ width: '100%', textDecoration: 'none' }}>{TOOL.post} 하기</Link>
       ) : (
-        <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/report`} style={{ width: '100%', textDecoration: 'none' }}>내 리포트 보기</a>
+        <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/report`} style={{ width: '100%', textDecoration: 'none' }}>내 리포트 보기</Link>
       )}
       {/* 나의 기록(ADR-118) — 회차 창과 무관하게 7주 내내 열어 둔다. 자기 점검이 목적이다. */}
-      <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/journey`} style={{ width: '100%', textDecoration: 'none', marginTop: 'var(--space-2)' }}>나의 기록 보기</a>
+      <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/journey`} style={{ width: '100%', textDecoration: 'none', marginTop: 'var(--space-2)' }}>나의 기록 보기</Link>
     </div>
   );
 

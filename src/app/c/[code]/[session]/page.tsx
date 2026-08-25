@@ -2,6 +2,7 @@
 //   흐름: 코드→차수 해석 → 미인증 /login?returnTo → 비멤버 안내(정지) → 멤버 /my/cohorts/{id}/checkin/{session}.
 //   ADR-89: 비멤버를 /join 으로 보내던 것을 안내로 바꿨다(목적지-의도 불일치 + 링크 유출 시 무단 자기등록 차단).
 //   returnTo 는 화이트리스트(safeReturnTo)만 — 여기서 만드는 경로는 그 화이트리스트에 부합한다.
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
 
@@ -21,7 +22,7 @@ export default async function CheckinShortcutPage({ params }: { params: Promise<
     return (
       <div style={{ maxWidth: 420, margin: '0 auto', padding: 'var(--space-8) var(--space-4)', textAlign: 'center' }}>
         <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>코드를 찾을 수 없어요.</p>
-        <a className="ui-btn ui-btn--ghost" href="/home" style={{ textDecoration: 'none', marginTop: 'var(--space-4)', display: 'inline-block' }}>홈으로</a>
+        <Link className="ui-btn ui-btn--ghost" href="/home" style={{ textDecoration: 'none', marginTop: 'var(--space-4)', display: 'inline-block' }}>홈으로</Link>
       </div>
     );
   }
@@ -40,7 +41,7 @@ export default async function CheckinShortcutPage({ params }: { params: Promise<
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0' }}>
           인도자에게 문의해 주세요.
         </p>
-        <a className="ui-btn ui-btn--ghost" href="/home" style={{ textDecoration: 'none', marginTop: 'var(--space-4)', display: 'inline-block' }}>홈으로</a>
+        <Link className="ui-btn ui-btn--ghost" href="/home" style={{ textDecoration: 'none', marginTop: 'var(--space-4)', display: 'inline-block' }}>홈으로</Link>
       </div>
     );
   }

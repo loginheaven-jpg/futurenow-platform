@@ -1,6 +1,6 @@
 'use client';
 // §8.3 차수 상세 클라이언트 래퍼 — 라우팅·관리 액션 배선 + 결과 토스트(2.4 패턴). 데이터는 서버 컴포넌트가 주입.
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/core/ui';
 import { CohortDetail } from '@/app/_screens/console/CohortDetail';
@@ -81,11 +81,18 @@ export function CohortDetailClient({
   const effectiveName = optimisticName ?? summary.name;
 
   // 관리 액션 공통 처리: 성공 → 토스트 + refresh, 실패 → 정제 토스트(원본 비노출). (이름 제외 5개 — 아직 전체 재렌더)
+  //
+  // pending 이 필요한 이유(성능 감사 2026-08-25): 액션이 끝나고 router.refresh() 가 도는 동안
+  //   버튼이 살아 있어 같은 액션이 두 번 발화할 수 있었다. useTransition 은 refresh() 의 재렌더까지
+  //   pending 에 포함하므로, '눌렀는데 아무 일도 없다'는 구간 전체를 덮는다.
+  //   문구를 새로 만들지 않는다(§2-1) — 비활성화로만 알린다.
+  const [pending, startTransition] = useTransition();
   async function run(action: () => Promise<{ ok: boolean; error?: string }>, successMsg: string) {
+    if (pending) return; // 연타 차단 — 첫 클릭이 끝나기 전에는 두 번째를 받지 않는다
     const res = await action();
     if (res.ok) {
       toast.success(successMsg);
-      router.refresh();
+      startTransition(() => router.refresh());
     } else {
       toast.error(refineActionError(res.error));
     }
@@ -155,6 +162,7 @@ export function CohortDetailClient({
         onRemoveMember={onRemoveMember}
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
+        actionPending={pending}
         onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}
         onSetCap={(n) => run(() => setCohortCapAction(summary.id, n), '정원을 바꿨어요.')}
         onRename={renameOptimistic}

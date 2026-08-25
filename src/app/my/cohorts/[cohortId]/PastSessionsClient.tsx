@@ -2,6 +2,7 @@
 // 차수 홈 최하단 '지난 회차' 접힌 줄(ADR-86). 지금까지 링크가 아예 없어 지난 갈무리를 볼 길이 없었다.
 //   시각 위계 3단(ADR-81)의 최하위를 유지한다 — 캡션 타이포·muted 색 그대로, 카드·버튼·테두리 없음.
 //   서버 왕복 0: 회차 번호만 받아 링크를 만든다(회차별 getMyCheckin 을 부르지 않는다).
+import Link from 'next/link';
 import { useState } from 'react';
 
 export function PastSessionsClient({ cohortId, sessionNos, label }: { cohortId: string; sessionNos: number[]; label: string }) {
@@ -22,7 +23,7 @@ export function PastSessionsClient({ cohortId, sessionNos, label }: { cohortId: 
 
       <div style={{ display: open ? 'block' : 'none' }}>
         {sessionNos.map((n) => (
-          <a
+          <Link
             key={n}
             href={`/my/cohorts/${cohortId}/checkin/${n}`}
             className="t-caption"
@@ -30,7 +31,7 @@ export function PastSessionsClient({ cohortId, sessionNos, label }: { cohortId: 
           >
             <span>{n}회차</span>
             <span aria-hidden>›</span>
-          </a>
+          </Link>
         ))}
       </div>
     </div>

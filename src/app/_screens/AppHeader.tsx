@@ -4,6 +4,7 @@
 //   variant='flow' : 제목 + (선택)부제만. 로고·뒤로·홈·액션 없음 — 진입 선형 플로우(진단)용, 일부러 출구 없음.
 // backHref 는 문자열(서버 컴포넌트 호환). onBack 콜백은 위저드 단계 뒤로 등 콜백이 필요한 sub 에서만.
 // (X2a~진입-1b: 레거시 분기 제거·variant 필수 승격 완료 — 미지정 호출처 0.)
+import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 
 const barStyle: CSSProperties = {
@@ -68,15 +69,15 @@ export function AppHeader({
         // root: 로고(홈 링크)가 제목 겸함
         <div>
           {/* 로고 = 서비스 정체성(제목이 접근성 이름). 홈 복귀는 우측 라벨드 홈 컨트롤이 담당(A′-5 역할 명료화). 로고도 홈으로 링크(브랜드 관례). */}
-          <a href={homeHref} style={{ textDecoration: 'none' }}>
+          <Link className="ui-tappable" href={homeHref} style={{ textDecoration: 'none' }}>
             <span className="t-h1" style={{ color: ON_ACCENT }}>{title}</span>
-          </a>
+          </Link>
           {subtitle ? <div className="t-caption" style={{ color: 'var(--navy-300)' }}>{subtitle}</div> : null}
         </div>
       ) : variant === 'sub' ? (
         <>
           {backHref ? (
-            <a href={backHref} aria-label="뒤로" style={{ ...iconLink, marginLeft: 'calc(-1 * var(--space-2))' }}>‹</a>
+            <Link className="ui-tappable" href={backHref} aria-label="뒤로" style={{ ...iconLink, marginLeft: 'calc(-1 * var(--space-2))' }}>‹</Link>
           ) : onBack ? (
             <button
               type="button"
@@ -97,9 +98,9 @@ export function AppHeader({
       {variant !== 'flow' ? (
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {variant === 'sub' ? (
-            <a href={homeHref} aria-label="홈" style={iconLink}>
+            <Link className="ui-tappable" href={homeHref} aria-label="홈" style={iconLink}>
               <HomeIcon />
-            </a>
+            </Link>
           ) : null}
           {action}
         </div>

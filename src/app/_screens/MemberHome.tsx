@@ -1,6 +1,7 @@
 // 통합 홈 본문(프레젠테이션 — 부수효과 없음). 진입-3: (코치·운영자)운영 진입 카드 + 진행 중 진단(골드 틴트) + 내 활동 + 코드 참여.
 // 데이터 = listMyCohorts(my_cohorts RPC). pre_done=false = 진행 중 진단(가입했으나 사전 미완). 참여자 팔레트·의미색 0(§0.4).
 // role: 코치·운영자에게만 '운영' 카드(→/coach·/admin) 노출(A′-1 역할 감금 해제 — 홈은 전원 개방·카드는 자격자만).
+import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import type { MyCohortSummary, Role } from '@/contracts';
 import { TOOL } from '@/app/_vocab/tool';
@@ -29,7 +30,7 @@ function ActivityRow({ href, title, subtitle, disabled }: { href?: string; title
       {!disabled ? <span aria-hidden style={{ color: 'var(--color-text-muted)', fontSize: 20 }}>›</span> : null}
     </>
   );
-  return disabled || !href ? <div style={style}>{body}</div> : <a href={href} style={style}>{body}</a>;
+  return disabled || !href ? <div style={style}>{body}</div> : <Link className="ui-tappable" href={href} style={style}>{body}</Link>;
 }
 
 export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachApps = 0 }: { greetingName: string; cohorts: MyCohortSummary[]; role?: Role; pendingCoachApps?: number }) {
@@ -41,6 +42,9 @@ export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachA
   const total = cohorts.length;
   const done = cohorts.filter((c) => c.preDone);
   const reportHref = done.length === 1 ? `/my/cohorts/${done[0].cohortId}/report` : '/my/cohorts';
+  // 차수가 하나면 목록을 거치지 않는다 — `/my/cohorts` 가 그 경우 즉시 리다이렉트하므로(page.tsx:20)
+  //   목록을 경유하면 **서버 렌더가 한 번 더** 돈다. 위 reportHref 와 같은 판정이다(성능 감사 2026-08-25).
+  const cohortsHref = total === 1 ? `/my/cohorts/${cohorts[0].cohortId}` : '/my/cohorts';
 
   return (
     <div>
@@ -66,9 +70,9 @@ export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachA
           <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-4)' }}>
             {inProgress.name} · {TOOL.pre}를 아직 마치지 않았어요.
           </p>
-          <a className="ui-btn" href={`/join?cohort=${inProgress.cohortId}`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
+          <Link className="ui-btn" href={`/join?cohort=${inProgress.cohortId}`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
             이어서 {TOOL.short}하기
-          </a>
+          </Link>
         </section>
       ) : postPending ? (
         <section style={{ background: 'var(--color-accent-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
@@ -76,15 +80,15 @@ export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachA
           <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-4)' }}>
             {postPending.name} · 세미나를 마친 지금의 나를 담아 주세요.
           </p>
-          <a className="ui-btn" href={`/join?cohort=${postPending.cohortId}&wave=post`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
+          <Link className="ui-btn" href={`/join?cohort=${postPending.cohortId}&wave=post`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
             {TOOL.post} 하기
-          </a>
+          </Link>
         </section>
       ) : null}
 
       {/* 내 활동 — 리스트 행(왼쪽 네이비 강조선·우측 chevron) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
-        <ActivityRow href="/my/cohorts" title="내 세미나" subtitle={`참여 중 ${total} · 완료 ${done.length}`} />
+        <ActivityRow href={cohortsHref} title="내 세미나" subtitle={`참여 중 ${total} · 완료 ${done.length}`} />
         {done.length > 0 ? (
           <ActivityRow href={reportHref} title="내 리포트" subtitle="내 마음의 거울 다시 보기" />
         ) : (
@@ -93,7 +97,7 @@ export function MemberHome({ greetingName, cohorts, role = 'user', pendingCoachA
       </div>
 
       {/* 새 세미나 참여(코드) — 주 버튼 아님(진행 중·내 활동이 우선) */}
-      <a className="ui-btn ui-btn--ghost" href="/join" style={cta}>코드로 세미나 참여</a>
+      <Link className="ui-btn ui-btn--ghost" href="/join" style={cta}>코드로 세미나 참여</Link>
     </div>
   );
 }

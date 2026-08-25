@@ -84,7 +84,7 @@ export function SignupClient() {
       <AuthGate allowCoachApply title="회원가입" busy={busy} onSignup={onSignup} onLogin={onLogin} />
       {/* 막다른 상태 해소(A′-3) — 로그인 페이지·현관 출구 */}
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-4)', textAlign: 'center' }}>
-        이미 계정이 있으신가요? <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인</a>
+        이미 계정이 있으신가요? <Link href="/login" style={{ color: 'var(--color-primary)' }}>로그인</Link>
         {' · '}
         <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
       </p>

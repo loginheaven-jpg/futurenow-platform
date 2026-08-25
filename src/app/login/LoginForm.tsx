@@ -96,14 +96,14 @@ export function LoginForm({
 
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
         {/* 이메일 리셋 발송이 안정화될 때까지 운영자 카톡 리셋을 안내. '비밀번호'에는 테스트용으로 기존 이메일 리셋 링크(/reset) 유지. */}
-        <a href="/reset" style={{ color: 'var(--color-primary)' }}>비밀번호</a>를 잊으신 분은 운영자에게 카톡으로 리셋을 요청해 주십시오.
+        <Link href="/reset" style={{ color: 'var(--color-primary)' }}>비밀번호</Link>를 잊으신 분은 운영자에게 카톡으로 리셋을 요청해 주십시오.
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
         처음 참여하시나요? 인도자에게 받은 코드로{' '}
-        <a href="/join" style={{ color: 'var(--color-primary)' }}>입장하기</a>
+        <Link href="/join" style={{ color: 'var(--color-primary)' }}>입장하기</Link>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
-        인도자로 활동하실 분은 <a href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</a>
+        인도자로 활동하실 분은 <Link href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</Link>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-4)', textAlign: 'center' }}>
         <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>

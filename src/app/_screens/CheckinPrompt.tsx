@@ -7,6 +7,7 @@
 //   · 판정·경고색을 쓰지 않는다(참여자 화면). accent 는 진행 흔적이지 경고가 아니다.
 //
 // 노출 기록은 상한 2(RPC)이며, 이 컴포넌트는 shouldPrompt 일 때 마운트 1회만 기록한다.
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { markCheckinPromptedAction } from './checkinPrompt.actions';
 
@@ -49,13 +50,13 @@ export function CheckinPrompt({
           : `${sessionNo}회차 갈무리가 열렸습니다. 3분이면 됩니다.`}
       </div>
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
-        <a
+        <Link
           className="ui-btn ui-btn--primary"
           href={`/my/cohorts/${cohortId}/checkin/${sessionNo}?edit=1`}
           style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}
         >
           지금 적기
-        </a>
+        </Link>
         <button
           type="button"
           onClick={() => setDismissed(true)}

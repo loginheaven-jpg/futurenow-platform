@@ -54,7 +54,7 @@ export function ResetConfirmForm({
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
             링크가 만료됐거나 유효하지 않아요. 재설정을 다시 요청해 주세요.
           </p>
-          <a className="ui-btn ui-btn--primary" href="/reset" style={{ width: '100%', textDecoration: 'none' }}>재설정 다시 요청</a>
+          <Link className="ui-btn ui-btn--primary" href="/reset" style={{ width: '100%', textDecoration: 'none' }}>재설정 다시 요청</Link>
         </div>
       ) : null}
 
@@ -92,7 +92,7 @@ export function ResetConfirmForm({
 
       {/* 출구 — 어느 단계에서도 로그인·현관으로 나갈 수 있게(A′-3) */}
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
-        <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인</a>
+        <Link href="/login" style={{ color: 'var(--color-primary)' }}>로그인</Link>
         {' · '}
         <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
       </p>

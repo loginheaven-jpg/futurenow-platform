@@ -68,7 +68,7 @@ export function ResetRequestForm({
       )}
 
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
-        <a href="/login" style={{ color: 'var(--color-primary)' }}>로그인으로 돌아가기</a>
+        <Link href="/login" style={{ color: 'var(--color-primary)' }}>로그인으로 돌아가기</Link>
         {' · '}
         <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
       </p>

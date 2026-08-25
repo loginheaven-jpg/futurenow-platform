@@ -9,6 +9,7 @@
 //
 // 서버 컴포넌트다. 상태가 상수(intake.ts)에서 오고 사용자별로 달라지는 것이 없어 동적일 이유가 없다.
 //   'use client' 는 클립보드를 쓰는 계좌 복사 버튼 하나에만 붙였다.
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AccountCopy } from './AccountCopy';
 import { CURRENT_INTAKE, STATUS_COPY, joinHref, seatsRemaining } from './intake';
@@ -38,9 +39,9 @@ export default async function RecruitPage() {
   const remaining = seatsRemaining(await seatsTaken(intake.code), status.enabled, intake);
 
   const cta = status.enabled ? (
-    <a className="rc-cta" href={href}>
+    <Link className="rc-cta" href={href}>
       {status.cta}
-    </a>
+    </Link>
   ) : (
     <span className="rc-cta" aria-disabled="true" role="link">
       {status.cta}

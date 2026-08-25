@@ -1,6 +1,7 @@
 'use client';
 // §8.3 차수 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
 // 덜 쓰는 관리(마감·정원)는 헤더 메뉴. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
+import Link from 'next/link';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, Stepper } from '@/core/ui';
 import { AppHeader } from '../AppHeader';
@@ -58,6 +59,7 @@ export function CohortDetail({
   backHref,
   onOpenMember,
   onArchive,
+  actionPending = false,
   onSetCap,
   onRename,
   onSetDescription,
@@ -80,6 +82,9 @@ export function CohortDetail({
   backHref?: string; // 셸 sub 뒤로 경로(→/coach). X2a 모드 셸 전환
   onOpenMember?: (id: string) => void;
   onArchive?: () => void | Promise<void>;
+  /** 부모 액션이 도는 중(성능 감사 2026-08-25). 자체 busy 는 onXxx 가 resolve 되면 풀리는데,
+   *  호출부는 그 뒤에 router.refresh() 를 돌린다 — 그 구간에도 버튼이 살아 있으면 다시 눌린다. */
+  actionPending?: boolean;
   onSetCap?: (n: number) => void | Promise<void>;
   onRename?: (name: string) => void | Promise<void>; // 이름 수정 → updateCohort({name})
   onSetDescription?: (description: string | null) => void | Promise<void>; // 소개 수정 → updateCohort({description}). 빈 값=null
@@ -105,6 +110,7 @@ export function CohortDetail({
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const busyAny = busy || actionPending; // 자체 액션 + 부모 refresh 구간
   const [shared, setShared] = useState<'link' | null>(null); // 재공유 피드백(토스트 미의존)
   const archived = status === 'archived';
 
@@ -243,13 +249,13 @@ export function CohortDetail({
               aria-label="차수 소개"
               style={{ ...nameInputStyle, minHeight: 72, padding: 'var(--space-3)', resize: 'vertical', marginTop: 'var(--space-1)', display: 'block', width: '100%' }}
             />
-            <Button variant="ghost" onClick={saveDescription} disabled={busy || !descChanged} style={{ marginTop: 'var(--space-2)' }}>소개 저장</Button>
+            <Button variant="ghost" onClick={saveDescription} disabled={busyAny || !descChanged} style={{ marginTop: 'var(--space-2)' }}>소개 저장</Button>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="t-body" style={{ color: 'var(--color-text)' }}>정원</span>
             <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
               <Stepper value={cap} min={1} max={100} onChange={setCap} label="정원" />
-              <Button variant="ghost" onClick={saveCap} disabled={busy || cap === maxMembers}>저장</Button>
+              <Button variant="ghost" onClick={saveCap} disabled={busyAny || cap === maxMembers}>저장</Button>
             </div>
           </div>
           {/* 마무리 체크 개시 — 세미나 종료 후 코치가 수동 개시(단방향·멱등). 참여자 홈에 '마무리 체크 하기' 노출(B-2). ADR-55 */}
@@ -263,20 +269,20 @@ export function CohortDetail({
             {postOpened ? (
               <span className="t-caption" style={{ color: 'var(--color-accent)', whiteSpace: 'nowrap', fontWeight: 600 }}>개시됨</span>
             ) : (
-              <Button variant="ghost" onClick={doOpenPost} disabled={busy}>{TOOL.post} 개시</Button>
+              <Button variant="ghost" onClick={doOpenPost} disabled={busyAny}>{TOOL.post} 개시</Button>
             )}
           </div>
           {archived ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 차수예요.</p>
-              <Button variant="ghost" onClick={doReopen} disabled={busy} style={{ width: '100%' }}>다시 열기</Button>
+              <Button variant="ghost" onClick={doReopen} disabled={busyAny} style={{ width: '100%' }}>다시 열기</Button>
             </div>
           ) : !confirmArchive ? (
-            <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busy} style={{ width: '100%' }}>차수 마감</Button>
+            <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busyAny} style={{ width: '100%' }}>차수 마감</Button>
           ) : (
             <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
               <Button variant="ghost" onClick={() => setConfirmArchive(false)} style={{ flex: 1 }}>취소</Button>
-              <Button onClick={doArchive} disabled={busy} style={{ flex: 1 }}>마감 확정</Button>
+              <Button onClick={doArchive} disabled={busyAny} style={{ flex: 1 }}>마감 확정</Button>
             </div>
           )}
 
@@ -286,7 +292,7 @@ export function CohortDetail({
               참여자·응답이 있어 삭제할 수 없어요. 마감을 이용해 주세요.
             </p>
           ) : !confirmDelete ? (
-            <Button variant="ghost" onClick={() => setConfirmDelete(true)} disabled={busy} style={{ width: '100%', color: 'var(--care-text)', borderColor: 'var(--care-text)' }}>
+            <Button variant="ghost" onClick={() => setConfirmDelete(true)} disabled={busyAny} style={{ width: '100%', color: 'var(--care-text)', borderColor: 'var(--care-text)' }}>
               차수 삭제
             </Button>
           ) : (
@@ -297,8 +303,8 @@ export function CohortDetail({
                   : `참여 ${memberCount} · 응답 ${responseCount} 이 있는 차수예요. 삭제하면 되돌릴 수 없어요.`}
               </p>
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={busy} style={{ flex: 1 }}>취소</Button>
-                <Button onClick={doDelete} disabled={busy} style={{ flex: 1, background: 'var(--care-text)' }}>삭제 확정</Button>
+                <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={busyAny} style={{ flex: 1 }}>취소</Button>
+                <Button onClick={doDelete} disabled={busyAny} style={{ flex: 1, background: 'var(--care-text)' }}>삭제 확정</Button>
               </div>
             </div>
           )}
@@ -319,13 +325,13 @@ export function CohortDetail({
       ) : null}
 
       {/* 회차 갈무리 현황(ADR-80 · Phase 7) — 회차 일정 등록·명단·한 걸음. */}
-      <a
+      <Link
         className="ui-btn ui-btn--ghost"
         href={`/coach/cohort/${cohort.id}/checkin`}
         style={{ width: '100%', textDecoration: 'none', textAlign: 'center', marginBottom: 'var(--space-6)' }}
       >
         회차 갈무리 현황
-      </a>
+      </Link>
 
       {care.length > 0 && (
         <Group title="먼저 챙길 분" color="var(--care-text)">

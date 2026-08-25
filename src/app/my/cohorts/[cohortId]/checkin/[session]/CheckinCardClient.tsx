@@ -4,6 +4,7 @@
 //   자동저장(디바운스 2s/blur)·단일버튼(save→submit)·완료상태. 판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출·워크북' 미사용.
 //   되비추기(priors): 지난 회차 답을 읽기전용 회색으로 되비춘다(§6). 깊이별 봉투(ADR-103). 공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d).
 //   ADR-86: 모드 둘(read/edit)·URL 하나. read 는 적은 것 전부를 읽는 화면 — 서버 쓰기 0(계측 컬럼을 건드리지 않는다).
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CheckinPhoto } from '@/contracts';
@@ -229,13 +230,21 @@ export function CheckinCardClient({
     if (preview) { setJustSubmitted(true); setMode('read'); return; } // 흐름만 보여 주고 서버는 건드리지 않는다
     setBusy(true);
     if (timer.current) clearTimeout(timer.current);
-    const res = await submitCheckinAction(cohortId, sessionNo, answers, flags); // R2: save→submit 한 액션 내 순차
-    setBusy(false);
-    if (res.ok) {
-      setJustSubmitted(true);
-      setMode('read');
-      router.refresh(); // 방금 올린 편지 사진이 read 화면에 바로 보이도록(서버 signed URL 재생성)
-    } else setSaveFailed(true);
+    // **finally 가 없으면 제출 버튼이 영구히 잠긴다.** 액션이 throw 하면(배포 스큐로 서버 액션을 못 찾거나
+    //   네트워크가 끊기면) setBusy(false) 에 도달하지 못하고, 참여자는 새로고침 전까지 제출을 못 한다.
+    //   가드가 있는 것과 가드가 풀리는 것은 다른 문제다(성능 감사 2026-08-25).
+    try {
+      const res = await submitCheckinAction(cohortId, sessionNo, answers, flags); // R2: save→submit 한 액션 내 순차
+      if (res.ok) {
+        setJustSubmitted(true);
+        setMode('read');
+        router.refresh(); // 방금 올린 편지 사진이 read 화면에 바로 보이도록(서버 signed URL 재생성)
+      } else setSaveFailed(true);
+    } catch {
+      setSaveFailed(true); // 조용히 삼키지 않는다 — 화면이 '저장하지 못했습니다 · 다시 시도'를 띄운다
+    } finally {
+      setBusy(false);
+    }
   }
 
   function onSubmit() {
@@ -310,16 +319,16 @@ export function CheckinCardClient({
         ) : null}
 
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <a className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}`} style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>{copy.done.toHome}</a>
+          <Link className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}`} style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>{copy.done.toHome}</Link>
           {/* 상태 토글이 아니라 실제 이동이다 — 서버가 되비추기(prior)를 다시 계산해야 편집 폼이 지난 회차를
               '남아 있지 않다'고 잘못 말하지 않는다(ADR-85 §6 보존). read 는 서버 쓰기 0이라 잃을 미저장 상태가 없다. */}
-          <a
+          <Link
             className="ui-btn ui-btn--ghost"
             href={`/my/cohorts/${cohortId}/checkin/${sessionNo}?edit=1`}
             style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}
           >
             {copy.done.edit}
-          </a>
+          </Link>
         </div>
 
         {/* '읽기 화면이 생겼으니 이제 못 고친다'는 오해 차단 — 마감 정책은 바뀌지 않았다(원문 인용). */}
@@ -597,7 +606,7 @@ export function CheckinCardClient({
             ) : (
               <Button onClick={() => { setGate(null); void doSubmit(); }} disabled={busy} style={{ flex: 1 }}>이대로 제출</Button>
             )}
-            <a className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}`} style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>나중에 이어 쓰기</a>
+            <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}`} style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>나중에 이어 쓰기</Link>
           </div>
           {gate.confidenceEmpty && gate.labels.length > 0 ? (
             <p className="t-caption" style={{ ...gray, margin: 'var(--space-3) 0 0' }}>

@@ -3,6 +3,7 @@
 //   데이터는 listCohortCheckins 가 이미 answers 를 통째로 가져왔고 서버에서 ReadBlock[] 으로 바꿔 내려온다.
 //   copy 객체를 prop 으로 받지 않는다(filledCount·counter 가 함수 → 직렬화 파손. ADR-85 digest 3203392472).
 //   펼친 내용은 열었을 때만 렌더한다 — 12명 전문이 접힌 채 DOM 에 상주하면 어깨너머 노출·Ctrl+F 면적이 커진다.
+import Link from 'next/link';
 import { useState } from 'react';
 import type { CheckinPhoto } from '@/contracts';
 import type { ReadBlock } from '@/instruments/futurenow/checkin/readModel';
@@ -26,7 +27,7 @@ function SessionTabs({ cohortId, sessionNos, current, userId, label }: { cohortI
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center', paddingTop: 'var(--space-3)' }}>
       <span className="t-caption" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
       {sessionNos.map((n) => (
-        <a
+        <Link prefetch={false}
           key={n}
           href={`/coach/cohort/${cohortId}/checkin?session=${n}&open=${userId}`}
           className="t-caption"
@@ -37,7 +38,7 @@ function SessionTabs({ cohortId, sessionNos, current, userId, label }: { cohortI
           }}
         >
           {n}회차
-        </a>
+        </Link>
       ))}
     </div>
   );
@@ -53,13 +54,13 @@ function Row({ entry, initialOpen, tabs, cohortId }: { entry: RosterEntry; initi
 
   // 세로 보기(ADR-118) — 이 사람의 전 회차를 한 화면에. **버튼 안에 넣지 않는다**(a 안의 button 은 중첩 상호작용이다).
   const journey = (
-    <a
+    <Link prefetch={false}
       className="t-caption"
       href={`/coach/cohort/${cohortId}/member/${entry.userId}`}
       style={{ flex: '0 0 auto', padding: '0 var(--space-2)', color: 'var(--color-primary)', textDecoration: 'none', minHeight: 'var(--tap-min)', display: 'flex', alignItems: 'center' }}
     >
       기록
-    </a>
+    </Link>
   );
 
   const head = (

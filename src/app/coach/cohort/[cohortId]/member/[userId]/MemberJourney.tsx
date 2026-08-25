@@ -3,6 +3,7 @@
 //
 // 표시 규율(ADR-86·80 유지): 막대·게이지·색·백분위·평균·정렬키를 쓰지 않는다. 자신감은 **숫자만** 적는다.
 //   의미색(care)은 연락 요청에만. 주 신호는 굵기·테두리로 가른다.
+import Link from 'next/link';
 import type { CheckinPhoto, CheckinRecord, CohortSession } from '@/contracts';
 import { JourneyCollapsible } from '@/app/_screens/JourneyCollapsible';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
@@ -89,13 +90,13 @@ export function MemberJourney({
         {/* 두 문서가 서로를 알되 섞이지 않는다 — 리포트가 없으면 버튼을 그리지 않는다. */}
         {reportId ? (
           <div style={{ marginTop: 'var(--space-3)' }}>
-            <a
+            <Link
               className="t-caption"
               href={`/coach/cohort/${cohortId}/report/${reportId}`}
               style={{ display: 'inline-block', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
             >
               사전 체크 리포트 보기
-            </a>
+            </Link>
           </div>
         ) : null}
         <div className="t-caption" style={{ ...sub, marginTop: 'var(--space-3)' }}>

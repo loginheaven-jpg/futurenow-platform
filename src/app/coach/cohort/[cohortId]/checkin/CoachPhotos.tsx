@@ -11,9 +11,13 @@ export function CoachPhotos({ photos, canDelete }: { photos: { path: string; url
 
   async function onDelete(path: string) {
     setBusy(path);
-    const res = await deletePhotoAction(path);
-    setBusy(null);
-    if (res.ok) router.refresh();
+    // finally 가 없으면 액션이 throw 할 때 버튼이 영구히 잠긴다(성능 감사 2026-08-25).
+    try {
+      const res = await deletePhotoAction(path);
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (

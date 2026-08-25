@@ -2,6 +2,7 @@
 // 회차 일정(ADR-80·82·83). 미등록이면 시작일 하나로 7행 seed, 등록돼 있으면 날짜 편집 + 회차별 링크 복사.
 //   개최=열림을 한 칸('날짜')으로 합침(중복 제거) — 저장 시 opens_at = held_at 로 자동. 마감은 별도.
 //   각 행 우측에 링크 복사 아이콘 = /c/{code}/{session}(QR 짧은 경로) → 카톡 배포.
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/core/ui';
@@ -80,8 +81,13 @@ export function ScheduleSeedClient({ cohortId, code, sessions }: { cohortId: str
   async function onSeed() {
     if (!date) return;
     setBusy(true); setErr(null); setMsg(null);
-    const res = await seedSessionsAction(cohortId, new Date(`${date}T10:00`).toISOString());
-    setBusy(false);
+    // finally 가 없으면 액션이 throw 할 때 버튼이 영구히 잠긴다(성능 감사 2026-08-25).
+    let res;
+    try {
+      res = await seedSessionsAction(cohortId, new Date(`${date}T10:00`).toISOString());
+    } finally {
+      setBusy(false);
+    }
     if (!res.ok) { setErr('일정 생성에 실패했어요.'); return; }
     if ((res.inserted ?? 0) === 0) setMsg('이미 등록된 일정이 있어 아무것도 바뀌지 않았습니다. 아래에서 회차별로 수정해 주세요.');
     router.refresh();
@@ -102,8 +108,12 @@ export function ScheduleSeedClient({ cohortId, code, sessions }: { cohortId: str
       opensAt: fromDateInput(r.date, 'opens'),
       closesAt: fromDateInput(r.closes, 'closes'),
     }));
-    const res = await saveScheduleAction(cohortId, payload);
-    setBusy(false);
+    let res;
+    try {
+      res = await saveScheduleAction(cohortId, payload);
+    } finally {
+      setBusy(false);
+    }
     if (res.ok) { setMsg('저장했어요.'); router.refresh(); }
     else setErr('일정 저장에 실패했어요.');
   }
@@ -156,14 +166,14 @@ export function ScheduleSeedClient({ cohortId, code, sessions }: { cohortId: str
               {copied === r.sessionNo ? <span className="t-caption" style={{ color: 'var(--color-primary)' }}>✓</span> : <LinkIcon />}
             </button>
             {/* 미리보기(ADR-92) — 아직 열리지 않은 회차도 여기서 본다. 카드 라우트는 opens_at 게이트가 막는다. */}
-            <a
+            <Link
               href={`/coach/cohort/${cohortId}/checkin/preview?session=${r.sessionNo}`}
               aria-label={`${r.sessionNo}회차 갈무리 카드 미리보기`}
               title="갈무리 카드 미리보기"
               style={{ ...linkBtn, textDecoration: 'none' }}
             >
               <EyeIcon />
-            </a>
+            </Link>
           </div>
         ))}
       </div>

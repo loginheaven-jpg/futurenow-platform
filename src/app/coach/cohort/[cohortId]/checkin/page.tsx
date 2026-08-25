@@ -1,6 +1,7 @@
 // 인도자 회차 현황(ADR-80 · Phase 7) — 코치/운영자 전용. 다음 회차 오프닝 자료 + 이탈 조기 경보.
 //   명단(상태·지각·연락요청) + 한 걸음(1회차 전원 비공개=인도자 전용) + 공유 동의 문장(이름 없이).
 //   지각은 submitted_at > closes_at 파생(컬럼 없음). care 의미색은 연락요청·돌봄 표시에만.
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
@@ -130,13 +131,13 @@ export default async function CoachCheckinPage({
 
       {/* 격자(ADR-118) — 명단 × 회차를 한 화면에. 이탈 조기 발견·소그룹 편성·연락 대상 고르기. */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
-        <a
+        <Link
           className="t-caption"
           href={`/coach/cohort/${cohortId}/matrix`}
           style={{ padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
         >
           격자로 보기
-        </a>
+        </Link>
       </div>
 
       <ScheduleSeedClient cohortId={cohortId} code={cohort?.code ?? ''} sessions={sessions} />
@@ -146,7 +147,7 @@ export default async function CoachCheckinPage({
           {/* 회차 탭 */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
             {sessions.map((s) => (
-              <a
+              <Link
                 key={s.sessionNo}
                 href={`/coach/cohort/${cohortId}/checkin?session=${s.sessionNo}${openUserId ? `&open=${openUserId}` : ''}`}
                 className="t-caption"
@@ -157,7 +158,7 @@ export default async function CoachCheckinPage({
                 }}
               >
                 {s.sessionNo}회차
-              </a>
+              </Link>
             ))}
           </div>
 

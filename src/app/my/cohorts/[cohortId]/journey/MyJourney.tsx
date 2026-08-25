@@ -9,6 +9,7 @@
 //
 // 상태 문구도 다르다. 인도자에게는 사실이고 참여자에게는 판정이 된다.
 //   그리고 **빈 칸은 링크여야 한다** — 자기 점검의 결과가 행동으로 이어지지 않으면 점검이 아니다.
+import Link from 'next/link';
 import type { CheckinPhoto, CheckinRecord, CohortSession } from '@/contracts';
 import { JourneyCollapsible } from '@/app/_screens/JourneyCollapsible';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
@@ -74,9 +75,9 @@ export function MyJourney({
   const StateLine = ({ no, state }: { no: number; state: CellState }) => {
     const text = STATE_TEXT[state] || '아직 비어 있어요';
     return LINKABLE[state] ? (
-      <a className="t-body" href={cardHref(no, state)} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+      <Link className="t-body" href={cardHref(no, state)} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
         {text} →
-      </a>
+      </Link>
     ) : (
       <span className="t-body" style={gray}>{text}</span>
     );
@@ -94,13 +95,13 @@ export function MyJourney({
         </div>
         {reportHref ? (
           <div style={{ marginTop: 'var(--space-3)' }}>
-            <a
+            <Link
               className="t-caption"
               href={reportHref}
               style={{ display: 'inline-block', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
             >
               내 리포트 보기
-            </a>
+            </Link>
           </div>
         ) : null}
       </div>
@@ -176,9 +177,9 @@ export function MyJourney({
             <JourneyCollapsible key={s.sessionNo} label={`${s.sessionNo}회차`}>
               <CheckinReadView blocks={blocks} photos={photos[s.sessionNo] ?? []} />
               <div style={{ marginTop: 'var(--space-3)' }}>
-                <a className="t-caption no-print" href={cardHref(s.sessionNo, state)} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+                <Link className="t-caption no-print" href={cardHref(s.sessionNo, state)} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
                   고쳐 쓰기 →
-                </a>
+                </Link>
               </div>
             </JourneyCollapsible>
           );

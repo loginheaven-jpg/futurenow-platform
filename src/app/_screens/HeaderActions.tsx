@@ -6,6 +6,7 @@
 //   sub 화면은 AppHeader(variant='sub')가 홈 아이콘을 이미 렌더하므로 homeHref 를 넘기지 않는다(중복 회피).
 // nav(navHref+navLabel): 맥락 전환 링크. 운영자 콘솔의 [본부]→/admin, 본부의 [코치 콘솔]→/coach (Step 3.정비).
 //   호출부가 role 로 노출을 결정(예: isAdmin 일 때만 전달) — HeaderActions 는 받은 값만 렌더.
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from './LogoutButton';
 import { HomeIcon } from './AppHeader';
@@ -29,19 +30,19 @@ export function HeaderActions({ homeHref, navHref, navLabel }: { homeHref?: stri
     <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
       {showHome ? (
         // 홈 복귀 = 라벨드 컨트롤(아이콘 + '홈' 텍스트) — 인지성 강화(A′-5). 자기참조(현재=홈)면 위에서 생략.
-        <a href={homeHref} aria-label="홈" className="t-caption" style={{ ...linkStyle, gap: 'var(--space-1)' }}>
+        <Link href={homeHref} aria-label="홈" className="t-caption ui-tappable" style={{ ...linkStyle, gap: 'var(--space-1)' }}>
           <HomeIcon />
           홈
-        </a>
+        </Link>
       ) : null}
       {navHref && navLabel ? (
-        <a href={navHref} className="t-caption" style={linkStyle}>
+        <Link href={navHref} className="t-caption ui-tappable" style={linkStyle}>
           {navLabel}
-        </a>
+        </Link>
       ) : null}
-      <a href="/account" className="t-caption" style={linkStyle}>
+      <Link href="/account" className="t-caption" style={linkStyle}>
         내 정보
-      </a>
+      </Link>
       <LogoutButton />
     </div>
   );

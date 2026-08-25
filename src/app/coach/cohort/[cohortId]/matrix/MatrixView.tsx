@@ -4,6 +4,7 @@
 //
 // **색을 뿌리지 않는다.** 성적표가 된다 — 상태는 기호로, 신호는 행 왼쪽 표식으로.
 // **신호로 정렬하지 않는다.** 순위가 된다. 행은 기존 명단 순서 그대로.
+import Link from 'next/link';
 import type { CheckinRecord, CohortSession, MemberRef } from '@/contracts';
 import { cellState, checkinSignals, type CellState } from '@/instruments/futurenow/checkin/journey';
 
@@ -59,28 +60,28 @@ export function MatrixView({
                         aria-hidden
                         style={{ width: 3, alignSelf: 'stretch', minHeight: 'var(--tap-min)', background: flagged ? 'var(--color-primary)' : 'transparent', marginRight: 'var(--space-2)' }}
                       />
-                      <a
+                      <Link prefetch={false}
                         className="t-body"
                         href={`/coach/cohort/${cohortId}/member/${m.userId}`}
                         style={{ color: 'var(--color-text)', textDecoration: 'none', padding: 'var(--space-2) 0', display: 'inline-block' }}
                       >
                         {m.name ?? '이름 미입력'}
                         {flagged ? <span className="t-caption" style={{ color: 'var(--color-text-muted)', marginLeft: 'var(--space-2)' }}>살펴볼 사람</span> : null}
-                      </a>
+                      </Link>
                     </div>
                   </th>
                   {ordered.map((s) => {
                     const st = cellState(mine.find((r) => r.sessionNo === s.sessionNo) ?? null, s, now);
                     return (
                       <td key={s.sessionNo} style={{ textAlign: 'center', padding: 0 }}>
-                        <a
+                        <Link prefetch={false}
                           href={`/coach/cohort/${cohortId}/checkin?session=${s.sessionNo}&open=${m.userId}`}
                           aria-label={`${m.name ?? '이름 미입력'} ${s.sessionNo}회차 ${LABEL[st]}`}
                           title={LABEL[st]}
                           style={{ display: 'block', minHeight: 'var(--tap-min)', lineHeight: 'var(--tap-min)', color: st === 'notopen' ? 'var(--color-text-muted)' : 'var(--color-text)', textDecoration: 'none' }}
                         >
                           {MARK[st]}
-                        </a>
+                        </Link>
                       </td>
                     );
                   })}
