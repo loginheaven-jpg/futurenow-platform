@@ -74,6 +74,17 @@ export default async function CoachReportPage({
         <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
         {/* 툴바 — 신상정보(팝업)·PDF. 신상정보는 홈→멤버관리 왕복 없이 리포트에서 바로(ADR-78). */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+          {/* 갈무리 왕복(ADR-118) — 나침반 점수를 보다가 '이 사람이 실제로 무엇을 하고 있지'를 물으면
+              화면을 나가야 했다. 두 문서가 서로를 알되 섞이지 않는다. */}
+          {resp.userId ? (
+            <a
+              className="t-caption"
+              href={`/coach/cohort/${resp.cohortId ?? cohortId}/member/${resp.userId}`}
+              style={{ display: 'inline-flex', alignItems: 'center', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
+            >
+              갈무리 기록 보기
+            </a>
+          ) : null}
           {memberDetail ? <MemberProfileButton detail={memberDetail} /> : null}
           <ReportPrintButton />
         </div>

@@ -43,12 +43,24 @@ function SessionTabs({ cohortId, sessionNos, current, userId, label }: { cohortI
   );
 }
 
-function Row({ entry, initialOpen, tabs }: { entry: RosterEntry; initialOpen: boolean; tabs: React.ReactNode }) {
+function Row({ entry, initialOpen, tabs, cohortId }: { entry: RosterEntry; initialOpen: boolean; tabs: React.ReactNode; cohortId: string }) {
   const [open, setOpen] = useState(initialOpen);
   // 펼침 가능 여부는 '갈무리 행이 있는가'로만 판정한다 — 내용 유무로 갈리면 부채널이 된다.
   //   익명 '바라는 점'만 쓴 사람은 개인 상세가 비므로(익명분은 여기 싣지 않는다),
   //   내용 기준으로 화살표를 감추면 명단만 훑어도 그가 익명 제보자임이 드러난다.
   const expandable = entry.hasRow;
+
+
+  // 세로 보기(ADR-118) — 이 사람의 전 회차를 한 화면에. **버튼 안에 넣지 않는다**(a 안의 button 은 중첩 상호작용이다).
+  const journey = (
+    <a
+      className="t-caption"
+      href={`/coach/cohort/${cohortId}/member/${entry.userId}`}
+      style={{ flex: '0 0 auto', padding: '0 var(--space-2)', color: 'var(--color-primary)', textDecoration: 'none', minHeight: 'var(--tap-min)', display: 'flex', alignItems: 'center' }}
+    >
+      기록
+    </a>
+  );
 
   const head = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', width: '100%' }}>
@@ -63,18 +75,21 @@ function Row({ entry, initialOpen, tabs }: { entry: RosterEntry; initialOpen: bo
     </div>
   );
 
-  if (!expandable) return <div style={{ display: 'flex', minHeight: 'var(--tap-min)', alignItems: 'center' }}>{head}</div>;
+  if (!expandable) return <div style={{ display: 'flex', minHeight: 'var(--tap-min)', alignItems: 'center' }}>{head}{journey}</div>;
 
   return (
     <div>
-      <button
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        style={{ width: '100%', minHeight: 'var(--tap-min)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+        style={{ flex: 1, minWidth: 0, minHeight: 'var(--tap-min)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
       >
         {head}
-      </button>
+        </button>
+        {journey}
+      </div>
       {open ? (
         <div style={{ padding: 'var(--space-2) 0 var(--space-4)' }}>
           <CheckinReadView blocks={entry.blocks} photos={entry.photos} />
@@ -109,6 +124,7 @@ export function RosterDetail({
           key={e.userId}
           entry={e}
           initialOpen={e.userId === openUserId}
+          cohortId={cohortId}
           tabs={<SessionTabs cohortId={cohortId} sessionNos={sessionNos} current={currentSession} userId={e.userId} label={tabsLabel} />}
         />
       ))}

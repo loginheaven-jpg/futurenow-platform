@@ -568,8 +568,8 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // 차수 멤버 id+name(코치/운영자). 권한·노출은 cohort_member_directory(DEFINER) 내부에서 강제 — 미달 시 빈 결과.
-  async listCohortMembers(cohortId: string): Promise<MemberRef[]> {
-    const { data, error } = await this.sb.rpc('cohort_member_directory', { p_cohort_id: cohortId });
+  async listCohortMembers(cohortId: string, onlyParticipants = false): Promise<MemberRef[]> {
+    const { data, error } = await this.sb.rpc('cohort_member_directory', { p_cohort_id: cohortId, p_only_participants: onlyParticipants });
     if (error) throw new CoreError(`listCohortMembers 실패: ${error.message}`);
     return ((data ?? []) as { user_id: string; name: string | null }[]).map((r) => ({ userId: r.user_id, name: r.name }));
   }
@@ -999,12 +999,11 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`markCheckinOpened 실패: ${error.message}`);
   }
 
-  async listCohortCheckins(cohortId: string, sessionNo: number): Promise<CheckinRecord[]> {
-    const { data, error } = await this.sb
-      .from('checkins')
-      .select(CHECKIN_COLS)
-      .eq('cohort_id', cohortId)
-      .eq('session_no', sessionNo);
+  async listCohortCheckins(cohortId: string, sessionNo?: number): Promise<CheckinRecord[]> {
+    // 회차를 지정하지 않으면 그 차수 전체(ADR-118). 조건을 **인자가 있을 때만** 붙인다.
+    let q = this.sb.from('checkins').select(CHECKIN_COLS).eq('cohort_id', cohortId);
+    if (sessionNo !== undefined) q = q.eq('session_no', sessionNo);
+    const { data, error } = await q;
     if (error) throw new CoreError(`listCohortCheckins 실패: ${error.message}`);
     return (data ?? []).map((r) => rowToCheckin(r as CheckinRow));
   }

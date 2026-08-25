@@ -361,7 +361,31 @@ describe('본부 데이터: 멤버명부 / 코치 신청 (RPC·임베드 매핑)
     });
     const members = await ctx.listCohortMembers('co1');
     expect(members).toEqual([{ userId: 'u2', name: '이참여' }, { userId: 'u3', name: null }]);
-    expect(rpcCalls).toContainEqual({ name: 'cohort_member_directory', args: { p_cohort_id: 'co1' } });
+    // ADR-118 이 선택 인자를 더했다. **기본값이 기존 동작**임을 여기서 못 박는다 —
+    //   기본이 참여자 전용으로 바뀌면 리포트 PDF 헤더의 이름 조회가 '참여자' 로 폴백된다(호출부 다섯 중 넷).
+    expect(rpcCalls).toContainEqual({ name: 'cohort_member_directory', args: { p_cohort_id: 'co1', p_only_participants: false } });
+  });
+
+  // ADR-118 — 세로 보기·격자가 회차 수만큼 왕복하지 않게 회차 인자를 선택으로 바꿨다.
+  it('listCohortCheckins 는 sessionNo 를 줄 때만 session_no 로 거른다', async () => {
+    const { ctx, calls } = ctxWith({ authUser: { id: 'c1' }, tableResolver: () => ({ data: [], error: null }) });
+    await ctx.listCohortCheckins('co1', 3);
+    expect(calls.find((c) => c.table === 'checkins')?.filters).toEqual({ cohort_id: 'co1', session_no: 3 });
+  });
+
+  it('listCohortCheckins 는 sessionNo 를 생략하면 그 차수 전체를 돌려준다', async () => {
+    const { ctx, calls } = ctxWith({ authUser: { id: 'c1' }, tableResolver: () => ({ data: [], error: null }) });
+    await ctx.listCohortCheckins('co1');
+    expect(calls.find((c) => c.table === 'checkins')?.filters).toEqual({ cohort_id: 'co1' });
+  });
+
+  it('listCohortMembers(onlyParticipants) 가 RPC 인자로 전달된다 — 명단·격자만 참여자 전용', async () => {
+    const { ctx, rpcCalls } = ctxWith({
+      authUser: { id: 'c1' },
+      rpcResolver: () => ({ data: [], error: null }),
+    });
+    await ctx.listCohortMembers('co1', true);
+    expect(rpcCalls).toContainEqual({ name: 'cohort_member_directory', args: { p_cohort_id: 'co1', p_only_participants: true } });
   });
 
   it('listCoachApplications 는 status 필터 + applicant 이름 매핑(읽기형)', async () => {

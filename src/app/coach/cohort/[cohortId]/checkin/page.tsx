@@ -31,7 +31,9 @@ export default async function CoachCheckinPage({
 
   const [sessions, members, cohort] = await Promise.all([
     ctx.listCohortSessions(cohortId),
-    ctx.listCohortMembers(cohortId),
+    // 참여자만(ADR-118) — 이 명단은 코칭 대상이지 참가자 목록이 아니다. 운영자가 섞이면
+    //   그들이 제출하지 않아 '연속 미착수' 신호가 인도자 자신에게 켜진다. 명단이 11 → 9 로 줄어드는 것은 의도다.
+    ctx.listCohortMembers(cohortId, true),
     ctx.getCohort(cohortId).catch(() => null),
   ]);
   const hasSchedule = sessions.length > 0;

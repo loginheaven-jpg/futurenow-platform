@@ -91,7 +91,12 @@ export interface CoreContext {
   listMyCohorts(): Promise<MyCohortSummary[]>; // 멤버 본인 차수+진행(RPC my_cohorts, DEFINER 비민감 메타). 코치 시점 listEnrollments 와 분리. 승인 2026-06-29
   listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체.
   listAllCohorts(): Promise<Cohort[]>; // 전체 차수(운영자 수퍼바이저 뷰 — 모든 인도자 차수 감독). RLS(cohorts_select is_admin)가 운영자만 전체 반환. ADR-74 승인 2026-06-28
-  listCohortMembers(cohortId: string): Promise<MemberRef[]>; // 차수 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28
+  // 차수 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28
+  //   onlyParticipants=true 면 role='user' 만(ADR-118). **기본값은 기존 동작이다** — 이 함수는 두 목적을 겸한다:
+  //   ⓐ 코칭 대상 명단(회차 현황·격자 — 운영자가 섞이면 신호가 인도자 자신에게 켜진다)
+  //   ⓑ userId → name 이름 조회(리포트 PDF 헤더·rosterModel — 운영자가 응답한 리포트도 이름이 나와야 한다).
+  //   ⓐ만 true 로 부른다. 기본값을 바꾸면 ⓑ가 '참여자' 로 폴백된다.
+  listCohortMembers(cohortId: string, onlyParticipants?: boolean): Promise<MemberRef[]>;
   getCohortMemberDetail(cohortId: string, userId: string): Promise<CohortMemberDetail>; // 차수 멤버 신상(코치=자기 조원만·운영자=전체, cohort_member_detail DEFINER). 전화·이메일 포함. ADR-75
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
@@ -153,7 +158,9 @@ export interface CoreContext {
   submitMyCheckin(cohortId: string, sessionNo: number): Promise<void>; // 본인 · 최초 submitted_at 고정, 재제출 edit_count+1(checkin_submit)
   markCheckinPrompted(cohortId: string, sessionNo: number): Promise<void>; // 본인 · 전면 안내 노출 기록(checkin_mark 'prompt', 상한 2)
   markCheckinOpened(cohortId: string, sessionNo: number): Promise<void>; // 본인 · first_opened_at 최초 1회(checkin_mark 'open')
-  listCohortCheckins(cohortId: string, sessionNo: number): Promise<CheckinRecord[]>; // 담당 인도자·운영자(checkins SELECT RLS)
+  // 담당 인도자·운영자(checkins SELECT RLS). sessionNo 를 생략하면 그 차수 **전체**를 한 번에(ADR-118) —
+  //   세로 보기·격자가 회차 수만큼 왕복하는 것을 막는다(7회차면 7회 → 1회). 기존 호출부는 그대로 산다.
+  listCohortCheckins(cohortId: string, sessionNo?: number): Promise<CheckinRecord[]>;
 
   // 편지 사진 첨부(ADR-83) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
   listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/차수 코치/운영자(storage RLS) · signed URL 포함
