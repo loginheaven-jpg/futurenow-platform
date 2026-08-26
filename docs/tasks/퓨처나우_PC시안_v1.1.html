@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퓨처나우 통합 웹사이트 — PC 시안 v1.1</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  --navy-900:#0F1B2D; --navy-700:#1B2A41; --navy-500:#34466A; --navy-300:#5B6B8C;
+  --gold-700:#B8923D; --gold-500:#C9A24B; --gold-300:#D9B96E; --gold-100:#EFE2C2;
+  --gray-0:#FFFFFF; --gray-50:#F7F6F4; --gray-100:#EEECE8; --gray-200:#DEDAD3;
+  --gray-400:#A8A29A; --gray-600:#6B655C; --gray-800:#3A352F; --gray-900:#211E1A;
+  --green-600:#2E7D6B; --amber-600:#C0852E; --red-600:#B23B3B;
+  --color-primary:var(--navy-700); --color-accent:var(--gold-500);
+  --color-accent-soft:var(--gold-100);
+  --color-bg:var(--gray-0); --color-surface-1:var(--gray-50); --color-surface-sunken:var(--gray-100);
+  --color-border:var(--gray-200); --color-border-strong:var(--gray-400);
+  --color-text:var(--gray-900); --color-text-secondary:var(--gray-600); --color-text-muted:var(--gray-400);
+  --color-success:var(--green-600); --color-care:var(--amber-600); --color-danger:var(--red-600);
+  --radius:12px; --radius-lg:16px;
+  --w-max:1200px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  background:var(--gray-100); color:var(--color-text); -webkit-font-smoothing:antialiased;
+  padding:36px 28px 90px;
+}
+.doc-head{max-width:1340px;margin:0 auto 30px}
+.doc-head h1{font-size:22px;font-weight:800;color:var(--navy-900);letter-spacing:-.02em}
+.doc-head p{font-size:13px;color:var(--color-text-secondary);margin-top:7px;line-height:1.7;max-width:900px}
+.plate{max-width:1340px;margin:0 auto 44px}
+.plate-label{font-size:13px;font-weight:700;color:var(--navy-700);margin-bottom:4px}
+.plate-label .path{font-family:ui-monospace,monospace;font-weight:600;color:var(--gold-700);font-size:12px;margin-left:8px}
+.plate-note{font-size:12px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:14px;max-width:940px}
+.screen{
+  background:var(--color-bg);border:1px solid var(--color-border);border-radius:14px;
+  overflow:hidden;box-shadow:0 10px 34px rgba(15,27,45,.10);
+}
+
+/* ══ 공통 ══ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border-radius:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;padding:12px 22px;min-height:46px}
+.btn-primary{background:var(--color-accent);color:var(--navy-900)}
+.btn-outline{background:transparent;border:1px solid var(--navy-500);color:var(--gray-0)}
+.btn-sm{padding:8px 14px;min-height:36px;font-size:12.5px;border-radius:8px}
+.btn-ghost{background:var(--color-bg);border:1px solid var(--color-border-strong);color:var(--navy-700)}
+
+/* ══ P1 공개 홈 ══ */
+.gnb{background:var(--navy-900);display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:70px}
+.gnb .brand{display:flex;align-items:baseline;gap:10px}
+.gnb .logo{font-size:19px;font-weight:800;color:var(--gray-0);letter-spacing:-.01em}
+.gnb .logo b{color:var(--gold-300)}
+.gnb .en{font-size:10px;font-weight:600;color:var(--navy-300);letter-spacing:.2em}
+.gnb nav{display:flex;align-items:center;gap:30px}
+.gnb nav a{font-size:14px;font-weight:600;color:var(--gray-0);text-decoration:none;opacity:.85}
+.gnb nav a:hover{opacity:1;color:var(--gold-300)}
+.gnb .login{font-size:13.5px;font-weight:700;color:var(--navy-900);background:var(--gold-500);
+  border-radius:8px;padding:9px 18px}
+
+.hero{background:linear-gradient(150deg,var(--navy-900) 0%,var(--navy-700) 62%,#22344F 100%);
+  padding:74px 40px 78px}
+.hero-in{max-width:var(--w-max);margin:0 auto;display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center}
+.hero .eyebrow{font-size:11.5px;font-weight:700;color:var(--gold-300);letter-spacing:.24em;margin-bottom:20px}
+.hero h2{font-size:52px;line-height:1.24;font-weight:800;color:var(--gray-0);letter-spacing:-.035em}
+.hero h2 b{color:var(--gold-300);font-weight:800}
+.hero .lead{margin-top:22px;font-size:16px;line-height:1.85;color:var(--navy-300);max-width:460px}
+.hero .cta{margin-top:34px;display:flex;gap:12px}
+
+/* 시그니처 — GROW+F 세로 축 */
+.grid-f{border-left:1px solid rgba(201,162,75,.28);padding-left:34px}
+.gf-row{display:flex;align-items:baseline;gap:20px;padding:13px 0;border-bottom:1px solid rgba(91,107,140,.22)}
+.gf-row:last-child{border-bottom:none}
+.gf-l{font-size:36px;font-weight:800;color:var(--gold-500);width:38px;letter-spacing:-.03em;line-height:1}
+.gf-en{font-size:10.5px;font-weight:700;color:var(--navy-300);letter-spacing:.18em;width:74px}
+.gf-ko{font-size:15px;font-weight:600;color:var(--gray-0)}
+.gf-ko span{color:var(--navy-300);font-weight:500;font-size:13px;margin-left:8px}
+
+.band{max-width:var(--w-max);margin:0 auto;padding:64px 40px 10px}
+.band-h{display:flex;align-items:baseline;gap:14px;margin-bottom:26px}
+.band-h .t{font-size:23px;font-weight:800;color:var(--navy-900);letter-spacing:-.02em}
+.band-h .d{font-size:13px;color:var(--color-text-secondary)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.tcard{border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:26px 24px;background:var(--color-surface-1)}
+.tcard .k{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--gold-700)}
+.tcard h4{font-size:17.5px;font-weight:800;margin-top:12px;color:var(--navy-900)}
+.tcard p{font-size:13.5px;line-height:1.8;color:var(--color-text-secondary);margin-top:10px}
+
+.weeks{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:6px}
+.wk{border-top:2px solid var(--color-border);padding-top:14px}
+.wk.on{border-top-color:var(--color-accent)}
+.wk .n{font-size:11px;font-weight:700;color:var(--color-text-muted);letter-spacing:.1em}
+.wk .t{font-size:14px;font-weight:700;margin-top:7px;line-height:1.45;color:var(--navy-900)}
+.wk .s{font-size:11.5px;color:var(--color-text-secondary);margin-top:5px}
+
+.news-row{display:grid;grid-template-columns:1.35fr 1fr;gap:22px;align-items:start}
+.news{border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden}
+.news .r{display:flex;justify-content:space-between;align-items:center;padding:17px 22px;border-bottom:1px solid var(--color-border)}
+.news .r:last-child{border-bottom:none}
+.news .r .t{font-size:14.5px;font-weight:600}
+.news .r .d{font-size:12px;color:var(--color-text-muted)}
+.badge{font-size:10.5px;font-weight:700;background:var(--color-accent-soft);color:var(--gold-700);
+  border-radius:6px;padding:4px 8px;margin-right:10px}
+.recruit{background:var(--navy-900);border-radius:var(--radius-lg);padding:28px 26px;color:var(--gray-0)}
+.recruit .k{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--gold-300)}
+.recruit h4{font-size:21px;font-weight:800;margin-top:12px;line-height:1.4}
+.recruit p{font-size:13px;color:var(--navy-300);margin-top:10px;line-height:1.75}
+.recruit .btn{margin-top:20px;width:100%}
+.foot{margin-top:56px;border-top:1px solid var(--color-border);background:var(--color-surface-1);padding:30px 40px}
+.foot-in{max-width:var(--w-max);margin:0 auto;display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--color-text-muted)}
+.foot-in a{color:var(--color-text-secondary);text-decoration:none;margin-left:18px}
+
+/* ══ P2 인도자 콘솔 ══ */
+.console{display:grid;grid-template-columns:250px 1fr;min-height:760px}
+.side{background:var(--navy-900);padding:24px 0 20px;display:flex;flex-direction:column}
+.side .brand{padding:0 22px 22px;border-bottom:1px solid rgba(91,107,140,.25)}
+.side .logo{font-size:17px;font-weight:800;color:var(--gray-0)}
+.side .logo b{color:var(--gold-300)}
+.side .role{font-size:10.5px;font-weight:700;letter-spacing:.16em;color:var(--navy-300);margin-top:6px}
+.co-pick{margin:18px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(91,107,140,.35);
+  border-radius:10px;padding:11px 13px}
+.co-pick .l{font-size:10px;color:var(--navy-300);font-weight:600}
+.co-pick .v{font-size:14px;font-weight:700;color:var(--gray-0);margin-top:3px;display:flex;justify-content:space-between}
+.co-pick .v span{color:var(--gold-300)}
+.side nav{padding:6px 10px;flex:1}
+.side nav a{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:9px;
+  font-size:13.5px;font-weight:600;color:var(--navy-300);text-decoration:none;margin-bottom:2px}
+.side nav a .ic{width:18px;text-align:center;font-size:14px}
+.side nav a.on{background:rgba(201,162,75,.16);color:var(--gold-300)}
+.side .who{padding:14px 22px 0;border-top:1px solid rgba(91,107,140,.25);margin-top:8px}
+.side .who .n{font-size:13px;font-weight:700;color:var(--gray-0)}
+.side .who .m{font-size:11px;color:var(--navy-300);margin-top:3px}
+
+.main{background:var(--color-surface-1);padding:0 0 34px}
+.main-h{background:var(--color-bg);border-bottom:1px solid var(--color-border);padding:24px 34px}
+.main-h h3{font-size:21px;font-weight:800;color:var(--navy-900);letter-spacing:-.02em}
+.main-h .sub{font-size:13px;color:var(--color-text-secondary);margin-top:6px}
+.main-h .sess{display:flex;gap:6px;margin-top:16px}
+.sdot{width:34px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;border:1px solid var(--color-border);color:var(--color-text-muted);background:var(--color-surface-1)}
+.sdot.done{background:var(--navy-700);color:var(--gray-0);border-color:var(--navy-700)}
+.sdot.now{background:var(--color-accent);color:var(--navy-900);border-color:var(--color-accent)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px 34px 6px}
+.stat{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:18px 20px}
+.stat .l{font-size:11.5px;font-weight:600;color:var(--color-text-secondary)}
+.stat .v{font-size:27px;font-weight:800;margin-top:8px;color:var(--navy-900);letter-spacing:-.02em}
+.stat .v small{font-size:14px;font-weight:600;color:var(--color-text-muted);margin-left:3px}
+.stat .n{font-size:11.5px;margin-top:6px;color:var(--color-text-muted)}
+.stat.care .v{color:var(--color-care)}
+
+.panel{margin:22px 34px 0;background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden}
+.panel-h{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--color-border)}
+.panel-h .t{font-size:15px;font-weight:800;color:var(--navy-900)}
+.panel-h .d{font-size:11.5px;color:var(--color-text-muted);margin-left:10px;font-weight:500}
+table{width:100%;border-collapse:collapse}
+th{font-size:11.5px;font-weight:700;color:var(--color-text-secondary);text-align:left;
+  padding:11px 22px;background:var(--color-surface-1);border-bottom:1px solid var(--color-border);letter-spacing:.02em}
+td{font-size:13.5px;padding:13px 22px;border-bottom:1px solid var(--color-border)}
+tr:last-child td{border-bottom:none}
+td.nm{font-weight:700;color:var(--navy-900)}
+.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:3px 9px}
+.pill.ok{background:rgba(46,125,107,.12);color:var(--color-success)}
+.pill.wait{background:var(--color-surface-sunken);color:var(--color-text-muted)}
+.pill.care{background:rgba(192,133,46,.13);color:var(--color-care)}
+.mini{font-size:12px;color:var(--color-text-secondary)}
+.bar{width:74px;height:6px;border-radius:4px;background:var(--color-surface-sunken);overflow:hidden;display:inline-block;vertical-align:middle}
+.bar i{display:block;height:100%;background:var(--navy-500)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 34px 0}
+.note-list{padding:6px 0}
+.note-list .row{padding:13px 22px;border-bottom:1px solid var(--color-border)}
+.note-list .row:last-child{border-bottom:none}
+.note-list .q{font-size:12px;color:var(--color-text-muted);font-weight:600}
+.note-list .a{font-size:13.5px;margin-top:5px;line-height:1.6}
+.priv{margin:20px 34px 0;font-size:11.5px;color:var(--color-text-muted);line-height:1.7;
+  border-left:2px solid var(--color-border-strong);padding-left:12px}
+
+/* ══ P3 참여자 PC ══ */
+.pnav{background:var(--navy-900);height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 34px}
+.pnav .l{display:flex;align-items:center;gap:34px}
+.pnav .logo{font-size:17px;font-weight:800;color:var(--gray-0)}
+.pnav .logo b{color:var(--gold-300)}
+.pnav .l a{font-size:13.5px;font-weight:600;color:var(--gray-0);opacity:.8;text-decoration:none}
+.pnav .l a.on{opacity:1;color:var(--gold-300)}
+.pnav .r{font-size:12.5px;color:var(--navy-300)}
+.pwrap{background:var(--color-surface-1);padding:38px 0 56px;min-height:520px}
+.pcol{max-width:720px;margin:0 auto}
+.pcol .hd{margin-bottom:20px}
+.pcol .hd .e{font-size:11.5px;font-weight:700;letter-spacing:.14em;color:var(--gold-700)}
+.pcol .hd h3{font-size:25px;font-weight:800;margin-top:9px;color:var(--navy-900);letter-spacing:-.02em}
+.pcol .hd .s{font-size:13.5px;color:var(--color-text-secondary);margin-top:8px;line-height:1.75}
+.qcard{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);
+  padding:24px 26px;margin-bottom:14px}
+.qcard .q{font-size:15.5px;font-weight:700;color:var(--navy-900);line-height:1.55}
+.qcard .hint{font-size:12.5px;color:var(--color-text-secondary);margin-top:7px}
+.qcard .ta{margin-top:14px;border:1px solid var(--color-border-strong);border-radius:10px;
+  min-height:96px;padding:13px 14px;font-size:13.5px;color:var(--color-text-muted);background:var(--color-bg)}
+.words{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.word{border:1px solid var(--color-border-strong);border-radius:999px;padding:9px 17px;font-size:13.5px;font-weight:600}
+.word.sel{background:var(--color-accent);border-color:var(--color-accent);color:var(--navy-900)}
+.pcol .go{margin-top:6px}
+.ruler{max-width:720px;margin:0 auto 12px;font-size:11px;color:var(--color-text-muted);
+  border-top:1px dashed var(--color-border-strong);padding-top:6px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <h1>퓨처나우 통합 웹사이트 — PC 시안 v1.1</h1>
+  <p>IA 확정본 §9의 세 수준을 화면으로 옮겼다. P1 공개 영역은 PC 전용 레이아웃, P2 인도자 콘솔은 PC 우선, P3 참여자 화면은 중앙 정렬 반응형, P4는 운영자 승인 큐다.
+  색·타이포는 design_system.md 토큰 그대로이며, 의미색(성공·돌봄)은 P2에서만 쓴다 — 참여자 화면 무경고색 원칙 유지.
+  표시된 이름과 수치는 전부 가상이다.</p>
+</div>
+
+<!-- ══════ P1 ══════ -->
+<div class="plate">
+  <div class="plate-label">P1 · 공개 홈 — PC 전용 레이아웃<span class="path">/</span></div>
+  <div class="plate-note">교회·기관 담당자가 도입을 검토하는 자리다. 히어로 우측의 <b>GROW+F 세로 축</b>이 이 페이지의 시그니처다 — 장식이 아니라 프로그램의 실제 순서이므로 구조가 곧 정보가 된다. 모바일에서는 가로 5점 트랙으로 접힌다.</div>
+  <div class="screen">
+    <div class="gnb">
+      <div class="brand"><span class="logo">퓨처<b>나우</b></span><span class="en">FUTURE NOW</span></div>
+      <nav>
+        <a>소개</a><a>참여 신청</a><a>진단</a><a>자료실</a><a>소식</a><a>문의</a>
+        <span class="login">로그인</span>
+      </nav>
+    </div>
+
+    <div class="hero">
+      <div class="hero-in">
+        <div>
+          <div class="eyebrow">6주의 여정 · 예봄 2기</div>
+          <h2>미래의 나를<br>오늘로 <b>데려오다</b></h2>
+          <div class="lead">도서 『퓨처나우』를 바탕으로 한 6주 세미나. 읽는 책이 아니라 쓰는 책이다. 매주 손으로 쓰고, 함께 나누고, 한 걸음을 걷는다.</div>
+          <div class="cta">
+            <button class="btn btn-primary">참여 신청</button>
+            <button class="btn btn-outline">프로그램 소개</button>
+          </div>
+        </div>
+        <div class="grid-f">
+          <div class="gf-row"><div class="gf-l">G</div><div class="gf-en">GOAL</div><div class="gf-ko">과거와 미래의 나<span>1–2회차</span></div></div>
+          <div class="gf-row"><div class="gf-l">R</div><div class="gf-en">REALITY</div><div class="gf-ko">직면과 재구성<span>3회차</span></div></div>
+          <div class="gf-row"><div class="gf-l">O</div><div class="gf-en">OPTIONS</div><div class="gf-ko">펼치고 하나를 고른다<span>4회차</span></div></div>
+          <div class="gf-row"><div class="gf-l">W</div><div class="gf-en">WILL</div><div class="gf-ko">의지가 아니라 환경<span>5회차</span></div></div>
+          <div class="gf-row"><div class="gf-l">F</div><div class="gf-en">FAITH</div><div class="gf-ko">끝에서 오늘을 본다<span>6회차</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="band-h"><span class="t">이 세미나가 하는 일</span><span class="d">설명하지 않고 쓰게 한다</span></div>
+      <div class="three">
+        <div class="tcard">
+          <div class="k">손에 남는 것</div>
+          <h4>여섯 주의 기록</h4>
+          <p>매 회차 끝에 갈무리 카드를 쓴다. 흩어지지 않고 쌓인다. 6주 뒤 처음부터 되짚어 볼 수 있다.</p>
+        </div>
+        <div class="tcard">
+          <div class="k">혼자가 아니다</div>
+          <h4>같이 걷는 사람</h4>
+          <p>7~12명이 한 기수를 이룬다. 매일의 걸음을 함께 올리고, 인도자가 곁에서 본다.</p>
+        </div>
+        <div class="tcard">
+          <div class="k">시작과 끝</div>
+          <h4>사전·사후 진단</h4>
+          <p>시작할 때와 마칠 때 같은 자리를 재 본다. 점수로 사람을 나누지 않는다. 방향을 보기 위한 눈금이다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="band-h"><span class="t">6주 여정</span><span class="d">회차마다 도착점이 손에 잡히는 물건으로 남는다</span></div>
+      <div class="weeks">
+        <div class="wk on"><div class="n">1회차</div><div class="t">과거의 나를<br>만나다</div><div class="s">존재가치 선언문</div></div>
+        <div class="wk on"><div class="n">2회차</div><div class="t">미래의 나를<br>만나다</div><div class="s">시각화 보드</div></div>
+        <div class="wk"><div class="n">3회차</div><div class="t">직면하고<br>다시 짜다</div><div class="s">빛 스위치 하나</div></div>
+        <div class="wk"><div class="n">4회차</div><div class="t">펼치고<br>하나를 고르다</div><div class="s">원씽 · 첫 도미노</div></div>
+        <div class="wk"><div class="n">5회차</div><div class="t">의지가 아닌<br>환경</div><div class="s">골든타임 설계</div></div>
+        <div class="wk"><div class="n">6회차</div><div class="t">끝에서<br>오늘을 보다</div><div class="s">여정의 갈무리</div></div>
+      </div>
+    </div>
+
+    <div class="band" style="padding-bottom:0">
+      <div class="band-h"><span class="t">소식</span></div>
+      <div class="news-row">
+        <div class="news">
+          <div class="r"><div><span class="badge">모집</span><span class="t">예봄 2기 — 9월 20일 시작</span></div><span class="d">8.20</span></div>
+          <div class="r"><span class="t">1기 수료 소식과 후기</span><span class="d">8.02</span></div>
+          <div class="r"><span class="t">교회·기관 도입 안내 자료 갱신</span><span class="d">7.28</span></div>
+        </div>
+        <div class="recruit">
+          <div class="k">NEXT COHORT</div>
+          <h4>다음 기수를<br>기다리시나요?</h4>
+          <p>모집이 열리면 가장 먼저 알려 드립니다. 교회·기관 단위 도입도 문의로 받습니다.</p>
+          <button class="btn btn-primary">알림 신청</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="foot-in">
+        <div>퓨처나우 · 청계로벤하임</div>
+        <div><a>이용약관</a><a>개인정보처리방침</a><a>문의</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ P2 ══════ -->
+<div class="plate">
+  <div class="plate-label">P2 · 인도자 콘솔 — PC 우선<span class="path">/coach</span></div>
+  <div class="plate-note">폰에서 할 일이 아닌 작업들의 자리다. 좌측 고정 사이드바에 기수 선택을 두어 여러 기수를 맡은 인도자가 화면을 잃지 않게 했다. 의미색은 여기서만 쓴다 — 돌봄 신호는 지목의 근거가 아니라 세션 후 안부의 재료이므로, 붉은색 대신 앰버 한 단계만 쓰고 순위를 매기지 않는다.</div>
+  <div class="screen">
+    <div class="console">
+      <div class="side">
+        <div class="brand"><div class="logo">퓨처<b>나우</b></div><div class="role">COACH CONSOLE</div></div>
+        <div class="co-pick"><div class="l">담당 기수</div><div class="v">예봄 2기 <span>▾</span></div></div>
+        <nav>
+          <a class="on"><span class="ic">▤</span>기수 대시보드</a>
+          <a><span class="ic">◷</span>회차 갈무리</a>
+          <a><span class="ic">◎</span>진단 결과</a>
+          <a><span class="ic">👣</span>동행 피드</a>
+          <a><span class="ic">◧</span>리포트 인쇄</a>
+          <a><span class="ic">▥</span>인도자 자료실</a>
+        </nav>
+        <div class="who"><div class="n">이승은</div><div class="m">인도자 · 예봄 1·2기</div></div>
+      </div>
+
+      <div class="main">
+        <div class="main-h">
+          <h3>예봄 2기 · 기수 대시보드</h3>
+          <div class="sub">9월 20일 시작 · 참여자 10명 · 진행 중 2회차</div>
+          <div class="sess">
+            <div class="sdot done">1</div><div class="sdot now">2</div><div class="sdot">3</div>
+            <div class="sdot">4</div><div class="sdot">5</div><div class="sdot">6</div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="l">참여자</div><div class="v">10<small>명</small></div><div class="n">정원 10명 마감</div></div>
+          <div class="stat"><div class="l">사전진단 완료</div><div class="v">10<small>/10</small></div><div class="n">전원 완료</div></div>
+          <div class="stat"><div class="l">2회차 갈무리</div><div class="v">7<small>/10</small></div><div class="n">세션 후 이틀 경과</div></div>
+          <div class="stat care"><div class="l">살펴볼 분</div><div class="v">2<small>명</small></div><div class="n">활력 지표 · 결산 응답</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h">
+            <div><span class="t">참여자</span><span class="d">이 화면의 정보는 참여자에게 보이지 않는다</span></div>
+            <button class="btn btn-ghost btn-sm">리포트 인쇄</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:15%">이름</th><th style="width:16%">사전진단</th><th style="width:15%">2회차 갈무리</th>
+              <th style="width:22%">지난 한 걸음</th><th style="width:17%">실행 자신감</th><th>살핌</th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="nm">김서온</td><td class="mini">완료 · 지렛대 O</td><td><span class="pill ok">제출</span></td><td class="mini">거의 했다</td><td><span class="bar"><i style="width:70%"></i></span> <span class="mini">7</span></td><td></td></tr>
+              <tr><td class="nm">박이든</td><td class="mini">완료 · 지렛대 W</td><td><span class="pill ok">제출</span></td><td class="mini">절반쯤 했다</td><td><span class="bar"><i style="width:50%"></i></span> <span class="mini">5</span></td><td></td></tr>
+              <tr><td class="nm">정하람</td><td class="mini">완료 · 지렛대 F</td><td><span class="pill wait">대기</span></td><td class="mini">—</td><td class="mini">—</td><td><span class="pill care">안부</span></td></tr>
+              <tr><td class="nm">최윤슬</td><td class="mini">완료 · 지렛대 G</td><td><span class="pill ok">제출</span></td><td class="mini">시작을 못 했다</td><td><span class="bar"><i style="width:30%"></i></span> <span class="mini">3</span></td><td><span class="pill care">안부</span></td></tr>
+              <tr><td class="nm">한도윤</td><td class="mini">완료 · 지렛대 R</td><td><span class="pill ok">제출</span></td><td class="mini">다 했다</td><td><span class="bar"><i style="width:90%"></i></span> <span class="mini">9</span></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="duo">
+          <div class="panel" style="margin:0">
+            <div class="panel-h"><div><span class="t">인도자에게 남긴 말</span><span class="d">2회차</span></div></div>
+            <div class="note-list">
+              <div class="row"><div class="q">세미나에 바라는 것</div><div class="a">나눔 시간이 조금 더 길었으면 합니다.</div></div>
+              <div class="row"><div class="q">연락을 부탁드립니다</div><div class="a">익명 · 한 분</div></div>
+            </div>
+          </div>
+          <div class="panel" style="margin:0">
+            <div class="panel-h"><div><span class="t">상시 진단</span><span class="d">기수 회원 결과</span></div><button class="btn btn-ghost btn-sm">전체 보기</button></div>
+            <div class="note-list">
+              <div class="row"><div class="q">가치 진단</div><div class="a">6명 완료 · 4명 미실시</div></div>
+              <div class="row"><div class="q">그림자 진단</div><div class="a">3명 완료 · 7명 미실시</div></div>
+              <div class="row"><div class="q">사랑의 언어</div><div class="a">8명 완료 · 2명 미실시</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="priv">
+          기수 회원의 진단 결과는 코칭의 재료로 이 화면에 열린다. 참여자는 진단을 시작할 때 그 사실을 안내받는다.
+          기수를 수료한 뒤 실시한 진단은 여기에 나타나지 않는다 — 열람 권한은 응시 시점의 소속으로 판정한다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ P3 ══════ -->
+<div class="plate">
+  <div class="plate-label">P3 · 참여자 화면 — 중앙 정렬 반응형<span class="path">/s/2</span></div>
+  <div class="plate-note">PC 전용으로 다시 짜지 않는다. 읽기 좋은 폭(720px)을 지키고 가운데 세우는 것으로 충분하다. 폰에서 쓰던 화면이 그대로 넓은 창에 앉는다 — 손이 위치를 다시 배우지 않아도 된다. 점선이 최대 폭 경계다.</div>
+  <div class="screen">
+    <div class="pnav">
+      <div class="l">
+        <span class="logo">퓨처<b>나우</b></span>
+        <a>홈</a><a class="on">내 여정</a><a>동행 피드</a><a>진단</a><a>자료실</a>
+      </div>
+      <div class="r">새암 · 예봄 2기</div>
+    </div>
+    <div class="pwrap">
+      <div class="ruler">최대 폭 720px</div>
+      <div class="pcol">
+        <div class="hd">
+          <div class="e">2회차 갈무리</div>
+          <h3>미래의 나를 만나다</h3>
+          <div class="s">오늘 자리에서 지나간 것을 담습니다. 정답은 없습니다. 다듬지 않으셔도 됩니다.</div>
+        </div>
+        <div class="qcard">
+          <div class="q">오늘의 마음</div>
+          <div class="hint">최대 두 개까지 고르실 수 있습니다.</div>
+          <div class="words">
+            <span class="word">설렘</span><span class="word sel">아득함</span><span class="word">해볼 만함</span>
+            <span class="word">낯섦</span><span class="word">뭉클함</span><span class="word">아직 모르겠음</span>
+          </div>
+        </div>
+        <div class="qcard">
+          <div class="q">오늘 만든 것 중 하나를 그대로 옮겨 적어 주세요</div>
+          <div class="hint">책 74~76쪽</div>
+          <div class="ta">여기에 적습니다</div>
+        </div>
+        <div class="qcard">
+          <div class="q">다음 한 걸음</div>
+          <div class="hint">무엇을 · 언제·어디서</div>
+          <div class="ta">여기에 적습니다</div>
+        </div>
+        <button class="btn btn-primary go">갈무리 저장하기</button>
+      </div>
+      <div class="ruler" style="border-top:none;border-bottom:1px dashed var(--color-border-strong);padding:8px 0 0;margin-top:14px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ P4 ══════ -->
+<div class="plate">
+  <div class="plate-label">P4 · 운영 콘솔 — 가입 승인<span class="path">/admin/approvals</span></div>
+  <div class="plate-note">일반 가입자를 촉진자포럼 명단과 대조하는 자리다. <b>대조 키(포럼 가입 이름·연락처)가 표에 함께 뜨는 것이 이 화면의 전부</b>다 — 이름과 이메일만 보이면 승인은 추측이 된다. 보류는 거절 통보를 대신하며, 사유는 내부 메모로만 남는다. 우측 상단에 만료 임박 계정을 함께 띄워 갱신 누락을 막는다.</div>
+  <div class="screen">
+    <div class="console">
+      <div class="side">
+        <div class="brand"><div class="logo">퓨처<b>나우</b></div><div class="role">ADMIN CONSOLE</div></div>
+        <div class="co-pick"><div class="l">전체 회원</div><div class="v">148명 <span>▾</span></div></div>
+        <nav>
+          <a><span class="ic">▤</span>기수 관리</a>
+          <a class="on"><span class="ic">✓</span>가입 승인 <span style="margin-left:auto;background:var(--gold-500);color:var(--navy-900);font-size:10.5px;font-weight:800;border-radius:5px;padding:2px 7px">4</span></a>
+          <a><span class="ic">◍</span>회원·권한</a>
+          <a><span class="ic">◎</span>진단 관리</a>
+          <a><span class="ic">✦</span>소식·자료</a>
+          <a><span class="ic">⚿</span>참여 코드</a>
+        </nav>
+        <div class="who"><div class="n">최철영</div><div class="m">운영자</div></div>
+      </div>
+
+      <div class="main">
+        <div class="main-h">
+          <h3>가입 승인</h3>
+          <div class="sub">일반 가입 신청을 촉진자포럼 명단과 대조한다. 승인하면 상시 진단이 열린다.</div>
+        </div>
+
+        <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat"><div class="l">승인 대기</div><div class="v">4<small>건</small></div><div class="n">가장 오래된 건 2일 경과</div></div>
+          <div class="stat"><div class="l">이번 달 승인</div><div class="v">11<small>명</small></div><div class="n">보류 1건</div></div>
+          <div class="stat care"><div class="l">만료 임박</div><div class="v">3<small>명</small></div><div class="n">30일 이내 · 갱신 안내 필요</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h">
+            <div><span class="t">승인 대기</span><span class="d">포럼 가입 정보는 신청자가 직접 적은 것이다</span></div>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:13%">신청자</th><th style="width:17%">계정 이메일</th>
+              <th style="width:19%">포럼 가입 이름 · 연락처</th><th style="width:23%">가입 경위</th>
+              <th style="width:9%">신청일</th><th>처리</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="nm">윤가온</td><td class="mini">gaon@example.com</td>
+                <td class="mini"><b style="color:var(--navy-900)">윤가온</b> · 010-****-1234</td>
+                <td class="mini">촉진자포럼 8월 정기모임 참석</td>
+                <td class="mini">8.24</td>
+                <td><button class="btn btn-primary btn-sm">승인</button> <button class="btn btn-ghost btn-sm">보류</button></td>
+              </tr>
+              <tr>
+                <td class="nm">서지호</td><td class="mini">jiho.seo@example.com</td>
+                <td class="mini"><b style="color:var(--navy-900)">서지호</b> · 010-****-8890</td>
+                <td class="mini">1기 수료자 소개</td>
+                <td class="mini">8.25</td>
+                <td><button class="btn btn-primary btn-sm">승인</button> <button class="btn btn-ghost btn-sm">보류</button></td>
+              </tr>
+              <tr>
+                <td class="nm">임로하</td><td class="mini">roha@example.com</td>
+                <td class="mini"><span class="pill care">명단 대조 안 됨</span></td>
+                <td class="mini">—</td>
+                <td class="mini">8.25</td>
+                <td><button class="btn btn-primary btn-sm">승인</button> <button class="btn btn-ghost btn-sm">보류</button></td>
+              </tr>
+              <tr>
+                <td class="nm">강태오</td><td class="mini">taeo.k@example.com</td>
+                <td class="mini"><b style="color:var(--navy-900)">강태오</b> · 010-****-4402</td>
+                <td class="mini">교회 소그룹에서 안내받음</td>
+                <td class="mini">8.26</td>
+                <td><button class="btn btn-primary btn-sm">승인</button> <button class="btn btn-ghost btn-sm">보류</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="duo">
+          <div class="panel" style="margin:0">
+            <div class="panel-h"><div><span class="t">승인 시 함께 정하는 것</span></div></div>
+            <div class="note-list">
+              <div class="row"><div class="q">유효기간</div><div class="a">기본 1년 · 승인 화면에서 조정</div></div>
+              <div class="row"><div class="q">근거 메모</div><div class="a">부여자와 부여일은 자동 기록된다</div></div>
+              <div class="row"><div class="q">안내 메일</div><div class="a">승인과 동시에 1통 발송</div></div>
+            </div>
+          </div>
+          <div class="panel" style="margin:0">
+            <div class="panel-h"><div><span class="t">만료 임박</span><span class="d">30일 이내</span></div><button class="btn btn-ghost btn-sm">갱신 안내 보내기</button></div>
+            <div class="note-list">
+              <div class="row"><div class="q">9월 12일 만료</div><div class="a">문하준 · 개인 회원</div></div>
+              <div class="row"><div class="q">9월 19일 만료</div><div class="a">배시우 · 개인 회원</div></div>
+              <div class="row"><div class="q">9월 24일 만료</div><div class="a">노아린 · 개인 회원</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="priv">
+          만료된 계정은 새 진단 응시가 닫히되, 이미 실시한 결과의 열람은 본인에게 계속 열려 있다.
+          자격의 만료가 기록의 몰수가 되어서는 안 된다.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
