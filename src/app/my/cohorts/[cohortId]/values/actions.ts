@@ -11,7 +11,7 @@ function fail(e: unknown, what: string): Ok {
 
 /** 탐색·정리 진행 저장(증분). 화면 이동마다 부른다 — 1차 전체가 통째로 날아가지 않게. */
 export async function saveValueProgressAction(
-  cohortId: string,
+  cohortId: string | null,
   stage: 'exploring' | 'candidates' | 'finalists',
   progress?: Record<string, unknown>,
   candidates?: number[],
@@ -26,7 +26,7 @@ export async function saveValueProgressAction(
 }
 
 /** 최종 3개 확정 — 선저장 지점. 이 뒤로 라벨·대조는 증분이다. */
-export async function finalizeValueAction(cohortId: string, ids: [number, number, number]): Promise<Ok> {
+export async function finalizeValueAction(cohortId: string | null, ids: [number, number, number]): Promise<Ok> {
   try {
     const ctx = await createServerContext();
     await ctx.finalizeMyValue(cohortId, ids);
@@ -38,7 +38,7 @@ export async function finalizeValueAction(cohortId: string, ids: [number, number
 
 /** 라벨·대조·정합 판정 증분 갱신. 넘기지 않은 값은 서버가 보존한다. */
 export async function patchValueAction(
-  cohortId: string,
+  cohortId: string | null,
   input: {
     labels?: Partial<{ v1: string; v2: string; v3: string }>;
     workbook?: Partial<{ peak: string; strength: string; longing: string }>;

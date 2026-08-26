@@ -313,3 +313,109 @@ describe.skipIf(!ENABLED)('자동 전이와 쓰기 봉쇄 (실DB)', () => {
     } finally { await close(client); }
   });
 });
+
+describe.skipIf(!ENABLED)('가치 카드 개인 응시 경로 (실DB · S-2)', () => {
+  it('차수분과 개인분이 각각 한 행으로 따로 산다 — 부분 유니크 인덱스 양쪽', async () => {
+    const client = await open();
+    try {
+      // 차수분
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{"k":1}'::jsonb,null)`);
+      // 개인분 — cohort_id NULL
+      await runAs(client, MEMBER, `select public.value_save_progress(null,'exploring','{"k":9}'::jsonb,null)`);
+
+      const n = async (where: string) =>
+        Number((await client.query(`select count(*)::int as c from public.value_assessments where user_id='${MEMBER}' and ${where}`)).rows[0].c);
+      expect(await n(`cohort_id = '${COHORT}'`), '차수분').toBe(1);
+      expect(await n('cohort_id is null'), '개인분').toBe(1);
+      expect(await n('true'), '둘이 공존한다').toBe(2);
+
+      // 개인분 중복 차단 — **기존 복합 UNIQUE 로는 NULL 이 서로 구별돼 전혀 막히지 않았다.**
+      await expectRaise(
+        client, MEMBER,
+        `insert into public.value_assessments (user_id,cohort_id,card_set_version,stage) values ('${MEMBER}',null,'v1','exploring')`,
+        '42501', // authenticated 는 직접 INSERT 권한이 없다(권한이 먼저 걸린다)
+      );
+      let code: string | undefined;
+      try {
+        await client.query(
+          `insert into public.value_assessments (user_id,cohort_id,card_set_version,stage) values ('${MEMBER}',null,'v1','exploring')`,
+        );
+      } catch (e) { code = (e as { code?: string }).code; }
+      expect(code, '개인분 두 번째 행은 인덱스가 막는다').toBe('23505');
+
+    } finally { await close(client); }
+  });
+
+  it('차수분 중복도 여전히 막힌다', async () => {
+    const client = await open();
+    try {
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      let code: string | undefined;
+      try {
+        await client.query(
+          `insert into public.value_assessments (user_id,cohort_id,card_set_version,stage) values ('${MEMBER}','${COHORT}','v1','exploring')`,
+        );
+      } catch (e) { code = (e as { code?: string }).code; }
+      expect(code).toBe('23505');
+    } finally { await close(client); }
+  });
+
+  it('이어쓰기가 두 갈래를 섞지 않는다', async () => {
+    const client = await open();
+    try {
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{"k":1}'::jsonb,null)`);
+      await runAs(client, MEMBER, `select public.value_save_progress(null,'exploring','{"k":9}'::jsonb,null)`);
+      await runAs(client, MEMBER, `select public.value_save_progress(null,'exploring','{"k":99}'::jsonb,null)`);
+      const k = async (where: string) =>
+        (await client.query(`select progress->>'k' as k from public.value_assessments where user_id='${MEMBER}' and ${where}`)).rows[0].k;
+      expect(await k('cohort_id is null'), '개인분만 갱신된다').toBe('99');
+      expect(await k(`cohort_id = '${COHORT}'`), '차수분은 그대로다').toBe('1');
+    } finally { await close(client); }
+  });
+
+  it('개인 응시도 응시 게이트를 지난다 — held 면 막힌다', async () => {
+    const client = await open();
+    try {
+      await client.query(seed(MEMBER, 'held', null));
+      await expectRaise(client, MEMBER, `select public.value_save_progress(null,'exploring','{}'::jsonb,null)`, '42501');
+    } finally { await close(client); }
+  });
+
+  it('개인 응시는 차수 소속을 묻지 않는다 — 미등록 individual 도 연다', async () => {
+    const client = await open();
+    try {
+      await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
+      await client.query(seed(MEMBER, 'individual', '2099-12-31'));
+      await runAs(client, MEMBER, `select public.value_save_progress(null,'exploring','{}'::jsonb,null)`);
+      const c = Number((await client.query(`select count(*)::int as c from public.value_assessments where user_id='${MEMBER}' and cohort_id is null`)).rows[0].c);
+      expect(c).toBe(1);
+      // 같은 사람이 차수 경로로는 여전히 막힌다(두 게이트가 독립이다).
+      await expectRaise(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`, 'P0001');
+    } finally { await close(client); }
+  });
+
+  it('개인분은 인도자에게 보이지 않고 본인·운영자만 읽는다', async () => {
+    const client = await open();
+    try {
+      await runAs(client, MEMBER, `select public.value_save_progress(null,'exploring','{}'::jsonb,null)`);
+      const q = `select count(*)::int as count from public.value_assessments where cohort_id is null`;
+      expect(await countAs(client, MEMBER, q), '본인').toBe(1);
+      expect(await countAs(client, COACH_A, q), '같은 차수 인도자도 못 본다').toBe(0);
+      expect(await countAs(client, COACH_B, q), '타 인도자').toBe(0);
+      expect(await countAs(client, ADMIN, q), '운영자').toBe(1);
+    } finally { await close(client); }
+  });
+
+  it('이동·삭제가 개인 행을 건드리지 않는다', async () => {
+    const client = await open();
+    try {
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      await runAs(client, MEMBER, `select public.value_save_progress(null,'exploring','{}'::jsonb,null)`);
+      await runAs(client, COACH_A, `select public.remove_cohort_member('${COHORT}','${MEMBER}')`);
+      const n = Number((await client.query(`select count(*)::int as c from public.value_assessments where user_id='${MEMBER}'`)).rows[0].c);
+      expect(n, '차수분만 지워지고 개인분은 남는다').toBe(1);
+      const isNull = (await client.query(`select cohort_id is null as p from public.value_assessments where user_id='${MEMBER}'`)).rows[0].p;
+      expect(isNull).toBe(true);
+    } finally { await close(client); }
+  });
+});

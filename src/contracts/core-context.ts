@@ -171,16 +171,18 @@ export interface CoreContext {
   // 가치 카드(ADR-121) — 별도 테이블 value_assessments. 쓰기는 전량 DEFINER RPC(D1 선례).
   //   Q8 승인은 '3종'이었으나 RPC 가 셋(save_progress·finalize·patch)이라 쓰기 진입점이 셋 필요하고,
   //   여기에 본인 조회·인도자 열람을 더해 **5종**이 됐다. 승인 델타를 완료 보고에 명시한다.
-  getMyValueAssessment(cohortId: string): Promise<ValueAssessment | null>; // 본인(value_assessments SELECT RLS)
+  // **cohortId: null = 개인 응시**(차수 미소속 · S-2). 차수분과 개인분은 부분 유니크 인덱스로
+  //   각각 한 행씩 따로 산다. NULL 행은 인도자에게 보이지 않는다(RLS 가 is_cohort_coach(NULL,…)=false).
+  getMyValueAssessment(cohortId: string | null): Promise<ValueAssessment | null>; // 본인(value_assessments SELECT RLS)
   saveMyValueProgress(input: { // 본인 · 증분 저장(value_save_progress DEFINER · 전이·개수 서버 강제)
-    cohortId: string;
+    cohortId: string | null;
     stage: Exclude<ValueStageKey, 'final'>;
     progress?: Record<string, unknown>;
     candidates?: number[];
   }): Promise<void>;
-  finalizeMyValue(cohortId: string, ids: [number, number, number]): Promise<void>; // 본인 · 선저장(value_finalize)
+  finalizeMyValue(cohortId: string | null, ids: [number, number, number]): Promise<void>; // 본인 · 선저장(value_finalize)
   patchMyValue(input: { // 본인 · 확정 후 라벨·대조 증분(value_patch · 안 넘긴 값은 보존)
-    cohortId: string;
+    cohortId: string | null;
     labels?: Partial<{ v1: string; v2: string; v3: string }>;
     workbook?: Partial<{ peak: string; strength: string; longing: string }>;
     alignment?: 'aligned' | 'different' | 'unsure' | 'skipped';

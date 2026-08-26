@@ -10,6 +10,9 @@ const SAFE_RETURN: RegExp[] = [
   /^\/my\/cohorts\/[0-9a-fA-F-]{36}\/checkin\/[1-9][0-9]?$/,
   /^\/c\/[A-Za-z0-9]{4,8}\/values$/,
   /^\/my\/cohorts\/[0-9a-fA-F-]{36}\/values$/,
+  // 개인 응시(S-2). **라우트와 같은 커밋에서 올린다** — 없는 경로를 허용하면 returnTo 는 통과했는데
+  //   목적지가 404 가 되고, 그것이 IA 원칙 2 가 막으려는 바로 그 상황이다.
+  /^\/my\/values$/,
 ];
 
 export function safeReturnTo(raw: string | null | undefined): string | null {

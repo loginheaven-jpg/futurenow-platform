@@ -1099,17 +1099,17 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // ── 가치 카드(ADR-121) ─────────────────────────────────────
-  async getMyValueAssessment(cohortId: string): Promise<ValueAssessment | null> {
+  async getMyValueAssessment(cohortId: string | null): Promise<ValueAssessment | null> {
     const me = await this.requireUser();
-    const { data, error } = await this.sb
-      .from('value_assessments').select(VALUE_COLS)
-      .eq('cohort_id', cohortId).eq('user_id', me.id).maybeSingle();
+    // NULL 은 `.eq` 로 못 잡는다(SQL 에서 NULL = NULL 이 참이 아니다) — `.is` 를 써야 개인분이 잡힌다.
+    const q = this.sb.from('value_assessments').select(VALUE_COLS).eq('user_id', me.id);
+    const { data, error } = await (cohortId === null ? q.is('cohort_id', null) : q.eq('cohort_id', cohortId)).maybeSingle();
     if (error) throw new CoreError(`getMyValueAssessment 실패: ${error.message}`);
     return data ? rowToValue(data as unknown as ValueRow) : null;
   }
 
   async saveMyValueProgress(input: {
-    cohortId: string;
+    cohortId: string | null;
     stage: 'exploring' | 'candidates' | 'finalists';
     progress?: Record<string, unknown>;
     candidates?: number[];
@@ -1128,7 +1128,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`saveMyValueProgress 실패: ${error.message}`);
   }
 
-  async finalizeMyValue(cohortId: string, ids: [number, number, number]): Promise<void> {
+  async finalizeMyValue(cohortId: string | null, ids: [number, number, number]): Promise<void> {
     const [v1, v2, v3] = VALUE_CARD_IDS.length(3).parse(ids);
     const { error } = await this.sb.rpc('value_finalize', {
       p_cohort_id: cohortId, p_v1: v1, p_v2: v2, p_v3: v3,
@@ -1137,7 +1137,7 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   async patchMyValue(input: {
-    cohortId: string;
+    cohortId: string | null;
     labels?: Partial<{ v1: string; v2: string; v3: string }>;
     workbook?: Partial<{ peak: string; strength: string; longing: string }>;
     alignment?: 'aligned' | 'different' | 'unsure' | 'skipped';
