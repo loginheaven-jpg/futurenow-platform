@@ -204,4 +204,8 @@ export interface CoreContext {
     validUntil?: string | null; // 개인 회원 승인에만. 화면 기본값은 MembershipQueueRow.defaultValidUntil
     note?: string | null;
   }): Promise<void>; // 운영자 전용 — decide_membership(가드: admin · 자기 자신 차단 · 화이트리스트 · 행잠금)
+  // 가입 대조 키(§4.3 급소) — 본인 전용 self-scoped DEFINER. 연락처는 user_contacts(불변식 13),
+  //   가입 경위는 memberships.signup_note. **status 는 건드리지 않는다** — 이미 승인된 사람이
+  //   정보를 고친다고 자격이 되돌아가면 안 된다(운영자 결정은 decideMembership 만 바꾼다).
+  recordSignupIntake(input: { forumName?: string | null; forumPhone?: string | null; signupNote?: string | null }): Promise<void>;
 }

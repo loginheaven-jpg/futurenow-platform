@@ -7,7 +7,9 @@
 export type Role = 'user' | 'coach' | 'admin';
 
 // 개인정보 동의 유형(ADR-76). privacy_use=멤버 필수 수집·이용 · sensitive_use=민감정보(종교·신앙) 선택 · coach_pledge=인도자 보호 서약.
-export type ConsentType = 'privacy_use' | 'sensitive_use' | 'coach_pledge';
+// 'forum_match' = 포럼 대조 키(이름·연락처) 수집·이용 동의. **`/signup` 경로에서만** 받는다(S-1 단계 6).
+//   기존 셋의 문안도 버전도 건드리지 않는다 — 올리면 해당 없는 기존 회원이 재동의 화면을 만난다.
+export type ConsentType = 'privacy_use' | 'sensitive_use' | 'coach_pledge' | 'forum_match';
 export interface ConsentRecord { type: ConsentType; version: string; agreedAt: string; }
 
 // 연락처 상세(운영자·본인만 — user_contacts 격리). 주소·계좌는 운영 목적(장학금)·인도자 비노출. ADR-76

@@ -1225,6 +1225,19 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`decideMembership 실패: ${error.message}`);
   }
 
+  async recordSignupIntake(input: {
+    forumName?: string | null;
+    forumPhone?: string | null;
+    signupNote?: string | null;
+  }): Promise<void> {
+    const { error } = await this.sb.rpc('record_signup_intake', {
+      p_forum_name: input.forumName ?? null,
+      p_forum_phone: input.forumPhone ?? null,
+      p_signup_note: input.signupNote ?? null,
+    });
+    if (error) throw new CoreError(`recordSignupIntake 실패: ${error.message}`);
+  }
+
   // ── 내부 ───────────────────────────────────────────────────
   private async requireUser(): Promise<CoreUser> {
     const u = await this.currentUser();
