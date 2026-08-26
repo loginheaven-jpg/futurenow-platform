@@ -43,6 +43,7 @@ import { z } from 'zod';
 import { gatewayChat } from './ai/gateway';
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
+import { toMemberState } from './membership';
 import {
   rowToAlert,
   rowToCoachApplication,
@@ -201,13 +202,6 @@ interface MembershipQueueDbRow {
   default_valid_until: string;
 }
 
-const MEMBER_STATES = ['pending', 'individual', 'cohort', 'expired', 'held'] as const;
-
-// 경계 검증이지 판정이 아니다 — DB 가 계약 밖 값을 내면 조용히 오타입으로 흐르지 않고 여기서 멈춘다.
-function toMemberState(v: unknown): MemberState {
-  if (typeof v === 'string' && (MEMBER_STATES as readonly string[]).includes(v)) return v as MemberState;
-  throw new CoreError(`member_state 응답이 계약 밖입니다: ${String(v)}`);
-}
 const VALUE_CARD_IDS = z.array(z.number().int().positive()).max(72);
 const VALUE_PROGRESS = z.record(z.string(), z.unknown());
 const VALUE_SHORT = z.string().max(20);   // 대조 세 칸 — 한 단어 전제
