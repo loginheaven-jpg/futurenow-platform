@@ -17,11 +17,21 @@ describe('safeReturnTo — 오픈 리다이렉트 방어(수용 11-a)', () => {
     expect(safeReturnTo('http://x/c/ABCD/1')).toBeNull();
   });
 
+  it('허용: 가치 카드 짧은 경로·카드 경로', () => {
+    expect(safeReturnTo('/c/ABCD/values')).toBe('/c/ABCD/values');
+    expect(safeReturnTo('/c/RSTUV12/values')).toBe('/c/RSTUV12/values');
+    expect(safeReturnTo('/my/cohorts/2f9a1c3e-4b5d-6e7f-8a9b-0c1d2e3f4a5b/values')).toBe(
+      '/my/cohorts/2f9a1c3e-4b5d-6e7f-8a9b-0c1d2e3f4a5b/values',
+    );
+  });
+
   it('거부: 화이트리스트 밖 내부 경로 → null', () => {
     expect(safeReturnTo('/admin')).toBeNull();
     expect(safeReturnTo('/home')).toBeNull();
     expect(safeReturnTo('/my/cohorts/xxx/report')).toBeNull();
     expect(safeReturnTo('/c/ab/1')).toBeNull(); // 코드 4자 미만
+    expect(safeReturnTo('/c/ABCD/valuesx')).toBeNull(); // 접두 오매칭 방지
+    expect(safeReturnTo('/my/cohorts/2f9a1c3e-4b5d-6e7f-8a9b-0c1d2e3f4a5b/values/1')).toBeNull();
   });
 
   it('빈 값 → null', () => {

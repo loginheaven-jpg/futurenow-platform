@@ -1,0 +1,178 @@
+// 가치 카드 72장 — 이식 원본 `loginheaven-jpg/value` 의 `client/public/values.json` 정본(id 1~72).
+// 원본은 런타임 fetch 였다. 상수로 굳혀 fetch 실패 경로와 로딩 상태를 없앤다(지시서 v3 §9).
+//
+// **카테고리를 참여자 렌더 타입에서 분리한다(v3 §4-1 · §11 #9).** 원본 `ValueCard.tsx` 는 카드마다
+//   `#{category}` 를 출력했다. 그러면 화면 제목에서 주제어를 걷어내도 카드마다 72번 되살아나
+//   '이 영역에서 무엇을 중시해야 하는가' 라는 사회적 프레임이 생긴다(v1 검토 R-7).
+//   렌더 금지를 규칙이 아니라 **타입으로** 막는다 — `ValueCard` 에 category 가 없으므로 화면이 참조할 경로가 없다.
+//   카테고리는 배열 분산(ordering.ts)과 그 검증에만 쓰이므로 별도 맵으로 둔다(CLAUDE §7 어휘 분리와 같은 사고).
+//
+// 카드 문구는 임의 수정하지 않는다(v3 §14 · 원본 `VALUES_REVIEW.md` 검토 이력). 72장 전수 금지어 0건 확인.
+
+/** 참여자에게 보이는 카드. **category 없음** — 위 주석 참조. */
+export type ValueCard = {
+  readonly id: number;
+  readonly korean: string;
+  readonly english: string;
+  readonly description: string;
+};
+
+export const VALUE_CARDS: readonly ValueCard[] = [
+  { id: 1, korean: '가족', english: 'Family', description: '가족과의 유대와 책임을 소중히 여김' },
+  { id: 2, korean: '감사', english: 'Gratitude', description: '받은 것에 대해 고마워하고 표현함' },
+  { id: 3, korean: '개방성', english: 'Openness', description: '새로운 생각과 경험을 환영함' },
+  { id: 4, korean: '겸손', english: 'Humility', description: '자신을 낮추고 타인을 존중함' },
+  { id: 5, korean: '경쟁력', english: 'Competitiveness', description: '목표 달성을 위해 경쟁함' },
+  { id: 6, korean: '경청', english: 'Listening', description: '타인의 말에 귀 기울임' },
+  { id: 7, korean: '공정성', english: 'Fairness', description: '모두를 공평하게 대함' },
+  { id: 8, korean: '공헌', english: 'Contribution', description: '사회에 가치를 더함' },
+  { id: 9, korean: '공감', english: 'Empathy', description: '타인의 감정을 이해하고 공유함' },
+  { id: 10, korean: '관계', english: 'Connection', description: '타인과 의미 있는 관계를 맺음' },
+  { id: 11, korean: '교육', english: 'Education', description: '배움과 가르침을 중시함' },
+  { id: 12, korean: '권위', english: 'Authority', description: '영향력과 결정권을 가짐' },
+  { id: 13, korean: '균형', english: 'Balance', description: '삶의 여러 영역(일, 가족, 건강 등)에서 균형을 유지함' },
+  { id: 14, korean: '근면', english: 'Diligence', description: '부지런하고 성실하게 일함' },
+  { id: 15, korean: '나눔', english: 'Generosity', description: '아낌없이 베풂' },
+  { id: 16, korean: '나다움', english: 'Authenticity', description: '자신의 생각과 감정을 솔직하게 표현함' },
+  { id: 17, korean: '도전', english: 'Challenge', description: '어려운 일에 맞서 도전함' },
+  { id: 18, korean: '독립성', english: 'Independence', description: '타인에게 의존하지 않음' },
+  { id: 19, korean: '리더십', english: 'Leadership', description: '다른 이들을 이끌고 영향을 줌' },
+  { id: 20, korean: '명예', english: 'Honor', description: '사회적 명예와 평판을 지킴' },
+  { id: 21, korean: '모험', english: 'Adventure', description: '새롭고 흥미진진한 경험을 추구함' },
+  { id: 22, korean: '목적', english: 'Purpose', description: '삶의 방향과 이유를 명확히 함' },
+  { id: 23, korean: '배려', english: 'Consideration', description: '타인을 돕고 보살핌' },
+  { id: 24, korean: '변화', english: 'Change', description: '새로운 것을 받아들이고 적응함' },
+  { id: 25, korean: '사랑', english: 'Love', description: '깊은 애정과 헌신' },
+  { id: 26, korean: '소명', english: 'Mission', description: '자신이 해야 할 일을 깨닫고 실천함' },
+  { id: 27, korean: '성장', english: 'Growth', description: '지속적으로 발전하고 진화함' },
+  { id: 28, korean: '성취', english: 'Achievement', description: '목표를 달성하고 결과를 만듦' },
+  { id: 29, korean: '소속감', english: 'Belonging', description: '집단의 일원으로 받아들여지고 소속됨' },
+  { id: 30, korean: '솔직함', english: 'Honesty', description: '타인에게 거짓 없이 진실을 말함' },
+  { id: 31, korean: '수용', english: 'Acceptance', description: '있는 그대로를 인정함' },
+  { id: 32, korean: '신념', english: 'Faith', description: '신념이나 종교적 확신을 가짐' },
+  { id: 33, korean: '신뢰', english: 'Trust', description: '타인과의 관계에서 믿음을 쌓음' },
+  { id: 34, korean: '안전', english: 'Safety', description: '위험으로부터 보호받음' },
+  { id: 35, korean: '양심', english: 'Conscience', description: '도덕적 옳고 그름을 따름' },
+  { id: 36, korean: '여유', english: 'Leisure', description: '휴식과 즐거움을 누림' },
+  { id: 37, korean: '열정', english: 'Passion', description: '뜨겁게 몰입하고 헌신함' },
+  { id: 38, korean: '영성', english: 'Spirituality', description: '초월적 의미와 연결됨' },
+  { id: 39, korean: '영향력', english: 'Influence', description: '타인과 세상에 영향을 미침' },
+  { id: 40, korean: '예의', english: 'Courtesy', description: '격식과 예절을 지킴' },
+  { id: 41, korean: '용기', english: 'Courage', description: '두려움에도 옳은 일을 함' },
+  { id: 42, korean: '원칙', english: 'Integrity', description: '자신의 가치관을 일관되게 지킴' },
+  { id: 43, korean: '유머', english: 'Humor', description: '즐거움과 웃음을 나눔' },
+  { id: 44, korean: '유연성', english: 'Flexibility', description: '상황에 맞게 유연하게 대처함' },
+  { id: 45, korean: '의리', english: 'Brotherhood', description: '친구를 위해 헌신하고 약속을 지킴' },
+  { id: 46, korean: '인내', english: 'Perseverance', description: '어려움 속에서도 끝까지 해냄' },
+  { id: 47, korean: '인정', english: 'Recognition', description: '노력과 성과를 인정받음' },
+  { id: 48, korean: '자기돌봄', english: 'Self-Care', description: '자신을 돌보고 사랑함' },
+  { id: 49, korean: '자부심', english: 'Pride', description: '자신과 성과에 자긍심을 가짐' },
+  { id: 50, korean: '자율성', english: 'Autonomy', description: '스스로 규칙을 정함' },
+  { id: 51, korean: '자유', english: 'Freedom', description: '제약받지 않음' },
+  { id: 52, korean: '전문성', english: 'Professionalism', description: '자기 분야에서 탁월함을 추구함' },
+  { id: 53, korean: '정', english: 'Affection', description: '시간이 쌓여 형성된 끈끈한 유대감' },
+  { id: 54, korean: '정의', english: 'Justice', description: '공정함과 형평성을 추구함' },
+  { id: 55, korean: '조화', english: 'Harmony', description: '타인과의 관계에서 갈등 없이 어울림' },
+  { id: 56, korean: '존엄', english: 'Dignity', description: '인간으로서 존중받고 대우받음' },
+  { id: 57, korean: '존중', english: 'Respect', description: '타인의 가치를 인정하고 존중함' },
+  { id: 58, korean: '즐거움', english: 'Fun', description: '기쁨과 재미를 경험함' },
+  { id: 59, korean: '지혜', english: 'Wisdom', description: '통찰력과 분별력을 가짐' },
+  { id: 60, korean: '창의성', english: 'Creativity', description: '새로운 아이디어를 창조함' },
+  { id: 61, korean: '책임감', english: 'Responsibility', description: '맡은 바를 끝까지 완수함' },
+  { id: 62, korean: '충성', english: 'Loyalty', description: '사람이나 조직에 헌신함' },
+  { id: 63, korean: '친밀감', english: 'Intimacy', description: '깊은 감정적 유대와 친밀함을 나눔' },
+  { id: 64, korean: '친절', english: 'Kindness', description: '따뜻하고 다정하게 대함' },
+  { id: 65, korean: '평등', english: 'Equality', description: '모두를 동등하게 대함' },
+  { id: 66, korean: '평온', english: 'Peace', description: '내면과 외면의 고요함을 유지함' },
+  { id: 67, korean: '풍요', english: 'Abundance', description: '물질적 여유를 누림' },
+  { id: 68, korean: '효도', english: 'Filial Piety', description: '부모를 공경하고 섬김' },
+  { id: 69, korean: '희망', english: 'Hope', description: '더 나은 미래를 믿음' },
+  { id: 70, korean: '건강', english: 'Health', description: '몸과 마음의 건강을 유지함' },
+  { id: 71, korean: '환경', english: 'Environment', description: '자연과 환경을 보호함' },
+  { id: 72, korean: '겸양', english: 'Modesty', description: '자신을 낮추고 겸손하게 행동함' },
+] as const;
+
+/** id → 카드. 저장값(`candidates`·`value*_id`)이 정수라 되살릴 때 쓴다. */
+export const CARD_BY_ID: ReadonlyMap<number, ValueCard> = new Map(VALUE_CARDS.map((c) => [c.id, c]));
+
+/** 카드 세트 판본. 저장 행의 `card_set_version` 과 짝이며 **기록자(이 파일)가 정한다**(스키마 DEFAULT 아님). */
+export const CARD_SET_VERSION = 'v1';
+
+/**
+ * 카테고리 — **참여자 표면 금지.** 배열 분산(`ordering.ts`)과 그 검증에만 쓴다.
+ * 18종이고 분포가 14:1 까지 치우쳐 있어(관계 14 : 물질 1) 균등 분배의 근거값이 된다.
+ */
+export const CARD_CATEGORY: Readonly<Record<number, string>> = {
+  1: '관계',
+  2: '정서',
+  3: '성장',
+  4: '덕목',
+  5: '성취',
+  6: '관계',
+  7: '정의',
+  8: '사회',
+  9: '관계',
+  10: '관계',
+  11: '성장',
+  12: '영향력',
+  13: '웰빙',
+  14: '덕목',
+  15: '사회',
+  16: '진실',
+  17: '성장',
+  18: '자율',
+  19: '영향력',
+  20: '한국특화',
+  21: '탐험',
+  22: '의미',
+  23: '관계',
+  24: '성장',
+  25: '관계',
+  26: '영성',
+  27: '성장',
+  28: '성취',
+  29: '관계',
+  30: '진실',
+  31: '정서',
+  32: '영성',
+  33: '관계',
+  34: '안전',
+  35: '덕목',
+  36: '웰빙',
+  37: '정서',
+  38: '영성',
+  39: '영향력',
+  40: '덕목',
+  41: '덕목',
+  42: '진실',
+  43: '정서',
+  44: '적응',
+  45: '관계',
+  46: '덕목',
+  47: '성취',
+  48: '웰빙',
+  49: '성취',
+  50: '자율',
+  51: '자율',
+  52: '성장',
+  53: '관계',
+  54: '정의',
+  55: '관계',
+  56: '덕목',
+  57: '관계',
+  58: '정서',
+  59: '성장',
+  60: '성장',
+  61: '덕목',
+  62: '관계',
+  63: '관계',
+  64: '덕목',
+  65: '정의',
+  66: '웰빙',
+  67: '물질',
+  68: '한국특화',
+  69: '정서',
+  70: '웰빙',
+  71: '사회',
+  72: '덕목',
+};
