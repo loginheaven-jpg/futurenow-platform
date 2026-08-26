@@ -326,6 +326,12 @@ BEGIN
   --   held 는 건드리지 않는다(트리거가 운영자 판단을 뒤집으면 안 된다).
   -- 대상 행은 **스키마 없이** 테이블 이름으로만 가리킨다(`public.memberships.status` 로 쓰면
   --   ON CONFLICT 절에서 missing FROM-clause entry 가 난다).
+  --
+  -- **알려진 한계(ADR-122 에 기재) — 복수 차수 수료자의 기간이 두 번째 마감에서 갱신되지 않는다.**
+  --   1기·2기를 모두 수료한 사람은 첫 마감에 individual 이 되고, 두 번째 마감 때 이 WHERE 가
+  --   'pending'·'expired' 만 통과시키므로 valid_until 이 그대로 남는다. 대상 3명.
+  --   **로직은 그대로 둔다**(지휘부 확정) — '연장은 운영자 결정'이라는 멱등 규칙이 본체이고,
+  --   만료 임박 목록(list_membership_queue 의 'expiring' 갈래)이 안전망으로 그들을 띄운다.
   WHERE memberships.status IN ('pending','expired');
   RETURN NULL;
 END;
@@ -338,9 +344,17 @@ CREATE TRIGGER cohorts_archive_membership
   EXECUTE FUNCTION public.membership_on_cohort_archived();
 
 -- ============================================================
--- 8. 백필 — 실계정 5개. 세미나 차수 등록자 18명은 **행을 만들지 않는다**(산출로 cohort).
---    분류는 이름이 아니라 등록 사실로 한다(ADR-110). 우선순위 trash > test > general > 미등록.
---    적용 전 읽기 전용 예행으로 결과를 확인했다: held 1 · individual 2 · pending 2.
+-- 8. 백필 — 실계정 5개. 분류는 이름이 아니라 등록 사실로 한다(ADR-110).
+--
+--    **규칙은 두 층이다. 첫 층이 최우선이다.**
+--      ① **세미나 등록자 전면 제외** — `WHERE has_seminar = false`. 18명은 행을 만들지 않는다
+--         (산출로 cohort 이므로 저장할 것이 없다).
+--      ② 남은 5명 안에서 `trash > test > general > 미등록`.
+--
+--    이 순서를 ②만 적어 두었다가 지휘부 감사를 오도했다 — 문서대로 재현하니 **7행**이 나왔다
+--    (세미나 등록자 중 체험·test 를 겸한 사람이 함께 잡혔다). 첫 층을 생략하면 규칙이 달라진다.
+--
+--    적용 전 읽기 전용 예행으로 결과를 확인했다: held 1 · individual 2 · pending 2 = 5행.
 -- ============================================================
 INSERT INTO public.memberships (user_id, status, valid_until, decided_by, decided_at, decision_note)
 SELECT b.id,
