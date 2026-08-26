@@ -5,6 +5,8 @@
 // 계약(/contracts) 형상은 바꾸지 않는다. 검증 스키마는 진단이 주입(validators 레지스트리).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
+  ValueAssessment,
+  ValueAssessmentRow,
   Alert,
   AlertInput,
   CheckinPhoto,
@@ -172,6 +174,48 @@ const CHECKIN_ANSWERS_SCHEMA = z.record(
   // 문자열 4000자(편지 옮겨쓰기 수용 — '편지를 써 보세요' 문안, ADR-82 후속). 배열 원소는 짧은 낱말이라 2000. 전체 32KB.
   z.union([z.string().max(4000), z.number().finite(), z.boolean(), z.null(), z.array(z.string().max(2000)).max(8)]),
 );
+
+// 가치 카드(ADR-121). 경계 검증은 CLAUDE §9 — DB 는 느슨(JSONB), 코드 경계는 엄격.
+//   코어는 카드 어휘를 모른다(§2·§7). 그래서 '카드 id 가 몇 번인가'는 보지 않고
+//   **일반 구조 한계**(정수·개수·길이)만 강제한다. 의미 검증은 인스트루먼트 몫이다.
+const VALUE_COLS =
+  'user_id, cohort_id, card_set_version, stage, progress, candidates, value1_id, value2_id, value3_id,' +
+  ' value1_label, value2_label, value3_label, wb_peak, wb_strength, wb_longing, alignment, finalized_at, updated_at';
+const VALUE_CARD_IDS = z.array(z.number().int().positive()).max(72);
+const VALUE_PROGRESS = z.record(z.string(), z.unknown());
+const VALUE_SHORT = z.string().max(20);   // 대조 세 칸 — 한 단어 전제
+const VALUE_LABEL = z.string().max(60);   // 내 말로 바꾸기 — 한 줄 전제
+const VALUE_JSON_MAX = 8_192;             // 무제한 JSONB 를 막는다(갈무리 32KB 선례의 축소판)
+
+type ValueRow = {
+  user_id: string; cohort_id: string; card_set_version: string; stage: string;
+  progress: Record<string, unknown> | null; candidates: number[] | null;
+  value1_id: number | null; value2_id: number | null; value3_id: number | null;
+  value1_label: string | null; value2_label: string | null; value3_label: string | null;
+  wb_peak: string | null; wb_strength: string | null; wb_longing: string | null;
+  alignment: string | null; finalized_at: string | null; updated_at: string;
+};
+
+function rowToValue(r: ValueRow): ValueAssessment {
+  const ids =
+    r.value1_id != null && r.value2_id != null && r.value3_id != null
+      ? ([r.value1_id, r.value2_id, r.value3_id] as [number, number, number])
+      : null;
+  return {
+    cohortId: r.cohort_id,
+    cardSetVersion: r.card_set_version,
+    stage: r.stage as ValueAssessment['stage'],
+    progress: r.progress ?? {},
+    candidates: r.candidates ?? null,
+    finalIds: ids,
+    labels: { v1: r.value1_label, v2: r.value2_label, v3: r.value3_label },
+    workbook: { peak: r.wb_peak, strength: r.wb_strength, longing: r.wb_longing },
+    alignment: (r.alignment as ValueAssessment['alignment']) ?? null,
+    finalizedAt: r.finalized_at,
+    updatedAt: r.updated_at,
+  };
+}
+
 
 class SupabaseCoreContext implements CoreContext {
   // 요청 단위 currentUser 캐시(C-2·ADR-60). CoreContext 는 요청마다 새로 생성(createCoreContext) → 인스턴스 캐시 = 요청 단위.
@@ -1031,6 +1075,80 @@ class SupabaseCoreContext implements CoreContext {
   async deleteCheckinPhoto(path: string): Promise<void> {
     const { error } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).remove([path]);
     if (error) throw new CoreError(`deleteCheckinPhoto 실패: ${error.message}`);
+  }
+
+  // ── 가치 카드(ADR-121) ─────────────────────────────────────
+  async getMyValueAssessment(cohortId: string): Promise<ValueAssessment | null> {
+    const me = await this.requireUser();
+    const { data, error } = await this.sb
+      .from('value_assessments').select(VALUE_COLS)
+      .eq('cohort_id', cohortId).eq('user_id', me.id).maybeSingle();
+    if (error) throw new CoreError(`getMyValueAssessment 실패: ${error.message}`);
+    return data ? rowToValue(data as unknown as ValueRow) : null;
+  }
+
+  async saveMyValueProgress(input: {
+    cohortId: string;
+    stage: 'exploring' | 'candidates' | 'finalists';
+    progress?: Record<string, unknown>;
+    candidates?: number[];
+  }): Promise<void> {
+    const progress = input.progress === undefined ? null : VALUE_PROGRESS.parse(input.progress);
+    const candidates = input.candidates === undefined ? null : VALUE_CARD_IDS.parse(input.candidates);
+    if (progress && JSON.stringify(progress).length > VALUE_JSON_MAX) {
+      throw new CoreError('saveMyValueProgress 실패: 진행 상태가 너무 큽니다.');
+    }
+    const { error } = await this.sb.rpc('value_save_progress', {
+      p_cohort_id: input.cohortId,
+      p_stage: input.stage,
+      p_progress: progress,
+      p_candidates: candidates,
+    });
+    if (error) throw new CoreError(`saveMyValueProgress 실패: ${error.message}`);
+  }
+
+  async finalizeMyValue(cohortId: string, ids: [number, number, number]): Promise<void> {
+    const [v1, v2, v3] = VALUE_CARD_IDS.length(3).parse(ids);
+    const { error } = await this.sb.rpc('value_finalize', {
+      p_cohort_id: cohortId, p_v1: v1, p_v2: v2, p_v3: v3,
+    });
+    if (error) throw new CoreError(`finalizeMyValue 실패: ${error.message}`);
+  }
+
+  async patchMyValue(input: {
+    cohortId: string;
+    labels?: Partial<{ v1: string; v2: string; v3: string }>;
+    workbook?: Partial<{ peak: string; strength: string; longing: string }>;
+    alignment?: 'aligned' | 'different' | 'unsure' | 'skipped';
+  }): Promise<void> {
+    const labels: Record<string, string> = {};
+    for (const [k, v] of Object.entries(input.labels ?? {})) {
+      if (typeof v === 'string' && v.trim()) labels[k] = VALUE_LABEL.parse(v.trim());
+    }
+    const wb: Record<string, string> = {};
+    for (const [k, v] of Object.entries(input.workbook ?? {})) {
+      if (typeof v === 'string' && v.trim()) wb[k] = VALUE_SHORT.parse(v.trim());
+    }
+    const { error } = await this.sb.rpc('value_patch', {
+      p_cohort_id: input.cohortId,
+      p_labels: labels,
+      p_wb: wb,
+      p_alignment: input.alignment ?? null,
+    });
+    if (error) throw new CoreError(`patchMyValue 실패: ${error.message}`);
+  }
+
+  async listCohortValueAssessments(cohortId: string): Promise<ValueAssessmentRow[]> {
+    const { data, error } = await this.sb
+      .from('value_assessments').select(`${VALUE_COLS}, users!inner(name)`)
+      .eq('cohort_id', cohortId);
+    if (error) throw new CoreError(`listCohortValueAssessments 실패: ${error.message}`);
+    return (data ?? []).map((r) => {
+      // PostgREST 조인은 배열로 오기도 하고 객체로 오기도 한다. 둘 다 받는다.
+      const row = r as unknown as ValueRow & { users?: { name: string | null } | { name: string | null }[] | null };
+      const u = Array.isArray(row.users) ? row.users[0] : row.users;
+      return { ...rowToValue(row), userId: row.user_id, userName: u?.name ?? null };
+    });
   }
 
   // ── 내부 ───────────────────────────────────────────────────

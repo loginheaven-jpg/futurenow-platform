@@ -230,3 +230,144 @@ describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
     }
   });
 });
+
+// ── 가치 카드(ADR-121) ───────────────────────────────────────────────────────
+// 3차 검토 N-5: 읽기 축만으로는 쓰기 구멍이 안 잡힌다. **행동으로** 판정한다 —
+//   카탈로그 한 줄(has_*_privilege)은 초록으로 통과하면서 RPC 가 금지 상태를 써 주는 구멍을 못 잡는다.
+//   그래서 실제로 INSERT·UPDATE·RPC 를 때려 sqlstate 와 영향 행수를 본다.
+describe.skipIf(!ENABLED)('RLS — value_assessments(ADR-121)', () => {
+  const C8 = '[1,2,3,4,5,6,7,8]';
+  const COHORT2 = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+
+  it('읽기 5축 — 본인/타인/같은차수코치/다른차수코치/운영자', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      const q = `select count(*) from public.value_assessments where cohort_id='${COHORT}'`;
+      expect(await countAs(client, MEMBER, q)).toBe(1);
+      expect(await countAs(client, COACH_A, q)).toBe(1);
+      expect(await countAs(client, ADMIN, q)).toBe(1);
+      expect(await countAs(client, COACH_B, q)).toBe(0);
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+
+  it('직접 쓰기가 회수됐다 — INSERT·UPDATE 권한 거부(42501) · TRUNCATE·anon 없음', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await expectRaise(client, MEMBER,
+        `insert into public.value_assessments (user_id,cohort_id,card_set_version) values ('${MEMBER}','${COHORT}','v1')`, '42501');
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      await expectRaise(client, MEMBER,
+        `update public.value_assessments set stage='final' where user_id='${MEMBER}'`, '42501');
+      const r = await client.query(
+        `select has_table_privilege('authenticated','public.value_assessments','TRUNCATE') as t,
+                has_table_privilege('anon','public.value_assessments','SELECT') as a`);
+      expect(r.rows[0].t).toBe(false);
+      expect(r.rows[0].a).toBe(false);
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+
+  it('비멤버는 RPC 로도 남의 차수에 행을 심지 못한다 (B-1 세 번째)', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await expectRaise(client, COACH_B, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`, 'P0001');
+      expect(await countAs(client, ADMIN, `select count(*) from public.value_assessments`)).toBe(0);
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+
+  it('stage 전진 도약과 역행이 둘 다 막힌다 (N-2)', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      // exploring 에서 곧바로 확정 시도 → 거부. 이것이 B-1 이 지목한 '탐색·비교 건너뛰기'다.
+      await expectRaise(client, MEMBER, `select public.value_finalize('${COHORT}',1,2,3)`, 'P0001');
+      await expectRaise(client, MEMBER, `select public.value_save_progress('${COHORT}','finalists','{}'::jsonb,'${C8}'::jsonb)`, 'P0001');
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','candidates','{}'::jsonb,'${C8}'::jsonb)`);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','finalists','{}'::jsonb,null)`);
+      await expectRaise(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`, 'P0001');
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+
+  it('개수 규칙을 서버가 강제한다 — 7장·13장 거부 (N-1)', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      await expectRaise(client, MEMBER,
+        `select public.value_save_progress('${COHORT}','candidates','{}'::jsonb,'[1,2,3,4,5,6,7]'::jsonb)`, 'P0001');
+      await expectRaise(client, MEMBER,
+        `select public.value_save_progress('${COHORT}','candidates','{}'::jsonb,'[1,2,3,4,5,6,7,8,9,10,11,12,13]'::jsonb)`, 'P0001');
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','candidates','{}'::jsonb,'${C8}'::jsonb)`);
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+
+  it('확정 후 잠금 — 후보 밖 거부 · 재확정 거부 · 라벨은 계속 쓴다', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','candidates','{}'::jsonb,'${C8}'::jsonb)`);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','finalists','{}'::jsonb,null)`);
+      await expectRaise(client, MEMBER, `select public.value_finalize('${COHORT}',1,2,99)`, 'P0001');
+      await expectRaise(client, MEMBER, `select public.value_finalize('${COHORT}',1,1,2)`, 'P0001');
+      await runAs(client, MEMBER, `select public.value_finalize('${COHORT}',1,2,3)`);
+      await expectRaise(client, MEMBER, `select public.value_finalize('${COHORT}',4,5,6)`, 'P0001');
+      await expectRaise(client, MEMBER, `select public.value_save_progress('${COHORT}','candidates','{}'::jsonb,'${C8}'::jsonb)`, 'P0001');
+      // 안 넘긴 값은 보존된다(부분 갱신 시맨틱).
+      await runAs(client, MEMBER, `select public.value_patch('${COHORT}','{"v1":"어제보다 나아지는 것"}'::jsonb,null,null)`);
+      await runAs(client, MEMBER, `select public.value_patch('${COHORT}',null,null,'different')`);
+      const r = await client.query(`select value1_label, alignment from public.value_assessments where user_id='${MEMBER}'`);
+      expect(r.rows[0].value1_label).toBe('어제보다 나아지는 것');
+      expect(r.rows[0].alignment).toBe('different');
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+
+  it('이중 등록자 이동이 unique 충돌 없이 완료된다 (N-3)', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await client.query(`set local session_replication_role = replica;
+        insert into public.cohorts (id,coach_id,instrument_id,name,code,status,max_members) values
+         ('${COHORT2}','${COACH_A}','__rlstest__','RLS2','RSTU2','active',10);
+        insert into public.enrollments (cohort_id,user_id) values ('${COHORT2}','${MEMBER}');
+        set local session_replication_role = origin;`);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT2}','exploring','{}'::jsonb,null)`);
+      // 충돌 제거 절이 없으면 여기서 23505 로 함수 전체가 실패한다.
+      await runAs(client, ADMIN, `select public.move_cohort_member('${MEMBER}','${COHORT}','${COHORT2}')`);
+      const n = await client.query(`select count(*) from public.value_assessments where user_id='${MEMBER}'`);
+      expect(Number(n.rows[0].count)).toBe(1);
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+
+  it('명단 영구 삭제가 가치 결과도 지운다', async () => {
+    const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await client.connect();
+    try {
+      await client.query('begin');
+      await client.query(SETUP);
+      await runAs(client, MEMBER, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`);
+      await runAs(client, COACH_A, `select public.remove_cohort_member('${COHORT}','${MEMBER}')`);
+      const n = await client.query(`select count(*) from public.value_assessments where user_id='${MEMBER}'`);
+      expect(Number(n.rows[0].count)).toBe(0);
+    } finally { await client.query('rollback'); await client.end(); }
+  });
+});
