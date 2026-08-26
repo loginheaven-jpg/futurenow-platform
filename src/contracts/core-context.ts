@@ -31,6 +31,9 @@ import type {
   Role,
   SaveResponseInput,
   Wave,
+  ValueAssessment,
+  ValueAssessmentRow,
+  ValueStageKey,
 } from './domain';
 import type { ChatRequest, ChatResponse } from './ai';
 
@@ -161,6 +164,25 @@ export interface CoreContext {
   // 담당 인도자·운영자(checkins SELECT RLS). sessionNo 를 생략하면 그 차수 **전체**를 한 번에(ADR-118) —
   //   세로 보기·격자가 회차 수만큼 왕복하는 것을 막는다(7회차면 7회 → 1회). 기존 호출부는 그대로 산다.
   listCohortCheckins(cohortId: string, sessionNo?: number): Promise<CheckinRecord[]>;
+
+  // 가치 카드(ADR-121) — 별도 테이블 value_assessments. 쓰기는 전량 DEFINER RPC(D1 선례).
+  //   Q8 승인은 '3종'이었으나 RPC 가 셋(save_progress·finalize·patch)이라 쓰기 진입점이 셋 필요하고,
+  //   여기에 본인 조회·인도자 열람을 더해 **5종**이 됐다. 승인 델타를 완료 보고에 명시한다.
+  getMyValueAssessment(cohortId: string): Promise<ValueAssessment | null>; // 본인(value_assessments SELECT RLS)
+  saveMyValueProgress(input: { // 본인 · 증분 저장(value_save_progress DEFINER · 전이·개수 서버 강제)
+    cohortId: string;
+    stage: Exclude<ValueStageKey, 'final'>;
+    progress?: Record<string, unknown>;
+    candidates?: number[];
+  }): Promise<void>;
+  finalizeMyValue(cohortId: string, ids: [number, number, number]): Promise<void>; // 본인 · 선저장(value_finalize)
+  patchMyValue(input: { // 본인 · 확정 후 라벨·대조 증분(value_patch · 안 넘긴 값은 보존)
+    cohortId: string;
+    labels?: Partial<{ v1: string; v2: string; v3: string }>;
+    workbook?: Partial<{ peak: string; strength: string; longing: string }>;
+    alignment?: 'aligned' | 'different' | 'unsure' | 'skipped';
+  }): Promise<void>;
+  listCohortValueAssessments(cohortId: string): Promise<ValueAssessmentRow[]>; // 담당 인도자·운영자(SELECT RLS)
 
   // 편지 사진 첨부(ADR-83) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
   listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/차수 코치/운영자(storage RLS) · signed URL 포함

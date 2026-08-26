@@ -10,6 +10,7 @@ import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { PastSessionsClient } from './PastSessionsClient';
 import { buildProgress, openedSessionNos } from './progress';
 import { TOOL } from '@/app/_vocab/tool';
+import { HOME_CARD, VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,7 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
 
   // 내 한 걸음(제출된 열린 회차의 step) — 열린 회차가 있을 때만 조회.
   const openCheckin = c.openSessionNo != null ? await ctx.getMyCheckin(cohortId, c.openSessionNo) : null;
+  const valueRow = await ctx.getMyValueAssessment(cohortId);
   const stepWhat = typeof openCheckin?.answers?.step_what === 'string' ? (openCheckin.answers.step_what as string) : '';
   const stepWhen = typeof openCheckin?.answers?.step_when === 'string' ? (openCheckin.answers.step_when as string) : '';
 
@@ -140,14 +142,28 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
     </div>
   );
 
+  // 가치 카드(ADR-121). 중립 위계 — 갈무리(accent)보다 낮게 둔다. 상태 넷을 stage 로 가른다.
+  const valueState = valueRow == null ? 'none'
+    : valueRow.stage === 'final' ? 'done'
+    : valueRow.stage === 'exploring' ? 'exploring'
+    : 'candidates';
+  const valueCopy = HOME_CARD[valueState];
+  const valueSection = (
+    <div style={neutralCard}>
+      <div className="t-body" style={{ color: 'var(--color-text)' }}>{VALUE_TOOL}</div>
+      <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '2px 0 var(--space-2)' }}>{valueCopy.line}</div>
+      <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/values`} style={{ width: '100%', textDecoration: 'none' }}>{valueCopy.btn}</Link>
+    </div>
+  );
+
   const pastSection = pastCount > 0 ? (
     <PastSessionsClient cohortId={cohortId} sessionNos={pastSessionNos} label={`지난 회차 ${pastCount}개`} />
   ) : null;
 
   // 상태별 순서: 사전 미완이면 진단 먼저, 진행 중이면 갈무리 먼저.
   const ordered = !c.preDone
-    ? [diagnosisSection, checkinSection, stepSection, pastSection]
-    : [checkinSection, stepSection, diagnosisSection, pastSection];
+    ? [diagnosisSection, checkinSection, stepSection, valueSection, pastSection]
+    : [checkinSection, stepSection, valueSection, diagnosisSection, pastSection];
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>

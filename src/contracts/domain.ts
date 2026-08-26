@@ -229,3 +229,28 @@ export interface InterpretationView {
   editedAt: string | null;
   effective: unknown;
 }
+
+// 가치 카드 결과(ADR-121). 별도 테이블 value_assessments 소유 — responses 와 성격이 다르다
+//   (responses 는 불변 제출이고 이것은 두 세션에 걸쳐 갱신되는 진행 상태다).
+//   카드 어휘(72장·카테고리·문안)는 전부 인스트루먼트 소유라 계약에는 **id 와 상태만** 싣는다.
+export type ValueStageKey = 'exploring' | 'candidates' | 'finalists' | 'final';
+
+export interface ValueAssessment {
+  cohortId: string;
+  cardSetVersion: string;
+  stage: ValueStageKey;
+  progress: Record<string, unknown>;
+  candidates: number[] | null;
+  finalIds: [number, number, number] | null;
+  labels: { v1: string | null; v2: string | null; v3: string | null };
+  workbook: { peak: string | null; strength: string | null; longing: string | null };
+  alignment: 'aligned' | 'different' | 'unsure' | 'skipped' | null;
+  finalizedAt: string | null;
+  updatedAt: string;
+}
+
+// 인도자·운영자 열람용 — 본인 것에 사람 이름이 붙는다(같은 차수 코치·운영자만, RLS).
+export interface ValueAssessmentRow extends ValueAssessment {
+  userId: string;
+  userName: string | null;
+}
