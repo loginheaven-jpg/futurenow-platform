@@ -93,6 +93,21 @@
 /* §3 간격·형태 토큰 */
 :root {
   --radius: 10px;
+
+  /* ── PC 브레이크포인트 (지휘부 확정 2026-08-26 · 메모 §8.1) ──────────────
+     design_system.md §11 이 "미규정"으로 두었던 자리를 채운다. **min-width 기준**(모바일 우선).
+     CSS 변수는 @media 조건에 쓸 수 없다 — 값을 한 곳에 적어 두어 사람이 대조하게 하는 것이 목적이고,
+     실제 @media 는 아래 .pc-* 유틸이 같은 수를 리터럴로 쓴다(수가 갈리면 여기서 먼저 보인다). */
+  --bp-sm: 640px;   /* 큰 폰 가로 */
+  --bp-md: 768px;   /* 태블릿 */
+  --bp-lg: 1024px;  /* 노트북 — 콘솔 사이드바가 고정되는 지점 */
+  --bp-xl: 1280px;  /* 데스크톱 */
+
+  /* 영역별 최대 폭 — §8.1 세 수준. 참여자 화면은 브레이크포인트를 쓰지 않고 폭만 제한한다. */
+  --w-public: 1200px;    /* 공개 영역 */
+  --w-participant: 720px;/* 참여자 화면 */
+  --w-sidebar: 250px;    /* 콘솔 사이드바(lg 이상 고정) */
+
   --radius-lg: 12px;
   --radius-pill: 999px;
   --tap-min: 44px;
@@ -235,3 +250,28 @@ body {
     break-inside: avoid;
   }
 }
+
+/* ── 공개 영역 레이아웃 (S-4) ─────────────────────────────────────────────
+   **공개 영역만 PC 전용 레이아웃이다.** 참여자 화면은 중앙 정렬 폭 제한뿐이고 재설계하지 않는다
+   (§7.1 세 수준 중 셋째가 일정의 안전판이다). */
+.pc-shell {
+  max-width: var(--w-public);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+/* 2열 — lg(1024px) 이상에서만 갈린다. 그 아래는 1단으로 흐른다. */
+.pc-two {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) {
+  .pc-two { grid-template-columns: 2fr 1fr; gap: var(--space-6); }
+  .pc-shell { padding: var(--space-6); }
+}
+
+/* 카드 그리드 — md(768px)에서 2열, xl(1280px)에서 3열. 자료실·소식 목록이 쓴다. */
+.pc-cards { display: grid; gap: var(--space-3); grid-template-columns: 1fr; }
+@media (min-width: 768px)  { .pc-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .pc-cards { grid-template-columns: repeat(3, 1fr); } }

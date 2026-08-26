@@ -4,11 +4,19 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { SeminarIntro } from '@/app/_screens/SeminarIntro';
+import { recentNews } from '@/app/_lib/publicNews';
+import { CURRENT_INTAKE } from '@/app/recruit/intake';
+
+// **ISR 로 정적을 지킨다**(S-4). 소식을 얹으면서 `cookies()` 를 쓰지 않으므로 라우트가
+//   동적으로 바뀌지 않는다 — `/recruit` 이 쓰는 것과 같은 구조이고, 그 구조를 깨지 않는다는 지시다.
+//   현관은 카톡으로 수십 명이 동시에 여는 링크라 요청마다 DB 를 때리면 안 된다.
+export const revalidate = 300;
 
 const full: CSSProperties = { width: '100%', textDecoration: 'none' };
 const divider: CSSProperties = { borderTop: 'var(--border-hair) solid var(--color-border)', margin: 'var(--space-8) 0' };
 
-export default function Home() {
+export default async function Home() {
+  const news = await recentNews(3);
   return (
     <main style={{ maxWidth: 430, margin: '0 auto', padding: 'var(--space-8) var(--space-4)' }}>
       {/* 첫 화면 — 권유부 + CTA */}
@@ -41,6 +49,46 @@ export default function Home() {
       {/* 소개 세 단락 — 스크롤(공통 소개, SeminarIntro 단일 출처 — 코드 미리보기와 공유) */}
       <div style={divider} />
       <SeminarIntro />
+
+      {/* 모집 배너 — 이번 기수로 보내는 한 줄. 정원·마감 판정은 /recruit 이 하고 여기는 문을 연다. */}
+      <div style={divider} />
+      <Link className="ui-card ui-tappable" href="/recruit" style={{ display: 'block', textDecoration: 'none', padding: 'var(--space-4)' }}>
+        <span className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>이번 기수 모집</span>
+        <span className="t-body" style={{ display: 'block', marginTop: 'var(--space-1)' }}>{CURRENT_INTAKE.capacity}</span>
+        <span className="t-caption" style={{ display: 'block', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
+          일정과 신청 방법 보기
+        </span>
+      </Link>
+
+      {/* 소식 최근 3건. **없으면 구획째 그리지 않는다** — 빈 제목만 남으면 관리되지 않는 인상이 된다. */}
+      {news.length > 0 ? (
+        <div style={{ marginTop: 'var(--space-6)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <h2 className="t-body" style={{ fontWeight: 600, margin: 0 }}>소식</h2>
+            <Link className="t-caption" href="/news" style={{ color: 'var(--color-text-secondary)' }}>더 보기</Link>
+          </div>
+          <div style={{ marginTop: 'var(--space-3)', display: 'grid', gap: 'var(--space-2)' }}>
+            {news.map((n) => (
+              <Link key={n.id} href={`/news/${n.id}`} className="ui-listrow ui-listrow--tappable" style={{ textDecoration: 'none' }}>
+                <span className="t-body">{n.title}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* 공개 영역 — 소개·자료실·문의. 현관이 정문이라 갈 곳을 한자리에 둔다. */}
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
+        <Link href="/about" style={{ color: 'var(--color-text-secondary)' }}>소개</Link>
+        {' · '}
+        {/* 소식은 **여기에도** 둔다. 위 소식 구획은 글이 없으면 통째로 사라지는데, 그때
+            /news 로 가는 길이 현관에서 완전히 없어진다(자기 테스트가 잡았다). */}
+        <Link href="/news" style={{ color: 'var(--color-text-secondary)' }}>소식</Link>
+        {' · '}
+        <Link href="/library" style={{ color: 'var(--color-text-secondary)' }}>자료실</Link>
+        {' · '}
+        <Link href="/contact" style={{ color: 'var(--color-text-secondary)' }}>문의</Link>
+      </p>
 
       {/* 로그인·인도자 진입 — 보조(하단·ghost, 참여자 현관이라 우선순위 낮게). 로그인은 전 역할 공용. */}
       <div style={{ ...divider, margin: 'var(--space-8) 0 var(--space-6)' }} />

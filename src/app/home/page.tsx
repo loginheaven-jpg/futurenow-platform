@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { MemberHome } from '@/app/_screens/MemberHome';
+import { RoleCard } from '@/app/_screens/RoleCard';
 import { CheckinPrompt } from '@/app/_screens/CheckinPrompt';
 import { ConsentGate } from '@/app/_consent/ConsentGate';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
@@ -56,6 +57,11 @@ export default async function MemberHomePage() {
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="퓨처나우" subtitle="내 자리" homeHref="/home" action={<HeaderActions homeHref="/home" />} />
       {prompt ? <CheckinPrompt {...prompt} /> : null}
+      {/* 역할 카드 — 통합 홈 최상단에 하나(IA 설계철학 원칙 3 · 발주서 §6).
+          **탭 한 번을 넘지 않는다**: 참여자는 차수 홈, 인도자는 콘솔, 운영자는 본부.
+          역할 감금 해제(ADR-51)는 그대로다 — 이 카드는 **거점을 가리키는 것**이지 가두는 것이 아니고,
+          아래 MemberHome 이 다른 길을 계속 연다. */}
+      <RoleCard role={me.role} cohorts={cohorts} />
       <MemberHome greetingName={greetingName} cohorts={cohorts} role={me.role} pendingCoachApps={pendingCoachApps} />
     </div>
   );

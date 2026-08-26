@@ -82,9 +82,16 @@ export default async function PendingPage({
       </ol>
 
       {/* 지금도 할 수 있는 것 — 막다른 골목이면 사람은 돌아오지 않는다(§4.6).
-          소식·자료실은 S-4 라 아직 없다. **없는 곳으로 보내지 않는다** — 있는 것만 둔다. */}
+          **S-4 로 세 링크를 되살렸다**(단계 5 §6.2 이월). 그때는 목적지가 없어 걸지 않았고,
+          이제 있으므로 시안 G 의 셋이 제자리로 돌아온다. */}
       <h2 className="t-body" style={{ marginTop: 'var(--space-6)', fontWeight: 600 }}>지금도 하실 수 있는 것</h2>
       <div style={{ marginTop: 'var(--space-3)', display: 'grid', gap: 'var(--space-2)' }}>
+        <Link href="/news" className="ui-listrow ui-listrow--tappable" style={{ textDecoration: 'none' }}>
+          <span className="t-body">소식 보기</span>
+        </Link>
+        <Link href="/library" className="ui-listrow ui-listrow--tappable" style={{ textDecoration: 'none' }}>
+          <span className="t-body">공개 자료실</span>
+        </Link>
         <Link href="/recruit" className="ui-listrow ui-listrow--tappable" style={{ textDecoration: 'none' }}>
           <span className="t-body">세미나 참여 신청</span>
         </Link>
@@ -100,7 +107,8 @@ export default async function PendingPage({
       ) : null}
 
       <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-5)' }}>
-        확인이 늦어지거나 잘못 접수된 것 같으면 인도자나 운영자에게 알려 주십시오.
+        확인이 늦어지거나 잘못 접수된 것 같으면{' '}
+        <Link href="/contact" style={{ color: 'var(--color-primary)' }}>문의</Link>로 알려 주십시오.
         신청하신 내용은 그대로 남아 있습니다.
       </p>
     </div>

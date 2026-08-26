@@ -17,11 +17,13 @@ import type {
   CohortSession,
   ConsentRecord,
   ConsentType,
+  ContactMessage,
   ContactDetail,
   CoreUser,
   Enrollment,
   InstrumentId,
   InterpretationView,
+  LibraryItem,
   UserProfile,
   MemberActivity,
   MemberRef,
@@ -30,6 +32,7 @@ import type {
   MembershipDecision,
   MembershipQueueRow,
   MyCohortSummary,
+  NewsPost,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -210,4 +213,18 @@ export interface CoreContext {
   //   가입 경위는 memberships.signup_note. **status 는 건드리지 않는다** — 이미 승인된 사람이
   //   정보를 고친다고 자격이 되돌아가면 안 된다(운영자 결정은 decideMembership 만 바꾼다).
   recordSignupIntake(input: { forumName?: string | null; forumPhone?: string | null; signupNote?: string | null }): Promise<void>;
+
+  // 공개 영역(S-4) — 소식·자료실·문의. 진단 어휘 0(코어 중립).
+  listNews(limit?: number): Promise<NewsPost[]>; // 발행분(운영자는 초안 포함 — RLS 가 가른다)
+  getNews(id: string): Promise<NewsPost | null>;
+  upsertNews(input: { id?: string | null; title: string; body: string; publish?: boolean }): Promise<string>; // 운영자 전용
+  deleteNews(id: string): Promise<void>; // 운영자 전용
+  // 자료실 — 목록은 RLS 가 tier 로 가른다. **파일은 목록에 실리지 않는다**(경로만).
+  listLibrary(): Promise<LibraryItem[]>;
+  // 만료형 서명 URL. 발급 전 `library_can_read` 로 자격을 먼저 묻는다 — 목록 RLS 와 같은 표를 본다.
+  signLibraryFile(storagePath: string, expiresInSec?: number): Promise<string | null>;
+  // 문의 — **비로그인도 보낼 수 있다**(공개 화면). 스팸 가드는 RPC 안(길이·빈도).
+  submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void>;
+  listContactMessages(onlyOpen?: boolean): Promise<ContactMessage[]>; // 운영자 전용
+  markContactHandled(id: string): Promise<void>; // 운영자 전용
 }

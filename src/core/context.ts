@@ -24,7 +24,10 @@ import type {
   Enrollment,
   InstrumentId,
   InterpretationView,
+  ContactMessage,
+  LibraryItem,
   MemberActivity,
+  NewsPost,
   MemberState,
   MembershipDecision,
   MembershipQueueRow,
@@ -188,6 +191,15 @@ const VALUE_COLS =
 
 
 // 승인 큐 RPC 원시 행. `status` 열에 담기는 것은 저장값이 아니라 member_state() 판정이다.
+interface NewsRow { id: string; title: string; body: string; published_at: string | null; created_at: string }
+interface LibraryRow { id: string; title: string; description: string | null; tier: string; storage_path: string; created_at: string }
+interface ContactRow { id: string; name: string | null; email: string | null; body: string; user_id: string | null; handled_at: string | null; created_at: string }
+
+function rowToNews(r: unknown): NewsPost {
+  const row = r as NewsRow;
+  return { id: row.id, title: row.title, body: row.body, publishedAt: row.published_at, createdAt: row.created_at };
+}
+
 interface MembershipQueueDbRow {
   bucket: string;
   user_id: string;
@@ -1236,6 +1248,95 @@ class SupabaseCoreContext implements CoreContext {
       p_signup_note: input.signupNote ?? null,
     });
     if (error) throw new CoreError(`recordSignupIntake 실패: ${error.message}`);
+  }
+
+  // ── 공개 영역(S-4) ────────────────────────────────────────
+  //
+  // **RLS 가 가르고 코어는 나른다.** 소식의 초안·자료실의 3단은 정책이 판정하므로
+  //   여기에 role 분기를 쓰지 않는다 — 쓰면 판정이 두 곳이 된다.
+
+  async listNews(limit = 20): Promise<NewsPost[]> {
+    const { data, error } = await this.sb
+      .from('news_posts')
+      .select('id,title,body,published_at,created_at')
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(limit);
+    if (error) throw new CoreError(`listNews 실패: ${error.message}`);
+    return (data ?? []).map(rowToNews);
+  }
+
+  async getNews(id: string): Promise<NewsPost | null> {
+    const { data, error } = await this.sb
+      .from('news_posts').select('id,title,body,published_at,created_at').eq('id', id).maybeSingle();
+    if (error) throw new CoreError(`getNews 실패: ${error.message}`);
+    return data ? rowToNews(data as NewsRow) : null;
+  }
+
+  async upsertNews(input: { id?: string | null; title: string; body: string; publish?: boolean }): Promise<string> {
+    const { data, error } = await this.sb.rpc('news_upsert', {
+      p_id: input.id ?? null, p_title: input.title, p_body: input.body, p_publish: input.publish ?? false,
+    });
+    if (error) throw new CoreError(`upsertNews 실패: ${error.message}`);
+    return String(data);
+  }
+
+  async deleteNews(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('news_delete', { p_id: id });
+    if (error) throw new CoreError(`deleteNews 실패: ${error.message}`);
+  }
+
+  async listLibrary(): Promise<LibraryItem[]> {
+    const { data, error } = await this.sb
+      .from('library_items')
+      .select('id,title,description,tier,storage_path,created_at')
+      .order('created_at', { ascending: false });
+    if (error) throw new CoreError(`listLibrary 실패: ${error.message}`);
+    return (data ?? []).map((r) => {
+      const row = r as unknown as LibraryRow;
+      return {
+        id: row.id, title: row.title, description: row.description,
+        tier: row.tier as LibraryItem['tier'], storagePath: row.storage_path, createdAt: row.created_at,
+      };
+    });
+  }
+
+  async signLibraryFile(storagePath: string, expiresInSec = 300): Promise<string | null> {
+    // **자격을 먼저 묻는다.** 목록 RLS 와 같은 표(library_can_read)를 보므로 둘이 갈리지 않는다.
+    //   서명 URL 은 한 번 나가면 만료까지 유효하므로, 발급 자체가 관문이다.
+    const { data: ok, error: gateErr } = await this.sb.rpc('library_can_read', { p_path: storagePath });
+    if (gateErr) throw new CoreError(`signLibraryFile 실패: ${gateErr.message}`);
+    if (ok !== true) return null;
+    const { data, error } = await this.sb.storage.from('library').createSignedUrl(storagePath, expiresInSec);
+    if (error) return null; // 파일이 아직 없을 수 있다 — 화면이 '준비 중'으로 받는다
+    return data?.signedUrl ?? null;
+  }
+
+  async submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void> {
+    const { error } = await this.sb.rpc('contact_submit', {
+      p_name: input.name ?? null, p_email: input.email ?? null, p_body: input.body,
+    });
+    if (error) throw new CoreError(error.message); // 사용자에게 보일 문안이 RPC 안에 있다(길이·빈도)
+  }
+
+  async listContactMessages(onlyOpen = false): Promise<ContactMessage[]> {
+    let q = this.sb.from('contact_messages')
+      .select('id,name,email,body,user_id,handled_at,created_at')
+      .order('created_at', { ascending: false });
+    if (onlyOpen) q = q.is('handled_at', null);
+    const { data, error } = await q;
+    if (error) throw new CoreError(`listContactMessages 실패: ${error.message}`);
+    return (data ?? []).map((r) => {
+      const row = r as unknown as ContactRow;
+      return {
+        id: row.id, name: row.name, email: row.email, body: row.body,
+        userId: row.user_id, handledAt: row.handled_at, createdAt: row.created_at,
+      };
+    });
+  }
+
+  async markContactHandled(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('contact_mark_handled', { p_id: id });
+    if (error) throw new CoreError(`markContactHandled 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────

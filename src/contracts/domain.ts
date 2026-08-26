@@ -291,3 +291,38 @@ export interface MembershipQueueRow {
   //   상수는 `membership_default_months()` 한 곳에만 있다(IA §12-2 확정 시 그것만 고친다).
   defaultValidUntil: string;
 }
+
+// ── 공개 영역(S-4) ─────────────────────────────────────────────────────────
+// 소식. `publishedAt === null` 이면 초안이고 **운영자에게만 보인다**(RLS 가 가른다) —
+//   상태 컬럼을 따로 두지 않았다. 발행 시각이 곧 공개 여부라 진실이 둘이 되지 않는다.
+export interface NewsPost {
+  id: string;
+  title: string;
+  body: string;
+  publishedAt: string | null;
+  createdAt: string;
+}
+
+// 자료실 3단. 'public' 은 **비로그인 열람 허용**이라는 뜻이지 공개 버킷이라는 뜻이 아니다 —
+//   버킷은 비공개 하나뿐이고 파일은 만료형 서명 URL 로만 나간다.
+export type LibraryTier = 'public' | 'member' | 'coach';
+
+export interface LibraryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  tier: LibraryTier;
+  storagePath: string;
+  createdAt: string;
+}
+
+// 문의. **메일이 아니라 저장으로 간다**(발송 수단 실측 0 · S-4). 운영자가 콘솔에서 읽는다.
+export interface ContactMessage {
+  id: string;
+  name: string | null;
+  email: string | null;
+  body: string;
+  userId: string | null;
+  handledAt: string | null;
+  createdAt: string;
+}
