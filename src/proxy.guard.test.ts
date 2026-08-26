@@ -1,6 +1,7 @@
+import { safeReturnTo } from '@/app/_lib/safeReturn';
 import { describe, expect, it } from 'vitest';
 import { config as proxyConfig } from './proxy';
-import { isProtectedPath, PROXY_MATCHER, proxyMatcherCovers } from './proxy.guard';
+import { isProtectedPath, PROXY_MATCHER, proxyMatcherCovers , loginRedirectSearch } from './proxy.guard';
 
 describe('isProtectedPath (middleware 보호 경로 판정)', () => {
   it('보호: /home·/my·/coach·/admin 및 하위', () => {
@@ -86,6 +87,35 @@ describe('proxyMatcherCovers (matcher 불변식 — 좁히지 말 것)', () => {
       '/e.webp',
     ]) {
       expect(proxyMatcherCovers(p)).toBe(false);
+    }
+  });
+});
+
+describe('loginRedirectSearch — 민감 쿼리는 버리고 경로만 살린다', () => {
+  it('경로를 returnTo 로 싣는다', () => {
+    expect(loginRedirectSearch('/my/values')).toBe('?returnTo=%2Fmy%2Fvalues');
+    expect(loginRedirectSearch('/home/assessments')).toBe('?returnTo=%2Fhome%2Fassessments');
+  });
+
+  it('**원 요청의 쿼리는 인자로 받지도 않는다** — 전파될 경로가 구조적으로 없다', () => {
+    // af6576d 가 세운 근거(토큰·민감 쿼리 미전파)를 지킨다. 함수가 pathname 만 받으므로
+    // 호출부가 실수로 search 를 섞을 방법이 없다.
+    expect(loginRedirectSearch.length).toBe(1);
+    expect(loginRedirectSearch('/my/values')).not.toMatch(/access_token|token|code=/);
+  });
+
+  it('경로가 아니면 빈 쿼리 — 붙이지 않는다', () => {
+    for (const bad of ['', 'my/values', 'https://evil.test/x', '//evil.test/x']) {
+      expect(loginRedirectSearch(bad), bad).toBe('');
+    }
+  });
+
+  it('실은 값이 화이트리스트를 그대로 통과한다 — 두 끝을 묶는다', () => {
+    // 여기서 화이트리스트를 다시 구현하지 않는다(사본이 둘). 대신 왕복이 성립함을 단언한다.
+    for (const p of ['/my/values', '/home/assessments', '/my/cohorts/11111111-1111-1111-1111-111111111111/values']) {
+      const q = loginRedirectSearch(p);
+      const got = decodeURIComponent(new URLSearchParams(q).get('returnTo') ?? '');
+      expect(safeReturnTo(got), p).toBe(p);
     }
   });
 });

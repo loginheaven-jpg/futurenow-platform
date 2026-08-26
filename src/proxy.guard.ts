@@ -23,3 +23,22 @@ export const PROXY_MATCHER = '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:
 export function proxyMatcherCovers(pathname: string): boolean {
   return new RegExp(`^${PROXY_MATCHER}$`).test(pathname);
 }
+
+// ── 미인증 차단 시 로그인 URL 의 쿼리 (S-3 · returnTo 복원) ──────────────────
+//
+// **원 요청의 `search` 는 절대 복사하지 않는다.** 그것이 `af6576d`(Step 2.2)가 `loginUrl.search = ''`
+//   로 세운 근거이고 **지금도 유효하다** — `/my/...?access_token=…` 같은 요청이 오면 통째로 옮길 때
+//   토큰이 로그인 URL·브라우저 이력·referrer·로그에 남는다.
+//
+// 그러나 그 근거는 **"쿼리를 옮기지 마라"이지 "경로를 버려라"가 아니었다.** 경로만 실으면
+//   민감 쿼리는 한 글자도 전파되지 않으면서 딥링크 복귀가 산다(IA 설계철학 원칙 1·2).
+//
+// **여기서 화이트리스트를 검사하지 않는다.** 검증은 소비 쪽(`loginOutcome` → `safeReturnTo`)이
+//   이미 한다. 여기서 한 번 더 하면 화이트리스트가 두 곳이 되고, 그것이 이 저장소가 반복해서
+//   데인 "사본이 둘"이다. 통과 못 하는 경로는 로그인 뒤 `/home` 으로 떨어진다.
+export function loginRedirectSearch(pathname: string): string {
+  if (typeof pathname !== 'string' || !pathname.startsWith('/')) return '';
+  // 프로토콜 상대(`//`)는 경로가 아니라 호스트로 읽힐 수 있다 — 애초에 싣지 않는다.
+  if (pathname.startsWith('//')) return '';
+  return `?returnTo=${encodeURIComponent(pathname)}`;
+}

@@ -52,3 +52,15 @@ describe('개인 응시 경로(S-2)', () => {
     }
   });
 });
+
+describe('체크 허브(S-3)', () => {
+  it('/home/assessments 를 허용한다 — 라우트와 짝이다', () => {
+    expect(safeReturnTo('/home/assessments')).toBe('/home/assessments');
+  });
+
+  it('비슷하지만 다른 경로는 막는다', () => {
+    for (const bad of ['/home/assessments/', '/home/assessment', '/home', '/homeassessments']) {
+      expect(safeReturnTo(bad), bad).toBeNull();
+    }
+  });
+});
