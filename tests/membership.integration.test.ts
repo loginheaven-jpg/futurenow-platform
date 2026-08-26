@@ -23,6 +23,14 @@ const COHORT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 //   기본값이 곧 판정의 축임을 픽스처가 함께 증명한다.
 const SETUP = `
 set local session_replication_role = replica;
+-- auth.users 를 먼저 심는다 — public.users.id 가 auth.users(id) 를 참조한다.
+-- replica 모드가 FK 를 건너뛰어 행은 들어가지만, **뒤이은 정상 UPDATE 가 그 FK 를 다시 검사해** 터진다.
+-- 같은 replica 창 안이라 handle_new_user 트리거도 돌지 않는다.
+insert into auth.users (id, email) values
+ ('11111111-1111-1111-1111-111111111111','t0@t.test'),
+ ('22222222-2222-2222-2222-222222222222','t1@t.test'),
+ ('33333333-3333-3333-3333-333333333333','t2@t.test'),
+ ('44444444-4444-4444-4444-444444444444','t3@t.test');
 insert into public.users (id,email,name,nickname,role) values
  ('${COACH_A}','coachA@t.test','CoachA','ca','coach'),
  ('${MEMBER}','memberM@t.test','MemberM','mm','user'),
@@ -230,24 +238,29 @@ describe.skipIf(!ENABLED)('자동 전이와 쓰기 봉쇄 (실DB)', () => {
 
       await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
 
-      const exp = (await client.query(
-        `select (public.membership_today() + (public.membership_default_months() || ' months')::interval)::date as d`,
+      // 여기도 ::text 로 받는다 — 한쪽만 캐스팅하면 Date 와 문자열을 비교하게 된다.
+      const exp: string = (await client.query(
+        `select ((public.membership_today() + (public.membership_default_months() || ' months')::interval)::date)::text as d`,
       )).rows[0].d;
+      // pg 는 date 를 JS Date 로 돌려준다 — String(date) 이 'Tue Jan 01 2030 …' 이라 문자열 비교가 어긋난다.
+      //   SQL 에서 text 로 캐스팅해 받는다(로컬 타임존이 끼어들 여지도 함께 없앤다).
       const row = async (u: string) =>
-        (await client.query(`select status, valid_until, decided_by from public.memberships where user_id='${u}'`)).rows[0];
+        (await client.query(
+          `select status, valid_until::text as valid_until, decided_by from public.memberships where user_id='${u}'`,
+        )).rows[0];
 
       // role 필터를 걸지 않았으므로 참여자·인도자·운영자가 모두 대상이다.
       expect((await row(MEMBER)).status).toBe('individual');
-      expect(String((await row(MEMBER)).valid_until)).toBe(String(exp));
+      expect((await row(MEMBER)).valid_until).toBe(exp);
       expect((await row(MEMBER)).decided_by).toBeNull(); // 결정한 사람이 없다 — 수료는 사실이다
-      expect(String((await row(COACH_A)).valid_until), '기존 individual 은 연장되지 않는다').toBe('2030-01-01');
+      expect((await row(COACH_A)).valid_until, '기존 individual 은 연장되지 않는다').toBe('2030-01-01');
       expect((await row(ADMIN)).status, 'held 는 트리거가 뒤집지 않는다').toBe('held');
 
       const before = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
       await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
       const after = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
       expect(after, '재실행 멱등').toBe(before);
-      expect(String((await row(COACH_A)).valid_until)).toBe('2030-01-01');
+      expect((await row(COACH_A)).valid_until).toBe('2030-01-01');
     } finally { await close(client); }
   });
 

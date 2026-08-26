@@ -16,6 +16,14 @@ const ENABLED = process.env.RUN_RLS_INTEGRATION === '1' && !!process.env.SUPABAS
 
 const SETUP = `
 set local session_replication_role = replica;
+-- auth.users 를 먼저 심는다 — public.users.id 가 auth.users(id) 를 참조한다.
+-- replica 모드가 FK 를 건너뛰어 행은 들어가지만, **뒤이은 정상 UPDATE 가 그 FK 를 다시 검사해** 터진다
+-- (set_user_role·decide_coach_application 이 여기서 실패했다). 같은 replica 창 안이라 handle_new_user 도 안 돈다.
+insert into auth.users (id, email) values
+ ('11111111-1111-1111-1111-111111111111','t0@t.test'),
+ ('22222222-2222-2222-2222-222222222222','t1@t.test'),
+ ('33333333-3333-3333-3333-333333333333','t2@t.test'),
+ ('44444444-4444-4444-4444-444444444444','t3@t.test');
 insert into public.users (id,email,name,nickname,role) values
  ('11111111-1111-1111-1111-111111111111','coachA@t.test','CoachA','ca','coach'),
  ('22222222-2222-2222-2222-222222222222','memberM@t.test','MemberM','mm','user'),
@@ -233,6 +241,13 @@ describe.skipIf(!ENABLED)('RLS — value_assessments(ADR-121)', () => {
     try {
       await client.query('begin');
       await client.query(SETUP);
+      // S-1 응시 게이트가 앞에 생겼다(member_can_assess). COACH_B 는 어느 차수에도 없어 상태가
+      //   'pending' 이라 42501 로 먼저 막힌다 — **이 단언이 지키려던 것은 그것이 아니라 '차수 게이트'다.**
+      //   레드가 났다고 단언을 지우지 않고, 상태 게이트를 통과시켜 원래 의도를 되살린다(ADR-111 처리와 같다).
+      await client.query(
+        `insert into public.memberships (user_id,status,valid_until,decided_at,decision_note)
+         values ('${COACH_B}','individual','2099-12-31',now(),'fixture')`,
+      );
       await expectRaise(client, COACH_B, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`, 'P0001');
       expect(await countAs(client, ADMIN, `select count(*) from public.value_assessments`)).toBe(0);
     } finally { await client.query('rollback'); await client.end(); }
