@@ -25,6 +25,9 @@ import type {
   InstrumentId,
   InterpretationView,
   MemberActivity,
+  MemberState,
+  MembershipDecision,
+  MembershipQueueRow,
   MemberRef,
   MemberSummary,
   MyCohortSummary,
@@ -181,6 +184,30 @@ const CHECKIN_ANSWERS_SCHEMA = z.record(
 const VALUE_COLS =
   'user_id, cohort_id, card_set_version, stage, progress, candidates, value1_id, value2_id, value3_id,' +
   ' value1_label, value2_label, value3_label, wb_peak, wb_strength, wb_longing, alignment, finalized_at, updated_at';
+
+
+// 승인 큐 RPC 원시 행. `status` 열에 담기는 것은 저장값이 아니라 member_state() 판정이다.
+interface MembershipQueueDbRow {
+  bucket: string;
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  forum_name: string | null;
+  forum_phone: string | null;
+  signup_note: string | null;
+  status: string;
+  valid_until: string | null;
+  created_at: string;
+  default_valid_until: string;
+}
+
+const MEMBER_STATES = ['pending', 'individual', 'cohort', 'expired', 'held'] as const;
+
+// 경계 검증이지 판정이 아니다 — DB 가 계약 밖 값을 내면 조용히 오타입으로 흐르지 않고 여기서 멈춘다.
+function toMemberState(v: unknown): MemberState {
+  if (typeof v === 'string' && (MEMBER_STATES as readonly string[]).includes(v)) return v as MemberState;
+  throw new CoreError(`member_state 응답이 계약 밖입니다: ${String(v)}`);
+}
 const VALUE_CARD_IDS = z.array(z.number().int().positive()).max(72);
 const VALUE_PROGRESS = z.record(z.string(), z.unknown());
 const VALUE_SHORT = z.string().max(20);   // 대조 세 칸 — 한 단어 전제
@@ -1149,6 +1176,59 @@ class SupabaseCoreContext implements CoreContext {
       const u = Array.isArray(row.users) ? row.users[0] : row.users;
       return { ...rowToValue(row), userId: row.user_id, userName: u?.name ?? null };
     });
+  }
+
+  // ── 회원 상태·승인(S-1 · ADR-122) ─────────────────────────
+  //
+  // **판정은 여기 없다.** 우선순위(held > cohort > 저장 > pending)와 만료 산출은 `member_state()`
+  //   한 곳에만 있고, 아래 셋은 그 결과를 읽어 나르기만 한다. TS 에 사본을 만들면 두 곳이
+  //   갈리는 날이 오고, 그때 화면과 서버 강제가 다른 답을 낸다.
+  // **유효기간 기본 개월수도 여기 없다** — 승인 화면 기본값은 큐가 실어 보내는 `defaultValidUntil` 이다.
+
+  async getMyMemberState(): Promise<MemberState> {
+    // 인자를 넘기지 않는다 — 함수 기본값이 auth.uid() 다. 남의 상태를 물으려면 운영자여야 하고
+    //   그 게이트는 member_state() 안에 있다(DEFINER 가 RLS 를 우회하므로).
+    const { data, error } = await this.sb.rpc('member_state');
+    if (error) throw new CoreError(`getMyMemberState 실패: ${error.message}`);
+    return toMemberState(data);
+  }
+
+  async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {
+    const { data, error } = await this.sb.rpc('list_membership_queue', { p_expiring_days: expiringDays });
+    if (error) throw new CoreError(`listMembershipQueue 실패: ${error.message}`);
+    return ((data ?? []) as MembershipQueueDbRow[]).map((r) => ({
+      bucket: r.bucket === 'expiring' ? 'expiring' : 'pending',
+      userId: r.user_id,
+      name: r.name,
+      email: r.email,
+      forumName: r.forum_name,
+      forumPhone: r.forum_phone, // 원값. 마스킹은 서버 컴포넌트가 한다(브라우저로 내보내지 않는다)
+      signupNote: r.signup_note,
+      // DB 쪽 열 이름은 `status` 이나 담긴 값은 **판정**(member_state)이다. RETURNS TABLE 의
+      //   OUT 이름은 CREATE OR REPLACE 로 못 바꾸고 그것만을 위해 마이그레이션을 더하지 않는다.
+      //   계약 이름(`state`)이 뜻을 말하고, 이 한 줄이 둘을 잇는다.
+      state: toMemberState(r.status),
+      validUntil: r.valid_until,
+      createdAt: r.created_at,
+      defaultValidUntil: r.default_valid_until,
+    }));
+  }
+
+  async decideMembership(input: {
+    userId: string;
+    decision: MembershipDecision;
+    validUntil?: string | null;
+    note?: string | null;
+  }): Promise<void> {
+    // 가드(운영자·자기 자신 차단·화이트리스트·행잠금)는 전부 RPC 안이다. 앱이 앞에서 한 번 더
+    //   막지 않는 이유는, 두 곳에서 막으면 한 곳만 고쳐질 때 뚫리기 때문이다.
+    const { error } = await this.sb.rpc('decide_membership', {
+      p_user_id: input.userId,
+      p_decision: input.decision,
+      p_valid_until: input.validUntil ?? null,
+      p_note: input.note ?? null,
+    });
+    if (error) throw new CoreError(`decideMembership 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────

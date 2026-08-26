@@ -254,3 +254,38 @@ export interface ValueAssessmentRow extends ValueAssessment {
   userId: string;
   userName: string | null;
 }
+
+// ── 회원 상태(S-1 · ADR-122) ────────────────────────────────────────────────
+// **Role 과 별도 축이다.** role(user·coach·admin)은 권한, state 는 자격이다. 한 컬럼에 섞지 않는다.
+//   기존 자가승격 방지(20260629100002)의 보호 범위를 흔들지 않으려는 분리다(발주서 §4.2).
+//
+// **'cohort' 는 저장되지 않는다.** enrollments ⋈ cohorts(kind='seminar' AND status='active')가
+//   이미 아는 사실이라 `member_state()` 가 산출한다. DB 의 memberships.status CHECK 에는
+//   'cohort' 가 없어 문법이 이중 기록을 막는다. 이 유니온이 그것보다 넓은 것은,
+//   **판정 결과**를 담는 타입이지 저장 값을 담는 타입이 아니기 때문이다.
+export type MemberState = 'pending' | 'individual' | 'cohort' | 'expired' | 'held';
+
+// 응시 계열. 여정 = 사전·사후 체크, 상시 = 가치 카드·그림자·사랑의 언어.
+export type AssessmentKind = 'journey' | 'standing';
+
+// 운영자가 내릴 수 있는 결정. **'pending' 과 'cohort' 는 없다** —
+//   앞은 초기 상태라 되돌릴 일이 아니고, 뒤는 산출이라 결정할 수 있는 것이 아니다.
+export type MembershipDecision = 'individual' | 'held' | 'expired';
+
+// 승인 큐 한 행(대기 + 만료 임박). `list_membership_queue` 가 두 갈래를 함께 돌려준다.
+export interface MembershipQueueRow {
+  bucket: 'pending' | 'expiring';
+  userId: string;
+  name: string | null;
+  email: string | null;
+  // 포럼 대조 키 — user_contacts 에 산다(불변식 13). 인도자에게는 어떤 경로로도 가지 않는다.
+  forumName: string | null;
+  forumPhone: string | null; // **원값.** 마스킹은 서버 컴포넌트의 순수 함수가 한다(브라우저 번들에 싣지 않는다)
+  signupNote: string | null;
+  state: MemberState; // 저장값이 아니라 **판정**. 화면은 이것을 다시 계산하지 않는다
+  validUntil: string | null; // ISO date
+  createdAt: string;
+  // 승인 화면 유효기간 기본값. **TS 가 기본 개월수를 모르게 하려고 DB 가 계산해 보낸다** —
+  //   상수는 `membership_default_months()` 한 곳에만 있다(IA §12-2 확정 시 그것만 고친다).
+  defaultValidUntil: string;
+}

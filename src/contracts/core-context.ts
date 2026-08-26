@@ -25,7 +25,10 @@ import type {
   UserProfile,
   MemberActivity,
   MemberRef,
+  MemberState,
   MemberSummary,
+  MembershipDecision,
+  MembershipQueueRow,
   MyCohortSummary,
   ResponseEnvelope,
   Role,
@@ -187,4 +190,18 @@ export interface CoreContext {
   // 편지 사진 첨부(ADR-83) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
   listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/차수 코치/운영자(storage RLS) · signed URL 포함
   deleteCheckinPhoto(path: string): Promise<void>; // 본인/운영자(storage RLS)
+
+  // 회원 상태·승인(S-1 · ADR-122) — role 과 별도 축. 상태가 가르는 것은 **새 응시 하나**이고
+  //   자기 결과 열람은 상태와 무관하다(메모 §2-가 · IA v2.1 §5.4). 그래서 열람 게이트 메서드가 없다.
+  //
+  // **판정은 SQL 에만 있다.** 우선순위(held > cohort > 저장 > pending)와 만료 산출은 `member_state()`
+  //   한 곳이고, 여기 셋은 그 결과를 **읽어 나르기만** 한다. TS 에 판정 사본을 만들지 않는다.
+  getMyMemberState(): Promise<MemberState>; // 본인 — member_state() DEFINER(인자 생략 = auth.uid())
+  listMembershipQueue(expiringDays?: number): Promise<MembershipQueueRow[]>; // 운영자 전용 — 대기 + 만료 임박 한 벌(list_membership_queue)
+  decideMembership(input: {
+    userId: string;
+    decision: MembershipDecision;
+    validUntil?: string | null; // 개인 회원 승인에만. 화면 기본값은 MembershipQueueRow.defaultValidUntil
+    note?: string | null;
+  }): Promise<void>; // 운영자 전용 — decide_membership(가드: admin · 자기 자신 차단 · 화이트리스트 · 행잠금)
 }
