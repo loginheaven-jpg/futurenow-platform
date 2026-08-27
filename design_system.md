@@ -38,7 +38,9 @@
   /* 브랜드 — 골드 (X1 확정 2026-06-30: 점 강조 전용) */
   --gold-700:#A8791A; --gold-500:#C8911F; --gold-300:#DBB05A; --gold-100:#F2E6CC;
   /* 중립 (warm gray) */
-  --gray-0:#FFFFFF; --gray-50:#F7F6F4; --gray-100:#EEECE8; --gray-200:#DEDAD3;
+  --gray-0:#FFFFFF; --gray-50:#F7F6F4; --gray-100:#EEECE8;
+  --gray-150:#E4E1DA;   /* 4차 F-0 신설 — 카드 위에 놓이는 면(입력창·트랙) */
+  --gray-200:#DEDAD3;
   --gray-400:#A8A29A; --gray-600:#6B655C; --gray-800:#3A352F; --gray-900:#211E1A;
   /* 의미색 — 인도자 화면 전용 (참여자 응답 화면 사용 금지) */
   --green-600:#2E7D6B; --amber-600:#C0852E; --red-600:#B23B3B;
@@ -57,14 +59,23 @@
   --color-primary:var(--navy-700);      --color-primary-strong:var(--navy-900);
   --color-accent:var(--gold-500);       --color-accent-soft:var(--gold-100);
   --color-bg:var(--gray-0);             --color-surface-1:var(--gray-50);
-  --color-surface-2:var(--gray-0);      --color-surface-sunken:var(--gray-100);
+  --color-surface-2:var(--gray-100);    --color-surface-sunken:var(--gray-150);
+  --color-surface-input:var(--color-surface-sunken);   /* 4차 F-0 신설 — 입력창 전용(별칭 §1.6) */
+  --color-surface-inverse:linear-gradient(150deg,var(--navy-900),var(--navy-700)); /* 4차 F-0 신설 — 네이비 면 */
   --color-border:var(--gray-200);       --color-border-strong:var(--gray-400);
   --color-text:var(--gray-900);         --color-text-secondary:var(--gray-600);
-  --color-text-muted:var(--gray-400);   --color-text-on-accent:var(--gray-0);
+  --color-text-muted:var(--gray-600);   --color-text-on-accent:var(--gray-0);
+  --color-accent-strong:var(--gold-300);/* 4차 F-0 신설 — 네이비 면 위 강조어 전용 */
   --color-text-on-gold:var(--navy-700); /* 골드 면 위 글자 — 대비 확보(흰 글자는 골드 위 2.79:1 미달) */
   --color-success:var(--green-600); --color-care:var(--amber-600); --color-danger:var(--red-600);
 }
 ```
+> **4차 F-0 개편(2026-08-27).** 3차 §11 부채 셋을 닫았다 — `surface-2` 가 배경과 같은 흰색이던 것,
+> `border-strong`=`text-muted`, `text-muted` 가 §10 대비 기준 미달이던 것. **면이 네 단으로 섰다**:
+> `bg`(1.00) → `surface-1`(1.08) → `surface-2`(1.18) → `sunken`(1.31). 실측은 §1.6.
+> **발주 원안은 `sunken` 을 그대로 두어 `surface-2` 와 같은 값이 됐다**(입력창이 카드와 동색).
+> `gray-150` 을 넣어 갈랐다 — F-0 중단 보고 §3.1·§4 대안 ②(지휘부 채택).
+
 > **`--color-text-on-gold`(navy-700)**: 골드 배경 위 글자 전용 — 랜딩 CTA·척도 선택 셀·완료 배지 등. 네이비 바 위 글자는 `--color-text-on-accent`(흰색) 유지. 흰 글자를 골드 위에 쓰면 2.79:1로 §10 대비 미달이라 분리(X2a 보완).
 
 ### 1.3 라이트 고정 (2026-07-01 확정) — 다크 모드 미지원
@@ -92,64 +103,82 @@ export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3
 - **헤더 부제**(차수명 등)는 **옅은 네이비**(`--navy-300`) — 골드 아님. 진입 흐름 일관화(진입-1b).
 - **본부·코치·참여자 홈 헤더는 동일 셸**(AppHeader `variant='root'`, 배경 `--color-primary`=navy-700). 본부 전용 색 깊이 구분(옛 `--hq-*` 토큰)은 **미채택·폐기** — 계층은 색이 아니라 진입 게이트(운영자 전용 라우트)로 구분.
 
-### 1.6 상태 대비 실측 (v4 신설 · 3차 T-1)
+### 1.6 상태 대비 실측 (v4 신설 · 3차 T-1 → **4차 F-0 개편**)
 
 **이 절은 2차 §11 결함에서 나왔다.** 기수 선택 칩의 "선택됨"을 `--color-surface-2` 면으로
-표시했는데 그 토큰이 `--color-bg` 와 **같은 색**이라 아무것도 보이지 않았다. 화면은 전환됐지만
-사용자에게는 죽은 클릭이었다. **이름이 다르면 색도 다를 것이라는 가정이 틀렸다.**
+표시했는데 그 토큰이 `--color-bg` 와 **같은 색**이라 아무것도 보이지 않았다.
+**이름이 다르면 색도 다를 것이라는 가정이 틀렸다.**
 
 수치는 손으로 적었으므로 갈릴 수 있다. `src/app/_lib/designTokens.test.ts` 가 `globals.css` 에서
-다시 계산해 이 표와 대조한다 — **어긋나면 레드가 난다.**
+다시 계산해 이 표와 대조하고, **선언되지 않은 같은 축 충돌이 생기면 레드가 난다.**
 
-#### 값이 같은 토큰 — 11묶음
+#### 대비비 실측 (WCAG · 4차 F-0 이후)
 
-`var()` 사슬을 끝까지 풀면 아래와 같이 묶인다. **아홉은 §1.2 3단 구조(원천 → 역할)의
-정상 별칭**이고, **둘은 역할이 다른데 값이 같다** — 그 둘이 함정이다.
-
-| 값 | 토큰 | 판정 |
-|---|---|---|
-| `#ffffff` | `--gray-0` · `--color-bg` · **`--color-surface-2`** · `--color-text-on-accent` | **⛔ 급소 ①** |
-| `#a8a29a` | `--gray-400` · **`--color-border-strong`** · **`--color-text-muted`** | **⚠ 급소 ②** |
-| `#1a3a5c` | `--navy-700` · `--color-primary` · `--color-text-on-gold` | 정상 별칭 |
-| `#102338` | `--navy-900` · `--color-primary-strong` | 정상 |
-| `#c8911f` | `--gold-500` · `--color-accent` | 정상 |
-| `#f2e6cc` | `--gold-100` · `--color-accent-soft` | 정상 |
-| `#f7f6f4` | `--gray-50` · `--color-surface-1` | 정상 |
-| `#eeece8` | `--gray-100` · `--color-surface-sunken` | 정상 |
-| `#dedad3` | `--gray-200` · `--color-border` | 정상 |
-| `#6b655c` | `--gray-600` · `--color-text-secondary` | 정상 |
-| `#211e1a` | `--gray-900` · `--color-text` | 정상 |
-
-#### 대비비 실측 (WCAG)
-
-| 구분 | 앞 | 뒤 | 대비 | 쓰임 |
+| 구분 | 앞 | 뒤 | 대비 | 비고 |
 |---|---|---|---:|---|
 | 글자 | `--color-text` | `--color-bg` | **16.60** | 본문 |
-| 글자 | `--color-text-secondary` | `--color-bg` | **5.77** | 보조 문구 |
-| 글자 | `--color-text-muted` | `--color-bg` | **2.53** ⛔ | 흐린 문구 — **§10 기준 미달**(§11 부채) |
-| 글자 | `--color-text-on-accent` | `--color-primary` | **11.64** | 네이비 면 위 흰 글자 |
-| 글자 | `--color-text-on-gold` | `--color-accent` | **4.17** ⚠ | 골드 면 위 글자 |
-| 면 | `--color-surface-1` | `--color-bg` | **1.08** ⚠ | 면 위의 면 ① |
-| 면 | `--color-surface-sunken` | `--color-bg` | **1.18** ⚠ | 면 위의 면 ② |
-| 면 | **`--color-surface-2`** | `--color-bg` | **1.00** ⛔ | **카드 배경 — 차이 없음** |
-| 면 | `--color-primary` | `--color-bg` | **11.64** | 네이비 면 |
-| 면 | `--color-accent-soft` | `--color-bg` | **1.24** ⚠ | 골드 연한 면 |
-| 테두리 | `--color-border` | `--color-bg` | **1.39** ⚠ | 기본 테두리 |
-| 테두리 | `--color-border-strong` | `--color-bg` | **2.53** | 강조 테두리 |
+| 글자 | `--color-text` | `--color-surface-2` | **14.07** | 카드 위 본문 |
+| 글자 | `--color-text-secondary` | `--color-bg` | **5.77** | |
+| 글자 | `--color-text-secondary` | `--color-surface-2` | **4.89** | 카드 위 |
+| 글자 | **`--color-text-muted`** | `--color-bg` | **5.77** | **F-0: 2.53 → 5.77** |
+| 글자 | `--color-text-muted` | `--color-surface-2` | **4.89** | 카드 위 |
+| 글자 | `--color-text-on-accent` | `--navy-700`(면 최악단) | **11.64** | 네이비 면 위 흰 글자 |
+| 글자 | `--color-text-on-accent` | `--navy-900` | **15.91** | |
+| 글자 | **`--color-accent-strong`** | `--navy-700`(면 최악단) | **5.75** | 강조어 |
+| 글자 | `--color-accent-strong` | `--navy-900` | **7.86** | |
+| 글자 | `--color-text-on-gold` | `--color-accent` | **4.17** | 골드 면 위 |
+| 면 | `--color-surface-1` | `--color-bg` | **1.08** | 패널 |
+| 면 | **`--color-surface-2`** | `--color-bg` | **1.18** | **F-0: 1.00 → 1.18. 카드가 면으로 선다** |
+| 면 | `--color-surface-sunken` | `--color-surface-2` | **1.11** | 카드 위에 놓이는 것 |
+| 면 | `--color-surface-input` | `--color-surface-2` | **1.11** | 〃(별칭) |
+| 면 | `--color-accent-soft` | `--color-bg` | **1.24** | |
+| 테두리 | `--color-border` | `--color-bg` | **1.39** | |
+| 테두리 | `--color-border` | `--color-surface-2` | **1.18** | 카드 위 |
+| 테두리 | `--color-border-strong` | `--color-bg` | **2.53** | |
+
+**`--color-surface-inverse` 는 그라디언트다**(navy-900 → navy-700). **대비는 최악단(navy-700)으로
+판정한다** — 글자가 가장 안 보이는 곳이 판정 기준이다.
+
+#### 같은 축 충돌 — **선언된 별칭 외에 0**
+
+값이 같아도 **축이 다르면 충돌이 아니다.** 흰 배경(`bg`)과 "네이비 면 위 흰 글자"(`text-on-accent`)가
+같은 값인 것은 당연하다. **면끼리·글자끼리 같은 값일 때만** 구분이 불가능해진다.
+
+| 값 | 토큰 | 축 | 판정 |
+|---|---|---|---|
+| `#FFFFFF` | `--color-bg` · `--color-text-on-accent` | 면 / 글자 | 충돌 아님 |
+| `#1A3A5C` | `--color-primary` · `--color-text-on-gold` | 브랜드 / 글자 | 충돌 아님 |
+| `#E4E1DA` | `--color-surface-sunken` · `--color-surface-input` | **면 / 면** | **선언된 별칭 ①** |
+| `#6B655C` | `--color-text-secondary` · `--color-text-muted` | **글자 / 글자** | **선언된 별칭 ②** |
+
+#### 선언된 별칭 둘 — **구분에 쓰지 않는다**
+
+> **별칭 ① `--color-surface-input` = `--color-surface-sunken`**
+> 입력창은 지금 "카드 위에 놓이는 것"과 같은 면이다. **이름을 따로 둔 이유는 값이 달라서가 아니라
+> 나중에 갈릴 자리이기 때문이다** — 입력창 면을 조정할 때 트랙·접힌 블록까지 함께 움직이지 않도록
+> 미리 갈라 두었다. F-1 부품은 입력 슬롯에 **반드시 `--color-surface-input`** 을 쓴다.
+
+> **별칭 ② `--color-text-muted` = `--color-text-secondary`**
+> **의도된 별칭이다.** 흰 바탕에서 §10 기준(4.5)을 넘으면서 `gray-600` 보다 눈에 띄게 옅은 회색이
+> **없다**(`#7D7770` 이 4.43 으로 0.07 차이 미달). WCAG 가 두 단계를 하나로 밀어붙인다.
+> **위계 구분은 색이 아니라 크기·굵기로 한다** — `t-caption`/`t-micro` 의 크기 차이와 `font-weight`
+> 가 그 일을 맡는다. 두 단계가 있는 척하지 않는다.
 
 #### 금지 — 이 쌍으로 상태를 가르지 말 것
 
-> **① `--color-surface-2` 로 선택·활성을 표시하지 않는다.** 배경과 대비 **1.00** 이라 보이지 않는다.
-> **② `--color-border-strong` 과 `--color-text-muted` 를 나란히 두고 구분에 쓰지 않는다.** 같은 색이다.
-> **③ 면색만으로 상태를 가르려면 `--color-primary`(11.64) 뿐이다.** `surface-1`·`sunken`·`accent-soft`
-> 는 배경과 1.3 미만이라 "선택됨"을 혼자 말하지 못한다 — 테두리·굵기·라벨을 함께 써야 한다.
+> **① 선언된 별칭 둘로 구분하지 않는다**(위). 같은 색이다.
+> **② 면색만으로 상태를 가르려면 `--color-primary`(11.64) 다.** 면 사다리
+> (`bg` 1.00 → `surface-1` 1.08 → `surface-2` 1.18 → `sunken` 1.31)는 **깊이**를 말하지
+> **선택 상태**를 말하지 못한다 — 단 차이가 0.1 안팎이라 "선택됨"으로 읽히지 않는다.
+> 상태는 **면과 테두리의 차이 + `aria-current`/`aria-pressed`** 로 가른다(§10).
+> **③ `--color-accent-strong` 은 네이비 면 위 강조어 전용이다.** **흰 바탕 금지 · 장문 금지.**
+> 최악단 5.75 라 기술적으로는 본문도 되지만 **용도 제한은 유지한다** — 골드 장문은 읽기 피로가 크다.
 
-**면 위의 면이 이 시스템에 사실상 없다.** `ui-card` 도 `background: var(--color-surface-2)` 이므로
-**카드는 면이 아니라 테두리(`--color-border`, 대비 1.39)로 서 있다.** 지금 화면들이 성립하는 이유가
-그것이고, 면 대비를 전제한 새 부품은 성립하지 않는다. 구조적 판단이 필요하므로 **§11에 부채로 남긴다.**
+**면 위의 면이 생겼다.** 3차 §1.6이 *"이 시스템에 없다"* 고 적었던 것을 F-0이 만들었다 —
+`ui-card` 가 이제 테두리가 아니라 **면으로 선다**(1.18). 3차 §11 부채 ①·②·③이 함께 닫혔다.
 
 **어떻게 갈랐는가 — 2차 §11 수정의 실물.** 기수 전환 칩을 `ui-btn--primary`(네이비 면·11.64) /
-`ui-btn--ghost`(투명 + 네이비 테두리·8.36)로 되돌렸다. 색이 아니라 **면과 테두리의 차이**다.
+`ui-btn--ghost`(투명 + 네이비 테두리)로 되돌렸다. 색이 아니라 **면과 테두리의 차이**다.
 
 ---
 
@@ -444,15 +473,13 @@ export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3
 ## 11. 미확정 (다음 세션)
 
 - **코치 등록 신청(신청자 측)** 화면·승인 후 알림 — 미정(운영자 측 승인/거절 `decide_coach_application`·AdminMembers는 구현).
-- **면 위의 면이 없다**(v4 · 3차 T-1 실측). `--color-surface-2` 가 `--color-bg` 와 같은 색(`#ffffff` · 대비 **1.00**)이라
-  **카드는 면이 아니라 테두리로 선다.** 면 대비가 필요한 화면이 나오면 **별도 발주로 토큰 체계를 손본다.**
-  지금은 §1.6 금지 규칙으로 함정만 막아 두었다 — **금지는 다음 사람이 빠지는 것을 막지만, 이것이 의도된 설계인지
-  미결 부채인지는 말하지 않는다.** 지금 고치지 않는 것과 영원히 이대로 가는 것은 다르다.
-- **`--color-text-muted` 가 §10 대비 기준을 어긴다**(v4 · 3차 T-1 실측). `--color-bg` 대비 **2.53** 으로
-  본문 기준(4.5)도 큰 글씨 기준(3.0)도 넘지 못하는데 `t-caption`·`t-micro` 전반에 쓰인다(80여 곳).
-  **값을 올리면 화면 전체의 인상이 바뀌므로 이번 회차에서 고치지 않았다.** 구조적 판단이 필요하다.
-- **`--color-border-strong` = `--color-text-muted`**(같은 `#a8a29a`). 역할이 다른데 값이 같다.
-  둘을 나란히 두고 구분에 쓰는 자리가 생기면 그때 갈라야 한다(§1.6 금지 ②).
+- ~~**면 위의 면이 없다**~~ · ~~**`--color-text-muted` 가 §10 대비 기준을 어긴다**~~ ·
+  ~~**`--color-border-strong` = `--color-text-muted`**~~ — **셋 다 4차 F-0 에서 닫혔다**(2026-08-27).
+  `surface-2` 가 `gray-100`(1.18)이 되어 카드가 면으로 서고, `text-muted` 가 `gray-600`(5.77)으로
+  올라가 §10 기준을 넘으며, 그 이동으로 `border-strong` 충돌이 함께 풀렸다.
+  **남은 것은 `text-muted`=`text-secondary` 별칭 하나이고 그것은 회피 불가라 §1.6에 선언했다**
+  (4.5 를 넘으면서 더 옅은 회색이 없다). 항목을 지우지 않고 취소선으로 남긴다 —
+  **왜 부채였는지가 사라지면 다음에 같은 자리에서 또 넘어진다.**
 - **다크 팔레트** — 라이트 고정(§1.3)이 현 정책. 필요해지면 X1 기준 직접 큐레이션 + 수동 토글 검토.
 - **B③ 코치 리포트 해석 문구** — AI 초안 생성·저장(구현) + 코치 수정 UI(B③-3) + 첫 열람 비차단 로딩 + PDF 반영(B③-4).
 - **PDF 라이브**(renderToBuffer 라우트) + 팔레트 X1 동기화(§1.1 노트) — 3.6 단위.
