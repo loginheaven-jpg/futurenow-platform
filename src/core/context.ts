@@ -22,12 +22,19 @@ import type {
   CoreContext,
   CoreUser,
   Enrollment,
+  FeedCohortRef,
+  FeedComment,
+  FeedEmoji,
+  FeedFlowPoint,
+  FeedPost,
   InstrumentId,
   InterpretationView,
   ContactMessage,
   LibraryItem,
   MemberActivity,
+  NewsComment,
   NewsPost,
+  QuietMember,
   MemberState,
   MembershipDecision,
   MembershipQueueRow,
@@ -194,6 +201,17 @@ const VALUE_COLS =
 interface NewsRow { id: string; title: string; body: string; published_at: string | null; created_at: string }
 interface LibraryRow { id: string; title: string; description: string | null; tier: string; storage_path: string; created_at: string }
 interface ContactRow { id: string; name: string | null; email: string | null; body: string; user_id: string | null; handled_at: string | null; created_at: string }
+
+// ── 동행 피드 행(2차 · ADR-124) ─────────────────────────────
+const FEED_PHOTO_BUCKET = 'feed-photos';
+interface FeedCohortRow { cohort_id: string; name: string; status: string; is_coach: boolean; last_post_at: string | null }
+// 묘비(deleted=true)는 author_id·author_name·body·photo_path 가 전부 null 로 온다 — RPC 가 비운다.
+interface FeedPostRow {
+  id: string; author_id: string | null; author_name: string | null; body: string | null;
+  photo_path: string | null; created_at: string; deleted: boolean; comment_count: number;
+  reactions: Record<string, number> | null; my_reaction: string | null;
+}
+interface FeedCommentRow { id: string; author_id: string; author_name: string | null; body: string; created_at: string }
 
 function rowToNews(r: unknown): NewsPost {
   const row = r as NewsRow;
@@ -1337,6 +1355,161 @@ class SupabaseCoreContext implements CoreContext {
   async markContactHandled(id: string): Promise<void> {
     const { error } = await this.sb.rpc('contact_mark_handled', { p_id: id });
     if (error) throw new CoreError(`markContactHandled 실패: ${error.message}`);
+  }
+
+  // ── 동행 피드(2차 · ADR-124) ───────────────────────────────
+  //
+  // **판정을 여기서 하지 않는다.** 기수 자격은 `feed_can_access`, 보류 차단은 `feed_assert_writable`
+  //   이 SQL 한 곳에서 본다. 코어는 나르기만 한다 — 화면이 버튼을 감추는 것은 표시일 뿐이고
+  //   막는 것은 RPC 다(IA §5.8).
+  //
+  // **쓰기 오류 문안은 RPC 안에 있다**(55000 + 사실 문장 · ADR-123 contact_submit 선례).
+  //   보류 계정에게 입력창을 감추지 않고 이 문장으로 답하라는 것이 발주 §9.1 의 단서다.
+
+  async listFeedCohorts(): Promise<FeedCohortRef[]> {
+    const { data, error } = await this.sb.rpc('feed_my_cohorts');
+    if (error) throw new CoreError(`listFeedCohorts 실패: ${error.message}`);
+    return (data ?? []).map((r: unknown) => {
+      const row = r as unknown as FeedCohortRow;
+      return {
+        cohortId: row.cohort_id,
+        name: row.name,
+        status: row.status as FeedCohortRef['status'],
+        isCoach: row.is_coach,
+        lastPostAt: row.last_post_at,
+      };
+    });
+  }
+
+  async listFeed(input: {
+    cohortId: string;
+    before?: { createdAt: string; id: string } | null;
+    limit?: number;
+    mine?: boolean;
+  }): Promise<FeedPost[]> {
+    const { data, error } = await this.sb.rpc('feed_list', {
+      p_cohort_id: input.cohortId,
+      p_before: input.before?.createdAt ?? null,
+      p_before_id: input.before?.id ?? null,
+      p_limit: input.limit ?? 20,
+      p_mine: input.mine ?? false,
+    });
+    if (error) throw new CoreError(`listFeed 실패: ${error.message}`);
+    return (data ?? []).map((r: unknown) => {
+      const row = r as unknown as FeedPostRow;
+      return {
+        id: row.id,
+        authorId: row.author_id,
+        authorName: row.author_name,
+        body: row.body,
+        photoPath: row.photo_path,
+        createdAt: row.created_at,
+        deleted: row.deleted,
+        commentCount: row.comment_count,
+        reactions: (row.reactions ?? {}) as FeedPost['reactions'],
+        myReaction: (row.my_reaction as FeedEmoji | null) ?? null,
+      };
+    });
+  }
+
+  async createFeedPost(input: { cohortId: string; body?: string; photoPath?: string | null }): Promise<string> {
+    const { data, error } = await this.sb.rpc('feed_post_create', {
+      p_cohort_id: input.cohortId,
+      p_body: input.body ?? '',
+      p_photo_path: input.photoPath ?? null,
+    });
+    if (error) throw new CoreError(error.message); // 사용자에게 보일 문안이 RPC 안에 있다
+    return String(data);
+  }
+
+  // **바이트는 이 호출 전에 지운다**(deleteFeedPhoto). DB 로는 storage 를 지울 수 없고
+  //   (ADR-87 · storage.protect_delete), RPC 가 photo_path 를 비우므로 순서를 뒤집으면 경로를 잃는다.
+  async deleteFeedPost(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('feed_post_delete', { p_id: id });
+    if (error) throw new CoreError(`deleteFeedPost 실패: ${error.message}`);
+  }
+
+  async listFeedComments(postId: string): Promise<FeedComment[]> {
+    const { data, error } = await this.sb.rpc('feed_comment_list', { p_post_id: postId });
+    if (error) throw new CoreError(`listFeedComments 실패: ${error.message}`);
+    return (data ?? []).map((r: unknown) => {
+      const row = r as unknown as FeedCommentRow;
+      return { id: row.id, authorId: row.author_id, authorName: row.author_name, body: row.body, createdAt: row.created_at };
+    });
+  }
+
+  async createFeedComment(postId: string, body: string): Promise<string> {
+    const { data, error } = await this.sb.rpc('feed_comment_create', { p_post_id: postId, p_body: body });
+    if (error) throw new CoreError(error.message);
+    return String(data);
+  }
+
+  async deleteFeedComment(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('feed_comment_delete', { p_id: id });
+    if (error) throw new CoreError(`deleteFeedComment 실패: ${error.message}`);
+  }
+
+  async reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji | null> {
+    const { data, error } = await this.sb.rpc('feed_react', { p_post_id: postId, p_emoji: emoji });
+    if (error) throw new CoreError(error.message);
+    return (data as FeedEmoji | null) ?? null; // null = 취소됨
+  }
+
+  // 목록에 URL 을 미리 싣지 않는다(S-4 §2.2 선례) — 화면이 보이는 만큼만 여기서 발급한다.
+  //   다만 피드 사진은 **인라인으로 보여야 한다**(클릭해야 보이는 사진은 카톡이 아니다).
+  async signFeedPhotos(paths: string[], expiresInSec = 3600): Promise<Record<string, string>> {
+    if (paths.length === 0) return {};
+    const { data, error } = await this.sb.storage.from(FEED_PHOTO_BUCKET).createSignedUrls(paths, expiresInSec);
+    if (error) return {}; // 조용히 실패한다 — 사진이 안 뜨는 것과 피드가 안 열리는 것은 심각도가 다르다
+    const out: Record<string, string> = {};
+    for (const row of data ?? []) {
+      if (row.signedUrl && row.path) out[row.path] = row.signedUrl;
+    }
+    return out;
+  }
+
+  async deleteFeedPhoto(path: string): Promise<void> {
+    const { error } = await this.sb.storage.from(FEED_PHOTO_BUCKET).remove([path]);
+    if (error) throw new CoreError(`deleteFeedPhoto 실패: ${error.message}`);
+  }
+
+  async getFeedFlow(cohortId: string, days = 7): Promise<FeedFlowPoint[]> {
+    const { data, error } = await this.sb.rpc('feed_flow', { p_cohort_id: cohortId, p_days: days });
+    if (error) throw new CoreError(`getFeedFlow 실패: ${error.message}`);
+    return (data ?? []).map((r: unknown) => {
+      const row = r as unknown as { day: string; posts: number; authors: number };
+      return { day: row.day, posts: Number(row.posts), authors: Number(row.authors) };
+    });
+  }
+
+  async listQuietMembers(cohortId: string, days = 3): Promise<QuietMember[]> {
+    const { data, error } = await this.sb.rpc('feed_quiet', { p_cohort_id: cohortId, p_days: days });
+    if (error) throw new CoreError(`listQuietMembers 실패: ${error.message}`);
+    return (data ?? []).map((r: unknown) => {
+      const row = r as unknown as { user_id: string; name: string | null; last_post_at: string | null };
+      return { userId: row.user_id, name: row.name, lastPostAt: row.last_post_at };
+    });
+  }
+
+  // ── 소식 댓글(2차) ─────────────────────────────────────────
+  async listNewsComments(postId: string): Promise<NewsComment[]> {
+    const { data, error } = await this.sb.rpc('news_comment_list', { p_post_id: postId });
+    if (error) throw new CoreError(`listNewsComments 실패: ${error.message}`);
+    return (data ?? []).map((r: unknown) => {
+      const row = r as unknown as FeedCommentRow;
+      return { id: row.id, authorId: row.author_id, authorName: row.author_name, body: row.body, createdAt: row.created_at };
+    });
+  }
+
+  async createNewsComment(postId: string, body: string): Promise<string> {
+    const { data, error } = await this.sb.rpc('news_comment_create', { p_post_id: postId, p_body: body });
+    if (error) throw new CoreError(error.message);
+    return String(data);
+  }
+
+  async deleteNewsComment(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('news_comment_delete', { p_id: id });
+    if (error) throw new CoreError(`deleteNewsComment 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────
