@@ -54,14 +54,17 @@ export function SiteGnb({
           {en ? <span className="site-gnb__en">{en}</span> : null}
         </Link>
 
-        <nav className="site-gnb__nav" aria-label="주 메뉴">
-          {items.map((it) => (
-            <Link key={it.href} href={it.href} aria-current={isCurrent(it.href) ? 'page' : undefined}>
-              {it.label}
-            </Link>
-          ))}
+        {/* **로그인은 nav 밖에 둔다.** 안에 두면 md↓ 에서 메뉴와 함께 숨어
+            폰 방문자가 로그인할 자리를 잃는다(F-2 390px 캡처가 잡았다). */}
+        <div className="site-gnb__right">
+          <nav className="site-gnb__nav" aria-label="주 메뉴">
+            {items.map((it) => (
+              <Link key={it.href} href={it.href} aria-current={isCurrent(it.href) ? 'page' : undefined}>
+                {it.label}
+              </Link>
+            ))}
+          </nav>
           <Link href={login.href} className="site-gnb__login">{login.label}</Link>
-        </nav>
 
         {sheet ? (
           <button
@@ -78,6 +81,7 @@ export function SiteGnb({
             </svg>
           </button>
         ) : null}
+        </div>
       </header>
 
       {sheet ? (

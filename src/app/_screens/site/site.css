@@ -70,8 +70,13 @@
 /* ── 3. CardBand3 ────────────────────────────────────────────── */
 .site-band { display: grid; grid-template-columns: 1fr; gap: 22px; }
 @media (min-width: 1024px) { .site-band { grid-template-columns: repeat(3, 1fr); } }
+/* **키커는 골드가 아니다.** 시안은 골드 키커지만 `--gold-700` 은 `surface-2` 위에서 3.29 로
+   §10 기준(4.5)에 못 미친다 — 12px 굵게는 large text 가 아니라 본문 취급이다.
+   더 진한 골드가 팔레트에 없다(`gold-700` 이 가장 진하다) → **본문 크기 골드 글자는 쓸 수 없다.**
+   토큰 신설은 F-0 소관이므로 여기서 만들지 않고 `text-secondary`(4.89)로 내렸다.
+   골드 정체성 상실은 완주 보고 §부채로 올린다. */
 .site-band__kicker {
-  font-size: 12px; font-weight: 700; color: var(--gold-700);
+  font-size: 12px; font-weight: 700; color: var(--color-text-secondary);
   letter-spacing: .08em; margin-bottom: var(--space-2);
 }
 .site-band__title { font-size: 17px; font-weight: 700; color: var(--color-text); margin: 0; }
@@ -192,3 +197,101 @@
   .site-gnb__nav { display: flex; }
   .site-gnb__burger { display: none; }
 }
+
+/* ══ 4차 F-2 · 공개 화면 조립용 부품 ═══════════════════════════ */
+
+/* ── 섹션 밴드(시안 P1 `.band`) — 부품이 아니라 **자리**다.
+      한 벌의 여백·최대 폭이라 클래스 하나로 족하다. 부품으로 만들면
+      `children` 만 넘기는 껍데기가 하나 늘고, 그 껍데기를 또 테스트해야 한다. */
+.site-section { max-width: 1200px; margin: 0 auto; padding: 46px var(--space-5) 0; }
+.site-section:last-of-type { padding-bottom: 46px; }
+@media (min-width: 1024px) {
+  .site-section { padding: 64px 40px 0; }
+  .site-section:last-of-type { padding-bottom: 64px; }
+}
+
+/* ── 10. SectionTitle ────────────────────────────────────────── */
+.site-sect {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-4); margin-bottom: var(--space-5);
+  border-bottom: var(--border-hair) solid var(--color-border); padding-bottom: var(--space-3);
+}
+.site-sect__t { font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: var(--color-text); margin: 0; }
+.site-sect__d { font-size: 13px; color: var(--color-text-secondary); margin: 6px 0 0; line-height: 1.6; }
+.site-sect__a { flex: 0 0 auto; font-size: 13px; }
+.site-sect__a a { color: var(--color-text-secondary); }
+@media (min-width: 1024px) {
+  .site-sect { align-items: flex-end; }
+  .site-sect__t { font-size: 22px; }
+  .site-sect__d { display: inline-block; margin: 0 0 0 var(--space-3); }
+}
+
+/* ── 11. NewsRow ─────────────────────────────────────────────── */
+.site-news { list-style: none; margin: 0; padding: 0; }
+.site-news__row + .site-news__row { border-top: var(--border-hair) solid var(--color-border); }
+.site-news__link {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 14px var(--space-1); min-height: var(--tap-min);
+  text-decoration: none; color: var(--color-text);
+}
+.site-news__l { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.site-news__badge {
+  flex: 0 0 auto; font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+  color: var(--color-text-on-gold); background: var(--color-accent);
+  border-radius: 5px; padding: 3px 7px;
+}
+.site-news__t {
+  font-size: 14.5px; font-weight: 600; line-height: 1.5;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.site-news__d { flex: 0 0 auto; font-size: 12px; color: var(--color-text-muted); }
+
+/* ── 12. RecruitCard ─────────────────────────────────────────── */
+.site-recruit {
+  background: var(--color-surface-2);
+  border: var(--border-hair) solid var(--color-border); border-radius: var(--radius-lg);
+  padding: 20px; align-self: start;
+}
+.site-recruit__k { font-size: 10.5px; font-weight: 700; letter-spacing: .18em; color: var(--color-text-secondary); } /* 위 키커와 같은 이유 */
+.site-recruit__t { font-size: 18px; font-weight: 800; line-height: 1.45; letter-spacing: -.01em; margin: 10px 0 0; color: var(--color-text); }
+.site-recruit__b { font-size: 13px; line-height: 1.75; color: var(--color-text-secondary); margin: var(--space-2) 0 0; }
+.site-recruit__cta { margin-top: var(--space-4); }
+
+/* 소식 + 모집 — 폰은 세로, lg↑ 는 시안대로 2단(본문이 넓고 모집이 좁다). */
+.site-newsband { display: grid; grid-template-columns: 1fr; gap: 22px; }
+@media (min-width: 1024px) { .site-newsband { grid-template-columns: 1.6fr 1fr; gap: 40px; } }
+
+/* ── 13. SiteFooter ──────────────────────────────────────────── */
+.site-foot { background: var(--navy-900); margin-top: 56px; }
+.site-foot__in {
+  max-width: 1200px; margin: 0 auto; padding: 26px var(--space-5);
+  display: flex; flex-direction: column; gap: var(--space-3);
+  justify-content: space-between; align-items: flex-start;
+}
+.site-foot__org { font-size: 13px; font-weight: 600; color: var(--color-text-on-accent); }
+.site-foot__note { font-size: 12px; color: var(--navy-300); margin-top: 6px; line-height: 1.6; }
+.site-foot__nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.site-foot__nav a { font-size: 12.5px; color: var(--navy-300); text-decoration: none; }
+@media (min-width: 768px) {
+  .site-foot__in { flex-direction: row; align-items: center; padding: 26px 40px; }
+}
+
+/* ── /about 참여 경로 3 (4차 F-2) — 새 형태가 아니라 `ui-card` 를 세로로 세운 것이다. */
+.site-about__ways { display: grid; gap: 10px; }
+.site-about__way { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--color-text); }
+.site-about__wayT { font-size: 15px; font-weight: 700; }
+.site-about__wayS { font-size: 12.5px; color: var(--color-text-secondary); }
+
+/* ── GrowAxis 짧은 라벨(md↓) · GNB 우측 그룹 — 4차 F-2 캡처가 잡은 둘 ─── */
+.site-grow__short { display: none; }
+.site-grow__row.has-short .site-grow__ko { display: none; }
+.site-grow__row.has-short .site-grow__short {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--color-text-on-accent); text-align: center;
+}
+@media (min-width: 768px) {
+  .site-grow__row.has-short .site-grow__ko { display: block; }
+  .site-grow__row.has-short .site-grow__short { display: none; }
+}
+
+.site-gnb__right { display: flex; align-items: center; gap: var(--space-4); }

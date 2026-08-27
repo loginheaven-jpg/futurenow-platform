@@ -17,6 +17,10 @@ import { QuickTiles } from './QuickTiles';
 import { SessionChipStrip } from './SessionChipStrip';
 import { MenuSheet } from './MenuSheet';
 import { SiteGnb } from './SiteGnb';
+import { SectionTitle } from './SectionTitle';
+import { NewsRow } from './NewsRow';
+import { RecruitCard } from './RecruitCard';
+import { SiteFooter } from './SiteFooter';
 
 describe('1 · SiteHero', () => {
   it('빈 슬롯은 그리지 않는다 — 없는 것을 자리로 남기지 않는다', () => {
@@ -155,5 +159,63 @@ describe('9 · SiteGnb', () => {
   it('시트 내용이 없으면 햄버거를 그리지 않는다 — 열 것이 없는 버튼을 두지 않는다', () => {
     const html = renderToStaticMarkup(<SiteGnb logo="로고" items={items} login={login} />);
     expect(html).not.toContain('site-gnb__burger');
+  });
+});
+
+// ── 4차 F-2 가 더한 넷 (§9.7 #10~#13) ──────────────────────────
+
+describe('10 · SectionTitle', () => {
+  it('부제·액션이 없으면 그리지 않는다', () => {
+    const html = renderToStaticMarkup(<SectionTitle title="소식" />);
+    expect(html).not.toContain('site-sect__d');
+    expect(html).not.toContain('site-sect__a');
+  });
+
+  it('**제목 층위는 prop 이다** — 부품이 h2/h3 를 판정하지 않는다', () => {
+    expect(renderToStaticMarkup(<SectionTitle title="가" />)).toContain('<h2');
+    expect(renderToStaticMarkup(<SectionTitle title="가" as="h3" />)).toContain('<h3');
+  });
+});
+
+describe('11 · NewsRow', () => {
+  it('빈 목록에 빈 상자를 남기지 않는다', () => {
+    expect(renderToStaticMarkup(<NewsRow items={[]} />)).toBe('');
+  });
+
+  it('**갈 곳이 없으면 링크가 아니다** — 눌리는데 아무 일도 없는 줄을 만들지 않는다', () => {
+    const html = renderToStaticMarkup(<NewsRow items={[{ id: 'a', title: '제목' }]} />);
+    expect(html).not.toContain('<a');
+  });
+
+  it('배지·날짜는 있을 때만 그린다 — 판정이 아니라 지정이다', () => {
+    const bare = renderToStaticMarkup(<NewsRow items={[{ id: 'a', title: 'T', href: '/n/a' }]} />);
+    expect(bare).not.toContain('site-news__badge');
+    expect(bare).not.toContain('site-news__d');
+    const full = renderToStaticMarkup(<NewsRow items={[{ id: 'a', title: 'T', href: '/n/a', badge: '모집', date: '8.20' }]} />);
+    expect(full).toContain('모집');
+    expect(full).toContain('8.20');
+  });
+});
+
+describe('12 · RecruitCard', () => {
+  it('CTA 가 없으면 버튼을 만들지 않는다 — 모집 여부는 화면이 판정한다', () => {
+    const html = renderToStaticMarkup(<RecruitCard title="T" />);
+    expect(html).not.toContain('ui-btn');
+    expect(html).not.toContain('site-recruit__k');
+    expect(html).not.toContain('site-recruit__b');
+  });
+});
+
+describe('13 · SiteFooter', () => {
+  it('**링크가 없으면 그 줄을 그리지 않는다** — 없는 페이지로 보내지 않는다', () => {
+    const html = renderToStaticMarkup(<SiteFooter org="퓨처나우" />);
+    expect(html).not.toContain('site-foot__nav');
+    expect(html).not.toContain('<a');
+  });
+
+  it('링크를 주면 이름 붙은 내비가 선다', () => {
+    const html = renderToStaticMarkup(<SiteFooter org="퓨처나우" links={[{ href: '/contact', label: '문의' }]} />);
+    expect(html).toContain('aria-label="이용 안내"');
+    expect(html).toContain('href="/contact"');
   });
 });
