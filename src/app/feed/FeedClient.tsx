@@ -72,6 +72,7 @@ export function FeedClient({
   const [pending, startTx] = useTransition();
 
   const canPost = !busy && !pending && (body.trim().length > 0 || photo !== null);
+  const selectedName = cohorts.find((c) => c.cohortId === selectedCohortId)?.name ?? null;
 
   /** 목록을 갈아끼울 때 사진 URL 도 함께 받는다(목록에 미리 싣지 않으므로). */
   async function adoptPhotoUrls(next: FeedPost[]): Promise<void> {
@@ -193,24 +194,33 @@ export function FeedClient({
 
   return (
     <div style={{ display: 'grid', gap: 'var(--space-5)', marginTop: 'var(--space-4)' }}>
-      {/* 기수 전환 — **여럿일 때만 노출한다**(발주 §6.1). 하나뿐이면 고를 것이 없다. */}
+      {/* 기수 전환 — **여럿일 때만 노출한다**(발주 §6.1). 하나뿐이면 고를 것이 없다.
+          **실기기 2차 지적(2026-08-27): "클릭 자체가 안 된다."** 마크업은 정상 `<a href>` 였고
+          덮개도 pointer-events 도 없었다. 원인은 **화면이 아무 답도 하지 않은 것**이다 —
+          내가 선택 배경으로 쓴 `--color-surface-2` 가 `--gray-0`, 즉 **페이지 배경과 같은 색**이라
+          선택 표시가 보이지 않았고, 양쪽 기수 모두 글이 0건이라 목록도 똑같았다.
+          전환이 실제로 일어나도 화면은 한 픽셀도 바뀌지 않는다 — 죽은 클릭과 구분할 방법이 없다.
+
+          그래서 인라인 칩을 버리고 **design_system 의 기존 부품**(`ui-btn`)을 쓴다.
+          `cursor: pointer`·탭 최소 높이·focus 링이 이미 들어 있고, primary(네이비 면)와
+          ghost(테두리)가 선택 상태를 색이 아니라 **면과 테두리의 차이**로 가른다.
+          부품을 새로 만들지 않는 편이 불변식 20 에도 맞다 — 내가 만든 칩이 애초에 임의 디자인이었다. */}
       {cohorts.length > 1 ? (
-        <nav className="t-caption" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-          {cohorts.map((c) => (
-            <Link
-              key={c.cohortId}
-              href={`/feed?cohort=${c.cohortId}`}
-              style={{
-                padding: 'var(--space-1) var(--space-3)',
-                borderRadius: 'var(--radius)',
-                border: 'var(--border-hair) solid var(--color-border)',
-                background: c.cohortId === selectedCohortId ? 'var(--color-surface-2)' : 'transparent',
-                textDecoration: 'none',
-              }}
-            >
-              {c.name}
-            </Link>
-          ))}
+        <nav aria-label="기수 선택" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+          {cohorts.map((c) => {
+            const on = c.cohortId === selectedCohortId;
+            return (
+              <Link
+                key={c.cohortId}
+                href={`/feed?cohort=${c.cohortId}`}
+                aria-current={on ? 'page' : undefined}
+                className={`ui-btn ${on ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+                style={{ textDecoration: 'none' }}
+              >
+                {c.name}
+              </Link>
+            );
+          })}
         </nav>
       ) : null}
 
@@ -259,11 +269,11 @@ export function FeedClient({
 
       {/* "내 걸음만" — 6주 뒤 자기 궤적을 보는 자리다(발주 §6.1). */}
       <div className="t-caption" style={{ display: 'flex', gap: 'var(--space-3)' }}>
-        <button type="button" onClick={() => reload(false)} disabled={pending}
+        <button type="button" onClick={() => reload(false)} disabled={pending} aria-pressed={!mine}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: mine ? 'var(--color-text-secondary)' : 'var(--color-text)', padding: 0 }}>
           모두
         </button>
-        <button type="button" onClick={() => reload(true)} disabled={pending}
+        <button type="button" onClick={() => reload(true)} disabled={pending} aria-pressed={mine}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: mine ? 'var(--color-text)' : 'var(--color-text-secondary)', padding: 0 }}>
           내 걸음만
         </button>
@@ -272,8 +282,12 @@ export function FeedClient({
       {posts.length === 0 ? (
         // 빈 상태는 **문안으로** 답한다. 시스템이 안내 글을 대신 써 넣지 않는다(발주 §9-3) —
         //   첫 글은 사람이 쓴다.
+        //
+        // **기수 이름을 문장에 넣는다**(실기기 2차 지적). 글이 0건이면 어느 기수를 보든 목록이
+        //   똑같아서, 전환이 됐는지 화면이 말해 주지 않았다. 이름이 있으면 빈 화면조차 답을 한다.
+        //   기수가 하나뿐이면 고를 것이 없으므로 이름을 붙이지 않는다(없는 선택을 암시하지 않는다).
         <p className="t-caption" style={muted}>
-          아직 아무도 남기지 않았어요. 오늘의 첫 걸음을 남겨 보세요.
+          {cohorts.length > 1 && selectedName ? `${selectedName}에는 ` : ''}아직 아무도 남기지 않았어요. 오늘의 첫 걸음을 남겨 보세요.
         </p>
       ) : null}
 
