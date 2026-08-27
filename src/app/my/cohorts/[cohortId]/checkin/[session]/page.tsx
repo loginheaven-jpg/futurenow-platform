@@ -96,7 +96,16 @@ export default async function CheckinCardPage({
 
   return (
     <Shell cohortId={cohortId}>
+      {/* **key 가 '고쳐 쓰기'를 살린다**(3차 T-2 · 발현을 테스트로 증명 2026-08-27 · 지휘부 사전 허가).
+          `?edit=1` 은 **같은 라우트의 쿼리 변경**이라 재마운트가 없다. 그런데 카드는
+          `useState(initialMode)` 로 모드를 잡고 `setMode` 는 둘 다 `'read'` 로만 간다 —
+          `'edit'` 로 가는 클릭 경로가 없다. 즉 **prop 이 바뀌어도 모드가 갈리지 않는다.**
+          `mode.ts` 가 제출·마감과 무관하게 `?edit=1` 을 무조건 편집으로 판정하는 이유는
+          그 링크가 **제출을 마친 사람이 자기 갈무리를 고치는 유일한 통로**이기 때문이다.
+          키에 `initialMode` 를 넣어야 그 전환이 새 인스턴스를 만든다 — 차수·회차만으로는 못 가른다.
+          **갈무리 로직·문안·저장 경로·`mode.ts` 는 한 줄도 건드리지 않았다**(발주 §8-5 범위). */}
       <CheckinCardClient
+        key={`${cohortId}-${sessionNo}-${initialMode}`}
         cohortId={cohortId}
         sessionNo={sessionNo}
         userId={me.id}
