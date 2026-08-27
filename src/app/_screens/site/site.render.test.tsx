@@ -1,0 +1,159 @@
+// site 부품 렌더 단언 (4차 F-1).
+//
+// **"무엇이 깨지면 안 되는가"에 맞춘다**(2차 §11.4 규율). 존재 확인이 아니라
+//   **부품이 지키기로 한 성질**을 단언한다 — 슬롯이 비면 그리지 않는가, 잠긴 회차를 감추지
+//   않는가, 상태를 색만으로 말하지 않는가.
+//
+// 렌더는 `renderToStaticMarkup` 이다(이 저장소 관행 · jsdom 없음).
+//   상호작용(focus trap·ESC·바깥 탭)은 순수 판정으로 떼어 `sheetKeys.test.ts` 가 전수한다.
+import { describe, expect, it } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { SiteHero } from './SiteHero';
+import { GrowAxis } from './GrowAxis';
+import { CardBand3 } from './CardBand3';
+import { WeekTimeline } from './WeekTimeline';
+import { SiteRoleCard } from './RoleCard';
+import { QuickTiles } from './QuickTiles';
+import { SessionChipStrip } from './SessionChipStrip';
+import { MenuSheet } from './MenuSheet';
+import { SiteGnb } from './SiteGnb';
+
+describe('1 · SiteHero', () => {
+  it('빈 슬롯은 그리지 않는다 — 없는 것을 자리로 남기지 않는다', () => {
+    const html = renderToStaticMarkup(<SiteHero headline="제목" />);
+    expect(html).not.toContain('site-hero__eyebrow');
+    expect(html).not.toContain('site-hero__lead');
+    expect(html).not.toContain('site-hero__cta');
+  });
+
+  it('강조는 `<b>` 슬롯으로 받는다 — 부품이 문장을 쪼개지 않는다', () => {
+    const html = renderToStaticMarkup(<SiteHero headline={<>5년 뒤의 <b>나</b>는</>} />);
+    expect(html).toContain('<b>나</b>');
+  });
+
+  it('CTA 두 톤이 서로 다른 부품 클래스를 쓴다', () => {
+    const html = renderToStaticMarkup(
+      <SiteHero headline="t" ctas={[{ href: '/a', label: '신청', tone: 'primary' }, { href: '/b', label: '소개', tone: 'ghost' }]} />,
+    );
+    expect(html).toContain('ui-btn--primary');
+    expect(html).toContain('ui-btn--ghost');
+  });
+});
+
+describe('2 · GrowAxis', () => {
+  it('다섯 축이 전부 prop 이다 — 부품이 G·R·O·W·F 를 알지 않는다', () => {
+    const html = renderToStaticMarkup(<GrowAxis rows={[{ letter: 'X', en: 'XX', ko: '한글' }]} />);
+    expect(html).toContain('>X<');
+    expect(html).not.toContain('GOAL'); // 부품에 박힌 축 이름이 없다
+  });
+});
+
+describe('3 · CardBand3', () => {
+  it('키커가 없으면 그리지 않는다', () => {
+    const html = renderToStaticMarkup(<CardBand3 cards={[{ title: 'T', body: 'B' }]} />);
+    expect(html).not.toContain('site-band__kicker');
+  });
+});
+
+describe('4 · WeekTimeline', () => {
+  it('**현재 회차는 prop 이다** — 부품이 날짜를 보지 않는다(불변식 10 계열)', () => {
+    const cells = [{ n: '1', title: 'a' }, { n: '2', title: 'b' }];
+    const none = renderToStaticMarkup(<WeekTimeline cells={cells} />);
+    expect(none, 'currentIndex 가 없으면 아무 칸도 강조하지 않는다').not.toContain('is-current');
+    const one = renderToStaticMarkup(<WeekTimeline cells={cells} currentIndex={1} />);
+    expect((one.match(/is-current/g) ?? []).length, '강조는 한 칸뿐이다').toBe(1);
+    expect(one).toContain('aria-current="step"');
+  });
+});
+
+describe('5 · RoleCard(site)', () => {
+  it('CTA 가 있으면 카드 전체가 링크다 — 폰에서 탭 대상이 넓어야 정확하다', () => {
+    const html = renderToStaticMarkup(<SiteRoleCard title="T" cta={{ href: '/home', label: '가기' }} />);
+    expect(html).toContain('<a');
+    expect(html).toContain('href="/home"');
+  });
+  it('CTA 가 없으면 링크가 아니다 — 갈 곳 없는 링크를 만들지 않는다', () => {
+    const html = renderToStaticMarkup(<SiteRoleCard title="T" />);
+    expect(html).not.toContain('<a');
+  });
+});
+
+describe('6 · QuickTiles', () => {
+  it('아이콘이 인라인 SVG 다 — 이모지가 아니다(발주 §5-3)', () => {
+    const html = renderToStaticMarkup(<QuickTiles tiles={[{ icon: 'feed', title: '동행', href: '/feed' }]} />);
+    expect(html).toContain('<svg');
+    expect(html).toContain('stroke="currentColor"');
+  });
+});
+
+describe('8 · SessionChipStrip', () => {
+  const chips = [
+    { no: 1, state: 'done' as const, href: '/1' },
+    { no: 2, state: 'current' as const, href: '/2' },
+    { no: 3, state: 'locked' as const },
+  ];
+  it('**잠긴 회차를 감추지 않는다** — 여정의 전체 길이가 보여야 한다', () => {
+    const html = renderToStaticMarkup(<SessionChipStrip chips={chips} />);
+    expect(html).toContain('is-locked');
+    expect(html).toContain('3회차 잠김');
+  });
+  it('잠긴 회차는 링크가 아니다 — 갈 수 없는 곳으로 보내지 않는다', () => {
+    const html = renderToStaticMarkup(<SessionChipStrip chips={chips} />);
+    const locked = html.slice(html.indexOf('is-locked') - 40);
+    expect(locked.startsWith('<a')).toBe(false);
+  });
+  it('**상태를 색만으로 말하지 않는다**(design_system §10) — aria-label 이 상태를 적는다', () => {
+    const html = renderToStaticMarkup(<SessionChipStrip chips={chips} />);
+    expect(html).toContain('1회차 완료');
+    expect(html).toContain('2회차 진행 중');
+    expect(html).toContain('aria-current="step"');
+  });
+});
+
+describe('7 · MenuSheet', () => {
+  const groups = [{ title: '여정', items: [{ href: '/a', label: '가' }] }];
+  it('닫혀 있으면 아무것도 그리지 않는다 — 열림은 prop 이다', () => {
+    expect(renderToStaticMarkup(<MenuSheet open={false} onClose={() => {}} name="나" groups={groups} />)).toBe('');
+  });
+  it('대화상자 시맨틱을 갖는다 — role·aria-modal·이름', () => {
+    const html = renderToStaticMarkup(<MenuSheet open onClose={() => {}} name="나" groups={groups} />);
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-modal="true"');
+    expect(html).toContain('aria-label="전체 메뉴"');
+  });
+  it('회차 칩이 없으면 그 구획을 만들지 않는다', () => {
+    const html = renderToStaticMarkup(<MenuSheet open onClose={() => {}} name="나" groups={groups} />);
+    expect(html).not.toContain('site-sheet__chips');
+  });
+  it('**#8 을 품는다**(발주 §3-7) — 칩을 주면 스트립이 함께 선다', () => {
+    const html = renderToStaticMarkup(
+      <MenuSheet open onClose={() => {}} name="나" groups={groups} chips={[{ no: 1, state: 'locked' }]} />,
+    );
+    expect(html).toContain('site-sheet__chips');
+    expect(html).toContain('site-chip');
+  });
+});
+
+describe('9 · SiteGnb', () => {
+  const items = [{ href: '/about', label: '소개' }, { href: '/library', label: '자료실' }];
+  const login = { href: '/login', label: '로그인' };
+
+  it('**현재 경로가 prop 이다** — 부품이 라우터를 읽지 않는다(강조 ①)', () => {
+    const none = renderToStaticMarkup(<SiteGnb logo="로고" items={items} login={login} />);
+    expect(none, 'currentPath 가 없으면 아무 항목도 현재가 아니다').not.toContain('aria-current');
+    const on = renderToStaticMarkup(<SiteGnb logo="로고" items={items} login={login} currentPath="/about" />);
+    expect((on.match(/aria-current="page"/g) ?? []).length).toBe(1);
+  });
+
+  it('하위 경로도 현재로 친다 — `/library/3` 에서 자료실이 꺼지지 않는다', () => {
+    const html = renderToStaticMarkup(<SiteGnb logo="로고" items={items} login={login} currentPath="/library/3" />);
+    const at = html.indexOf('aria-current="page"');
+    expect(at).toBeGreaterThan(-1);
+    expect(html.slice(at, at + 60)).toContain('자료실');
+  });
+
+  it('시트 내용이 없으면 햄버거를 그리지 않는다 — 열 것이 없는 버튼을 두지 않는다', () => {
+    const html = renderToStaticMarkup(<SiteGnb logo="로고" items={items} login={login} />);
+    expect(html).not.toContain('site-gnb__burger');
+  });
+});
