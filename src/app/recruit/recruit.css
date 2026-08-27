@@ -406,3 +406,38 @@
   font-weight: 500;
   color: var(--rc-ink-faint);
 }
+
+/* ── lg 2단 (4차 F-4 후속 · 지휘부 판정) ─────────────────────────
+   **md 이하는 현행 그대로다.** 기본값이 `display: block` 이라 `.rc-wrap` 이 지금처럼
+   520px 중앙 정렬로 흐르고, 카드 그리드는 아예 그려지지 않는다(`display: none`).
+   모바일 모집 흐름에 카드가 끼어들지 않는다.
+
+   이 파일 최초의 `@media` 다 — 그전까지 `/recruit` 은 폭에 반응하지 않았다(F-4 실측). */
+.rc-cards { display: none; }
+
+@media (min-width: 1024px) {
+  .rc-two {
+    display: grid;
+    /* 좌가 신청 흐름이고 우가 보조다. 좌를 넓게 둔다 — 무게중심을 옮기지 않는다. */
+    grid-template-columns: minmax(0, 560px) minmax(0, 520px);
+    gap: 56px;
+    justify-content: center;
+    align-items: start;
+    padding: 0 32px;
+  }
+  /* 좌측은 자기 최대폭을 유지한다 — 2단이 됐다고 본문 줄이 길어지면 읽기가 나빠진다. */
+  .rc-two > .rc-wrap { margin: 0; }
+
+  .rc-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    /* 스크롤을 따라오게 둔다 — 좌측이 길어 카드가 위에서만 보이면 있으나 마나다. */
+    position: sticky;
+    top: 32px;
+  }
+  .rc-cards img {
+    width: 100%; height: auto; display: block;
+    border-radius: var(--radius); border: var(--border-hair) solid rgba(255, 255, 255, .12);
+  }
+}
