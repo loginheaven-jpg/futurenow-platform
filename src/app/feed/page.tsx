@@ -55,7 +55,19 @@ export default async function FeedPage({
   return (
     <div className="pc-shell" style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="sub" title="동행" backHref="/home" />
+      {/* **key 가 이 화면의 정확성이다**(실기기 검증 2026-08-27 · FAIL 1건).
+          기수 칩은 같은 라우트에서 쿼리만 바꾸므로 FeedClient 가 재마운트되지 않는다.
+          서버는 새 기수의 글을 정확히 내려보내고 initialPosts prop 도 바뀌지만,
+          `useState(initialPosts)` 는 **첫 값만** 쓰므로 posts 가 옛 기수 글을 붙들었다.
+          더 나쁜 것은 selectedCohortId 는 prop 이라 갱신된다는 점이다 —
+          **보고 있는 기수와 쓰는 기수가 어긋난다.** 데이터 손상은 아니나 사용자에게는
+          가장 나쁜 종류의 어긋남이다.
+
+          useEffect 로 동기화하지 않고 key 로 간다. 기수를 바꾸는 것은 **다른 방으로 가는 일**이라
+          쓰던 본문과 고른 사진이 따라가지 않는 편이 정확하고, photoUrls·mine·done 초기화까지
+          key 하나가 전부 처리한다. 동기화 코드는 초기화할 상태가 늘 때마다 빠뜨릴 자리가 는다. */}
       <FeedClient
+        key={selected.cohortId}
         meId={me.id}
         isCoach={selected.isCoach}
         cohorts={cohorts}

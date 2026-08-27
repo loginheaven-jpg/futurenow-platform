@@ -31,7 +31,11 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
       {/* 본문은 평문이다. 마크다운·HTML 을 넣지 않는다 — 운영자가 붙여 넣은 것이 그대로 렌더되면
           주입 표면이 열린다. 줄바꿈만 살린다. */}
       <div className="t-body" style={{ marginTop: 'var(--space-5)', whiteSpace: 'pre-wrap' }}>{post.body}</div>
-      <NewsComments postId={post.id} initial={comments} meId={me?.id ?? null} canModerate={canModerate} />
+      {/* **key 는 피드와 같은 이유다**(실기기 검증 2026-08-27 FAIL 의 부류).
+          `/news/1` → `/news/2` 는 같은 자리에 같은 컴포넌트를 다시 그리므로 재마운트되지 않는다.
+          `useState(initial)` 은 첫 값만 쓰니 댓글이 옛 글 것을 붙들고, postId prop 은 갱신돼
+          **보는 글과 쓰는 글이 어긋난다.** 피드에서 실제로 그렇게 났다 — 같은 부류를 함께 막는다. */}
+      <NewsComments key={post.id} postId={post.id} initial={comments} meId={me?.id ?? null} canModerate={canModerate} />
       <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-6)' }}>
         <Link href="/news" style={{ color: 'var(--color-text-secondary)' }}>소식 목록</Link>
       </p>
