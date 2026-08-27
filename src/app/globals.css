@@ -24,6 +24,10 @@
   --gray-0: #ffffff;
   --gray-50: #f7f6f4;
   --gray-100: #eeece8;
+  /* gray-150 — 4차 F-0 신설. 카드 면(surface-2=gray-100) 위에 놓이는 것(입력창·트랙)이
+     카드와 갈리도록 한 칸을 넣었다. 없으면 sunken 이 surface-2 와 같은 값이 되어
+     .ui-textarea 가 카드와 같은 색이 된다(F-0 중단 보고 §3.1). */
+  --gray-150: #e4e1da;
   --gray-200: #dedad3;
   --gray-400: #a8a29a;
   --gray-600: #6b655c;
@@ -68,14 +72,31 @@
   --color-accent-soft: var(--gold-100);
   --color-bg: var(--gray-0);
   --color-surface-1: var(--gray-50);
-  --color-surface-2: var(--gray-0);
-  --color-surface-sunken: var(--gray-100);
+  /* 카드 면 — 4차 F-0: gray-0 → gray-100. **카드가 면으로 선다**(bg 대비 1.00 → 1.18).
+     이전에는 배경과 같은 흰색이라 카드가 테두리로만 서 있었다(3차 §11 부채 ①). */
+  --color-surface-2: var(--gray-100);
+  /* 카드 안에 놓이는 면(입력창·진행 트랙·접힌 블록) — 4차 F-0: gray-100 → gray-150.
+     surface-2 가 gray-100 을 가져갔으므로 한 칸 내려 갈린다(surface-2 대비 1.11). */
+  --color-surface-sunken: var(--gray-150);
+  /* 입력창 전용 면 — 4차 F-0 신설. 초기값은 sunken 과 같다(의도된 별칭 · §1.6).
+     지금은 인라인 입력창 9파일이 surface-2 를 쓰고 있어 카드와 같은 색이 된다 —
+     그 치환은 F-2·F-3 이고, F-1 부품은 **처음부터 이 토큰**을 쓴다. */
+  --color-surface-input: var(--color-surface-sunken);
+  /* 네이비 면 — 4차 F-0 신설. 히어로·역할 카드. 위 글자는 --color-text-on-accent.
+     **그라디언트다** — 대비는 최악단(navy-700)으로 판정한다(on-accent 11.64 · accent-strong 5.75). */
+  --color-surface-inverse: linear-gradient(150deg, var(--navy-900), var(--navy-700));
   --color-border: var(--gray-200);
   --color-border-strong: var(--gray-400);
   --color-text: var(--gray-900);
   --color-text-secondary: var(--gray-600);
-  --color-text-muted: var(--gray-400);
+  /* 4차 F-0: gray-400 → gray-600. 흰 바탕 대비 2.53 → 5.77 로 §10 기준(4.5)을 넘긴다.
+     **text-secondary 와 같은 값이다 — 의도된 별칭**(§1.6). 4.5 를 넘으면서 더 옅은 회색이
+     없다(#7d7770 이 4.43 으로 미달). 위계는 색이 아니라 크기·굵기로 가른다. */
+  --color-text-muted: var(--gray-600);
   --color-text-on-accent: var(--gray-0);
+  /* 네이비 면 위 골드 강조어 — 4차 F-0 신설. **강조어 전용 · 장문 금지 · 흰 바탕 금지.**
+     최악단(navy-700) 대비 5.75 라 기술적으로는 본문도 되지만, 용도 제한은 유지한다. */
+  --color-accent-strong: var(--gold-300);
   --color-text-on-gold: var(--navy-700); /* 골드 면 위 글자 — 대비 확보(흰 글자는 골드 위 2.79:1 미달). 네이비 바 글자는 on-accent(흰색) 유지 */
   /* 의미색 — 인도자 화면 전용. 참여자 응답 화면에서 사용 금지 */
   --color-success: var(--green-600);

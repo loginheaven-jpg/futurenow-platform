@@ -12,10 +12,13 @@ describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
     html = renderToStaticMarkup(await Home());
   });
 
-  it('권유부 + 골드 CTA(함께 시작해 볼까요?) → /join, 네이비 글자', () => {
-    expect(html).toContain('어떤 사람일까요'); // 권유 문구(hero)
-    expect(html).toContain('함께 시작해 볼까요?');
-    expect(html).toContain('href="/join"');
+  // **4차 F-2 에서 현관이 시안 P1·A 로 전면 교체됐다.** 아래 단언은 문구가 아니라
+  //   **그 문구가 지키던 것**을 따라 옮겨 적었다 — 참여로 가는 길·로그인·모집·소식 규율.
+  //   문구를 그대로 두면 테스트가 옛 화면을 지키고, 지우면 지키던 것이 함께 사라진다.
+  it('참여로 가는 길 둘 — 신청(/recruit)과 코드 지름길(/join). 골드 면 + 네이비 글자', () => {
+    expect(html).toContain('참여 신청');
+    expect(html).toContain('href="/recruit"');
+    expect(html).toContain('href="/join"'); // 링크만 받은 참여자의 문 — 없어지면 못 들어온다
     expect(html).toContain('--color-text-on-gold'); // 골드 면 + 네이비 글자 유지
   });
 
@@ -23,19 +26,19 @@ describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
     expect(html).toContain('코드로 입장');
   });
 
-  it('소개 세 단락(의문형 소제목)', () => {
-    expect(html).toContain('어떤 시간인가요');
-    expect(html).toContain('무엇이 달라지나요');
-    expect(html).toContain('어떻게 진행되나요');
-    expect(html).toContain('사전 체크'); // 진행 본문
+  it('**소개로 가는 길**이 있다 — 세 단락 본문은 /about 으로 옮겼다', () => {
+    // 시안 P1 의 현관에는 소개 3단락이 없다(그 자리를 `.three` 카드가 든다).
+    //   본문은 `/about` 이 들고 `about/page.test.tsx` 가 거기서 잠근다 — **사라진 것이 아니라 옮겼다.**
+    //   옮겼다는 사실 자체는 완주 보고에 적었다(조용히 바꾸지 않는다).
+    expect(html).toContain('href="/about"');
+    expect(html).toContain('프로그램 소개'); // 히어로 CTA
   });
 
-  it('로그인·인도자 진입(보조) → /login·/signup + 재방문 로그인', () => {
+  it('로그인·인도자 진입 → /login·/signup', () => {
     expect(html).toContain('href="/login"');
-    expect(html).toContain('로그인'); // 일반 로그인(전 역할 공용)
-    expect(html).toContain('이미 참여하셨나요?'); // 상단 재방문 참여자 로그인 진입
+    expect(html).toContain('로그인'); // GNB 우측 버튼이 옛 `이미 참여하셨나요?` 자리를 대신한다
     expect(html).toContain('href="/signup"');
-    expect(html).toContain('회원가입');
+    expect(html).toContain('인도자 회원가입'); // 푸터 — 인도자가 들어올 문
   });
 
   it('옛 결정화면 CTA·플레이스홀더 제거', () => {
@@ -54,9 +57,10 @@ describe('현관 공개 영역 배선 (S-4)', () => {
     html = renderToStaticMarkup(await Home());
   });
 
-  it('모집 배너가 /recruit 로 간다', () => {
+  it('모집이 /recruit 로 간다 — 소식 첫 줄이 모집 공지다', () => {
     expect(html).toContain('href="/recruit"');
-    expect(html).toContain('이번 기수 모집');
+    expect(html).toContain('모집'); // 소식 첫 줄 배지
+    expect(html).toContain('예봄 2기'); // intake.ts 단일 출처
   });
 
   it('공개 영역 세 곳으로 가는 길이 있다', () => {
@@ -65,9 +69,11 @@ describe('현관 공개 영역 배선 (S-4)', () => {
     }
   });
 
-  it('소식이 없으면 구획째 그리지 않는다 — 빈 제목만 남기지 않는다', () => {
-    // 테스트 환경은 env 가 없어 recentNews()가 빈 배열이다. 그때 '더 보기'가 뜨면 안 된다.
+  it('소식이 없으면 `더 보기` 를 주지 않는다 — 눌러서 빈 목록을 보지 않게', () => {
+    // 테스트 환경은 env 가 없어 recentNews() 가 빈 배열이다.
+    //   **구획 자체는 남는다** — 모집 줄과 모집 카드가 채우므로 빈 제목만 남는 일이 없다.
     expect(html).not.toContain('더 보기');
+    expect(html).toContain('site-news__row'); // 모집 줄이 그 자리를 채운다
   });
 
   it('참여자 현관 규율 — 의미색을 쓰지 않는다', () => {

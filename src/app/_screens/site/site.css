@@ -1,0 +1,399 @@
+/* 공개·홈 부품 반응형 (4차 F-1 · design_system §3.1).
+   **@media 임의 수치 금지**(발주 §2) — 여기 리터럴은 §3.1 브레이크포인트(640/768/1024/1280)뿐이고
+   `siteTokens.ts` 의 BP 상수가 사람이 대조할 짝이다(CSS 변수는 @media 조건에 못 들어간다).
+   색은 전부 역할 토큰이다 — **시안 색값 이관 0**(발주 §1.1). */
+
+/* ── 1. SiteHero ─────────────────────────────────────────────── */
+.site-hero {
+  background: var(--color-surface-inverse);
+  padding: 74px var(--space-6) 78px;
+}
+.site-hero__in {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr; gap: var(--space-6); align-items: center;
+}
+.site-hero__eyebrow {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .24em;
+  color: var(--color-accent-strong); margin-bottom: var(--space-5);
+}
+.site-hero__h1 {
+  font-size: 26px; line-height: 1.24; font-weight: 800; letter-spacing: -.035em;
+  color: var(--color-text-on-accent); margin: 0;
+}
+.site-hero__h1 b { color: var(--color-accent-strong); font-weight: 800; }
+.site-hero__lead {
+  margin-top: 22px; font-size: 16px; line-height: 1.85;
+  color: var(--navy-300); max-width: 460px;
+}
+.site-hero__cta { margin-top: 34px; display: flex; gap: var(--space-3); flex-wrap: wrap; }
+@media (min-width: 1024px) {
+  .site-hero { padding: 74px 40px 78px; }
+  .site-hero__in { grid-template-columns: 1.05fr .95fr; gap: 64px; }
+  .site-hero__h1 { font-size: 52px; }
+}
+
+/* ── 2. GrowAxis ─────────────────────────────────────────────── */
+/* **모바일 우선**(design_system §10) — 기본이 가로 5점 트랙이고 md↑ 에서 세로 5행이 된다.
+   `max-width: 767px` 로 쓰면 §3.1 에 없는 수치(768-1)가 생긴다 — 브레이크포인트만 쓰려면
+   min-width 한 방향으로 적어야 한다. 부품 순수성 테스트가 그것을 강제한다. */
+.site-grow { display: flex; gap: var(--space-2); overflow-x: auto; }
+.site-grow__row {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
+  padding: var(--space-3) var(--space-2); min-width: 64px;
+}
+.site-grow__l {
+  font-size: 24px; font-weight: 800; color: var(--color-accent);
+  letter-spacing: -.03em; line-height: 1;
+}
+.site-grow__en { display: none; }
+.site-grow__ko { font-size: 11px; font-weight: 600; color: var(--color-text-on-accent); text-align: center; }
+.site-grow__note { display: none; }
+
+@media (min-width: 768px) {
+  .site-grow {
+    display: block; overflow: visible;
+    border-left: 1px solid rgba(219, 176, 90, .28); padding-left: 34px;
+  }
+  .site-grow__row {
+    flex-direction: row; align-items: baseline; gap: var(--space-5);
+    padding: 13px 0; min-width: 0; border-bottom: 1px solid rgba(127, 148, 174, .22);
+  }
+  .site-grow__l { font-size: 36px; width: 38px; flex: 0 0 38px; }
+  .site-grow__en {
+    display: block; font-size: 10.5px; font-weight: 700; color: var(--navy-300);
+    letter-spacing: .18em; width: 74px; flex: 0 0 74px;
+  }
+  .site-grow__ko { font-size: 15px; text-align: left; }
+  .site-grow__note { display: block; font-size: 12px; color: var(--navy-300); margin-left: auto; }
+}
+
+/* ── 3. CardBand3 ────────────────────────────────────────────── */
+.site-band { display: grid; grid-template-columns: 1fr; gap: 22px; }
+@media (min-width: 1024px) { .site-band { grid-template-columns: repeat(3, 1fr); } }
+/* **키커는 골드가 아니다.** 시안은 골드 키커지만 `--gold-700` 은 `surface-2` 위에서 3.29 로
+   §10 기준(4.5)에 못 미친다 — 12px 굵게는 large text 가 아니라 본문 취급이다.
+   더 진한 골드가 팔레트에 없다(`gold-700` 이 가장 진하다) → **본문 크기 골드 글자는 쓸 수 없다.**
+   토큰 신설은 F-0 소관이므로 여기서 만들지 않고 `text-secondary`(4.89)로 내렸다.
+   골드 정체성 상실은 완주 보고 §부채로 올린다. */
+.site-band__kicker {
+  font-size: 12px; font-weight: 700; color: var(--color-text-secondary);
+  letter-spacing: .08em; margin-bottom: var(--space-2);
+}
+.site-band__title { font-size: 17px; font-weight: 700; color: var(--color-text); margin: 0; }
+.site-band__body { font-size: 14px; line-height: 1.75; color: var(--color-text-secondary); margin-top: var(--space-2); }
+
+/* ── 4. WeekTimeline ─────────────────────────────────────────── */
+.site-weeks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 1024px) { .site-weeks { grid-template-columns: repeat(6, 1fr); } }
+.site-weeks__cell { border-top: 2px solid var(--color-border); padding-top: 14px; }
+.site-weeks__cell.is-current { border-top-color: var(--color-accent); }
+.site-weeks__n { font-size: 11px; font-weight: 700; color: var(--color-text-muted); letter-spacing: .1em; }
+.site-weeks__t { font-size: 14px; font-weight: 700; margin-top: 7px; line-height: 1.45; color: var(--color-text); }
+.site-weeks__out { font-size: 12px; color: var(--color-text-secondary); margin-top: var(--space-1); }
+
+/* ── 5. RoleCard(site) ───────────────────────────────────────── */
+.site-role {
+  position: relative; overflow: hidden; border-radius: var(--radius-lg);
+  background: var(--color-surface-inverse); padding: 22px 20px;
+  color: var(--color-text-on-accent); display: block; text-decoration: none;
+}
+.site-role::after {
+  content: ""; position: absolute; right: -46px; top: -46px; width: 150px; height: 150px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(219, 176, 90, .28), transparent 70%);
+}
+.site-role__badge {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  border: 1px solid var(--color-accent-strong); color: var(--color-accent-strong);
+  border-radius: 6px; padding: 3px 9px;
+}
+.site-role__who { font-size: 12px; font-weight: 600; color: var(--navy-300); margin-top: var(--space-2); }
+.site-role__title { font-size: 20px; font-weight: 800; line-height: 1.4; letter-spacing: -.01em; margin: var(--space-2) 0 0; }
+.site-role__sub { font-size: 12.5px; color: var(--navy-300); margin-top: 6px; }
+.site-role__cta { margin-top: var(--space-4); position: relative; z-index: 1; }
+
+/* ── 6. QuickTiles ───────────────────────────────────────────── */
+.site-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.site-quick__tile {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  border: var(--border-hair) solid var(--color-border); border-radius: var(--radius-lg);
+  padding: 14px; background: var(--color-surface-1);
+  min-height: var(--tap-min); text-decoration: none; color: var(--color-text);
+}
+.site-quick__t { font-size: 14px; font-weight: 700; }
+.site-quick__s { font-size: 11.5px; color: var(--color-text-secondary); }
+
+/* ── 7. MenuSheet ────────────────────────────────────────────── */
+.site-sheet__overlay {
+  position: fixed; inset: 0; background: rgba(16, 35, 56, .45); z-index: 60;
+  display: flex; justify-content: flex-end;
+}
+.site-sheet {
+  width: min(360px, 88vw); height: 100%; background: var(--color-bg);
+  display: flex; flex-direction: column; box-shadow: -8px 0 24px rgba(16, 35, 56, .18);
+}
+.site-sheet__top { background: var(--navy-900); padding: 18px 20px 20px; }
+.site-sheet__close {
+  float: right; color: var(--color-accent-strong); font-size: 20px; font-weight: 800;
+  line-height: 1; background: none; border: 0; cursor: pointer; min-height: var(--tap-min); min-width: var(--tap-min);
+}
+.site-sheet__cohort {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  background: rgba(219, 176, 90, .18); color: var(--color-accent-strong);
+  border-radius: 6px; padding: 4px 9px;
+}
+.site-sheet__name { font-size: 18px; font-weight: 800; color: var(--color-text-on-accent); margin-top: 10px; }
+.site-sheet__name small { font-size: 12px; font-weight: 600; color: var(--navy-300); margin-left: 6px; }
+.site-sheet__body { flex: 1; overflow-y: auto; padding: 6px 0 20px; }
+.site-sheet__group { padding: 16px 20px 4px; }
+.site-sheet__h { font-size: 11px; font-weight: 700; color: var(--color-text-muted); letter-spacing: .1em; margin-bottom: var(--space-2); }
+.site-sheet__item {
+  display: flex; align-items: center; gap: var(--space-3); padding: 12px 20px;
+  font-size: 14.5px; font-weight: 600; color: var(--color-text); text-decoration: none;
+  min-height: var(--tap-min);
+}
+.site-sheet__chips { padding: 12px 20px 4px; }
+/* 시트 안에서만 칩 간격을 좁힌다. 390px 폰에서 시트 안쪽 폭은 min(360, 88vw) - 40 = 303px 인데
+   기본 간격으로는 44*6 + 8*5 = 304px 라 **1px 이 모자라 여섯째 회차만 홀로 다음 줄로 내려앉는다.**
+   간격을 4px 로 줄이면 284px — 여섯 회차가 한 줄에 선다. 44px 탭 크기는 그대로 둔다(줄이지 않는다).
+   시트 폭(88vw)도 그대로 둔다 — 넓히면 바깥 탭으로 닫을 자리가 47px→31px 로 좁아진다.
+   ~365px 미만 폰에서는 여전히 감긴다. 감기더라도 **감추지는 않는다**(#8 의 약속). */
+.site-sheet__chips .site-chips { gap: var(--space-1); }
+
+/* ── 8. SessionChipStrip ─────────────────────────────────────── */
+.site-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.site-chip {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; text-decoration: none;
+  border: var(--border-hair) solid var(--color-border);
+  background: var(--color-surface-1); color: var(--color-text);
+}
+.site-chip.is-done { background: var(--color-primary); color: var(--color-text-on-accent); border-color: var(--color-primary); }
+.site-chip.is-current { background: var(--color-accent); color: var(--color-text-on-gold); border-color: var(--color-accent); }
+.site-chip.is-locked { color: var(--color-text-muted); background: var(--color-surface-sunken); border-style: dashed; }
+
+/* ── 9. SiteGnb ──────────────────────────────────────────────── */
+.site-gnb {
+  background: var(--navy-900); display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--space-4); height: 70px;
+}
+.site-gnb__brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
+.site-gnb__logo { font-size: 19px; font-weight: 800; color: var(--color-text-on-accent); letter-spacing: -.01em; }
+.site-gnb__logo b { color: var(--color-accent-strong); }
+.site-gnb__en { font-size: 10px; font-weight: 600; color: var(--navy-300); letter-spacing: .2em; }
+.site-gnb__nav { display: none; align-items: center; gap: 30px; }
+.site-gnb__nav a { font-size: 14px; font-weight: 600; color: var(--color-text-on-accent); text-decoration: none; opacity: .85; }
+.site-gnb__nav a[aria-current="page"] { opacity: 1; color: var(--color-accent-strong); }
+.site-gnb__login {
+  font-size: 13.5px; font-weight: 700; color: var(--color-text-on-gold);
+  background: var(--color-accent); border-radius: 8px; padding: 9px 18px; text-decoration: none;
+}
+.site-gnb__burger {
+  background: none; border: 0; cursor: pointer; color: var(--color-text-on-accent);
+  min-height: var(--tap-min); min-width: var(--tap-min); font-size: 20px;
+}
+@media (min-width: 768px) {
+  .site-gnb { padding: 0 40px; }
+  .site-gnb__nav { display: flex; }
+  .site-gnb__burger { display: none; }
+}
+
+/* ══ 4차 F-2 · 공개 화면 조립용 부품 ═══════════════════════════ */
+
+/* ── 섹션 밴드(시안 P1 `.band`) — 부품이 아니라 **자리**다.
+      한 벌의 여백·최대 폭이라 클래스 하나로 족하다. 부품으로 만들면
+      `children` 만 넘기는 껍데기가 하나 늘고, 그 껍데기를 또 테스트해야 한다. */
+.site-section { max-width: 1200px; margin: 0 auto; padding: 46px var(--space-5) 0; }
+.site-section:last-of-type { padding-bottom: 46px; }
+@media (min-width: 1024px) {
+  .site-section { padding: 64px 40px 0; }
+  .site-section:last-of-type { padding-bottom: 64px; }
+}
+
+/* ── 10. SectionTitle ────────────────────────────────────────── */
+.site-sect {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-4); margin-bottom: var(--space-5);
+  border-bottom: var(--border-hair) solid var(--color-border); padding-bottom: var(--space-3);
+}
+.site-sect__t { font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: var(--color-text); margin: 0; }
+.site-sect__d { font-size: 13px; color: var(--color-text-secondary); margin: 6px 0 0; line-height: 1.6; }
+.site-sect__a { flex: 0 0 auto; font-size: 13px; }
+.site-sect__a a { color: var(--color-text-secondary); }
+@media (min-width: 1024px) {
+  .site-sect { align-items: flex-end; }
+  .site-sect__t { font-size: 22px; }
+  .site-sect__d { display: inline-block; margin: 0 0 0 var(--space-3); }
+}
+
+/* ── 11. NewsRow ─────────────────────────────────────────────── */
+.site-news { list-style: none; margin: 0; padding: 0; }
+.site-news__row + .site-news__row { border-top: var(--border-hair) solid var(--color-border); }
+.site-news__link {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 14px var(--space-1); min-height: var(--tap-min);
+  text-decoration: none; color: var(--color-text);
+}
+.site-news__l { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.site-news__badge {
+  flex: 0 0 auto; font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+  color: var(--color-text-on-gold); background: var(--color-accent);
+  border-radius: 5px; padding: 3px 7px;
+}
+.site-news__t {
+  font-size: 14.5px; font-weight: 600; line-height: 1.5;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.site-news__d { flex: 0 0 auto; font-size: 12px; color: var(--color-text-muted); }
+
+/* ── 12. RecruitCard ─────────────────────────────────────────── */
+.site-recruit {
+  background: var(--color-surface-2);
+  border: var(--border-hair) solid var(--color-border); border-radius: var(--radius-lg);
+  padding: 20px; align-self: start;
+}
+.site-recruit__k { font-size: 10.5px; font-weight: 700; letter-spacing: .18em; color: var(--color-text-secondary); } /* 위 키커와 같은 이유 */
+.site-recruit__t { font-size: 18px; font-weight: 800; line-height: 1.45; letter-spacing: -.01em; margin: 10px 0 0; color: var(--color-text); }
+.site-recruit__b { font-size: 13px; line-height: 1.75; color: var(--color-text-secondary); margin: var(--space-2) 0 0; }
+.site-recruit__cta { margin-top: var(--space-4); }
+
+/* 소식 + 모집 — 폰은 세로, lg↑ 는 시안대로 2단(본문이 넓고 모집이 좁다). */
+.site-newsband { display: grid; grid-template-columns: 1fr; gap: 22px; }
+@media (min-width: 1024px) { .site-newsband { grid-template-columns: 1.6fr 1fr; gap: 40px; } }
+
+/* ── 13. SiteFooter ──────────────────────────────────────────── */
+.site-foot { background: var(--navy-900); margin-top: 56px; }
+.site-foot__in {
+  max-width: 1200px; margin: 0 auto; padding: 26px var(--space-5);
+  display: flex; flex-direction: column; gap: var(--space-3);
+  justify-content: space-between; align-items: flex-start;
+}
+.site-foot__org { font-size: 13px; font-weight: 600; color: var(--color-text-on-accent); }
+.site-foot__note { font-size: 12px; color: var(--navy-300); margin-top: 6px; line-height: 1.6; }
+.site-foot__nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.site-foot__nav a { font-size: 12.5px; color: var(--navy-300); text-decoration: none; }
+@media (min-width: 768px) {
+  .site-foot__in { flex-direction: row; align-items: center; padding: 26px 40px; }
+}
+
+/* ── /about 참여 경로 3 (4차 F-2) — 새 형태가 아니라 `ui-card` 를 세로로 세운 것이다. */
+.site-about__ways { display: grid; gap: 10px; }
+.site-about__way { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--color-text); }
+.site-about__wayT { font-size: 15px; font-weight: 700; }
+.site-about__wayS { font-size: 12.5px; color: var(--color-text-secondary); }
+
+/* ── GrowAxis 짧은 라벨(md↓) · GNB 우측 그룹 — 4차 F-2 캡처가 잡은 둘 ─── */
+.site-grow__short { display: none; }
+.site-grow__row.has-short .site-grow__ko { display: none; }
+.site-grow__row.has-short .site-grow__short {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--color-text-on-accent); text-align: center;
+}
+@media (min-width: 768px) {
+  .site-grow__row.has-short .site-grow__ko { display: block; }
+  .site-grow__row.has-short .site-grow__short { display: none; }
+}
+
+.site-gnb__right { display: flex; align-items: center; gap: var(--space-4); }
+
+/* ══ 4차 F-2b · 인도자·도서 부품 ══════════════════════════════ */
+
+/* ── 14. LeaderCard ─────────────────────────────────────────── */
+/* **두 사람 대등**(발주 §1-4) — lg↑ 2열, md↓ 세로. 한쪽만 넓어지는 규칙을 두지 않는다. */
+.site-leaders { display: grid; grid-template-columns: 1fr; gap: 22px; }
+@media (min-width: 1024px) { .site-leaders { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
+
+.site-leader {
+  background: var(--color-surface-2);
+  border: var(--border-hair) solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 22px 20px;
+}
+.site-leader__top { display: flex; gap: var(--space-4); align-items: flex-start; }
+/* 정사각 + 라운드(원고 §5.4 — 원형/라운드 중 하나로 통일). 자리표시자도 같은 형태로 선다. */
+.site-leader__photo {
+  flex: 0 0 auto; width: 96px; height: 96px; border-radius: var(--radius-lg);
+  overflow: hidden; background: var(--color-surface-sunken);
+  display: flex; align-items: center; justify-content: center;
+}
+.site-leader__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.site-leader__ph { font-size: 30px; font-weight: 800; color: var(--color-text-muted); }
+.site-leader__who { min-width: 0; }
+.site-leader__name { font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: var(--color-text); margin: 0; }
+.site-leader__title { font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); margin-top: 5px; }
+.site-leader__tag { font-size: 13px; line-height: 1.6; color: var(--color-text-secondary); margin: var(--space-2) 0 0; }
+.site-leader__bio { list-style: none; margin: var(--space-4) 0 0; padding: 0; }
+.site-leader__bio li {
+  font-size: 12.5px; line-height: 1.7; color: var(--color-text-secondary);
+  padding-left: 12px; position: relative;
+}
+.site-leader__bio li::before {
+  content: ""; position: absolute; left: 0; top: 9px;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--color-border-strong);
+}
+.site-leader__intro {
+  font-size: 14px; line-height: 1.85; color: var(--color-text); margin: var(--space-4) 0 0;
+  padding-top: var(--space-4); border-top: var(--border-hair) solid var(--color-border);
+}
+
+/* ── 15. BookPanel ──────────────────────────────────────────── */
+.site-book { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 1024px) { .site-book { grid-template-columns: 300px 1fr; gap: 44px; } }
+.site-book__coverwrap { display: flex; justify-content: center; }
+/* 정면 평면 + 얇은 그림자. **3D 목업 금지**(원고 §5.3) — 기울이거나 두께를 그리지 않는다. */
+.site-book__cover {
+  width: 200px; aspect-ratio: 2 / 3; border-radius: 4px; overflow: hidden;
+  background: var(--color-surface-inverse);
+  box-shadow: 0 6px 18px rgba(16, 35, 56, .16);
+  display: flex; align-items: center; justify-content: center;
+}
+@media (min-width: 1024px) { .site-book__cover { width: 100%; } }
+.site-book__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.site-book__ph {
+  font-size: 20px; font-weight: 800; letter-spacing: .18em; line-height: 1.5;
+  color: var(--color-accent-strong); text-align: center;
+}
+.site-book__facts {
+  margin: 0 0 var(--space-5); padding: 0 0 var(--space-4);
+  border-bottom: var(--border-hair) solid var(--color-border);
+}
+.site-book__fact { display: flex; gap: var(--space-3); padding: 5px 0; }
+.site-book__fact dt { flex: 0 0 76px; font-size: 12px; font-weight: 700; color: var(--color-text-muted); }
+.site-book__fact dd { margin: 0; font-size: 13.5px; color: var(--color-text); }
+.site-book__p { font-size: 14px; line-height: 1.9; color: var(--color-text); margin: 0 0 var(--space-4); }
+.site-book__buy { margin-top: var(--space-2); }
+.site-book__notice { font-size: 12.5px; line-height: 1.7; color: var(--color-text-secondary); margin: var(--space-4) 0 0; }
+.site-book__bulk { font-size: 12.5px; margin: var(--space-2) 0 0; }
+
+/* ── 참여 대상 — lg↑ 단락형(§4.1) / md↓ 리스트형(§4.2). **화면당 하나만**(발주 §2). */
+.site-aud__para { display: none; }
+.site-aud__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.site-aud__list li {
+  font-size: 14px; line-height: 1.6; color: var(--color-text);
+  padding-left: 20px; position: relative;
+}
+.site-aud__list li::before {
+  content: ""; position: absolute; left: 4px; top: 9px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent);
+}
+@media (min-width: 1024px) {
+  .site-aud__para { display: block; font-size: 15.5px; line-height: 1.95; color: var(--color-text); margin: 0; max-width: 780px; }
+  .site-aud__list { display: none; }
+}
+
+/* 신청 CTA — 골드 primary 는 **세미나 신청 전용**이다(원고 §3.4 위계). */
+.site-cta { margin-top: var(--space-6); display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.site-cta__note { font-size: 12.5px; color: var(--color-text-secondary); }
+
+/* GROW+F 구획만 네이비 면이다 — `GrowAxis` 글자가 `--color-text-on-accent`(흰색)라
+   밝은 면 위에서는 읽히지 않는다. 면을 바꾸는 것이지 부품을 바꾸는 것이 아니다. */
+.site-section--dark {
+  background: var(--color-surface-inverse);
+  max-width: none; padding-left: 0; padding-right: 0;
+}
+.site-section--dark > * { max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 var(--space-5); }
+.site-section--dark .site-sect { border-bottom-color: var(--navy-500); }
+.site-section--dark .site-sect__t { color: var(--color-text-on-accent); }
+.site-section--dark .site-sect__d { color: var(--navy-300); }
+@media (min-width: 1024px) {
+  .site-section--dark > * { padding: 0 40px; }
+}
