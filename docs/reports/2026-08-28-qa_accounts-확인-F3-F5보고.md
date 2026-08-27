@@ -226,6 +226,40 @@ O 가로 넘침 0 — 전 화면 전 폭에서 가로 스크롤이 생기지 않
 
 ---
 
-## 7. 원격 확인
+## 7. 커밋과 원격 확인 — **저장소에 실물이 없으면 판정하지 않는다**
 
-*(회신에 `git ls-remote origin feat/site-v2-4` 실행 출력을 붙인다.)*
+### 이 회차 커밋 (F-5 준비 → §4 확인 → F-3 잔여 → F-5 A행)
+
+| 해시 | 무엇 |
+|---|---|
+| `5ebca8c` | 4폭 하네스 통합 + F-5 시나리오 표 초안 |
+| `204092b` | `playwright` devDep 도입 · 로드 상태 대기 · `auth` 모드 |
+| `a6addc1` | **§4 확인 전항 통과** · F-3 잔여 2/3 · F-5 1차 |
+| `f80e654` | *"기다림에는 끝이 있어야 한다"* 규율 승격 + 함정 넷 고정 |
+| `c8b6086` | **F-3 회차 칩 재캡처** — 세 상태 확인 |
+| `e2e2f73` | 재캡처 결과를 §4·§6 에 반영 |
+| **`9d879a5`** | **F-5 A행 완주** — 85장 · 실패 0 · 가로 넘침 0 + B행 절차서 |
+
+### 원격 조회
+
+```
+$ git ls-remote origin feat/site-v2-4
+9d879a56ef6ef4e87e43019414555cdce4e5d37c	refs/heads/feat/site-v2-4
+```
+
+원격 트리에 실물이 들어갔는지도 봤다 — **해시만으로는 내용을 말할 수 없다**:
+
+```
+$ git ls-tree -r origin/feat/site-v2-4 --name-only | grep -c 'captures/f5/'
+85
+
+$ git -c core.quotepath=false ls-tree -r origin/feat/site-v2-4 --name-only | grep '실기기-절차서'
+docs/reports/2026-08-28-F5-실기기-절차서-최박사.md
+
+$ git show origin/feat/site-v2-4:scripts/shots.mjs | grep -c 'OVERFLOW'
+4
+```
+
+> **이 절의 해시는 A행 커밋(`9d879a5`)이다.** 이 보고서의 §7 을 채운 커밋은 그 뒤에 붙으므로
+> 보고서 안에 미리 적을 수 없다 — **회신에 최종 `ls-remote` 출력을 함께 낸다.**
+> (자기 참조의 한계이지 규율의 예외가 아니다 — F-4 에서와 같다.)
