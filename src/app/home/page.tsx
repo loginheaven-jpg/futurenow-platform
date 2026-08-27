@@ -7,7 +7,8 @@
 //     · 복귀 안내 판정(ADR-91 B — prompt_count·마감 6시간)
 //     · `MemberHome` 본문(운영 카드·진행 중 진단·내 활동·코드 참여)
 //   `AppHeader` → `SiteGnb variant="member"` + `MenuSheet`, `RoleCard` → `SiteRoleCard`,
-//   `FeedShortcut` → `QuickTiles` 한 칸으로 옮겼고 **목적지는 전부 그대로다**.
+//   `FeedShortcut` → `QuickTiles` 한 칸으로 옮겼고 **목적지는 전부 그대로다**
+//   (그 파일은 F-4 에서 삭제했다 — 고아로 남기면 다음 사람이 살아 있는 줄 알고 고친다).
 import { redirect } from 'next/navigation';
 import { MemberHome } from '@/app/_screens/MemberHome';
 import { CheckinPrompt } from '@/app/_screens/CheckinPrompt';
@@ -17,12 +18,10 @@ import { createServerContext } from '@/core/supabase/server';
 import type { QuickTile } from '@/app/_screens/site/QuickTiles';
 import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
-import type { MenuGroup } from '@/app/_screens/site/MenuSheet';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
 import { roleTarget } from './roleTarget';
-import { buildSessionChips } from './sessionChips';
-import { openedSessionNos } from '@/app/my/cohorts/[cohortId]/progress';
+import { buildMemberSheet } from '@/app/_lib/memberSheet';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +41,8 @@ export default async function MemberHomePage() {
   const pendingCoachApps = me.role === 'admin' ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
 
   // 동행 피드 바로가기(2차 · 발주 §6.3) — **탭바를 짓지 않기로 확정**했으므로 진입은 기존 표면으로 낸다.
-  //   피드를 가진 기수가 없으면 타일 자체를 그리지 않는다(없는 곳으로 보내지 않는다 · 옛 `FeedShortcut` 규율 그대로).
+  //   피드를 가진 기수가 없으면 타일 자체를 그리지 않는다 — **없는 곳으로 보내지 않는다.**
+  //   이 규율은 삭제된 `FeedShortcut` 이 지키던 것이고, 파일을 지우면서 규율은 여기로 옮겨 왔다.
   //   조회 실패는 빈 배열이다 — 바로가기가 없는 것과 홈이 안 열리는 것은 심각도가 다르다.
   const feedCohorts = await ctx.listFeedCohorts().catch(() => []);
 
@@ -71,27 +71,10 @@ export default async function MemberHomePage() {
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
 
-  // 시안 E 회차 칩 — **활성 차수가 하나일 때만** 만든다. 여럿이면 어느 기수의 회차인지 말할 수 없고,
-  //   시트는 *내* 여정을 보이는 자리라 임의로 하나를 고르지 않는다(`roleTarget` 과 같은 판단).
-  //   제출 조회는 **이미 열린 회차에만** 팬아웃한다(`openedSessionNos`) — 미래 회차는 제출이 있을 수 없다.
-  //   차수 홈(`/my/cohorts/[cohortId]`)이 쓰는 것과 **같은 방식**이고 계약·DB 델타 0 이다.
-  let chips: ReturnType<typeof buildSessionChips> = [];
-  if (primary) {
-    const sessions = await ctx.listCohortSessions(primary.cohortId).catch(() => []);
-    // eslint-disable-next-line react-hooks/purity
-    const now = Date.now();
-    const submitted = new Set(
-      (
-        await Promise.all(
-          openedSessionNos(sessions, now).map(async (n) => {
-            const row = await ctx.getMyCheckin(primary.cohortId, n).catch(() => null);
-            return row?.submittedAt != null ? n : null;
-          }),
-        )
-      ).filter((n): n is number => n != null),
-    );
-    chips = buildSessionChips({ cohortId: primary.cohortId, sessions, submitted, openSessionNo: primary.openSessionNo, now });
-  }
+  // 시트 자료는 **한 곳에서 만든다**(`buildMemberSheet`) — /home·차수 홈·진단 홈이 같은 시트를
+  //   각자 조립하면 메뉴 하나가 늘 때 세 곳이 어긋난다(불변식 23).
+  // eslint-disable-next-line react-hooks/purity
+  const sheet = await buildMemberSheet(ctx, cohorts, { hasFeed: feedCohorts.length > 0, now: Date.now() });
 
   // 시안 B `.quick-grid` — 네 칸. **갈 수 없는 곳은 칸을 만들지 않는다.**
   const tiles: QuickTile[] = [
@@ -107,29 +90,14 @@ export default async function MemberHomePage() {
   const news = await recentNews(2).catch(() => []);
   const newsRows: NewsRowItem[] = news.map((n) => ({ id: n.id, title: n.title, date: shortDate(n.publishedAt), href: `/news/${n.id}` }));
 
-  // 시안 E 그룹 — **계정 그룹에 로그아웃이 없다.** 로그아웃은 폼 액션이라 링크 목록에 섞지 않는다.
-  //   `/account` 안에 이미 있고, 시트에서 한 번 더 내면 같은 것이 두 곳에 산다.
-  const groups: MenuGroup[] = [
-    {
-      title: '여정',
-      items: [
-        ...(primary ? [{ href: `/my/cohorts/${primary.cohortId}`, label: '내 기수' }] : [{ href: '/my/cohorts', label: '내 기수' }]),
-        ...(feedCohorts.length > 0 ? [{ href: '/feed', label: '동행' }] : []),
-      ],
-    },
-    { title: '진단', items: [{ href: '/home/assessments', label: '체크 허브' }, { href: '/my/values', label: '가치 카드' }] },
-    { title: '자료', items: [{ href: '/library', label: '자료실' }, { href: '/news', label: '소식' }] },
-    { title: '계정', items: [{ href: '/account', label: '내 정보' }] },
-  ];
-
   return (
     <HomeScreen
-      who={{ name: greetingName, role: target.who, cohort: primary?.name }}
+      who={{ name: greetingName, role: target.who, cohort: sheet.cohortName }}
       role={{ badge: target.cohort, who: target.who, title: target.title, sub: target.sub, href: target.href, ctaLabel: target.ctaLabel }}
       tiles={tiles}
       news={newsRows}
-      groups={groups}
-      chips={chips}
+      groups={sheet.groups}
+      chips={sheet.chips}
       prompt={prompt ? <CheckinPrompt {...prompt} /> : null}
     >
       {/* **무접촉** — 운영 카드·진행 중 진단·내 활동·코드 참여는 이번 회차에서 한 줄도 손대지 않았다. */}

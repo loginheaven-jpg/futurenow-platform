@@ -1,14 +1,21 @@
 // 차수 홈(ADR-80 · Phase 2). 카드 하나에 진단 둘 + 갈무리 일곱을 담는 본체.
+//
+// **4차 F-4 에서 보이는 층을 시안 C(내 여정)로 교체했다.** 판정은 한 줄도 바뀌지 않았다 —
+//   갈무리 문구·버튼·목적지(ADR-86 · ADR-91 B), 순서 규칙(사전 미완이면 진단 먼저),
+//   진행 누적(ADR-102 축3), 가치 카드 4상태(ADR-121)가 전부 그대로다.
+//   **진행 표시는 점이다** — 시안의 채움 막대는 불변식 11 로 불채택(지휘부 판정 2026-08-27).
 //   시각 위계 세 단: 이번 주 갈무리(accent·primary) · 진단(중립·ghost) · 지난 회차(접힌 줄).
 //   진단과 갈무리를 같은 위계로 두지 않는다("매주 진단받는다" 오인 방지).
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
+import { CohortHomeScreen, type CohortListRow } from './CohortHomeScreen';
+import { sessionPartLabel } from './sessionPart';
+import { buildMemberSheet } from '@/app/_lib/memberSheet';
 import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { PastSessionsClient } from './PastSessionsClient';
 import { buildProgress, openedSessionNos } from './progress';
+import { buildSessionChips } from '@/app/home/sessionChips';
 import { TOOL } from '@/app/_vocab/tool';
 import { HOME_CARD, VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 
@@ -88,13 +95,6 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   );
   const progress = buildProgress(sessions, submittedNos);
 
-  const accentCard = {
-    padding: 'var(--space-4)',
-    background: 'var(--color-accent-soft, var(--color-surface-2))',
-    border: 'var(--border-hair) solid var(--color-accent)',
-    borderRadius: 'var(--radius)',
-    marginBottom: 'var(--space-4)',
-  } as const;
   const neutralCard = {
     padding: 'var(--space-4)',
     background: 'var(--color-surface-1)',
@@ -103,14 +103,9 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
     marginBottom: 'var(--space-4)',
   } as const;
 
-  const checkinSection = c.openSessionNo != null ? (
-    <div style={accentCard}>
-      <div className="t-body-lg" style={{ color: 'var(--color-primary)' }}>{c.openSessionNo}회차 갈무리</div>
-      {checkinLine ? <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '2px 0 var(--space-3)' }}>{checkinLine}</div> : null}
-      <Link className="ui-btn ui-btn--primary" href={`/my/cohorts/${cohortId}/checkin/${c.openSessionNo}${checkinEdit ? '?edit=1' : ''}`} style={{ width: '100%', textDecoration: 'none' }}>{checkinBtn}</Link>
-    </div>
-  ) : null;
-
+  // 옛 갈무리 카드(`checkinSection`)는 F-4 에서 **시안 C `.today-card`** 로 옮겼다 —
+  //   문구(`checkinLine`)·버튼(`checkinBtn`)·목적지(`checkinEdit`)는 위에서 그대로 계산해
+  //   `today` prop 으로 넘긴다. 판정은 하나도 바뀌지 않았고 그릇만 바뀌었다.
   const stepSection = (
     <div style={neutralCard}>
       <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-1)' }}>내 한 걸음</div>
@@ -164,32 +159,58 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
     <PastSessionsClient cohortId={cohortId} sessionNos={pastSessionNos} label={`지난 회차 ${pastCount}개`} />
   ) : null;
 
-  // 상태별 순서: 사전 미완이면 진단 먼저, 진행 중이면 갈무리 먼저.
-  const ordered = !c.preDone
-    ? [diagnosisSection, checkinSection, stepSection, valueSection, pastSection]
-    : [checkinSection, stepSection, valueSection, diagnosisSection, pastSection];
+  // **상태별 순서 규칙은 그대로다**(ADR-80): 사전 미완이면 진단 먼저, 진행 중이면 갈무리 먼저.
+  //   F-4 에서 배열 대신 JSX 자리로 옮겼다 — `before` 가 오늘 카드보다 앞이고,
+  //   `diagnosisSection` 은 사전을 마쳤을 때만 아래로 내려간다. **순서는 한 칸도 안 바뀌었다.**
+
+  // ── F-4 표시 자료 — 위 판정에는 손대지 않았다. ─────────────────────────────
+  const partLabel = sessionPartLabel(c.openSessionNo);
+  const sessionTitle = c.openSessionNo != null ? (getCheckinSession(c.openSessionNo)?.cover.subtitle ?? null) : null;
+  // 시트 자료는 공용(`buildMemberSheet`)이나, **회차 칩만은 이 화면이 이미 가진 것을 쓴다** —
+  //   위에서 `submittedNos` 를 뽑아 두었으므로 같은 조회를 두 번 하지 않는다.
+  const sheet = await buildMemberSheet(ctx, mine, { hasFeed: true, now });
+  const chips = buildSessionChips({ cohortId, sessions, submitted: submittedNos, openSessionNo: c.openSessionNo, now });
+
+  // 시안 C `.my-list` — 나의 기록 넷.
+  //   **`회차 자료` 는 시안 문구를 그대로 쓰지 않았다** — 회차별 자료 라우트가 없어
+  //   전체 자료실로 잇는다. 없는 것을 있는 것처럼 부르지 않는다(완주 보고 대조표 △).
+  const rows: CohortListRow[] = [
+    { key: 'journey', title: '되비추기', note: '지난 회차 다시 보기', href: `/my/cohorts/${cohortId}/journey` },
+    { key: 'feed', title: '동행 피드', note: '오늘의 걸음', href: `/feed?cohort=${cohortId}` },
+    c.preDone
+      ? { key: 'report', title: `${TOOL.pre} 완료`, note: '리포트 보기', href: `/my/cohorts/${cohortId}/report` }
+      : { key: 'pre', title: TOOL.pre, note: '아직 하지 않으셨어요', href: `/join?cohort=${cohortId}` },
+    { key: 'library', title: '자료실', note: '배포 자료', href: '/library' },
+  ];
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title={c.name} backHref="/home" homeHref="/home" action={<HeaderActions />} />
-      {/* ADR-102 축3 — 7주 기록 누적. **AppHeader 바로 아래 고정**이고 ordered 배열 밖이다.
-          '이번 주 갈무리' 블록은 사전진단 미완이면 밀리고 openSessionNo 가 없으면 아예 안 그려져
-          앵커가 될 수 없다. 반면 이 표시는 '일정만 있으면 그린다'라 상태 무관 규칙이어야 한다.
-          카드보다 먼저 전체를 보게 한다. */}
-      {progress ? (
-        <div className="t-caption" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>
-          <span>7주 기록</span>
-          {/* 캡션급 위계 — 카드도 테두리도 두지 않는다(ADR-81 3단에 넷째가 끼는 자리라 강조하면 accent CTA 가 밀린다).
-              색은 채움=본문색 / 비움=muted 뿐이다. 경고색을 쓰지 않는다 — 안 쓴 회차는 결핍이 아니라 아직 안 온 주다. */}
-          <span aria-hidden="true" style={{ letterSpacing: '0.15em', color: 'var(--color-text-muted)' }}>
-            {progress.cells.map((on, i) => (
-              <span key={i} style={on ? { color: 'var(--color-text)' } : undefined}>{on ? '●' : '○'}</span>
-            ))}
-          </span>
-          <span>{progress.done} / {progress.total} 완료</span>
-        </div>
-      ) : null}
-      {ordered.map((s, i) => (s ? <div key={i}>{s}</div> : null))}
-    </div>
+    <CohortHomeScreen
+      who={{ name: me.name?.trim() || '회원', role: '참여자', cohort: c.name }}
+      head={{ hello: `${me.name?.trim() || '회원'} 님의 여정`, part: partLabel, title: sessionTitle }}
+      progress={progress ? { label: '7주 기록', ...progress, cohortName: c.name } : null}
+      // 사전 미완이면 진단이 오늘 카드보다 **먼저** 온다 — ADR-80 순서 규칙 그대로다.
+      before={!c.preDone ? diagnosisSection : null}
+      today={
+        c.openSessionNo != null
+          ? {
+              tag: '오늘의 갈무리',
+              title: `${c.openSessionNo}회차${sessionTitle ? ` — ${sessionTitle}` : ''}`,
+              line: checkinLine || undefined,
+              cta: {
+                href: `/my/cohorts/${cohortId}/checkin/${c.openSessionNo}${checkinEdit ? '?edit=1' : ''}`,
+                label: checkinBtn,
+              },
+            }
+          : null
+      }
+      rows={rows}
+      groups={sheet.groups}
+      chips={chips}
+    >
+      {stepSection}
+      {valueSection}
+      {c.preDone ? diagnosisSection : null}
+      {pastSection}
+    </CohortHomeScreen>
   );
 }

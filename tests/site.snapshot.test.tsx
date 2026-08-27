@@ -17,6 +17,9 @@ import { HomeScreen } from '@/app/home/HomeScreen';
 import { MenuSheet } from '@/app/_screens/site/MenuSheet';
 import { MemberHome } from '@/app/_screens/MemberHome';
 import { HOME_FIXTURE, HOME_COHORTS } from '@/app/home/homeFixture';
+import { CohortHomeScreen } from '@/app/my/cohorts/[cohortId]/CohortHomeScreen';
+import { AssessmentsScreen } from '@/app/home/assessments/AssessmentsScreen';
+import { COHORT_FIXTURE, ASSESS_FIXTURE } from '@/app/_lib/f4Fixture';
 
 const DIR = process.env.SHOT_DIR;
 
@@ -53,5 +56,13 @@ describe.skipIf(!DIR)('로그인 홈(시안 B·E) 마크업', () => {
       />,
     );
     writeFileSync(`${DIR}/home-sheet.html`, sheet, 'utf8');
+  });
+});
+
+// 시안 C·F — 둘 다 인증 뒤라 라우트를 열 수 없다(4차 F-4).
+describe.skipIf(!DIR)('차수 홈·진단 홈(시안 C·F) 마크업', () => {
+  it('둘을 따로 쓴다', () => {
+    writeFileSync(`${DIR}/cohort.html`, renderToStaticMarkup(<CohortHomeScreen {...COHORT_FIXTURE} />), 'utf8');
+    writeFileSync(`${DIR}/assess.html`, renderToStaticMarkup(<AssessmentsScreen {...ASSESS_FIXTURE} />), 'utf8');
   });
 });

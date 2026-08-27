@@ -46,4 +46,10 @@ writeFileSync(`${OUT}/home-page.html`, wrap(readFileSync(`${OUT}/home.html`, 'ut
 writeFileSync(`${OUT}/home-sheet-page.html`, wrap(readFileSync(`${OUT}/home-sheet.html`, 'utf8')), 'utf8');
 for (const w of [1280, 1024, 768, 390]) shot('home-page.html', w, `${OUT}/home-${w}.png`, true);
 shot('home-sheet-page.html', 390, `${OUT}/home-sheet-390.png`, false);
+
+// 차수 홈·진단 홈(시안 C·F) — 4차 F-4. 둘 다 인증 뒤라 라우트를 열 수 없다.
+for (const [src, name] of [['cohort', 'cohort'], ['assess', 'assess']]) {
+  writeFileSync(`${OUT}/${name}-page.html`, wrap(readFileSync(`${OUT}/${src}.html`, 'utf8')), 'utf8');
+  for (const w of [1280, 1024, 768, 390]) shot(`${name}-page.html`, w, `${OUT}/${name}-${w}.png`, true);
+}
 console.log('캡처 완료');

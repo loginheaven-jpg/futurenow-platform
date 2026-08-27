@@ -265,6 +265,8 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
 describe('진행·상태 문구가 되돌아가지 않는다 (ADR-102 Phase 3)', () => {
   const card = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/page.tsx', import.meta.url), 'utf8');
+  // 4차 F-4 — 표시 층이 갈렸다. 진행 표시·오늘 카드는 이제 화면 부품에 있다.
+  const screen = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/CohortHomeScreen.tsx', import.meta.url), 'utf8');
   // 금지어 검사는 **주석을 걷어내고** 본다. 규율을 설명하는 주석이 금지어를 인용하는 것은 정상이고
   //   (CheckinCardClient.tsx:4 가 '설문·진단·지각·미제출·워크북 미사용'이라 적어 둔 것이 그렇다),
   //   그것까지 잡으면 검사가 자기 문서를 때린다. koreanLiterals 와 같은 사고다.
@@ -292,21 +294,30 @@ describe('진행·상태 문구가 되돌아가지 않는다 (ADR-102 Phase 3)',
   });
 
   // 7 로 박으면 5주·6주 편성에서 깨진다. 회차 수는 cohort_sessions 가 정한다(progress.ts 가 순수 함수로 잠근다).
-  it('일곱 칸 표시가 AppHeader 바로 아래 고정이고 회차 수를 하드코딩하지 않는다', () => {
-    expect(home).toContain('7주 기록');
-    expect(home).toContain('완료</span>');
-    expect(home).toContain('buildProgress');
-    // ordered 배열 밖에 있어야 상태 무관이다 — 사전진단 미완이면 밀리는 자리에 두면 앵커가 못 된다.
-    const headerAt = home.indexOf('<AppHeader');
-    const progressAt = home.indexOf("<span>7주 기록</span>");
-    const orderedAt = home.indexOf('{ordered.map(');
-    expect(headerAt).toBeLessThan(progressAt);
-    expect(progressAt).toBeLessThan(orderedAt);
+  //
+  // **4차 F-4 에서 화면이 `CohortHomeScreen` 으로 갈렸다.** 단언을 지우지 않고 **뜻을 따라 옮겼다** —
+  //   지키던 것은 ⑴ 라벨이 있다 ⑵ 회차 수를 박지 않는다 ⑶ **상태 무관 앵커**로 카드보다 먼저 온다,
+  //   셋이고 셋 다 그대로 잠근다. (`AppHeader`·`ordered` 는 사라진 이름이라 자리를 새 구조로 옮겼다.)
+  it('진행 표시가 카드보다 먼저 오고 회차 수를 하드코딩하지 않는다', () => {
+    expect(home, '회차 수는 순수 함수가 정한다').toContain('buildProgress');
+    expect(home, '라벨은 화면이 아니라 페이지가 준다').toContain("label: '7주 기록'");
+    expect(screen).toContain('progress.label');
+    expect(screen).toContain('progress.done');
+    expect(screen, '완료 낱말을 잃지 않는다').toContain('완료');
+    // **상태 무관 앵커** — 사전진단 미완이면 밀리는 자리(before·today)보다 앞이어야 한다.
+    const progressAt = screen.indexOf('cohort-progress');
+    const beforeAt = screen.indexOf('{before ?? null}');
+    const todayAt = screen.indexOf('cohort-today');
+    expect(progressAt).toBeGreaterThan(-1);
+    expect(progressAt).toBeLessThan(beforeAt);
+    expect(beforeAt).toBeLessThan(todayAt);
   });
 
   // 판정·색을 두지 않는다. 안 쓴 회차는 결핍이 아니라 아직 안 온 주다.
   it('진행 표시에 경고색이 없다', () => {
-    const block = home.slice(home.indexOf("<span>7주 기록</span>"), home.indexOf('{ordered.map('));
+    // F-4 이후 이 블록은 화면 부품에 있다. **막대도 없다**(불변식 11 — 시안 `.p-fill` 불채택).
+    const block = screen.slice(screen.indexOf('cohort-progress'), screen.indexOf('{before ?? null}'));
+    expect(block.includes('p-fill'), '채움 막대를 두지 않는다').toBe(false);
     for (const t of ['--color-danger', '--color-care', '--care-', '--color-warning']) {
       expect(block.includes(t), t).toBe(false);
     }
