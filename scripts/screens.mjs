@@ -41,7 +41,9 @@ export const PUBLIC_SCREENS = [
  */
 export const AUTH_SCREENS = [
   { name: 'member-home',   path: '/home',                          fixture: 'home',        role: 'user',  note: '로그인 홈 — 시안 B (F-3)' },
-  { name: 'member-sheet',  path: '/home',                          fixture: 'home-sheet',  role: 'user',  note: '전체 메뉴 시트 — 시안 E (F-3) · 햄버거를 눌러야 보인다' },
+  // **눌러야 보이는 화면이다.** URL 이 `/home` 과 같으므로 `open` 이 없으면
+  //   하네스가 홈을 두 번 찍는다(F-5 준비 실측에서 실제로 그랬다).
+  { name: 'member-sheet',  path: '/home',                          fixture: 'home-sheet',  role: 'user',  open: '전체 메뉴 열기', full: false, note: '전체 메뉴 시트 — 시안 E (F-3)' },
   { name: 'cohort-home',   path: '/my/cohorts/{cohort}',           fixture: 'cohort',      role: 'user',  note: '차수 홈 — 시안 C (F-4)' },
   { name: 'assessments',   path: '/home/assessments',              fixture: 'assess',      role: 'user',  note: '진단 홈 — 시안 F (F-4)' },
   { name: 'preview-site',  path: '/preview/site',                  fixture: 'gallery',     role: 'user',  note: '부품 전시 15종 (F-1~F-2b)' },
@@ -52,6 +54,11 @@ export const AUTH_SCREENS = [
   { name: 'coach-console', path: '/coach',                                                 role: 'coach', note: '인도자 콘솔 홈 — **사이드바 lg↑/미만**(3차 T-4)' },
   { name: 'coach-cohort',  path: '/coach/cohort/{cohort}',                                 role: 'coach', note: '차수 상세 — 명단·회차' },
 ];
+
+/**
+ * `open` — 캡처 전에 누를 버튼의 접근성 이름. 없으면 누르지 않는다.
+ * `full` — 전체 높이 캡처 여부(기본 true). `position: fixed` 인 것은 뷰포트 한 화면이 맞다.
+ */
 
 /** 표시 층 SSR 픽스처 이름 → 하네스가 쓰는 산출 파일. `tests/site.snapshot.test.tsx` 가 만든다. */
 export const FIXTURE_FILES = {

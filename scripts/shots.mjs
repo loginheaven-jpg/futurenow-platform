@@ -93,11 +93,21 @@ async function settle(page, label) {
     .catch(() => console.warn(`    ⚠ ${label}: 이미지 대기 실패 — 그대로 찍는다`));
 }
 
-async function shot(ctx, url, w, out, full, label) {
+async function shot(ctx, url, w, out, full, label, open) {
   const page = await ctx.newPage();
   await page.setViewportSize({ width: w, height: 900 });
   await page.goto(url, { waitUntil: 'commit' });
   await settle(page, `${label} ${w}px`);
+  if (open) {
+    // **눌러야 보이는 화면**(시트 등). 못 누르면 조용히 홈을 찍게 되므로 시끄럽게 실패한다.
+    try {
+      await page.getByRole('button', { name: open }).click({ timeout: 5000 });
+      await page.waitForTimeout(300); // 열림 전환
+    } catch (err) {
+      console.error(`    ✕ ${label} ${w}px: '${open}' 을 누르지 못했다 — ${String(err).split(String.fromCharCode(10))[0]}`);
+      FAILED.push(`${label}-${w}(open)`);
+    }
+  }
   try {
     // `animations: 'disabled'` — 움직이는 것이 있으면 캡처가 안정될 때까지 기다리다 늘어진다.
     await page.screenshot({ path: out, fullPage: full, timeout: SHOT_MS, animations: 'disabled' });
@@ -199,7 +209,8 @@ async function captureAuth(browser) {
     const ctx = await login(role);
     for (const s of list) {
       const path = s.path.replace('{cohort}', cohort);
-      for (const w of WIDTHS) await shot(ctx, `${BASE}${path}`, w, `${dir('auth')}/${s.name}-${w}.png`, true, s.name);
+      const widths = s.full === false ? [390] : WIDTHS;
+      for (const w of widths) await shot(ctx, `${BASE}${path}`, w, `${dir('auth')}/${s.name}-${w}.png`, s.full !== false, s.name, s.open);
       console.log(`  [${role}] ${s.name.padEnd(14)} ${path.padEnd(28)} ${s.note}`);
     }
     await ctx.close();
