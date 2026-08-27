@@ -40,4 +40,10 @@ for (const w of [1280, 1024, 768, 390]) shot('gallery.html', w, `${OUT}/site-${w
 // 시트 — position:fixed 라 뷰포트 한 화면으로 찍는다. md↓ 가 햄버거 경로라 390 을 본다.
 shot('sheet.html', 390, `${OUT}/sheet-390.png`, false);
 shot('sheet.html', 1280, `${OUT}/sheet-1280.png`, false);
+
+// 로그인 홈(시안 B·E) — 4차 F-3. 인증 뒤라 라우트를 열 수 없어 표시 층을 그대로 그린다.
+writeFileSync(`${OUT}/home-page.html`, wrap(readFileSync(`${OUT}/home.html`, 'utf8')), 'utf8');
+writeFileSync(`${OUT}/home-sheet-page.html`, wrap(readFileSync(`${OUT}/home-sheet.html`, 'utf8')), 'utf8');
+for (const w of [1280, 1024, 768, 390]) shot('home-page.html', w, `${OUT}/home-${w}.png`, true);
+shot('home-sheet-page.html', 390, `${OUT}/home-sheet-390.png`, false);
 console.log('캡처 완료');

@@ -397,3 +397,13 @@
 @media (min-width: 1024px) {
   .site-section--dark > * { padding: 0 40px; }
 }
+
+/* 로그인 홈 GNB(시안 B `.topbar`) — 폭과 무관하게 햄버거가 선다. 시트가 내비이기 때문이다. */
+.site-gnb__right.is-member .site-gnb__burger { display: block; }
+
+/* ── 로그인 홈(/home · 시안 B) 셸 — 4차 F-3 ─────────────────── */
+.home-shell { max-width: 480px; margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-8); }
+.home-sect { margin-top: var(--space-6); }
+/* 시안 B 의 소구획 제목은 밑줄이 없다 — 공개 현관의 `.band-h` 보다 작고 조용하다. */
+.home-sect .site-sect { border-bottom: 0; padding-bottom: 0; margin-bottom: var(--space-3); }
+.home-sect .site-sect__t { font-size: 14px; font-weight: 700; }

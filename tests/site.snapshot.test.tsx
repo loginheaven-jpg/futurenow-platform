@@ -13,6 +13,10 @@ import { describe, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { writeFileSync } from 'node:fs';
 import { SiteGallery } from '@/app/_screens/site/SiteGallery';
+import { HomeScreen } from '@/app/home/HomeScreen';
+import { MenuSheet } from '@/app/_screens/site/MenuSheet';
+import { MemberHome } from '@/app/_screens/MemberHome';
+import { HOME_FIXTURE, HOME_COHORTS } from '@/app/home/homeFixture';
 
 const DIR = process.env.SHOT_DIR;
 
@@ -21,5 +25,33 @@ describe.skipIf(!DIR)('부품 전시 마크업', () => {
     writeFileSync(`${DIR}/body.html`, renderToStaticMarkup(<SiteGallery />), 'utf8');
     const opened = renderToStaticMarkup(<SiteGallery openSheet />);
     writeFileSync(`${DIR}/body-sheet.html`, opened.slice(opened.indexOf('<div class="site-sheet__overlay"')), 'utf8');
+  });
+});
+
+// **`/home` 은 인증 뒤라 열 수 없다**(QA 계정 대기). 표시 층을 순수 컴포넌트로 뗐으므로
+//   같은 부품·같은 조립을 여기서 그려 4폭으로 잡는다 — F-3 게이트의 캡처가 이것이다.
+describe.skipIf(!DIR)('로그인 홈(시안 B·E) 마크업', () => {
+  it('홈과 시트를 따로 쓴다', () => {
+    writeFileSync(
+      `${DIR}/home.html`,
+      renderToStaticMarkup(
+        <HomeScreen {...HOME_FIXTURE}>
+          <MemberHome greetingName={HOME_FIXTURE.who.name} cohorts={HOME_COHORTS} role="user" />
+        </HomeScreen>,
+      ),
+      'utf8',
+    );
+    const sheet = renderToStaticMarkup(
+      <MenuSheet
+        open
+        onClose={() => {}}
+        name={HOME_FIXTURE.who.name}
+        role={HOME_FIXTURE.who.role}
+        cohort={HOME_FIXTURE.who.cohort}
+        groups={HOME_FIXTURE.groups}
+        chips={HOME_FIXTURE.chips}
+      />,
+    );
+    writeFileSync(`${DIR}/home-sheet.html`, sheet, 'utf8');
   });
 });
