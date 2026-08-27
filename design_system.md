@@ -132,7 +132,7 @@ export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3
 | 글자 | `--color-text-on-accent` | `--navy-900` | **15.91** | |
 | 글자 | **`--color-accent-strong`** | `--navy-700`(면 최악단) | **5.75** | 강조어 |
 | 글자 | `--color-accent-strong` | `--navy-900` | **7.86** | |
-| 글자 | `--color-text-on-gold` | `--color-accent` | **4.17** | 골드 면 위 |
+| 글자 | **`--color-text-on-gold`** | `--color-accent` | **5.70** | 골드 면 위 · **F-5 전: navy-700(4.17 · AA 미달) → navy-900** |
 | 면 | `--color-surface-1` | `--color-bg` | **1.08** | 패널 |
 | 면 | **`--color-surface-2`** | `--color-bg` | **1.18** | **F-0: 1.00 → 1.18. 카드가 면으로 선다** |
 | 면 | `--color-surface-sunken` | `--color-surface-2` | **1.11** | 카드 위에 놓이는 것 |
@@ -494,7 +494,7 @@ export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3
 | 6 | **`QuickTiles`** | 바로가기 2×2. 아이콘·제목·힌트 | `surface-1` + hairline · `min-height: var(--tap-min)` | **이모지 금지** — 인라인 SVG 스트로크(`currentColor`) | `QuickTiles.tsx` |
 | 7 | **`MenuSheet`** | 우측 전체 메뉴 시트. 네이비 헤더(이름·역할·기수) · 회차 칩 · 그룹 목록 | `role="dialog"` · `aria-modal` · 폭 `min(360px, 88vw)` | **열림은 prop.** 시트가 스스로 열리지 않는다 | `MenuSheet.tsx` |
 | 8 | **`SessionChipStrip`** | 회차 칩. 완료·진행·열림·잠금 4상태 | 완료 `--color-primary` · 진행 `--color-accent`+`text-on-gold` · 잠금 점선+`surface-sunken` | **잠긴 회차를 감추지 않는다.** 상태를 **색만으로** 말하지 않는다(`aria-label`) | `SessionChipStrip.tsx` |
-| 9 | **`SiteGnb`** | 네이비 상단 바. 로고 · 메뉴 6 · 골드 로그인 | md↑ 메뉴 표시 · **md↓ 햄버거 → #7 호출** · `aria-current="page"` | 현재 경로 판정을 부품이 하지 않는다 — **`currentPath` prop**(라우터를 읽지 않는다) | `SiteGnb.tsx` |
+| 9 | **`SiteGnb`** | 네이비 상단 바. **두 모습** — `public`(시안 P1 `.gnb`: 로고 · 메뉴 6 · 골드 로그인) / `member`(시안 B `.topbar`: **로고 + 햄버거뿐**) | `public` md↑ 메뉴 · md↓ 햄버거 · `member` 는 폭과 무관하게 햄버거(시트가 내비다) · `aria-current="page"` | 현재 경로 판정을 부품이 하지 않는다 — **`currentPath` prop**(라우터를 읽지 않는다). **로그인한 사람에게 로그인 버튼을 다시 보이지 않는다** | `SiteGnb.tsx` |
 | 10 | **`SectionTitle`** | 소구획 머리. 제목 · 부제 · 우측 액션 3슬롯 | 하단 hairline · lg↑ 부제가 제목 옆으로 붙는다 | 부제·액션 없으면 그리지 않는다 | `SectionTitle.tsx` |
 | 11 | **`NewsRow`** | 소식 줄. 배지 · 제목 · 날짜 | 배지 골드 면 · 날짜 `text-muted` · 줄 사이 hairline | **날짜를 만들지 않는다** — 이미 만들어진 문자열을 받는다. `href` 없으면 링크가 아니다 | `NewsRow.tsx` |
 | 12 | **`RecruitCard`** | 모집 안내 띠. 키커 · 제목 · 본문 · CTA 1 | `surface-2` + hairline · 골드는 **CTA 에만** | **모집 개폐를 판정하지 않는다** — CTA 를 줄지는 화면이 정한다 | `RecruitCard.tsx` |
@@ -560,16 +560,17 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
   **표기 규율이 함께 확정됐다** — 대조표에서 **✕(미구현)과 ✕(불채택)을 가른다.**
   탭바는 **불채택(지휘부 결정)** 으로 적는다. → §9.6
 
-- **골드 면 위 글자가 4.17 이다 — §10 기준(4.5) 미달**(4차 F-2 실측 · **지휘부 판단 필요**).
-  `--color-text-on-gold`(=`navy-700` #1A3A5C)를 `--color-accent`(=`gold-500` #C8911F) 위에 얹은
-  값이고 **§1.6 표가 이미 4.17 로 적어 두었다** — 새로 발견한 값이 아니라 **기준 판정이 안 붙어
-  있던 값**이다. Lighthouse 접근성 감사가 `/`·`/about` 에서 이것만 걸었다(그 외 0).
-  걸리는 자리: `ui-btn--primary`(골드 버튼) · `site-gnb__login` · `site-news__badge` —
-  **F-2 가 만든 것이 아니라 앱 전역 쌍**이다.
-  **대안 실측**: `--color-text-on-gold: var(--navy-900)`(#102338) → **5.70**. 한 줄 변경이고
-  골드 면 위 글자만 한 단계 진해진다. `#0D1B2A` 면 6.23, 검정이면 7.53.
-  **F-0(색 토큰) 소관이라 F-2 에서 바꾸지 않았다** — 골드 버튼은 앱 전역이고, 토큰 변경은
-  회귀 대조가 따라야 한다(F-0 게이트가 그렇게 했다).
+- ~~**골드 면 위 글자가 4.17 이다**~~ — **해소(2026-08-28 · A안 채택)**.
+  `--color-text-on-gold` 를 `navy-700` → **`navy-900`** 으로 내렸다: **4.17 → 5.70.**
+  **함께 움직인 셋이 한 커밋이다** — 토큰(`globals.css`) · 게이트 테스트(`4.17 → 5.70`) ·
+  **PDF 하드코딩**(`report/labels.ts` `ink: '#1A3A5C' → '#102338'`).
+  **CSS 만 고치면 화면과 PDF 가 갈라진다**(§1.1 PDF 팔레트 동기화 의무).
+  회귀 실측: Lighthouse 접근성 `/`·`/about`·`/recruit` **96 → 100** · `color-contrast` **전부 통과** ·
+  vitest 1048 통과 · 육안 회귀 0. 항목을 지우지 않고 취소선으로 남긴다 —
+  **왜 부채였는지가 사라지면 다음에 같은 자리에서 또 넘어진다.**
+  *(대안 실측 기록: 면을 `gold-700` 으로 내리는 안은 오히려 **3.00** 으로 나빠졌다.
+  골드를 어둡게 하면 네이비 글자와 가까워지기 때문이다. 크기 기준 명문화도 불가 —
+  골드 면 글자 실측 최대가 17px 이라 대형 텍스트 기준 18.66px 굵게에 닿지 않는다.)*
 - **본문 크기로 쓸 수 있는 골드 글자색이 없다**(4차 F-2 실측). 팔레트에서 가장 진한 골드가
   `--gold-700`(#A8791A)인데 `surface-2` 위 **3.29** · 흰 바탕 **3.88** 로 둘 다 4.5 미달이다.
   시안의 **골드 키커**(`.tcard .k`·`.recruit .k`)를 그대로 쓸 수 없어 F-2 는

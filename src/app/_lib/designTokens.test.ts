@@ -57,7 +57,7 @@ const DOCUMENTED: [string, string, number][] = [
   ['--color-text-on-accent', '--navy-900', 15.91],
   ['--color-accent-strong', '--navy-700', 5.75],
   ['--color-accent-strong', '--navy-900', 7.86],
-  ['--color-text-on-gold', '--color-accent', 4.17],
+  ['--color-text-on-gold', '--color-accent', 5.70],  // F-5 전 A안: navy-700(4.17 · AA 미달) → navy-900
   ['--color-surface-1', '--color-bg', 1.08],
   ['--color-surface-2', '--color-bg', 1.18],
   ['--color-surface-sunken', '--color-surface-2', 1.11],

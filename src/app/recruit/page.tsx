@@ -15,6 +15,7 @@ import { AccountCopy } from './AccountCopy';
 import { CURRENT_INTAKE, STATUS_COPY, joinHref, seatsRemaining } from './intake';
 import { seatsTaken } from './seats';
 import { APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SEATS_LEFT, TEAM, VOICES, WHAT } from './copy';
+import { RECRUIT_CARDS } from './cards';
 import './recruit.css';
 
 // 남은 자리를 DB 에서 읽으므로 완전 정적은 아니다. 대신 **ISR** 로 캐시를 지킨다 —
@@ -50,6 +51,11 @@ export default async function RecruitPage() {
 
   return (
     <main className="rc">
+      {/* **lg 이상에서만 2단이다**(지휘부 판정). 좌는 기존 신청 흐름 **그대로**이고
+          — 폼·CTA·남은 자리 로직을 한 줄도 건드리지 않았다 —
+          우는 카드뉴스 정적 그리드다. **lg 미만에서는 우측이 통째로 숨는다**:
+          모바일 `/recruit` 은 현행 1단 신청 흐름이고 카드가 끼어들지 않는다. */}
+      <div className="rc-two">
       <div className="rc-wrap">
         {/* 1 · 히어로 — 카드 1 */}
         <section className="rc-sec">
@@ -291,6 +297,18 @@ export default async function RecruitPage() {
             <span>{APPLY.deadlineNote}</span>
           </p>
         </section>
+      </div>
+
+      {/* 카드뉴스 — **정적 `img` 다.** 캐러셀·라이트박스 같은 새 위젯을 두지 않는다(지휘부 판정).
+          순서는 `cards.ts` 배열 그대로다: 문제(2) → 문제(3) → 답(6) → 증언(7).
+          **여기서 다시 정렬하지 않는다** — 그 순서에 뜻이 실려 있다. */}
+      <aside className="rc-cards" aria-label="예봄 2기 안내 카드">
+        {RECRUIT_CARDS.map((c) => (
+          // 이미지 속 글자는 스크린리더가 못 읽는다 — `alt` 가 그 장의 유일한 접근 경로다.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={c.n} src={c.src} alt={c.alt} width={800} height={800} loading="lazy" decoding="async" />
+        ))}
+      </aside>
       </div>
 
       {/* 하단 고정 바 — 스크롤 어디서든 누를 수 있게(§3.3) */}
