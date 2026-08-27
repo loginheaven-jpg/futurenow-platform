@@ -2,6 +2,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createServerContext } from '@/core/supabase/server';
+import { NewsComments } from './NewsComments';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,15 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
   if (!post) notFound();
   const muted = { color: 'var(--color-text-secondary)' } as const;
 
+  // 댓글은 **비로그인도 읽는다**(발주 §5.2) — 로그인 여부는 쓰기와 삭제 버튼만 가른다.
+  //   조회 실패는 조용히 빈 목록이다: 댓글이 안 뜨는 것과 소식이 안 열리는 것은 심각도가 다르다.
+  const [me, comments] = await Promise.all([
+    ctx.currentUser().catch(() => null),
+    ctx.listNewsComments(id).catch(() => []),
+  ]);
+  // 삭제 권한이 미치는 범위는 RPC 가 정한다(본인 · 운영자 · 그 소식 작성자). 화면은 그 셋을 그대로 비춘다.
+  const canModerate = !!me && (me.role === 'admin' || (post.authorId !== null && post.authorId === me.id));
+
   return (
     <div className="pc-shell" style={{ maxWidth: 720 }}>
       <h1 className="t-h1" style={{ color: 'var(--color-primary)' }}>{post.title}</h1>
@@ -21,6 +31,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
       {/* 본문은 평문이다. 마크다운·HTML 을 넣지 않는다 — 운영자가 붙여 넣은 것이 그대로 렌더되면
           주입 표면이 열린다. 줄바꿈만 살린다. */}
       <div className="t-body" style={{ marginTop: 'var(--space-5)', whiteSpace: 'pre-wrap' }}>{post.body}</div>
+      <NewsComments postId={post.id} initial={comments} meId={me?.id ?? null} canModerate={canModerate} />
       <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-6)' }}>
         <Link href="/news" style={{ color: 'var(--color-text-secondary)' }}>소식 목록</Link>
       </p>

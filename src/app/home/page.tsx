@@ -7,6 +7,7 @@ import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { MemberHome } from '@/app/_screens/MemberHome';
 import { RoleCard } from '@/app/_screens/RoleCard';
+import { FeedShortcut } from '@/app/_screens/FeedShortcut';
 import { CheckinPrompt } from '@/app/_screens/CheckinPrompt';
 import { ConsentGate } from '@/app/_consent/ConsentGate';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
@@ -34,6 +35,11 @@ export default async function MemberHomePage() {
   //   비용: 대상이 있을 때만 getMyCheckin·listCohortSessions 각 1회가 는다(my_cohorts 가 prompt_count 를
   //   반환하지 않아 불가피하다). 11명 규모라 감수한다 — 기수가 늘면 그때 RPC 에 얹는다(B3).
   //   /my/cohorts 에는 두지 않는다: 차수가 하나면 차수 홈으로 리다이렉트하므로 실효 지점이 /home 이다.
+  // 동행 피드 바로가기(2차 · 발주 §6.3) — **탭바를 짓지 않기로 확정**했으므로 진입은 기존 표면으로 낸다.
+  //   피드를 가진 기수가 없으면 줄 자체를 그리지 않는다(없는 곳으로 보내지 않는다 · S-4 §6.2 판단).
+  //   조회 실패는 빈 배열이다 — 바로가기가 없는 것과 홈이 안 열리는 것은 심각도가 다르다.
+  const feedCohorts = await ctx.listFeedCohorts().catch(() => []);
+
   const open = cohorts.find((c) => c.openSessionNo != null && !c.openSessionSubmitted);
   let prompt: { cohortId: string; sessionNo: number; hasContent: boolean; shouldPrompt: boolean } | null = null;
   if (open && open.openSessionNo != null) {
@@ -62,6 +68,7 @@ export default async function MemberHomePage() {
           역할 감금 해제(ADR-51)는 그대로다 — 이 카드는 **거점을 가리키는 것**이지 가두는 것이 아니고,
           아래 MemberHome 이 다른 길을 계속 연다. */}
       <RoleCard role={me.role} cohorts={cohorts} />
+      <FeedShortcut count={feedCohorts.length} />
       <MemberHome greetingName={greetingName} cohorts={cohorts} role={me.role} pendingCoachApps={pendingCoachApps} />
     </div>
   );

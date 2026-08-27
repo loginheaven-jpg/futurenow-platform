@@ -254,6 +254,9 @@ export interface CoreContext {
   // 사진 — 갈무리 선례(ADR-83)와 같은 구조. 업로드 바이트는 클라이언트 직접(리사이즈 후).
   signFeedPhotos(paths: string[], expiresInSec?: number): Promise<Record<string, string>>; // 경로→만료형 URL
   deleteFeedPhoto(path: string): Promise<void>; // Storage API 경유만(ADR-87 — DB 로는 지울 수 없다)
+  // 차수 하드삭제 전 회수 대상(발주 §4.2). **DB 가 경로를 안다** — 스토리지를 접두어로 훑지 않는다.
+  //   삭제된 글은 photo_path 가 이미 비어 있으므로 살아 있는 글만 세면 남은 바이트 전부다.
+  listFeedPhotoPaths(cohortId: string): Promise<string[]>;
   // 인도자 콘솔 전용 둘. **참여자가 불러도 RPC 가 거부한다** — 화면이 감추는 것은 표시일 뿐이다.
   getFeedFlow(cohortId: string, days?: number): Promise<FeedFlowPoint[]>;
   listQuietMembers(cohortId: string, days?: number): Promise<QuietMember[]>;

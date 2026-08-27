@@ -198,7 +198,7 @@ const VALUE_COLS =
 
 
 // 승인 큐 RPC 원시 행. `status` 열에 담기는 것은 저장값이 아니라 member_state() 판정이다.
-interface NewsRow { id: string; title: string; body: string; published_at: string | null; created_at: string }
+interface NewsRow { id: string; title: string; body: string; published_at: string | null; created_at: string; author_id: string | null }
 interface LibraryRow { id: string; title: string; description: string | null; tier: string; storage_path: string; created_at: string }
 interface ContactRow { id: string; name: string | null; email: string | null; body: string; user_id: string | null; handled_at: string | null; created_at: string }
 
@@ -215,7 +215,7 @@ interface FeedCommentRow { id: string; author_id: string; author_name: string | 
 
 function rowToNews(r: unknown): NewsPost {
   const row = r as NewsRow;
-  return { id: row.id, title: row.title, body: row.body, publishedAt: row.published_at, createdAt: row.created_at };
+  return { id: row.id, title: row.title, body: row.body, publishedAt: row.published_at, createdAt: row.created_at, authorId: row.author_id ?? null };
 }
 
 interface MembershipQueueDbRow {
@@ -1276,7 +1276,7 @@ class SupabaseCoreContext implements CoreContext {
   async listNews(limit = 20): Promise<NewsPost[]> {
     const { data, error } = await this.sb
       .from('news_posts')
-      .select('id,title,body,published_at,created_at')
+      .select('id,title,body,published_at,created_at,author_id')
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(limit);
     if (error) throw new CoreError(`listNews 실패: ${error.message}`);
@@ -1285,7 +1285,7 @@ class SupabaseCoreContext implements CoreContext {
 
   async getNews(id: string): Promise<NewsPost | null> {
     const { data, error } = await this.sb
-      .from('news_posts').select('id,title,body,published_at,created_at').eq('id', id).maybeSingle();
+      .from('news_posts').select('id,title,body,published_at,created_at,author_id').eq('id', id).maybeSingle();
     if (error) throw new CoreError(`getNews 실패: ${error.message}`);
     return data ? rowToNews(data as NewsRow) : null;
   }
@@ -1471,6 +1471,18 @@ class SupabaseCoreContext implements CoreContext {
   async deleteFeedPhoto(path: string): Promise<void> {
     const { error } = await this.sb.storage.from(FEED_PHOTO_BUCKET).remove([path]);
     if (error) throw new CoreError(`deleteFeedPhoto 실패: ${error.message}`);
+  }
+
+  // 차수 하드삭제 전 회수 대상. RLS(feed_posts_select)가 이미 그 기수를 가르므로 여기서
+  //   권한을 다시 보지 않는다. 접두어로 스토리지를 훑지 않는 이유는 ADR-87 과 같다 —
+  //   실제 저장 키를 아는 것은 DB 이고, 훑기는 경로 규약이 바뀌는 순간 조용히 빗나간다.
+  async listFeedPhotoPaths(cohortId: string): Promise<string[]> {
+    const { data, error } = await this.sb
+      .from('feed_posts').select('photo_path').eq('cohort_id', cohortId).not('photo_path', 'is', null);
+    if (error) throw new CoreError(`listFeedPhotoPaths 실패: ${error.message}`);
+    return (data ?? [])
+      .map((r: unknown) => (r as { photo_path: string | null }).photo_path)
+      .filter((p): p is string => !!p);
   }
 
   async getFeedFlow(cohortId: string, days = 7): Promise<FeedFlowPoint[]> {

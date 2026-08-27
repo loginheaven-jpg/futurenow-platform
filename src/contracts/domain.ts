@@ -301,6 +301,9 @@ export interface NewsPost {
   body: string;
   publishedAt: string | null;
   createdAt: string;
+  // 2차 추가 — 댓글 삭제 권한이 **그 소식 작성자**까지 미친다(발주 §9-4). 화면이 버튼을
+  //   보일지 정하려면 누가 썼는지 알아야 한다. 강제는 `news_comment_delete` 가 한다.
+  authorId: string | null;
 }
 
 // 자료실 3단. 'public' 은 **비로그인 열람 허용**이라는 뜻이지 공개 버킷이라는 뜻이 아니다 —

@@ -15,6 +15,35 @@ export async function deleteCohortAction(cohortId: string): Promise<{ ok: boolea
     const c = await ctx();
     const cohort = await c.getCohort(cohortId); // RLS 미달/부재 → throw → catch
     if (cohort.code === GENERAL_CODE) return { ok: false, error: '예약된 체험 체크 차수는 삭제할 수 없어요.' };
+
+    // **사진 회수 — RPC 보다 먼저**(발주 §4.2 · ADR-87). Supabase 는 storage.objects 직접 DELETE 를
+    //   막으므로 DB 행이 CASCADE 로 사라져도 **S3 바이트는 회수되지 않는다.** 차수가 사라지면
+    //   무엇을 지워야 할지 알 방법도 함께 사라지므로 순서를 뒤집을 수 없다.
+    //
+    //   `20260802100200` 주석은 이 절이 여기 있다고 적어 두었으나 **실제로는 없었다**(1차 이전부터의
+    //   드리프트 · 2차 설계 보고 §9-②). 피드 사진을 넣으면서 갈무리 사진도 같은 자리에 함께 넣는다 —
+    //   사양 변경이 아니라 미이행분 이행이다.
+    //
+    //   실패해도 삭제 자체는 진행한다: 사진이 남는 것보다 차수가 안 지워지는 쪽이 나쁘다
+    //   (removeCohortMemberAction 의 판단과 같다).
+    try {
+      for (const path of await c.listFeedPhotoPaths(cohortId)) {
+        await c.deleteFeedPhoto(path).catch(() => undefined);
+      }
+      const [sessions, members] = await Promise.all([
+        c.listCohortSessions(cohortId).catch(() => []),
+        c.listCohortMembers(cohortId).catch(() => []),
+      ]);
+      for (const m of members) {
+        for (const s of sessions) {
+          const photos = await c.listCheckinPhotos(cohortId, s.sessionNo, m.userId).catch(() => []);
+          for (const p of photos) await c.deleteCheckinPhoto(p.path).catch(() => undefined);
+        }
+      }
+    } catch {
+      /* 사진 회수 실패는 삭제를 막지 않는다 */
+    }
+
     await c.deleteCohort(cohortId);
     return { ok: true };
   } catch (e) {

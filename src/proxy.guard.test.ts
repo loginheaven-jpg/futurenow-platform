@@ -104,6 +104,15 @@ describe('loginRedirectSearch — 민감 쿼리는 버리고 경로만 살린다
     expect(loginRedirectSearch('/my/values')).not.toMatch(/access_token|token|code=/);
   });
 
+  it('/feed 는 보호 라우트다 — 미인증이 미들웨어에서 걸린다(발주 §8)', () => {
+    expect(isProtectedPath('/feed')).toBe(true);
+    // 접두 오매칭은 막는다 — '/feeds' 같은 공개 경로가 생겨도 휩쓸리지 않는다.
+    expect(isProtectedPath('/feeds')).toBe(false);
+    expect(isProtectedPath('/feedback')).toBe(false);
+    // **matcher 는 그대로다**(불변식 17) — 접두사를 더하는 것은 넓히는 방향이다.
+    expect(proxyMatcherCovers('/feed')).toBe(true);
+  });
+
   it('경로가 아니면 빈 쿼리 — 붙이지 않는다', () => {
     for (const bad of ['', 'my/values', 'https://evil.test/x', '//evil.test/x']) {
       expect(loginRedirectSearch(bad), bad).toBe('');
@@ -112,7 +121,7 @@ describe('loginRedirectSearch — 민감 쿼리는 버리고 경로만 살린다
 
   it('실은 값이 화이트리스트를 그대로 통과한다 — 두 끝을 묶는다', () => {
     // 여기서 화이트리스트를 다시 구현하지 않는다(사본이 둘). 대신 왕복이 성립함을 단언한다.
-    for (const p of ['/my/values', '/home/assessments', '/my/cohorts/11111111-1111-1111-1111-111111111111/values']) {
+    for (const p of ['/my/values', '/home/assessments', '/feed', '/my/cohorts/11111111-1111-1111-1111-111111111111/values']) {
       const q = loginRedirectSearch(p);
       const got = decodeURIComponent(new URLSearchParams(q).get('returnTo') ?? '');
       expect(safeReturnTo(got), p).toBe(p);
