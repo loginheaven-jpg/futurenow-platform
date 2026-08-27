@@ -94,7 +94,17 @@ export default async function CoachReportPage({
       <ReportPrintHeader participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />
       {/* 화면 순서: 해석(위) → 차트(아래). PDF 인쇄에서만 order 로 차트=1페이지·해석=2페이지로 재배치(ADR-69). */}
       <div className="report-interp-block">
-        <InterpretationPanel responseId={responseId} initial={initialVm} />
+        {/* **key 가 정확성이다**(3차 T-2 · 발현 확인 2026-08-27).
+            리포트→리포트 이동(`MemberJourney` 형제 링크)은 같은 자리에 같은 컴포넌트를 다시 그린다.
+            재마운트가 없으면 남는 것이 표시 하나가 아니다 —
+              · `vm` 이 **이전 참여자의 해석**을 붙든다
+              · `triggered` ref 가 살아남아 다음 리포트를 **영영 다시 부르지 않는다**
+              · `editing`·`draft` 가 살아, 편집 중 이동해 저장하면
+                `saveCoachInterpretationAction(responseId=B, content=A의 초안)` 이 되어
+                **A의 해석이 B의 기록에 써진다.** 표시 결함이 아니라 데이터 오염이다.
+            인도자가 A의 화면에서 B의 해석을 읽고 코칭하면 잘못된 사람을 읽는 것이고,
+            그 위험이 갈무리 쪽보다 무겁다. */}
+        <InterpretationPanel key={responseId} responseId={responseId} initial={initialVm} />
       </div>
       <div className="report-charts-block" style={{ marginTop: 'var(--space-4)' }}>
         <ReportScreen scores={scores} />
