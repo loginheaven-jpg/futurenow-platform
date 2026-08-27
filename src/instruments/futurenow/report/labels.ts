@@ -73,7 +73,10 @@ export function growEmphasis(grow: FuturenowScores['grow']): Record<GrowKey, Gro
  */
 export const GROW_TONE: Record<GrowEmphasis, { css: { fill: string; ink: string }; pdf: { fill: string; ink: string } }> = {
   lever: { css: { fill: 'var(--color-success)', ink: 'var(--color-text-on-accent)' }, pdf: { fill: '#2E7D6B', ink: '#FFFFFF' } },
-  floor: { css: { fill: 'var(--color-accent)', ink: 'var(--color-text-on-gold)' }, pdf: { fill: '#C8911F', ink: '#1A3A5C' } },
+  // **PDF 잉크는 CSS 토큰과 함께 움직인다.** `--color-text-on-gold` 가 navy-700 → navy-900 으로
+  //   바뀌었으므로 여기 하드코딩도 같이 간다 — **CSS 만 고치면 화면과 PDF 가 갈라진다**
+  //   (design_system §1.1 이 요구하는 PDF 팔레트 동기화 · 4차 F-3 §5-① 지적).
+  floor: { css: { fill: 'var(--color-accent)', ink: 'var(--color-text-on-gold)' }, pdf: { fill: '#C8911F', ink: '#102338' } },
   plain: { css: { fill: 'var(--color-primary)', ink: 'var(--color-text-on-accent)' }, pdf: { fill: '#1B2A41', ink: '#FFFFFF' } },
 };
 
