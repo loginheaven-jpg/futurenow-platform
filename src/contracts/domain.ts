@@ -7,7 +7,9 @@
 export type Role = 'user' | 'coach' | 'admin';
 
 // 개인정보 동의 유형(ADR-76). privacy_use=멤버 필수 수집·이용 · sensitive_use=민감정보(종교·신앙) 선택 · coach_pledge=인도자 보호 서약.
-export type ConsentType = 'privacy_use' | 'sensitive_use' | 'coach_pledge';
+// 'forum_match' = 포럼 대조 키(이름·연락처) 수집·이용 동의. **`/signup` 경로에서만** 받는다(S-1 단계 6).
+//   기존 셋의 문안도 버전도 건드리지 않는다 — 올리면 해당 없는 기존 회원이 재동의 화면을 만난다.
+export type ConsentType = 'privacy_use' | 'sensitive_use' | 'coach_pledge' | 'forum_match';
 export interface ConsentRecord { type: ConsentType; version: string; agreedAt: string; }
 
 // 연락처 상세(운영자·본인만 — user_contacts 격리). 주소·계좌는 운영 목적(장학금)·인도자 비노출. ADR-76
@@ -253,4 +255,74 @@ export interface ValueAssessment {
 export interface ValueAssessmentRow extends ValueAssessment {
   userId: string;
   userName: string | null;
+}
+
+// ── 회원 상태(S-1 · ADR-122) ────────────────────────────────────────────────
+// **Role 과 별도 축이다.** role(user·coach·admin)은 권한, state 는 자격이다. 한 컬럼에 섞지 않는다.
+//   기존 자가승격 방지(20260629100002)의 보호 범위를 흔들지 않으려는 분리다(발주서 §4.2).
+//
+// **'cohort' 는 저장되지 않는다.** enrollments ⋈ cohorts(kind='seminar' AND status='active')가
+//   이미 아는 사실이라 `member_state()` 가 산출한다. DB 의 memberships.status CHECK 에는
+//   'cohort' 가 없어 문법이 이중 기록을 막는다. 이 유니온이 그것보다 넓은 것은,
+//   **판정 결과**를 담는 타입이지 저장 값을 담는 타입이 아니기 때문이다.
+export type MemberState = 'pending' | 'individual' | 'cohort' | 'expired' | 'held';
+
+// 응시 계열. 여정 = 사전·사후 체크, 상시 = 가치 카드·그림자·사랑의 언어.
+export type AssessmentKind = 'journey' | 'standing';
+
+// 운영자가 내릴 수 있는 결정. **'pending' 과 'cohort' 는 없다** —
+//   앞은 초기 상태라 되돌릴 일이 아니고, 뒤는 산출이라 결정할 수 있는 것이 아니다.
+export type MembershipDecision = 'individual' | 'held' | 'expired';
+
+// 승인 큐 한 행(대기 + 만료 임박). `list_membership_queue` 가 두 갈래를 함께 돌려준다.
+export interface MembershipQueueRow {
+  bucket: 'pending' | 'expiring';
+  userId: string;
+  name: string | null;
+  email: string | null;
+  // 포럼 대조 키 — user_contacts 에 산다(불변식 13). 인도자에게는 어떤 경로로도 가지 않는다.
+  forumName: string | null;
+  forumPhone: string | null; // **원값.** 마스킹은 서버 컴포넌트의 순수 함수가 한다(브라우저 번들에 싣지 않는다)
+  signupNote: string | null;
+  state: MemberState; // 저장값이 아니라 **판정**. 화면은 이것을 다시 계산하지 않는다
+  validUntil: string | null; // ISO date
+  createdAt: string;
+  // 승인 화면 유효기간 기본값. **TS 가 기본 개월수를 모르게 하려고 DB 가 계산해 보낸다** —
+  //   상수는 `membership_default_months()` 한 곳에만 있다(IA §12-2 확정 시 그것만 고친다).
+  defaultValidUntil: string;
+}
+
+// ── 공개 영역(S-4) ─────────────────────────────────────────────────────────
+// 소식. `publishedAt === null` 이면 초안이고 **운영자에게만 보인다**(RLS 가 가른다) —
+//   상태 컬럼을 따로 두지 않았다. 발행 시각이 곧 공개 여부라 진실이 둘이 되지 않는다.
+export interface NewsPost {
+  id: string;
+  title: string;
+  body: string;
+  publishedAt: string | null;
+  createdAt: string;
+}
+
+// 자료실 3단. 'public' 은 **비로그인 열람 허용**이라는 뜻이지 공개 버킷이라는 뜻이 아니다 —
+//   버킷은 비공개 하나뿐이고 파일은 만료형 서명 URL 로만 나간다.
+export type LibraryTier = 'public' | 'member' | 'coach';
+
+export interface LibraryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  tier: LibraryTier;
+  storagePath: string;
+  createdAt: string;
+}
+
+// 문의. **메일이 아니라 저장으로 간다**(발송 수단 실측 0 · S-4). 운영자가 콘솔에서 읽는다.
+export interface ContactMessage {
+  id: string;
+  name: string | null;
+  email: string | null;
+  body: string;
+  userId: string | null;
+  handledAt: string | null;
+  createdAt: string;
 }

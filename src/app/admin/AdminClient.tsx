@@ -1,4 +1,5 @@
 'use client';
+import type { ReactNode } from 'react';
 // 본부 클라이언트 래퍼 — 코치 신청 결정(승인/거절) + 멤버 역할(승격/강등) 액션 + 갱신. 데이터는 서버 컴포넌트가 주입.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,10 +13,12 @@ export function AdminClient({
   members,
   applications,
   currentUserId,
+  notices,
 }: {
   members: MemberSummary[];
   applications: CoachApplication[];
   currentUserId: string;
+  notices?: ReactNode;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -83,6 +86,7 @@ export function AdminClient({
       currentUserId={currentUserId}
       busyId={busyId}
       appBusyId={appBusyId}
+      notices={notices}
       headerActions={<HeaderActions homeHref="/home" navHref="/coach" navLabel="인도자 콘솔" />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}

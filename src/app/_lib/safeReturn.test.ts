@@ -40,3 +40,27 @@ describe('safeReturnTo — 오픈 리다이렉트 방어(수용 11-a)', () => {
     expect(safeReturnTo('')).toBeNull();
   });
 });
+
+describe('개인 응시 경로(S-2)', () => {
+  it('/my/values 를 허용한다 — 라우트와 짝이다', () => {
+    expect(safeReturnTo('/my/values')).toBe('/my/values');
+  });
+
+  it('비슷하지만 다른 경로는 막는다', () => {
+    for (const bad of ['/my/values/', '/my/valuesx', '/my/value', '//my/values', '/my/values?x=1']) {
+      expect(safeReturnTo(bad), bad).toBeNull();
+    }
+  });
+});
+
+describe('체크 허브(S-3)', () => {
+  it('/home/assessments 를 허용한다 — 라우트와 짝이다', () => {
+    expect(safeReturnTo('/home/assessments')).toBe('/home/assessments');
+  });
+
+  it('비슷하지만 다른 경로는 막는다', () => {
+    for (const bad of ['/home/assessments/', '/home/assessment', '/home', '/homeassessments']) {
+      expect(safeReturnTo(bad), bad).toBeNull();
+    }
+  });
+});

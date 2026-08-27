@@ -1,9 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import Home from './page';
 
 describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
-  const html = renderToStaticMarkup(<Home />);
+  // S-4 에서 현관이 **서버 비동기 컴포넌트**가 됐다(소식 미리보기). `renderToStaticMarkup(<Home />)` 는
+  //   비동기 컴포넌트를 동기로 그리지 못해 suspend 로 터진다 — 그래서 **먼저 await 해서 엘리먼트를 얻는다.**
+  //   단언은 한 줄도 바꾸지 않았다. 깨진 것은 렌더 방식이지 지키려던 내용이 아니다(ADR-111 처리와 같다).
+  //   env 가 없는 테스트 환경에서 `recentNews()` 는 네트워크를 타지 않고 빈 배열을 돌려준다.
+  let html = '';
+  beforeAll(async () => {
+    html = renderToStaticMarkup(await Home());
+  });
 
   it('권유부 + 골드 CTA(함께 시작해 볼까요?) → /join, 네이비 글자', () => {
     expect(html).toContain('어떤 사람일까요'); // 권유 문구(hero)
@@ -38,5 +45,34 @@ describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
 
   it('참여자 화면 — 의미색 토큰 0', () => {
     expect(html).not.toMatch(/--care|--danger|--warning/);
+  });
+});
+
+describe('현관 공개 영역 배선 (S-4)', () => {
+  let html = '';
+  beforeAll(async () => {
+    html = renderToStaticMarkup(await Home());
+  });
+
+  it('모집 배너가 /recruit 로 간다', () => {
+    expect(html).toContain('href="/recruit"');
+    expect(html).toContain('이번 기수 모집');
+  });
+
+  it('공개 영역 세 곳으로 가는 길이 있다', () => {
+    for (const href of ['/about', '/library', '/contact', '/news']) {
+      expect(html, href).toContain(`href="${href}"`);
+    }
+  });
+
+  it('소식이 없으면 구획째 그리지 않는다 — 빈 제목만 남기지 않는다', () => {
+    // 테스트 환경은 env 가 없어 recentNews()가 빈 배열이다. 그때 '더 보기'가 뜨면 안 된다.
+    expect(html).not.toContain('더 보기');
+  });
+
+  it('참여자 현관 규율 — 의미색을 쓰지 않는다', () => {
+    for (const token of ['--care-', '--color-danger', '--color-warning']) {
+      expect(html, token).not.toContain(token);
+    }
   });
 });

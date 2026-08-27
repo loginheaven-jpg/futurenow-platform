@@ -60,7 +60,9 @@ function Grid({ ids, picked, toggle }: { ids: readonly number[]; picked: Set<num
   );
 }
 
-export function ValuesClient({ cohortId, initial }: { cohortId: string; initial: ValueAssessment | null }) {
+// **차수 경로와 개인 경로가 이 한 컴포넌트를 공유한다**(복제 금지 · 발주서 §3.2).
+//   라우트 파일 둘이 cohortId 해석만 달리하고, 여기는 null 을 그대로 아래로 흘린다.
+export function ValuesClient({ cohortId, initial }: { cohortId: string | null; initial: ValueAssessment | null }) {
   const saved = initial?.progress as { picks?: number[]; page?: number; pairwise?: PairwiseState } | undefined;
 
   const [screen, setScreen] = useState<Screen>(() => {

@@ -4,7 +4,7 @@
 // role(인가)은 middleware 가 판정하지 않는다 — edge 매 요청 DB 조회 회피. 미인증→/login 만 일원화, role 게이트는 페이지(심층방어).
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { isProtectedPath } from './proxy.guard'; // 순수 판정(테스트 대상)
+import { isProtectedPath, loginRedirectSearch } from './proxy.guard'; // 순수 판정(테스트 대상)
 import { VERIFIED_UID_HEADER } from './core/auth/verifiedIdentity';
 
 export async function proxy(request: NextRequest) {
@@ -40,7 +40,10 @@ export async function proxy(request: NextRequest) {
   if (!user && isProtectedPath(request.nextUrl.pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
-    loginUrl.search = ''; // 토큰·민감 쿼리 미전파
+    // **원 search 를 통째로 덮어쓴다** — 토큰·민감 쿼리 미전파(af6576d 의 근거는 그대로다).
+    //   다만 경로만은 returnTo 로 살린다. 딥링크가 설계철학 원칙 1이고, 버리면 로그인 뒤
+    //   사용자가 자기가 어디로 가려 했는지 잃는다. 검증은 loginOutcome 의 화이트리스트가 한다.
+    loginUrl.search = loginRedirectSearch(request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 

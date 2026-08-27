@@ -31,6 +31,7 @@ export function AdminMembers({
   onApprove,
   onReject,
   headerActions,
+  notices,
 }: {
   members: MemberSummary[];
   applications: CoachApplication[];
@@ -44,10 +45,14 @@ export function AdminMembers({
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   headerActions?: ReactNode;
+  /** 헤더 아래 한 줄짜리 알림 슬롯(S-4 후속). 운영자가 어차피 오는 자리에 숫자를 놓는다. */
+  notices?: ReactNode;
 }) {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <AppHeader variant="root" title="본부" subtitle="인도자 신청·멤버 관리" homeHref="/home" action={headerActions} />
+
+      {notices}
 
       {/* ① 승인 대기 — 인도자 신청 큐(멤버 역할 관리와 구분) */}
       <section style={{ marginBottom: 'var(--space-6)' }}>

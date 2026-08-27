@@ -10,11 +10,20 @@
 // 동일 매트릭스를 MCP/psql 로 1회 실측해 12/12 통과를 확인했다(2026-06-26). 이 파일은 반복 검증용.
 import { describe, it, expect } from 'vitest';
 import { Client } from 'pg';
+import { countAs, expectRaise, runAs, updateCountAs } from './helpers/asRole';
 
 const ENABLED = process.env.RUN_RLS_INTEGRATION === '1' && !!process.env.SUPABASE_DB_URL;
 
 const SETUP = `
 set local session_replication_role = replica;
+-- auth.users 를 먼저 심는다 — public.users.id 가 auth.users(id) 를 참조한다.
+-- replica 모드가 FK 를 건너뛰어 행은 들어가지만, **뒤이은 정상 UPDATE 가 그 FK 를 다시 검사해** 터진다
+-- (set_user_role·decide_coach_application 이 여기서 실패했다). 같은 replica 창 안이라 handle_new_user 도 안 돈다.
+insert into auth.users (id, email) values
+ ('11111111-1111-1111-1111-111111111111','t0@t.test'),
+ ('22222222-2222-2222-2222-222222222222','t1@t.test'),
+ ('33333333-3333-3333-3333-333333333333','t2@t.test'),
+ ('44444444-4444-4444-4444-444444444444','t3@t.test');
 insert into public.users (id,email,name,nickname,role) values
  ('11111111-1111-1111-1111-111111111111','coachA@t.test','CoachA','ca','coach'),
  ('22222222-2222-2222-2222-222222222222','memberM@t.test','MemberM','mm','user'),
@@ -45,53 +54,6 @@ const APP_SETUP = `
 insert into public.coach_applications (id,user_id,status,motivation,created_at)
  values ('${APP}','${MEMBER}','pending','이끌고 싶습니다', now());
 `;
-
-/** 주어진 sub(사용자)로 authenticated 역할을 시뮬레이션해 count 쿼리를 평가한다. */
-async function countAs(client: Client, sub: string, sql: string): Promise<number> {
-  await client.query(`set local role authenticated`);
-  await client.query(`select set_config('request.jwt.claims', $1, true)`, [
-    JSON.stringify({ sub, role: 'authenticated' }),
-  ]);
-  const r = await client.query(sql);
-  await client.query(`reset role`);
-  return Number(r.rows[0].count);
-}
-
-/** sub 로 authenticated 시뮬레이션해 문장을 실행(void). 실패 시 savepoint 로 트랜잭션 복구 후 throw(이후 검증 계속 가능). */
-async function runAs(client: Client, sub: string, sql: string): Promise<void> {
-  await client.query('savepoint sp');
-  try {
-    await client.query(`set local role authenticated`);
-    await client.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub, role: 'authenticated' })]);
-    await client.query(sql);
-  } catch (e) {
-    await client.query('rollback to savepoint sp');
-    await client.query('release savepoint sp');
-    throw e;
-  }
-  await client.query('reset role');
-  await client.query('release savepoint sp');
-}
-
-/** 주어진 문장이 특정 sqlstate 로 raise 하는지 확인. */
-async function expectRaise(client: Client, sub: string, sql: string, sqlstate: string): Promise<void> {
-  let code: string | undefined;
-  try {
-    await runAs(client, sub, sql);
-  } catch (e) {
-    code = (e as { code?: string }).code;
-  }
-  expect(code).toBe(sqlstate);
-}
-
-/** sub 로 UPDATE 를 실행하고 영향 행수를 반환(USING 으로 가려진 행은 0). */
-async function updateCountAs(client: Client, sub: string, sql: string): Promise<number> {
-  await client.query(`set local role authenticated`);
-  await client.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub, role: 'authenticated' })]);
-  const r = await client.query(sql);
-  await client.query(`reset role`);
-  return r.rowCount ?? 0;
-}
 
 describe.skipIf(!ENABLED)('RLS 격리 (실DB, 역할별)', () => {
   it('전화·응답·알림 가시성이 역할별로 의도대로 격리된다', async () => {
@@ -279,6 +241,13 @@ describe.skipIf(!ENABLED)('RLS — value_assessments(ADR-121)', () => {
     try {
       await client.query('begin');
       await client.query(SETUP);
+      // S-1 응시 게이트가 앞에 생겼다(member_can_assess). COACH_B 는 어느 차수에도 없어 상태가
+      //   'pending' 이라 42501 로 먼저 막힌다 — **이 단언이 지키려던 것은 그것이 아니라 '차수 게이트'다.**
+      //   레드가 났다고 단언을 지우지 않고, 상태 게이트를 통과시켜 원래 의도를 되살린다(ADR-111 처리와 같다).
+      await client.query(
+        `insert into public.memberships (user_id,status,valid_until,decided_at,decision_note)
+         values ('${COACH_B}','individual','2099-12-31',now(),'fixture')`,
+      );
       await expectRaise(client, COACH_B, `select public.value_save_progress('${COHORT}','exploring','{}'::jsonb,null)`, 'P0001');
       expect(await countAs(client, ADMIN, `select count(*) from public.value_assessments`)).toBe(0);
     } finally { await client.query('rollback'); await client.end(); }

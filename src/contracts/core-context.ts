@@ -17,16 +17,22 @@ import type {
   CohortSession,
   ConsentRecord,
   ConsentType,
+  ContactMessage,
   ContactDetail,
   CoreUser,
   Enrollment,
   InstrumentId,
   InterpretationView,
+  LibraryItem,
   UserProfile,
   MemberActivity,
   MemberRef,
+  MemberState,
   MemberSummary,
+  MembershipDecision,
+  MembershipQueueRow,
   MyCohortSummary,
+  NewsPost,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -168,16 +174,18 @@ export interface CoreContext {
   // 가치 카드(ADR-121) — 별도 테이블 value_assessments. 쓰기는 전량 DEFINER RPC(D1 선례).
   //   Q8 승인은 '3종'이었으나 RPC 가 셋(save_progress·finalize·patch)이라 쓰기 진입점이 셋 필요하고,
   //   여기에 본인 조회·인도자 열람을 더해 **5종**이 됐다. 승인 델타를 완료 보고에 명시한다.
-  getMyValueAssessment(cohortId: string): Promise<ValueAssessment | null>; // 본인(value_assessments SELECT RLS)
+  // **cohortId: null = 개인 응시**(차수 미소속 · S-2). 차수분과 개인분은 부분 유니크 인덱스로
+  //   각각 한 행씩 따로 산다. NULL 행은 인도자에게 보이지 않는다(RLS 가 is_cohort_coach(NULL,…)=false).
+  getMyValueAssessment(cohortId: string | null): Promise<ValueAssessment | null>; // 본인(value_assessments SELECT RLS)
   saveMyValueProgress(input: { // 본인 · 증분 저장(value_save_progress DEFINER · 전이·개수 서버 강제)
-    cohortId: string;
+    cohortId: string | null;
     stage: Exclude<ValueStageKey, 'final'>;
     progress?: Record<string, unknown>;
     candidates?: number[];
   }): Promise<void>;
-  finalizeMyValue(cohortId: string, ids: [number, number, number]): Promise<void>; // 본인 · 선저장(value_finalize)
+  finalizeMyValue(cohortId: string | null, ids: [number, number, number]): Promise<void>; // 본인 · 선저장(value_finalize)
   patchMyValue(input: { // 본인 · 확정 후 라벨·대조 증분(value_patch · 안 넘긴 값은 보존)
-    cohortId: string;
+    cohortId: string | null;
     labels?: Partial<{ v1: string; v2: string; v3: string }>;
     workbook?: Partial<{ peak: string; strength: string; longing: string }>;
     alignment?: 'aligned' | 'different' | 'unsure' | 'skipped';
@@ -187,4 +195,36 @@ export interface CoreContext {
   // 편지 사진 첨부(ADR-83) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
   listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/차수 코치/운영자(storage RLS) · signed URL 포함
   deleteCheckinPhoto(path: string): Promise<void>; // 본인/운영자(storage RLS)
+
+  // 회원 상태·승인(S-1 · ADR-122) — role 과 별도 축. 상태가 가르는 것은 **새 응시 하나**이고
+  //   자기 결과 열람은 상태와 무관하다(메모 §2-가 · IA v2.1 §5.4). 그래서 열람 게이트 메서드가 없다.
+  //
+  // **판정은 SQL 에만 있다.** 우선순위(held > cohort > 저장 > pending)와 만료 산출은 `member_state()`
+  //   한 곳이고, 여기 셋은 그 결과를 **읽어 나르기만** 한다. TS 에 판정 사본을 만들지 않는다.
+  getMyMemberState(): Promise<MemberState>; // 본인 — member_state() DEFINER(인자 생략 = auth.uid())
+  listMembershipQueue(expiringDays?: number): Promise<MembershipQueueRow[]>; // 운영자 전용 — 대기 + 만료 임박 한 벌(list_membership_queue)
+  decideMembership(input: {
+    userId: string;
+    decision: MembershipDecision;
+    validUntil?: string | null; // 개인 회원 승인에만. 화면 기본값은 MembershipQueueRow.defaultValidUntil
+    note?: string | null;
+  }): Promise<void>; // 운영자 전용 — decide_membership(가드: admin · 자기 자신 차단 · 화이트리스트 · 행잠금)
+  // 가입 대조 키(§4.3 급소) — 본인 전용 self-scoped DEFINER. 연락처는 user_contacts(불변식 13),
+  //   가입 경위는 memberships.signup_note. **status 는 건드리지 않는다** — 이미 승인된 사람이
+  //   정보를 고친다고 자격이 되돌아가면 안 된다(운영자 결정은 decideMembership 만 바꾼다).
+  recordSignupIntake(input: { forumName?: string | null; forumPhone?: string | null; signupNote?: string | null }): Promise<void>;
+
+  // 공개 영역(S-4) — 소식·자료실·문의. 진단 어휘 0(코어 중립).
+  listNews(limit?: number): Promise<NewsPost[]>; // 발행분(운영자는 초안 포함 — RLS 가 가른다)
+  getNews(id: string): Promise<NewsPost | null>;
+  upsertNews(input: { id?: string | null; title: string; body: string; publish?: boolean }): Promise<string>; // 운영자 전용
+  deleteNews(id: string): Promise<void>; // 운영자 전용
+  // 자료실 — 목록은 RLS 가 tier 로 가른다. **파일은 목록에 실리지 않는다**(경로만).
+  listLibrary(): Promise<LibraryItem[]>;
+  // 만료형 서명 URL. 발급 전 `library_can_read` 로 자격을 먼저 묻는다 — 목록 RLS 와 같은 표를 본다.
+  signLibraryFile(storagePath: string, expiresInSec?: number): Promise<string | null>;
+  // 문의 — **비로그인도 보낼 수 있다**(공개 화면). 스팸 가드는 RPC 안(길이·빈도).
+  submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void>;
+  listContactMessages(onlyOpen?: boolean): Promise<ContactMessage[]>; // 운영자 전용
+  markContactHandled(id: string): Promise<void>; // 운영자 전용
 }

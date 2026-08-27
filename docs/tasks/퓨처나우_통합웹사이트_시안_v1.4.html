@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퓨처나우 통합 웹사이트 — 1차 개편 시안 v1.4</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  /* 원천 팔레트 — design_system.md §1.1 그대로 */
+  --navy-900:#0F1B2D; --navy-700:#1B2A41; --navy-500:#34466A; --navy-300:#5B6B8C;
+  --gold-700:#B8923D; --gold-500:#C9A24B; --gold-300:#D9B96E; --gold-100:#EFE2C2;
+  --gray-0:#FFFFFF; --gray-50:#F7F6F4; --gray-100:#EEECE8; --gray-200:#DEDAD3;
+  --gray-400:#A8A29A; --gray-600:#6B655C; --gray-800:#3A352F; --gray-900:#211E1A;
+  /* 역할 토큰 — §1.2 */
+  --color-primary:var(--navy-700); --color-primary-strong:var(--navy-900);
+  --color-accent:var(--gold-500);  --color-accent-soft:var(--gold-100);
+  --color-bg:var(--gray-0);        --color-surface-1:var(--gray-50);
+  --color-surface-sunken:var(--gray-100);
+  --color-border:var(--gray-200);  --color-border-strong:var(--gray-400);
+  --color-text:var(--gray-900);    --color-text-secondary:var(--gray-600);
+  --color-text-muted:var(--gray-400); --color-text-on-accent:var(--gray-0);
+  --radius:12px; --radius-lg:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  background:var(--gray-100); color:var(--color-text);
+  -webkit-font-smoothing:antialiased; padding:40px 24px 80px;
+}
+.doc-head{max-width:1720px;margin:0 auto 36px}
+.doc-head h1{font-size:22px;font-weight:800;color:var(--navy-900);letter-spacing:-.02em}
+.doc-head p{font-size:13px;color:var(--color-text-secondary);margin-top:6px;line-height:1.6}
+.frames{display:flex;flex-wrap:wrap;gap:32px;justify-content:center;max-width:1800px;margin:0 auto}
+.frame-wrap{display:flex;flex-direction:column;gap:12px}
+.frame-label{font-size:13px;font-weight:700;color:var(--navy-700)}
+.frame-label .path{font-family:ui-monospace,monospace;font-weight:600;color:var(--gold-700);margin-left:6px;font-size:12px}
+.frame-note{font-size:12px;color:var(--color-text-secondary);max-width:390px;line-height:1.6}
+.phone{
+  width:390px;min-height:760px;background:var(--color-bg);
+  border-radius:28px;border:1px solid var(--color-border);
+  box-shadow:0 12px 40px rgba(15,27,45,.12);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+
+/* ── 공통 부품 ─────────────────────────── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;background:var(--navy-900);
+}
+.brand{display:flex;align-items:baseline;gap:8px}
+.brand .logo{font-size:17px;font-weight:800;color:var(--gray-0);letter-spacing:-.01em}
+.brand .logo b{color:var(--gold-300);font-weight:800}
+.brand .en{font-size:10px;font-weight:600;color:var(--navy-300);letter-spacing:.18em}
+.topbar .menu-btn{width:22px;height:14px;display:flex;flex-direction:column;justify-content:space-between}
+.topbar .menu-btn span{height:2px;background:var(--gold-300);border-radius:2px}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:48px;border-radius:var(--radius);font-size:15px;font-weight:700;
+  border:none;cursor:pointer;font-family:inherit;width:100%;
+}
+.btn-primary{background:var(--color-accent);color:var(--navy-900)}
+.btn-ghost{background:transparent;color:var(--navy-700);border:1px solid var(--color-border-strong)}
+.btn-navy{background:var(--navy-700);color:var(--gray-0)}
+.arrow{font-weight:800}
+.section-title{font-size:12px;font-weight:700;color:var(--color-text-muted);letter-spacing:.08em;margin-bottom:10px}
+.card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px}
+.tabbar{
+  margin-top:auto;display:flex;border-top:1px solid var(--color-border);
+  background:var(--color-bg);padding:8px 8px 14px;
+}
+.tabbar a{flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--color-text-muted);text-decoration:none;padding-top:6px}
+.tabbar a.on{color:var(--navy-700)}
+.tabbar .ico{display:block;font-size:18px;margin-bottom:3px}
+
+/* ── A. 공개 홈 ─────────────────────────── */
+.hero{
+  background:linear-gradient(168deg,var(--navy-900) 0%,var(--navy-700) 78%);
+  padding:36px 24px 32px;color:var(--gray-0);
+}
+.hero .eyebrow{font-size:11px;font-weight:700;color:var(--gold-300);letter-spacing:.22em;margin-bottom:14px}
+.hero h2{font-size:26px;font-weight:800;line-height:1.4;letter-spacing:-.02em}
+.hero h2 b{color:var(--gold-300)}
+.hero p{margin-top:12px;font-size:13.5px;line-height:1.7;color:var(--navy-300)}
+.hero .cta{margin-top:22px;display:flex;gap:10px}
+.hero .cta .btn{min-height:46px;font-size:14px}
+.hero .cta .btn-outline{background:transparent;border:1px solid var(--navy-500);color:var(--gray-0)}
+.journey{padding:22px 24px 6px}
+.journey-track{display:flex;align-items:center;gap:0;margin-top:4px}
+.j-step{flex:1;text-align:center;position:relative}
+.j-step .dot{
+  width:34px;height:34px;border-radius:50%;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;background:var(--color-surface-sunken);color:var(--color-text-secondary);
+  border:1.5px solid var(--color-border);
+}
+.j-step.gold .dot{background:var(--color-accent);color:var(--navy-900);border-color:var(--color-accent)}
+.j-step .lb{font-size:10px;color:var(--color-text-secondary);margin-top:6px;font-weight:600}
+.j-line{height:2px;background:var(--color-border);flex:0 0 6px;margin-bottom:20px}
+.notice{padding:20px 24px}
+.notice .card{padding:0;overflow:hidden}
+.notice .row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--color-border)}
+.notice .row:last-child{border-bottom:none}
+.notice .row .t{font-size:13.5px;font-weight:600}
+.notice .row .d{font-size:11px;color:var(--color-text-muted)}
+.notice .badge{
+  font-size:10px;font-weight:700;background:var(--color-accent-soft);color:var(--gold-700);
+  border-radius:6px;padding:3px 7px;margin-right:8px;flex-shrink:0;
+}
+.pub-foot{padding:8px 24px 24px;font-size:11px;color:var(--color-text-muted);line-height:1.7}
+
+/* ── B. 로그인 홈 — 역할 카드 ─────────────── */
+.role-card{
+  margin:20px 20px 0;border-radius:var(--radius-lg);
+  background:linear-gradient(160deg,var(--navy-700),var(--navy-900));
+  padding:22px 20px;color:var(--gray-0);position:relative;overflow:hidden;
+}
+.role-card::after{
+  content:"";position:absolute;right:-46px;top:-46px;width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,162,75,.28),transparent 70%);
+}
+.role-card .who{font-size:12px;font-weight:600;color:var(--navy-300);margin-bottom:8px}
+.role-card .who b{color:var(--gold-300)}
+.role-card h3{font-size:20px;font-weight:800;line-height:1.4;letter-spacing:-.01em}
+.role-card .sub{font-size:12.5px;color:var(--navy-300);margin-top:6px}
+.role-card .go{
+  margin-top:18px;display:inline-flex;align-items:center;gap:8px;
+  background:var(--color-accent);color:var(--navy-900);
+  font-size:14px;font-weight:800;border-radius:10px;padding:12px 18px;
+}
+.quick{padding:22px 20px 6px}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.q-tile{
+  border:1px solid var(--color-border);border-radius:var(--radius-lg);
+  padding:14px;background:var(--color-surface-1);
+}
+.q-tile .ico{font-size:20px}
+.q-tile .t{font-size:13px;font-weight:700;margin-top:8px}
+.q-tile .p{font-size:10.5px;color:var(--color-text-muted);margin-top:3px;font-family:ui-monospace,monospace}
+
+/* ── C. 내 여정 ────────────────────────── */
+.my-head{padding:22px 20px 0}
+.my-head .hello{font-size:13px;color:var(--color-text-secondary)}
+.my-head h3{font-size:20px;font-weight:800;margin-top:4px;color:var(--navy-900)}
+.progress{padding:16px 20px 0}
+.p-track{height:8px;border-radius:6px;background:var(--color-surface-sunken);overflow:hidden}
+.p-fill{height:100%;width:33%;background:var(--color-accent);border-radius:6px}
+.p-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary);margin-top:6px}
+.today-card{margin:18px 20px 0}
+.today-card .card{border:1.5px solid var(--color-accent);background:var(--color-bg);padding:20px}
+.today-card .tag{font-size:11px;font-weight:800;color:var(--gold-700);letter-spacing:.08em}
+.today-card h4{font-size:17px;font-weight:800;margin-top:8px;line-height:1.45}
+.today-card p{font-size:13px;color:var(--color-text-secondary);margin-top:6px;line-height:1.65}
+.today-card .btn{margin-top:16px}
+.my-list{padding:20px}
+.my-list .row{
+  display:flex;align-items:center;gap:12px;padding:13px 4px;
+  border-bottom:1px solid var(--color-border);
+}
+.my-list .row:last-child{border-bottom:none}
+.my-list .ico{width:34px;height:34px;border-radius:10px;background:var(--color-surface-sunken);display:flex;align-items:center;justify-content:center;font-size:16px}
+.my-list .t{font-size:14px;font-weight:600;flex:1}
+.my-list .chev{color:var(--color-text-muted);font-weight:700}
+
+/* ── D. 딥링크 게이트 ──────────────────── */
+.gate{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 28px}
+.gate .brand-c{text-align:center;margin-bottom:30px}
+.gate .brand-c .logo{font-size:22px;font-weight:800;color:var(--navy-900)}
+.gate .brand-c .logo b{color:var(--gold-700)}
+.dest{
+  border:1px solid var(--color-border);background:var(--color-surface-1);
+  border-radius:var(--radius-lg);padding:14px 16px;display:flex;gap:12px;align-items:center;
+  margin-bottom:22px;
+}
+.dest .ico{width:38px;height:38px;border-radius:10px;background:var(--color-accent-soft);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.dest .l1{font-size:11px;color:var(--color-text-muted);font-weight:600}
+.dest .l2{font-size:14px;font-weight:700;color:var(--navy-900);margin-top:2px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-bottom:6px}
+.field input{
+  width:100%;min-height:48px;border:1px solid var(--color-border-strong);border-radius:var(--radius);
+  padding:0 14px;font-size:15px;font-family:inherit;background:var(--color-bg);color:var(--color-text);
+}
+.gate .help{text-align:center;font-size:12px;color:var(--color-text-secondary);margin-top:18px}
+.gate .help a{color:var(--gold-700);font-weight:700;text-decoration:none}
+
+/* ── E. 전체 메뉴 시트 ─────────────────── */
+.sheet-top{background:var(--navy-900);padding:18px 20px 20px}
+.sheet-top .close{color:var(--gold-300);font-size:20px;font-weight:800;float:right;line-height:1}
+.sheet-top .cohort{
+  display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  background:rgba(201,162,75,.18);color:var(--gold-300);border-radius:6px;padding:4px 9px;
+}
+.sheet-top .name{font-size:18px;font-weight:800;color:var(--gray-0);margin-top:10px}
+.sheet-top .name small{font-size:12px;font-weight:600;color:var(--navy-300);margin-left:6px}
+.sheet-body{flex:1;overflow-y:auto;padding:6px 0 20px}
+.m-group{padding:16px 20px 4px}
+.m-group .h{font-size:11px;font-weight:700;color:var(--color-text-muted);letter-spacing:.1em;margin-bottom:8px}
+.m-item{
+  display:flex;align-items:center;gap:12px;padding:12px 20px;
+  font-size:14.5px;font-weight:600;color:var(--color-text);
+}
+.m-item .ico{width:22px;text-align:center;font-size:15px;color:var(--navy-500)}
+.m-item .chev{margin-left:auto;color:var(--color-text-muted);font-weight:700}
+.m-item.lock{color:var(--color-text-muted);font-weight:500}
+.m-item.lock .ico{color:var(--color-text-muted)}
+.sess-strip{display:flex;gap:7px;padding:4px 20px 8px;flex-wrap:wrap}
+.sess-chip{
+  width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;border:1px solid var(--color-border);
+  background:var(--color-surface-1);color:var(--color-text-secondary);
+}
+.sess-chip.done{background:var(--navy-700);color:var(--gray-0);border-color:var(--navy-700)}
+.sess-chip.now{background:var(--color-accent);color:var(--navy-900);border-color:var(--color-accent)}
+.sess-chip.lock{color:var(--color-text-muted);background:var(--color-surface-sunken);border-style:dashed}
+.sheet-note{font-size:11px;color:var(--color-text-muted);padding:2px 20px 0;line-height:1.6}
+.m-foot{border-top:1px solid var(--color-border);margin-top:10px;padding-top:8px}
+
+/* ── F. 진단 홈 ────────────────────────── */
+.a-head{padding:24px 20px 4px}
+.a-head h3{font-size:21px;font-weight:800;color:var(--navy-900);letter-spacing:-.01em}
+.a-head p{font-size:12.5px;color:var(--color-text-secondary);margin-top:6px;line-height:1.65}
+.a-sec{padding:20px 20px 0}
+.a-sec .h{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.a-sec .h .t{font-size:13px;font-weight:800;color:var(--navy-700)}
+.a-sec .h .d{font-size:11px;color:var(--color-text-muted)}
+.a-item{
+  border:1px solid var(--color-border);border-radius:var(--radius-lg);
+  padding:15px 16px;margin-bottom:10px;display:flex;align-items:center;gap:13px;
+}
+.a-item .ico{
+  width:40px;height:40px;border-radius:11px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  background:var(--color-surface-sunken);
+}
+.a-item.done .ico{background:var(--color-accent-soft)}
+.a-item .t{font-size:14.5px;font-weight:700}
+.a-item .s{font-size:11.5px;color:var(--color-text-secondary);margin-top:3px}
+.a-item .st{
+  margin-left:auto;font-size:10.5px;font-weight:700;border-radius:6px;padding:4px 8px;flex-shrink:0;
+  background:var(--color-surface-sunken);color:var(--color-text-secondary);
+}
+.a-item.done .st{background:var(--color-accent-soft);color:var(--gold-700)}
+.a-item.wait{border-style:dashed}
+.a-item.wait .t,.a-item.wait .s{color:var(--color-text-muted)}
+.a-priv{
+  margin:6px 20px 0;background:var(--color-surface-1);border:1px solid var(--color-border);
+  border-radius:var(--radius);padding:12px 14px;font-size:11.5px;color:var(--color-text-secondary);line-height:1.65;
+}
+.a-priv b{color:var(--navy-700)}
+
+/* ── G. 승인 대기 ─────────────────────── */
+.wait-track{border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:6px 16px}
+.wt-row{display:flex;gap:14px;align-items:flex-start;padding:14px 0;position:relative}
+.wt-row:not(:last-child)::after{
+  content:"";position:absolute;left:11px;top:34px;bottom:-2px;width:1.5px;background:var(--color-border);
+}
+.wt-dot{
+  width:23px;height:23px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;background:var(--color-surface-sunken);color:var(--color-text-muted);
+  border:1.5px solid var(--color-border);z-index:1;
+}
+.wt-row.done .wt-dot{background:var(--navy-700);color:var(--gray-0);border-color:var(--navy-700)}
+.wt-row.now .wt-dot{background:var(--color-accent);color:var(--navy-900);border-color:var(--color-accent)}
+.wt-t{font-size:14px;font-weight:700}
+.wt-row:not(.done):not(.now) .wt-t{color:var(--color-text-muted);font-weight:600}
+.wt-s{font-size:11.5px;color:var(--color-text-secondary);margin-top:3px}
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <h1>퓨처나우 통합 웹사이트 — 1차 개편 시안 v1.4</h1>
+  <p>일곱 화면. design_system.md 토큰(네이비+골드·Pretendard) 그대로 적용. 딥링크 원칙(정문·옆문 병행)이 B·C·D에 구현되어 있다.<br>
+  C의 회차 목록과 B의 바로가기 타일은 각각 고유 URL의 표면이다 — 같은 주소를 카톡 링크로 보내면 해당 화면에 직행한다.</p>
+</div>
+
+<div class="frames">
+
+<!-- ═══ A. 공개 홈 ═══ -->
+<div class="frame-wrap">
+  <div class="frame-label">A · 공개 홈 (비로그인)<span class="path">/</span></div>
+  <div class="phone">
+    <div class="topbar">
+      <div class="brand"><span class="logo">퓨처<b>나우</b></span><span class="en">FUTURE NOW</span></div>
+      <div class="menu-btn"><span></span><span></span><span></span></div>
+    </div>
+    <div class="hero">
+      <div class="eyebrow">6주의 여정</div>
+      <h2>미래의 나를<br>오늘로 <b>데려오다</b></h2>
+      <p>도서 『퓨처나우』 기반 6주 세미나.<br>쓰고, 나누고, 걷는다 — 읽는 책이 아니라 쓰는 책이다.</p>
+      <div class="cta">
+        <button class="btn btn-primary">참여 신청</button>
+        <button class="btn btn-outline">프로그램 소개</button>
+      </div>
+    </div>
+    <div class="journey">
+      <div class="section-title">GROW + F — 6주 여정</div>
+      <div class="journey-track">
+        <div class="j-step gold"><div class="dot">G</div><div class="lb">목표</div></div><div class="j-line"></div>
+        <div class="j-step"><div class="dot">R</div><div class="lb">직면</div></div><div class="j-line"></div>
+        <div class="j-step"><div class="dot">O</div><div class="lb">옵션</div></div><div class="j-line"></div>
+        <div class="j-step"><div class="dot">W</div><div class="lb">실행</div></div><div class="j-line"></div>
+        <div class="j-step"><div class="dot">F</div><div class="lb">믿음</div></div>
+      </div>
+    </div>
+    <div class="notice">
+      <div class="section-title">소식</div>
+      <div class="card">
+        <div class="row"><div style="display:flex;align-items:center"><span class="badge">모집</span><span class="t">예봄 2기 — 9월 20일 시작</span></div><span class="d">8.20</span></div>
+        <div class="row"><span class="t">1기 수료 소식</span><span class="d">8.02</span></div>
+      </div>
+    </div>
+    <div class="pub-foot">퓨처나우 · 교회·기관 도입 문의는 문의 메뉴에서</div>
+    <div class="tabbar">
+      <a class="on"><span class="ico">⌂</span>홈</a>
+      <a><span class="ico">✦</span>소개</a>
+      <a><span class="ico">✎</span>신청</a>
+      <a><span class="ico">▤</span>자료실</a>
+      <a><span class="ico">→</span>로그인</a>
+    </div>
+  </div>
+  <div class="frame-note">외부인을 위한 정문. 상단 소개, 여정 개요, 소식 순. 모집 배너는 소식 첫 줄에 배지로.</div>
+</div>
+
+<!-- ═══ B. 로그인 홈 ═══ -->
+<div class="frame-wrap">
+  <div class="frame-label">B · 홈 — 로그인 상태 (참여자)<span class="path">/</span></div>
+  <div class="phone">
+    <div class="topbar">
+      <div class="brand"><span class="logo">퓨처<b>나우</b></span><span class="en">FUTURE NOW</span></div>
+      <div class="menu-btn"><span></span><span></span><span></span></div>
+    </div>
+    <div class="role-card">
+      <div class="who"><b>예봄 2기</b> · 참여자</div>
+      <h3>내 여정으로 —<br>오늘의 갈무리가 기다립니다</h3>
+      <div class="sub">2회차 · 미래의 나를 만나다</div>
+      <div class="go">내 여정으로 <span class="arrow">→</span></div>
+    </div>
+    <div class="quick">
+      <div class="section-title">바로가기</div>
+      <div class="quick-grid">
+        <div class="q-tile"><div class="ico">🕯</div><div class="t">오늘의 갈무리</div><div class="p">/c/ZR4KB/2</div></div>
+        <div class="q-tile"><div class="ico">🪞</div><div class="t">되비추기</div><div class="p">journey</div></div>
+        <div class="q-tile"><div class="ico">👣</div><div class="t">동행 피드</div><div class="p">feed (2차)</div></div>
+        <div class="q-tile"><div class="ico">▤</div><div class="t">자료실</div><div class="p">/library</div></div>
+      </div>
+    </div>
+    <div class="notice">
+      <div class="section-title">소식</div>
+      <div class="card">
+        <div class="row"><span class="t">2회차 준비물 안내</span><span class="d">어제</span></div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <a class="on"><span class="ico">⌂</span>홈</a>
+      <a><span class="ico">🕯</span>내 여정</a>
+      <a><span class="ico">👣</span>피드</a>
+      <a><span class="ico">▤</span>자료실</a>
+    </div>
+  </div>
+  <div class="frame-note">원칙 3의 구현. 홈을 거치되 역할 카드 한 번의 탭으로 도착한다. 인도자·운영자는 같은 자리에 각자의 카드가 뜬다. 바로가기 타일의 경로 표기는 시안 설명용 — 실화면에서는 뺀다.</div>
+</div>
+
+<!-- ═══ C. 내 여정 ═══ -->
+<div class="frame-wrap">
+  <div class="frame-label">C · 내 여정 (기본 착지)<span class="path">/my</span></div>
+  <div class="phone">
+    <div class="topbar">
+      <div class="brand"><span class="logo">퓨처<b>나우</b></span><span class="en">FUTURE NOW</span></div>
+      <div class="menu-btn"><span></span><span></span><span></span></div>
+    </div>
+    <div class="my-head">
+      <div class="hello">새암 님의 여정</div>
+      <h3>PART 1 · GOAL — 미래의 나를 만나다</h3>
+    </div>
+    <div class="progress">
+      <div class="p-track"><div class="p-fill"></div></div>
+      <div class="p-meta"><span>2 / 6회차</span><span>예봄 2기</span></div>
+    </div>
+    <div class="today-card">
+      <div class="card">
+        <div class="tag">오늘의 갈무리</div>
+        <h4>2회차 — 미래의 나를 만나다</h4>
+        <p>세션의 끝에서 오늘을 갈무리합니다. 다듬지 않으셔도 됩니다.</p>
+        <button class="btn btn-primary">갈무리 쓰기 <span class="arrow">→</span></button>
+      </div>
+    </div>
+    <div class="my-list">
+      <div class="section-title">나의 기록</div>
+      <div class="row"><div class="ico">🪞</div><div class="t">되비추기 — 지난 회차 다시 보기</div><div class="chev">›</div></div>
+      <div class="row"><div class="ico">👣</div><div class="t">동행 피드 — 오늘의 걸음</div><div class="chev">›</div></div>
+      <div class="row"><div class="ico">◎</div><div class="t">사전진단 완료</div><div class="chev">›</div></div>
+      <div class="row"><div class="ico">▤</div><div class="t">회차 자료</div><div class="chev">›</div></div>
+    </div>
+    <div class="tabbar">
+      <a><span class="ico">⌂</span>홈</a>
+      <a class="on"><span class="ico">🕯</span>내 여정</a>
+      <a><span class="ico">👣</span>피드</a>
+      <a><span class="ico">▤</span>자료실</a>
+    </div>
+  </div>
+  <div class="frame-note">원칙 4의 구현. 포털이 아니라 오늘의 카드가 화면의 무게중심이다. 판정·비교·순위 없음. 진행 표시는 위치 안내일 뿐 성취 지표가 아니다.</div>
+</div>
+
+<!-- ═══ D. 딥링크 게이트 ═══ -->
+<div class="frame-wrap">
+  <div class="frame-label">D · 딥링크 게이트<span class="path">/login?returnTo=/c/ZR4KB/3</span></div>
+  <div class="phone">
+    <div class="gate">
+      <div class="brand-c"><div class="logo">퓨처<b>나우</b></div></div>
+      <div class="dest">
+        <div class="ico">🕯</div>
+        <div>
+          <div class="l1">로그인하면 이동합니다</div>
+          <div class="l2">3회차 갈무리 — 현재의 나를 직면하다</div>
+        </div>
+      </div>
+      <div class="field"><label>이메일</label><input type="email" placeholder="이메일 주소"></div>
+      <div class="field"><label>비밀번호</label><input type="password" placeholder="비밀번호"></div>
+      <button class="btn btn-navy">로그인</button>
+      <div class="help">처음이신가요? <a>참여 코드로 가입하기</a></div>
+    </div>
+  </div>
+  <div class="frame-note">원칙 2의 구현. 카톡·QR로 받은 링크(/c/ZR4KB/3 · ADR-89)를 눌렀을 때 로그인 벽이 목적지를 삼키지 않는다 — 목적지를 문장으로 보여 주고, 인증 후 그 자리에 내려 준다. 세션 6주 유지로 기수 중 재로그인은 원칙적으로 없다. 경로는 기존 갈무리 QR 진입 체계를 그대로 쓴다 — 신설하지 않는다.</div>
+</div>
+
+<!-- ═══ E. 전체 메뉴 시트 ═══ -->
+<div class="frame-wrap">
+  <div class="frame-label">E · 전체 메뉴 시트 (세 줄 아이콘)<span class="path">참여자 상태</span></div>
+  <div class="phone">
+    <div class="sheet-top">
+      <span class="close">✕</span>
+      <span class="cohort">예봄 2기</span>
+      <div class="name">새암 <small>참여자</small></div>
+    </div>
+    <div class="sheet-body">
+      <div class="m-group"><div class="h">나의 여정</div></div>
+      <div class="m-item"><span class="ico">🕯</span>내 여정<span class="chev">›</span></div>
+      <div class="m-group" style="padding-top:8px"><div class="h">회차 갈무리</div></div>
+      <div class="sess-strip">
+        <div class="sess-chip done">1</div>
+        <div class="sess-chip now">2</div>
+        <div class="sess-chip lock">3</div>
+        <div class="sess-chip lock">4</div>
+        <div class="sess-chip lock">5</div>
+        <div class="sess-chip lock">6</div>
+      </div>
+      <div class="sheet-note">3회차부터는 세션 후에 열립니다.</div>
+      <div class="m-item" style="margin-top:8px"><span class="ico">🪞</span>되비추기<span class="chev">›</span></div>
+      <div class="m-item"><span class="ico">👣</span>동행 피드<span class="chev">›</span></div>
+
+      <div class="m-group"><div class="h">진단</div></div>
+      <div class="m-item"><span class="ico">◎</span>사전진단 <span style="font-size:11px;color:var(--gold-700);font-weight:700;margin-left:4px">완료</span><span class="chev">›</span></div>
+      <div class="m-item lock"><span class="ico">◈</span>사후진단 · 6회차 후 열림</div>
+      <div class="m-item"><span class="ico">✧</span>상시 진단<span class="chev">›</span></div>
+
+      <div class="m-group"><div class="h">그 밖에</div></div>
+      <div class="m-item"><span class="ico">▤</span>자료실<span class="chev">›</span></div>
+      <div class="m-item"><span class="ico">✦</span>소식<span class="chev">›</span></div>
+
+      <div class="m-foot">
+        <div class="m-item"><span class="ico">⚙</span>계정 설정<span class="chev">›</span></div>
+        <div class="m-item" style="color:var(--color-text-secondary)"><span class="ico">→</span>로그아웃</div>
+      </div>
+    </div>
+  </div>
+  <div class="frame-note">하단 탭이 매일 쓰는 넷이라면, 시트는 나머지 전부와 계정이다. 핵심은 회차 1~6을 직접 편 것 — 링크를 못 받았거나 지난 회차를 열고 싶을 때의 정문이며, 딥링크의 대응물이다. 잠긴 회차도 감추지 않는다. 여정의 전체 길이가 보여야 한다.</div>
+</div>
+
+<!-- ═══ F. 진단 홈 ═══ -->
+<div class="frame-wrap">
+  <div class="frame-label">F · 진단 홈<span class="path">/a</span></div>
+  <div class="phone">
+    <div class="topbar">
+      <div class="brand"><span class="logo">퓨처<b>나우</b></span><span class="en">FUTURE NOW</span></div>
+      <div class="menu-btn"><span></span><span></span><span></span></div>
+    </div>
+    <div class="a-head">
+      <h3>진단</h3>
+      <p>나를 아는 도구들. 정답이 없고, 점수로 사람을 나누지 않습니다.</p>
+    </div>
+
+    <div class="a-sec">
+      <div class="h"><span class="t">여정 진단</span><span class="d">예봄 2기</span></div>
+      <div class="a-item done">
+        <div class="ico">◎</div>
+        <div><div class="t">퓨처나우 사전진단</div><div class="s">8월 18일 완료 · 결과 보기</div></div>
+        <div class="st">완료</div>
+      </div>
+      <div class="a-item wait">
+        <div class="ico">◈</div>
+        <div><div class="t">퓨처나우 사후진단</div><div class="s">6회차를 마친 뒤 열립니다</div></div>
+        <div class="st">대기</div>
+      </div>
+    </div>
+
+    <div class="a-sec">
+      <div class="h"><span class="t">상시 진단</span><span class="d">언제든</span></div>
+      <div class="a-item">
+        <div class="ico">◆</div>
+        <div><div class="t">가치 진단</div><div class="s">무엇을 지키며 살고 싶은가</div></div>
+        <div class="st">시작</div>
+      </div>
+      <div class="a-item">
+        <div class="ico">◑</div>
+        <div><div class="t">그림자 진단</div><div class="s">보고 싶지 않았던 나의 자리</div></div>
+        <div class="st">시작</div>
+      </div>
+      <div class="a-item">
+        <div class="ico">♡</div>
+        <div><div class="t">사랑의 언어 진단</div><div class="s">나는 어떻게 사랑을 주고받는가</div></div>
+        <div class="st">시작</div>
+      </div>
+    </div>
+
+    <div class="a-priv">
+      <b>이 결과는 우리 기수 인도자와 함께 봅니다.</b> 코칭에 쓰이는 재료입니다. 정답이 없으니 편하게 쓰셔도 됩니다.
+    </div>
+
+    <div class="tabbar">
+      <a><span class="ico">⌂</span>홈</a>
+      <a><span class="ico">🕯</span>내 여정</a>
+      <a><span class="ico">👣</span>피드</a>
+      <a><span class="ico">▤</span>자료실</a>
+    </div>
+  </div>
+  <div class="frame-note">두 계열이 시각적으로 갈린다. 하단 고지가 열람 정책을 참여자 언어로 말한다 — 허락을 구하는 문장이 아니라 알려 주는 문장이다. 개인 회원(차수 미소속)에게는 이 자리에 "이 결과는 나만 봅니다"가 대신 들어간다. 상시 진단 3종은 3~4차 구현이며, 이 화면은 1차에서 자리와 URL만 확정한다.</div>
+</div>
+
+<!-- ═══ G. 승인 대기 ═══ -->
+<div class="frame-wrap">
+  <div class="frame-label">G · 승인 대기 안내<span class="path">/pending</span></div>
+  <div class="phone">
+    <div class="topbar">
+      <div class="brand"><span class="logo">퓨처<b>나우</b></span><span class="en">FUTURE NOW</span></div>
+      <div class="menu-btn"><span></span><span></span><span></span></div>
+    </div>
+    <div class="a-head">
+      <h3>가입 신청이 접수되었습니다</h3>
+      <p>운영자가 촉진자포럼 명단과 확인한 뒤 진단을 열어 드립니다.</p>
+    </div>
+
+    <div style="padding:20px 20px 0">
+      <div class="wait-track">
+        <div class="wt-row done"><div class="wt-dot">✓</div><div><div class="wt-t">가입 신청</div><div class="wt-s">8월 26일 접수</div></div></div>
+        <div class="wt-row now"><div class="wt-dot">●</div><div><div class="wt-t">운영자 확인</div><div class="wt-s">보통 하루 안에 끝납니다</div></div></div>
+        <div class="wt-row"><div class="wt-dot">○</div><div><div class="wt-t">진단 이용</div><div class="wt-s">확인이 끝나면 메일로 알려 드립니다</div></div></div>
+      </div>
+    </div>
+
+    <div style="padding:22px 20px 0">
+      <div class="section-title">지금도 하실 수 있는 것</div>
+      <div class="my-list" style="padding:0">
+        <div class="row"><div class="ico">✦</div><div class="t">소식 보기</div><div class="chev">›</div></div>
+        <div class="row"><div class="ico">▤</div><div class="t">공개 자료실</div><div class="chev">›</div></div>
+        <div class="row"><div class="ico">✎</div><div class="t">세미나 참여 신청</div><div class="chev">›</div></div>
+      </div>
+    </div>
+
+    <div class="a-priv" style="margin-top:14px">
+      확인이 늦어지거나 잘못 접수된 것 같으면 <b>문의</b>로 알려 주십시오. 신청하신 내용은 그대로 남아 있습니다.
+    </div>
+
+    <div class="tabbar">
+      <a class="on"><span class="ico">⌂</span>홈</a>
+      <a><span class="ico">✦</span>소식</a>
+      <a><span class="ico">▤</span>자료실</a>
+      <a><span class="ico">⚙</span>계정</a>
+    </div>
+  </div>
+  <div class="frame-note">빈 화면은 고장으로 읽힌다. 지금 어느 단계인지, 무엇을 기다리는지, 얼마나 걸리는지, 어디로 문의하는지를 문장으로 말한다. 진단 링크를 눌러 여기로 온 경우에도 오류를 띄우지 않고 이 화면으로 받으며, 승인 후 원래 주소로 돌아간다.</div>
+</div>
+
+</div>
+</body>
+</html>

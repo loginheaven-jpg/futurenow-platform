@@ -10,6 +10,12 @@ const SAFE_RETURN: RegExp[] = [
   /^\/my\/cohorts\/[0-9a-fA-F-]{36}\/checkin\/[1-9][0-9]?$/,
   /^\/c\/[A-Za-z0-9]{4,8}\/values$/,
   /^\/my\/cohorts\/[0-9a-fA-F-]{36}\/values$/,
+  // 개인 응시(S-2). **라우트와 같은 커밋에서 올린다** — 없는 경로를 허용하면 returnTo 는 통과했는데
+  //   목적지가 404 가 되고, 그것이 IA 원칙 2 가 막으려는 바로 그 상황이다.
+  /^\/my\/values$/,
+  // 체크 허브(S-3). 라우트와 같은 커밋이다 — proxy 가 이제 미인증 차단 시 경로를 returnTo 로
+  //   싣기 때문에(`loginRedirectSearch`), 여기 없으면 로그인 뒤 /home 으로 흘러 딥링크가 끊긴다.
+  /^\/home\/assessments$/,
 ];
 
 export function safeReturnTo(raw: string | null | undefined): string | null {

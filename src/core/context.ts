@@ -24,7 +24,13 @@ import type {
   Enrollment,
   InstrumentId,
   InterpretationView,
+  ContactMessage,
+  LibraryItem,
   MemberActivity,
+  NewsPost,
+  MemberState,
+  MembershipDecision,
+  MembershipQueueRow,
   MemberRef,
   MemberSummary,
   MyCohortSummary,
@@ -40,6 +46,7 @@ import { z } from 'zod';
 import { gatewayChat } from './ai/gateway';
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
+import { toMemberState } from './membership';
 import {
   rowToAlert,
   rowToCoachApplication,
@@ -181,6 +188,32 @@ const CHECKIN_ANSWERS_SCHEMA = z.record(
 const VALUE_COLS =
   'user_id, cohort_id, card_set_version, stage, progress, candidates, value1_id, value2_id, value3_id,' +
   ' value1_label, value2_label, value3_label, wb_peak, wb_strength, wb_longing, alignment, finalized_at, updated_at';
+
+
+// 승인 큐 RPC 원시 행. `status` 열에 담기는 것은 저장값이 아니라 member_state() 판정이다.
+interface NewsRow { id: string; title: string; body: string; published_at: string | null; created_at: string }
+interface LibraryRow { id: string; title: string; description: string | null; tier: string; storage_path: string; created_at: string }
+interface ContactRow { id: string; name: string | null; email: string | null; body: string; user_id: string | null; handled_at: string | null; created_at: string }
+
+function rowToNews(r: unknown): NewsPost {
+  const row = r as NewsRow;
+  return { id: row.id, title: row.title, body: row.body, publishedAt: row.published_at, createdAt: row.created_at };
+}
+
+interface MembershipQueueDbRow {
+  bucket: string;
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  forum_name: string | null;
+  forum_phone: string | null;
+  signup_note: string | null;
+  status: string;
+  valid_until: string | null;
+  created_at: string;
+  default_valid_until: string;
+}
+
 const VALUE_CARD_IDS = z.array(z.number().int().positive()).max(72);
 const VALUE_PROGRESS = z.record(z.string(), z.unknown());
 const VALUE_SHORT = z.string().max(20);   // 대조 세 칸 — 한 단어 전제
@@ -1078,17 +1111,17 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // ── 가치 카드(ADR-121) ─────────────────────────────────────
-  async getMyValueAssessment(cohortId: string): Promise<ValueAssessment | null> {
+  async getMyValueAssessment(cohortId: string | null): Promise<ValueAssessment | null> {
     const me = await this.requireUser();
-    const { data, error } = await this.sb
-      .from('value_assessments').select(VALUE_COLS)
-      .eq('cohort_id', cohortId).eq('user_id', me.id).maybeSingle();
+    // NULL 은 `.eq` 로 못 잡는다(SQL 에서 NULL = NULL 이 참이 아니다) — `.is` 를 써야 개인분이 잡힌다.
+    const q = this.sb.from('value_assessments').select(VALUE_COLS).eq('user_id', me.id);
+    const { data, error } = await (cohortId === null ? q.is('cohort_id', null) : q.eq('cohort_id', cohortId)).maybeSingle();
     if (error) throw new CoreError(`getMyValueAssessment 실패: ${error.message}`);
     return data ? rowToValue(data as unknown as ValueRow) : null;
   }
 
   async saveMyValueProgress(input: {
-    cohortId: string;
+    cohortId: string | null;
     stage: 'exploring' | 'candidates' | 'finalists';
     progress?: Record<string, unknown>;
     candidates?: number[];
@@ -1107,7 +1140,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`saveMyValueProgress 실패: ${error.message}`);
   }
 
-  async finalizeMyValue(cohortId: string, ids: [number, number, number]): Promise<void> {
+  async finalizeMyValue(cohortId: string | null, ids: [number, number, number]): Promise<void> {
     const [v1, v2, v3] = VALUE_CARD_IDS.length(3).parse(ids);
     const { error } = await this.sb.rpc('value_finalize', {
       p_cohort_id: cohortId, p_v1: v1, p_v2: v2, p_v3: v3,
@@ -1116,7 +1149,7 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   async patchMyValue(input: {
-    cohortId: string;
+    cohortId: string | null;
     labels?: Partial<{ v1: string; v2: string; v3: string }>;
     workbook?: Partial<{ peak: string; strength: string; longing: string }>;
     alignment?: 'aligned' | 'different' | 'unsure' | 'skipped';
@@ -1149,6 +1182,161 @@ class SupabaseCoreContext implements CoreContext {
       const u = Array.isArray(row.users) ? row.users[0] : row.users;
       return { ...rowToValue(row), userId: row.user_id, userName: u?.name ?? null };
     });
+  }
+
+  // ── 회원 상태·승인(S-1 · ADR-122) ─────────────────────────
+  //
+  // **판정은 여기 없다.** 우선순위(held > cohort > 저장 > pending)와 만료 산출은 `member_state()`
+  //   한 곳에만 있고, 아래 셋은 그 결과를 읽어 나르기만 한다. TS 에 사본을 만들면 두 곳이
+  //   갈리는 날이 오고, 그때 화면과 서버 강제가 다른 답을 낸다.
+  // **유효기간 기본 개월수도 여기 없다** — 승인 화면 기본값은 큐가 실어 보내는 `defaultValidUntil` 이다.
+
+  async getMyMemberState(): Promise<MemberState> {
+    // 인자를 넘기지 않는다 — 함수 기본값이 auth.uid() 다. 남의 상태를 물으려면 운영자여야 하고
+    //   그 게이트는 member_state() 안에 있다(DEFINER 가 RLS 를 우회하므로).
+    const { data, error } = await this.sb.rpc('member_state');
+    if (error) throw new CoreError(`getMyMemberState 실패: ${error.message}`);
+    return toMemberState(data);
+  }
+
+  async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {
+    const { data, error } = await this.sb.rpc('list_membership_queue', { p_expiring_days: expiringDays });
+    if (error) throw new CoreError(`listMembershipQueue 실패: ${error.message}`);
+    return ((data ?? []) as MembershipQueueDbRow[]).map((r) => ({
+      bucket: r.bucket === 'expiring' ? 'expiring' : 'pending',
+      userId: r.user_id,
+      name: r.name,
+      email: r.email,
+      forumName: r.forum_name,
+      forumPhone: r.forum_phone, // 원값. 마스킹은 서버 컴포넌트가 한다(브라우저로 내보내지 않는다)
+      signupNote: r.signup_note,
+      // DB 쪽 열 이름은 `status` 이나 담긴 값은 **판정**(member_state)이다. RETURNS TABLE 의
+      //   OUT 이름은 CREATE OR REPLACE 로 못 바꾸고 그것만을 위해 마이그레이션을 더하지 않는다.
+      //   계약 이름(`state`)이 뜻을 말하고, 이 한 줄이 둘을 잇는다.
+      state: toMemberState(r.status),
+      validUntil: r.valid_until,
+      createdAt: r.created_at,
+      defaultValidUntil: r.default_valid_until,
+    }));
+  }
+
+  async decideMembership(input: {
+    userId: string;
+    decision: MembershipDecision;
+    validUntil?: string | null;
+    note?: string | null;
+  }): Promise<void> {
+    // 가드(운영자·자기 자신 차단·화이트리스트·행잠금)는 전부 RPC 안이다. 앱이 앞에서 한 번 더
+    //   막지 않는 이유는, 두 곳에서 막으면 한 곳만 고쳐질 때 뚫리기 때문이다.
+    const { error } = await this.sb.rpc('decide_membership', {
+      p_user_id: input.userId,
+      p_decision: input.decision,
+      p_valid_until: input.validUntil ?? null,
+      p_note: input.note ?? null,
+    });
+    if (error) throw new CoreError(`decideMembership 실패: ${error.message}`);
+  }
+
+  async recordSignupIntake(input: {
+    forumName?: string | null;
+    forumPhone?: string | null;
+    signupNote?: string | null;
+  }): Promise<void> {
+    const { error } = await this.sb.rpc('record_signup_intake', {
+      p_forum_name: input.forumName ?? null,
+      p_forum_phone: input.forumPhone ?? null,
+      p_signup_note: input.signupNote ?? null,
+    });
+    if (error) throw new CoreError(`recordSignupIntake 실패: ${error.message}`);
+  }
+
+  // ── 공개 영역(S-4) ────────────────────────────────────────
+  //
+  // **RLS 가 가르고 코어는 나른다.** 소식의 초안·자료실의 3단은 정책이 판정하므로
+  //   여기에 role 분기를 쓰지 않는다 — 쓰면 판정이 두 곳이 된다.
+
+  async listNews(limit = 20): Promise<NewsPost[]> {
+    const { data, error } = await this.sb
+      .from('news_posts')
+      .select('id,title,body,published_at,created_at')
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(limit);
+    if (error) throw new CoreError(`listNews 실패: ${error.message}`);
+    return (data ?? []).map(rowToNews);
+  }
+
+  async getNews(id: string): Promise<NewsPost | null> {
+    const { data, error } = await this.sb
+      .from('news_posts').select('id,title,body,published_at,created_at').eq('id', id).maybeSingle();
+    if (error) throw new CoreError(`getNews 실패: ${error.message}`);
+    return data ? rowToNews(data as NewsRow) : null;
+  }
+
+  async upsertNews(input: { id?: string | null; title: string; body: string; publish?: boolean }): Promise<string> {
+    const { data, error } = await this.sb.rpc('news_upsert', {
+      p_id: input.id ?? null, p_title: input.title, p_body: input.body, p_publish: input.publish ?? false,
+    });
+    if (error) throw new CoreError(`upsertNews 실패: ${error.message}`);
+    return String(data);
+  }
+
+  async deleteNews(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('news_delete', { p_id: id });
+    if (error) throw new CoreError(`deleteNews 실패: ${error.message}`);
+  }
+
+  async listLibrary(): Promise<LibraryItem[]> {
+    const { data, error } = await this.sb
+      .from('library_items')
+      .select('id,title,description,tier,storage_path,created_at')
+      .order('created_at', { ascending: false });
+    if (error) throw new CoreError(`listLibrary 실패: ${error.message}`);
+    return (data ?? []).map((r) => {
+      const row = r as unknown as LibraryRow;
+      return {
+        id: row.id, title: row.title, description: row.description,
+        tier: row.tier as LibraryItem['tier'], storagePath: row.storage_path, createdAt: row.created_at,
+      };
+    });
+  }
+
+  async signLibraryFile(storagePath: string, expiresInSec = 300): Promise<string | null> {
+    // **자격을 먼저 묻는다.** 목록 RLS 와 같은 표(library_can_read)를 보므로 둘이 갈리지 않는다.
+    //   서명 URL 은 한 번 나가면 만료까지 유효하므로, 발급 자체가 관문이다.
+    const { data: ok, error: gateErr } = await this.sb.rpc('library_can_read', { p_path: storagePath });
+    if (gateErr) throw new CoreError(`signLibraryFile 실패: ${gateErr.message}`);
+    if (ok !== true) return null;
+    const { data, error } = await this.sb.storage.from('library').createSignedUrl(storagePath, expiresInSec);
+    if (error) return null; // 파일이 아직 없을 수 있다 — 화면이 '준비 중'으로 받는다
+    return data?.signedUrl ?? null;
+  }
+
+  async submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void> {
+    const { error } = await this.sb.rpc('contact_submit', {
+      p_name: input.name ?? null, p_email: input.email ?? null, p_body: input.body,
+    });
+    if (error) throw new CoreError(error.message); // 사용자에게 보일 문안이 RPC 안에 있다(길이·빈도)
+  }
+
+  async listContactMessages(onlyOpen = false): Promise<ContactMessage[]> {
+    let q = this.sb.from('contact_messages')
+      .select('id,name,email,body,user_id,handled_at,created_at')
+      .order('created_at', { ascending: false });
+    if (onlyOpen) q = q.is('handled_at', null);
+    const { data, error } = await q;
+    if (error) throw new CoreError(`listContactMessages 실패: ${error.message}`);
+    return (data ?? []).map((r) => {
+      const row = r as unknown as ContactRow;
+      return {
+        id: row.id, name: row.name, email: row.email, body: row.body,
+        userId: row.user_id, handledAt: row.handled_at, createdAt: row.created_at,
+      };
+    });
+  }
+
+  async markContactHandled(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('contact_mark_handled', { p_id: id });
+    if (error) throw new CoreError(`markContactHandled 실패: ${error.message}`);
   }
 
   // ── 내부 ───────────────────────────────────────────────────
