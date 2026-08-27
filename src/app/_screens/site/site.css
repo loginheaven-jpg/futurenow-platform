@@ -295,3 +295,105 @@
 }
 
 .site-gnb__right { display: flex; align-items: center; gap: var(--space-4); }
+
+/* ══ 4차 F-2b · 인도자·도서 부품 ══════════════════════════════ */
+
+/* ── 14. LeaderCard ─────────────────────────────────────────── */
+/* **두 사람 대등**(발주 §1-4) — lg↑ 2열, md↓ 세로. 한쪽만 넓어지는 규칙을 두지 않는다. */
+.site-leaders { display: grid; grid-template-columns: 1fr; gap: 22px; }
+@media (min-width: 1024px) { .site-leaders { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
+
+.site-leader {
+  background: var(--color-surface-2);
+  border: var(--border-hair) solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 22px 20px;
+}
+.site-leader__top { display: flex; gap: var(--space-4); align-items: flex-start; }
+/* 정사각 + 라운드(원고 §5.4 — 원형/라운드 중 하나로 통일). 자리표시자도 같은 형태로 선다. */
+.site-leader__photo {
+  flex: 0 0 auto; width: 96px; height: 96px; border-radius: var(--radius-lg);
+  overflow: hidden; background: var(--color-surface-sunken);
+  display: flex; align-items: center; justify-content: center;
+}
+.site-leader__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.site-leader__ph { font-size: 30px; font-weight: 800; color: var(--color-text-muted); }
+.site-leader__who { min-width: 0; }
+.site-leader__name { font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: var(--color-text); margin: 0; }
+.site-leader__title { font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); margin-top: 5px; }
+.site-leader__tag { font-size: 13px; line-height: 1.6; color: var(--color-text-secondary); margin: var(--space-2) 0 0; }
+.site-leader__bio { list-style: none; margin: var(--space-4) 0 0; padding: 0; }
+.site-leader__bio li {
+  font-size: 12.5px; line-height: 1.7; color: var(--color-text-secondary);
+  padding-left: 12px; position: relative;
+}
+.site-leader__bio li::before {
+  content: ""; position: absolute; left: 0; top: 9px;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--color-border-strong);
+}
+.site-leader__intro {
+  font-size: 14px; line-height: 1.85; color: var(--color-text); margin: var(--space-4) 0 0;
+  padding-top: var(--space-4); border-top: var(--border-hair) solid var(--color-border);
+}
+
+/* ── 15. BookPanel ──────────────────────────────────────────── */
+.site-book { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 1024px) { .site-book { grid-template-columns: 300px 1fr; gap: 44px; } }
+.site-book__coverwrap { display: flex; justify-content: center; }
+/* 정면 평면 + 얇은 그림자. **3D 목업 금지**(원고 §5.3) — 기울이거나 두께를 그리지 않는다. */
+.site-book__cover {
+  width: 200px; aspect-ratio: 2 / 3; border-radius: 4px; overflow: hidden;
+  background: var(--color-surface-inverse);
+  box-shadow: 0 6px 18px rgba(16, 35, 56, .16);
+  display: flex; align-items: center; justify-content: center;
+}
+@media (min-width: 1024px) { .site-book__cover { width: 100%; } }
+.site-book__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.site-book__ph {
+  font-size: 20px; font-weight: 800; letter-spacing: .18em; line-height: 1.5;
+  color: var(--color-accent-strong); text-align: center;
+}
+.site-book__facts {
+  margin: 0 0 var(--space-5); padding: 0 0 var(--space-4);
+  border-bottom: var(--border-hair) solid var(--color-border);
+}
+.site-book__fact { display: flex; gap: var(--space-3); padding: 5px 0; }
+.site-book__fact dt { flex: 0 0 76px; font-size: 12px; font-weight: 700; color: var(--color-text-muted); }
+.site-book__fact dd { margin: 0; font-size: 13.5px; color: var(--color-text); }
+.site-book__p { font-size: 14px; line-height: 1.9; color: var(--color-text); margin: 0 0 var(--space-4); }
+.site-book__buy { margin-top: var(--space-2); }
+.site-book__notice { font-size: 12.5px; line-height: 1.7; color: var(--color-text-secondary); margin: var(--space-4) 0 0; }
+.site-book__bulk { font-size: 12.5px; margin: var(--space-2) 0 0; }
+
+/* ── 참여 대상 — lg↑ 단락형(§4.1) / md↓ 리스트형(§4.2). **화면당 하나만**(발주 §2). */
+.site-aud__para { display: none; }
+.site-aud__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.site-aud__list li {
+  font-size: 14px; line-height: 1.6; color: var(--color-text);
+  padding-left: 20px; position: relative;
+}
+.site-aud__list li::before {
+  content: ""; position: absolute; left: 4px; top: 9px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent);
+}
+@media (min-width: 1024px) {
+  .site-aud__para { display: block; font-size: 15.5px; line-height: 1.95; color: var(--color-text); margin: 0; max-width: 780px; }
+  .site-aud__list { display: none; }
+}
+
+/* 신청 CTA — 골드 primary 는 **세미나 신청 전용**이다(원고 §3.4 위계). */
+.site-cta { margin-top: var(--space-6); display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.site-cta__note { font-size: 12.5px; color: var(--color-text-secondary); }
+
+/* GROW+F 구획만 네이비 면이다 — `GrowAxis` 글자가 `--color-text-on-accent`(흰색)라
+   밝은 면 위에서는 읽히지 않는다. 면을 바꾸는 것이지 부품을 바꾸는 것이 아니다. */
+.site-section--dark {
+  background: var(--color-surface-inverse);
+  max-width: none; padding-left: 0; padding-right: 0;
+}
+.site-section--dark > * { max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 var(--space-5); }
+.site-section--dark .site-sect { border-bottom-color: var(--navy-500); }
+.site-section--dark .site-sect__t { color: var(--color-text-on-accent); }
+.site-section--dark .site-sect__d { color: var(--navy-300); }
+@media (min-width: 1024px) {
+  .site-section--dark > * { padding: 0 40px; }
+}

@@ -21,6 +21,8 @@ import { SectionTitle } from './SectionTitle';
 import { NewsRow } from './NewsRow';
 import { RecruitCard } from './RecruitCard';
 import { SiteFooter } from './SiteFooter';
+import { LeaderCard } from './LeaderCard';
+import { BookPanel } from './BookPanel';
 
 describe('1 · SiteHero', () => {
   it('빈 슬롯은 그리지 않는다 — 없는 것을 자리로 남기지 않는다', () => {
@@ -217,5 +219,73 @@ describe('13 · SiteFooter', () => {
     const html = renderToStaticMarkup(<SiteFooter org="퓨처나우" links={[{ href: '/contact', label: '문의' }]} />);
     expect(html).toContain('aria-label="이용 안내"');
     expect(html).toContain('href="/contact"');
+  });
+});
+
+// ── 4차 F-2b 가 더한 둘 (§9.7 #14~#15) ─────────────────────────
+
+describe('14 · LeaderCard', () => {
+  const base = { name: '홍길동', title: '직함', intro: '소개문', photo: { alt: '홍길동 사진' } };
+
+  it('**사진이 없으면 이니셜 자리표시자가 선다** — 빈 상자를 남기지 않는다', () => {
+    const html = renderToStaticMarkup(<LeaderCard {...base} />);
+    expect(html).not.toContain('<img');
+    expect(html).toContain('site-leader__ph');
+    expect(html).toContain('>홍<'); // 이름 첫 글자
+    expect(html, '스크린리더에 준비 중임을 알린다').toContain('사진 준비 중');
+  });
+
+  it('**`maxSize` 를 코드로 막는다** — 원본 도착 전 확대 금지(원고 §5.2)', () => {
+    const html = renderToStaticMarkup(<LeaderCard {...base} photo={{ alt: 'a', maxSize: 320 }} />);
+    expect(html).toContain('max-width:320px');
+    expect(html).toContain('max-height:320px');
+    // 상한이 없으면 규격(§5.0)대로 자란다 — 인라인 상한을 걸지 않는다.
+    expect(renderToStaticMarkup(<LeaderCard {...base} />)).not.toContain('max-width:320px');
+  });
+
+  it('사진이 있으면 WebP 폴백과 지연 로딩을 건다(원고 §5.4)', () => {
+    const html = renderToStaticMarkup(<LeaderCard {...base} photo={{ src: 'a.jpg', alt: '대체 문구' }} />);
+    expect(html).toContain('<picture>');
+    expect(html).toContain('a.webp');
+    expect(html).toContain('type="image/webp"');
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain('alt="대체 문구"');
+  });
+
+  it('약력이 없으면 그 목록을 그리지 않는다', () => {
+    expect(renderToStaticMarkup(<LeaderCard {...base} />)).not.toContain('site-leader__bio');
+  });
+});
+
+describe('15 · BookPanel', () => {
+  const base = { facts: [{ k: '제목', v: '퓨처나우' }], intro: ['한 단락'] };
+
+  it('**구매 버튼은 ghost 다** — 골드 primary 는 세미나 신청 전용(원고 §3.4 위계)', () => {
+    const html = renderToStaticMarkup(<BookPanel {...base} buy={{ href: 'https://x.test/b', label: '구매' }} />);
+    expect(html).toContain('ui-btn--ghost');
+    expect(html).not.toContain('ui-btn--primary');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
+
+  it('표지가 없으면 자리표시자가 선다 — **3D 목업이 아니다**', () => {
+    const html = renderToStaticMarkup(<BookPanel {...base} cover={{ alt: '표지' }} />);
+    expect(html).not.toContain('<img');
+    expect(html).toContain('site-book__ph');
+    expect(html).toContain('이미지 준비 중');
+  });
+
+  it('소개 단락을 합치지 않는다 — 단락이 곧 호흡이다', () => {
+    const html = renderToStaticMarkup(<BookPanel {...base} intro={['가', '나', '다']} />);
+    // `site-book__ph`(표지 자리표시자)까지 세지 않도록 닫는 따옴표까지 본다.
+    expect((html.match(/site-book__p"/g) ?? []).length).toBe(3);
+  });
+
+  it('구매·고지·단체 구매·표지가 없으면 그리지 않는다', () => {
+    const html = renderToStaticMarkup(<BookPanel {...base} />);
+    expect(html, 'cover 자체가 없으면 표지 칸을 만들지 않는다').not.toContain('site-book__cover');
+    expect(html).not.toContain('ui-btn');
+    expect(html).not.toContain('site-book__notice');
+    expect(html).not.toContain('site-book__bulk');
   });
 });

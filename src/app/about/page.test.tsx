@@ -21,15 +21,20 @@ describe('/about — 소개 상세', () => {
     expect(html).toContain('사전 체크'); // 진행 본문
   });
 
-  it('참여 경로 셋이 다 있다 — 코드·로그인·도입 문의', () => {
+  it('참여 경로 셋이 다 있다 — 신청·로그인·단체 구매 문의', () => {
+    // F-2b 에서 `/about` 구성이 발주 §4 순서로 바뀌었다. `/recruit` 대신 **신청 CTA 가 `/join`** 이다
+    //   (원고 §7 — 신청 도착점은 `/join`). 로그인은 GNB, 문의는 도서 단체 구매 줄이 든다.
     for (const href of ['/join', '/login', '/contact']) {
       expect(html, href).toContain(`href="${href}"`);
     }
   });
 
-  it('모집이 열려 있으면 신청 안내로 보낸다 — 판정은 화면이 한다', () => {
-    // `intake.ts` 가 `open` 인 동안의 단언이다. 닫히면 `알림 신청`(→ /contact)으로 바뀐다.
-    expect(html).toContain('href="/recruit"');
+  it('**골드 primary 는 세미나 신청 전용이다**(원고 §3.4 위계) — 구매 버튼은 ghost', () => {
+    expect(html).toContain('--color-text-on-gold'); // 신청 CTA 만 골드 면
+    const buy = html.slice(html.indexOf('kyobobook') - 200, html.indexOf('kyobobook') + 200);
+    expect(buy, '구매 버튼이 골드면 위계가 무너진다').toContain('ui-btn--ghost');
+    expect(buy).toContain('rel="noopener noreferrer"');
+    expect(buy).toContain('target="_blank"');
   });
 
   it('공개 화면 규율 — 의미색 토큰 0', () => {
@@ -41,7 +46,7 @@ describe('/about — 소개 상세', () => {
   it('**새 형태를 만들지 않았다** — 시안 없는 화면이라 승인 부품만 쓴다(불변식 20)', () => {
     // 부품이 남기는 클래스만으로 화면이 선다. `site-` 접두 밖의 새 조어가 없다는 뜻은 아니고,
     //   **§9.7 부품과 기존 `ui-` 공용 부품 밖의 형태를 새로 짓지 않았다**는 뜻이다.
-    for (const cls of ['site-gnb', 'site-hero', 'site-grow', 'site-sect', 'site-recruit', 'site-foot']) {
+    for (const cls of ['site-gnb', 'site-hero', 'site-grow', 'site-sect', 'site-leader', 'site-book', 'site-foot']) {
       expect(html, cls).toContain(cls);
     }
   });

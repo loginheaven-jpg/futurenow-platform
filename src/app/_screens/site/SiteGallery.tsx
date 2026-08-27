@@ -14,6 +14,13 @@ import { QuickTiles } from './QuickTiles';
 import { SessionChipStrip } from './SessionChipStrip';
 import { MenuSheet } from './MenuSheet';
 import { SiteGnb } from './SiteGnb';
+import { SectionTitle } from './SectionTitle';
+import { NewsRow } from './NewsRow';
+import { RecruitCard } from './RecruitCard';
+import { SiteFooter } from './SiteFooter';
+import { LeaderCard } from './LeaderCard';
+import { BookPanel } from './BookPanel';
+import { LEADERS, BOOK_FACTS, BOOK_INTRO, BOOK_BUY, BOOK_NOTICE, BOOK_BULK, GROWF_SUMMARY } from './siteContent';
 import { BAND_CARDS, CHIPS, GNB_ITEMS, GROW_ROWS, MENU_GROUPS, QUICK_TILES, SHEET, WEEK_CELLS } from './galleryFixture';
 
 function Item({ n, name, note, children }: { n: number; name: string; note?: string; children: React.ReactNode }) {
@@ -73,6 +80,52 @@ export function SiteGallery({ openSheet = false }: { openSheet?: boolean }) {
 
         <Item n={8} name="SessionChipStrip" note="완료·진행·열림·잠금 — 잠긴 회차를 감추지 않는다">
           <SessionChipStrip chips={CHIPS} />
+        </Item>
+
+        <Item n={10} name="SectionTitle" note="제목 · 부제 · 우측 액션 3슬롯">
+          <SectionTitle title="6주 여정" desc="회차마다 도착점이 손에 잡히는 물건으로 남는다"
+                        action={<span>더 보기</span>} />
+        </Item>
+
+        <Item n={11} name="NewsRow" note="배지 · 제목 · 날짜 · 링크 없으면 링크가 아니다">
+          <NewsRow items={[
+            { id: 'a', badge: '모집', title: '예봄 2기 — 9월 20일 (일) 시작', href: '#' },
+            { id: 'b', title: '1기 수료 소식과 후기', date: '8.02', href: '#' },
+            { id: 'c', title: '링크 없는 줄 — 눌리지 않는다', date: '7.28' },
+          ]} />
+        </Item>
+
+        <Item n={12} name="RecruitCard" note="키커 · 제목 · 본문 · CTA(모집 개폐는 화면이 판정)">
+          <div style={{ maxWidth: 360 }}>
+            <RecruitCard kicker="NEXT COHORT" title={<>다음 기수를<br />기다리시나요?</>}
+                         body="모집이 열리면 가장 먼저 알려 드립니다." cta={{ href: '#', label: '알림 신청' }} />
+          </div>
+        </Item>
+
+        <Item n={14} name="LeaderCard" note="2인 대등 · 사진 공란 시 이니셜 자리표시자 · maxSize 상한">
+          <div className="site-leaders">
+            {LEADERS.map((l) => (
+              <LeaderCard key={l.name} name={l.name} title={l.title} tagline={l.tagline}
+                          bio={l.bio} intro={l.intro}
+                          photo={{ alt: l.photo.alt, maxSize: l.photo.maxSize }} />
+            ))}
+          </div>
+        </Item>
+
+        <Item n={15} name="BookPanel" note="표지 자리표시자 · 서지 · 소개 3단락 · ghost 구매 버튼">
+          <BookPanel cover={{ alt: '도서 퓨처나우 표지' }} facts={BOOK_FACTS} intro={BOOK_INTRO}
+                     buy={BOOK_BUY} notice={BOOK_NOTICE} bulk={BOOK_BULK} />
+        </Item>
+
+        <Item n={2} name="GrowAxis — 원고 §3.3 재사용" note="표를 새로 그리지 않는다(사본 둘 방지)">
+          <div style={{ background: 'var(--color-surface-inverse)', padding: 'var(--space-5)', borderRadius: 'var(--radius-lg)' }}>
+            <GrowAxis rows={GROWF_SUMMARY} />
+          </div>
+        </Item>
+
+        <Item n={13} name="SiteFooter" note="링크가 없으면 그 줄을 그리지 않는다">
+          <SiteFooter org="퓨처나우 · 청계로벤하임" links={[{ href: '#', label: '문의' }]}
+                      note="보조 문장 슬롯" />
         </Item>
 
         <Item n={7} name="MenuSheet" note="우측 시트 · focus trap · ESC · 바깥 탭 닫힘">

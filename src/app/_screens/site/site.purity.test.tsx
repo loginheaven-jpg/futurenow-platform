@@ -16,6 +16,8 @@ const PARTS = [
   'SessionChipStrip.tsx', 'SiteGnb.tsx', 'SiteHero.tsx', 'WeekTimeline.tsx',
   // F-2 가 더한 넷 (§9.7 #10~#13)
   'NewsRow.tsx', 'RecruitCard.tsx', 'SectionTitle.tsx', 'SiteFooter.tsx',
+  // F-2b 가 더한 둘 (§9.7 #14~#15 — 발주 F2b §3 사양 승인분)
+  'LeaderCard.tsx', 'BookPanel.tsx',
 ];
 /** 부품이 아닌 동거 파일. **명시하지 않으면 통과하지 못한다** — 새 파일이 조용히 끼어들 자리를 없앤다. */
 const NOT_PARTS = ['SiteGallery.tsx', 'galleryFixture.tsx'];
@@ -23,7 +25,7 @@ const NOT_PARTS = ['SiteGallery.tsx', 'galleryFixture.tsx'];
 const files = readdirSync(DIR).filter((f) => /\.tsx$/.test(f) && !f.includes('.test.'));
 
 describe('site 부품 — 계산하지 않는다', () => {
-  it('13종이 모두 있고, 그 밖의 파일은 이름이 적혀 있다', () => {
+  it('15종이 모두 있고, 그 밖의 파일은 이름이 적혀 있다', () => {
     expect(files.filter((f) => !NOT_PARTS.includes(f)).sort()).toEqual([...PARTS].sort());
     // 적어 둔 비-부품이 실제로 있는지도 본다 — 지워진 이름이 목록에 남으면 가드가 헐거워진다.
     for (const f of NOT_PARTS) expect(files, `${f} 가 없다 — NOT_PARTS 에서 지워라`).toContain(f);
@@ -72,7 +74,7 @@ describe('site 부품 — 계산하지 않는다', () => {
 
   it('**시안 색값을 옮기지 않았다**(발주 §1.1·§5-3)', () => {
     // 시안 팔레트는 네이비 #1B2A41 · 골드 #C9A24B 이고 앱 정본과 다르다.
-    for (const f of [...files, 'site.css', 'siteTokens.ts', 'publicNav.ts', 'programCopy.ts']) {
+    for (const f of [...files, 'site.css', 'siteTokens.ts', 'publicNav.ts', 'programCopy.ts', 'siteContent.ts']) {
       const src = readFileSync(join(DIR, f), 'utf8').toLowerCase();
       expect(src, `${f} 에 시안 네이비가 있다`).not.toContain('#1b2a41');
       expect(src, `${f} 에 시안 골드가 있다`).not.toContain('#c9a24b');
