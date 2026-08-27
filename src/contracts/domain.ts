@@ -301,6 +301,9 @@ export interface NewsPost {
   body: string;
   publishedAt: string | null;
   createdAt: string;
+  // 2차 추가 — 댓글 삭제 권한이 **그 소식 작성자**까지 미친다(발주 §9-4). 화면이 버튼을
+  //   보일지 정하려면 누가 썼는지 알아야 한다. 강제는 `news_comment_delete` 가 한다.
+  authorId: string | null;
 }
 
 // 자료실 3단. 'public' 은 **비로그인 열람 허용**이라는 뜻이지 공개 버킷이라는 뜻이 아니다 —
@@ -324,5 +327,72 @@ export interface ContactMessage {
   body: string;
   userId: string | null;
   handledAt: string | null;
+  createdAt: string;
+}
+
+// ── 동행 피드(2차 · ADR-124) ───────────────────────────────────────────────
+// 카톡 대체다. 게시판이 아니라 **날짜별 시간순 피드**이고, 하루에 여러 번 몇 초 단위로 쓰인다.
+
+// 이모지 넷(발주 §9-2 확정). **DB `feed_emojis()` 와 짝이다** — 둘이 갈리면 목록 밖 이모지가
+//   화면에 뜨고 누르면 거부된다. 통합테스트가 네 종 통과 + 목록 밖 거부로 그 짝을 잠근다.
+export const FEED_EMOJI = ['👏', '🙏', '💪', '❤️'] as const;
+export type FeedEmoji = (typeof FEED_EMOJI)[number];
+
+// 반응 집계 — `{'👏': 3, '🙏': 1}`. **정렬에 쓰지 않는다**(불변식 11 · 발주 §3.2).
+export type FeedReactionSummary = Partial<Record<FeedEmoji, number>>;
+
+// 피드 글. `deleted === true` 면 **묘비**다 — 본문·사진·작성자가 전부 null 이고 댓글만 남는다.
+//   묘비를 두는 이유는 하나뿐이다: 답글이 고아가 되지 않게(발주 §5.3).
+export interface FeedPost {
+  id: string;
+  authorId: string | null;
+  authorName: string | null;
+  body: string | null;
+  photoPath: string | null; // 서명 URL 이 아니다. 화면이 보이는 만큼만 따로 발급한다(S-4 §2.2 선례)
+  createdAt: string;
+  deleted: boolean;
+  commentCount: number;
+  reactions: FeedReactionSummary;
+  myReaction: FeedEmoji | null;
+}
+
+// 댓글은 **1단**이다(발주 §3.4). `parentId` 가 없는 것이 그 강제다 — DB 에도 컬럼이 없다.
+export interface FeedComment {
+  id: string;
+  authorId: string;
+  authorName: string | null;
+  body: string;
+  createdAt: string;
+}
+
+// 피드를 가진 내 기수. 여럿일 때만 화면에 전환이 뜬다. 기본은 목록 첫 행(활성 우선·최신순).
+export interface FeedCohortRef {
+  cohortId: string;
+  name: string;
+  status: 'active' | 'archived';
+  isCoach: boolean;
+  lastPostAt: string | null;
+}
+
+// 인도자 콘솔 전용 둘(발주 §6.2) — **판정 없이 사실만**. 참여자 경로에 두지 않는다.
+export interface FeedFlowPoint {
+  day: string; // KST 기준 날짜(YYYY-MM-DD)
+  posts: number;
+  authors: number;
+}
+
+// '조용한 분'. 색·순위 없이 목록과 마지막 게시 시각만. 지목이 아니라 안부의 재료다.
+export interface QuietMember {
+  userId: string;
+  name: string | null;
+  lastPostAt: string | null;
+}
+
+// 소식 댓글 — 전체 가입자가 쓰고 **비로그인도 읽는다**(발주 §5.2).
+export interface NewsComment {
+  id: string;
+  authorId: string;
+  authorName: string | null;
+  body: string;
   createdAt: string;
 }

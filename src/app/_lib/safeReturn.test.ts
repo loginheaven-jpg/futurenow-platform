@@ -64,3 +64,21 @@ describe('체크 허브(S-3)', () => {
     }
   });
 });
+
+describe('동행 피드(2차)', () => {
+  it('/feed 를 허용한다 — 라우트와 같은 커밋이다(발주 §8)', () => {
+    expect(safeReturnTo('/feed')).toBe('/feed');
+  });
+
+  it('비슷하지만 다른 경로는 막는다', () => {
+    for (const bad of ['/feed/', '/feeds', '/feedx', '//feed', '/fee']) {
+      expect(safeReturnTo(bad), bad).toBeNull();
+    }
+  });
+
+  it('기수 전환 쿼리가 붙은 형태는 통과하지 않는다', () => {
+    // proxy 가 애초에 쿼리를 싣지 않으므로 이 형태는 오지 않는다. 그래도 막아 둔다 —
+    // 화이트리스트가 느슨해지는 첫 걸음이 대개 "실제로는 안 오는데" 다.
+    expect(safeReturnTo('/feed?cohort=abc')).toBeNull();
+  });
+});

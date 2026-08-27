@@ -139,6 +139,10 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
       )}
       {/* 나의 기록(ADR-118) — 회차 창과 무관하게 7주 내내 열어 둔다. 자기 점검이 목적이다. */}
       <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${cohortId}/journey`} style={{ width: '100%', textDecoration: 'none', marginTop: 'var(--space-2)' }}>나의 기록 보기</Link>
+      {/* 동행 피드(2차 · 발주 §6.3) — 탭바를 짓지 않으므로 차수 홈이 진입 표면 하나다.
+          갈무리와 **같은 위계에 두지 않는다**: 갈무리는 혼자 쓰는 방이고 피드는 함께 보는 방이다(§3.3).
+          여기서 잇는 것은 화면 이동뿐이고, 갈무리 → 피드로 글을 옮기는 길은 두지 않는다. */}
+      <Link className="ui-btn ui-btn--ghost" href={`/feed?cohort=${cohortId}`} style={{ width: '100%', textDecoration: 'none', marginTop: 'var(--space-2)' }}>동행 보기</Link>
     </div>
   );
 

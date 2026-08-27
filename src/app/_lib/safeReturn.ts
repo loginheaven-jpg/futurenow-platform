@@ -16,6 +16,10 @@ const SAFE_RETURN: RegExp[] = [
   // 체크 허브(S-3). 라우트와 같은 커밋이다 — proxy 가 이제 미인증 차단 시 경로를 returnTo 로
   //   싣기 때문에(`loginRedirectSearch`), 여기 없으면 로그인 뒤 /home 으로 흘러 딥링크가 끊긴다.
   /^\/home\/assessments$/,
+  // 동행 피드(2차). **라우트와 같은 커밋이다**(발주 §8 마지막 줄). 미인증으로 /feed 에 닿으면
+  //   proxy 가 `?returnTo=/feed` 를 붙이고, 여기 없으면 로그인 뒤 /home 으로 흘러 딥링크가 끊긴다.
+  //   기수 전환 쿼리(`?cohort=`)는 proxy 가 애초에 싣지 않는다 — 로그인 뒤 기본 기수로 착지한다.
+  /^\/feed$/,
 ];
 
 export function safeReturnTo(raw: string | null | undefined): string | null {

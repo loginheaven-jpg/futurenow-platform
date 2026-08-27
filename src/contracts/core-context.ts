@@ -21,6 +21,11 @@ import type {
   ContactDetail,
   CoreUser,
   Enrollment,
+  FeedCohortRef,
+  FeedComment,
+  FeedEmoji,
+  FeedFlowPoint,
+  FeedPost,
   InstrumentId,
   InterpretationView,
   LibraryItem,
@@ -32,7 +37,9 @@ import type {
   MembershipDecision,
   MembershipQueueRow,
   MyCohortSummary,
+  NewsComment,
   NewsPost,
+  QuietMember,
   ResponseEnvelope,
   Role,
   SaveResponseInput,
@@ -227,4 +234,35 @@ export interface CoreContext {
   submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void>;
   listContactMessages(onlyOpen?: boolean): Promise<ContactMessage[]>; // 운영자 전용
   markContactHandled(id: string): Promise<void>; // 운영자 전용
+
+  // 동행 피드(2차 · ADR-124) — 기수 스코프. **판정은 SQL 한 곳**(`feed_can_access`)이고
+  //   여기 메서드는 그 결과를 나르기만 한다. 화면이 자격을 다시 계산하지 않는다(IA §5.8).
+  //   읽기 자격과 쓰기 자격은 같은 집합이며, 가르는 것은 `held` 하나다(발주 §9.1).
+  listFeedCohorts(): Promise<FeedCohortRef[]>; // 피드를 가진 내 기수(활성 우선·최신순). 첫 행이 기본 선택
+  listFeed(input: {
+    cohortId: string;
+    before?: { createdAt: string; id: string } | null; // 키셋 — '더 보기'가 이 짝을 되돌려준다(무한 스크롤 아님)
+    limit?: number;
+    mine?: boolean; // '내 걸음만'
+  }): Promise<FeedPost[]>;
+  createFeedPost(input: { cohortId: string; body?: string; photoPath?: string | null }): Promise<string>; // 사진만 올려도 게시된다
+  deleteFeedPost(id: string): Promise<void>; // 본인 · 그 기수 인도자 · 운영자 → soft. **바이트는 호출 전에 지운다**
+  listFeedComments(postId: string): Promise<FeedComment[]>;
+  createFeedComment(postId: string, body: string): Promise<string>;
+  deleteFeedComment(id: string): Promise<void>;
+  reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji | null>; // 같은 이모지 재호출 = 취소(null 반환)
+  // 사진 — 갈무리 선례(ADR-83)와 같은 구조. 업로드 바이트는 클라이언트 직접(리사이즈 후).
+  signFeedPhotos(paths: string[], expiresInSec?: number): Promise<Record<string, string>>; // 경로→만료형 URL
+  deleteFeedPhoto(path: string): Promise<void>; // Storage API 경유만(ADR-87 — DB 로는 지울 수 없다)
+  // 차수 하드삭제 전 회수 대상(발주 §4.2). **DB 가 경로를 안다** — 스토리지를 접두어로 훑지 않는다.
+  //   삭제된 글은 photo_path 가 이미 비어 있으므로 살아 있는 글만 세면 남은 바이트 전부다.
+  listFeedPhotoPaths(cohortId: string): Promise<string[]>;
+  // 인도자 콘솔 전용 둘. **참여자가 불러도 RPC 가 거부한다** — 화면이 감추는 것은 표시일 뿐이다.
+  getFeedFlow(cohortId: string, days?: number): Promise<FeedFlowPoint[]>;
+  listQuietMembers(cohortId: string, days?: number): Promise<QuietMember[]>;
+
+  // 소식 댓글(2차) — 소식 본문 쓰기는 1차 그대로 운영자·인도자다. 댓글만 전체 가입자로 연다.
+  listNewsComments(postId: string): Promise<NewsComment[]>; // 비로그인 포함
+  createNewsComment(postId: string, body: string): Promise<string>;
+  deleteNewsComment(id: string): Promise<void>; // 본인 · 운영자 · **그 소식 작성자**(발주 §9-4)
 }

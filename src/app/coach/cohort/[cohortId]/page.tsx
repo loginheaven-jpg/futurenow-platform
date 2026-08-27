@@ -7,6 +7,7 @@ import { createServerContext } from '@/core/supabase/server';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { TRAP_AXES } from '@/instruments/futurenow/report/labels';
 import { CohortDetailClient } from './CohortDetailClient';
+import { FeedSummary } from './FeedSummary';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,18 +82,24 @@ export default async function CohortDetailPage({
       : [];
 
   return (
-    <CohortDetailClient
-      summary={summary}
-      roster={roster}
-      status={cohort.status}
-      maxMembers={cohort.maxMembers}
-      postOpened={cohort.postOpenedAt != null}
-      backHref={backHref}
-      isAdmin={me.role === 'admin'}
-      canManageMembers={canManageMembers}
-      memberCount={enrollments.length}
-      responseCount={responses.length}
-      moveTargets={moveTargets}
-    />
+    <>
+      <CohortDetailClient
+        summary={summary}
+        roster={roster}
+        status={cohort.status}
+        maxMembers={cohort.maxMembers}
+        postOpened={cohort.postOpenedAt != null}
+        backHref={backHref}
+        isAdmin={me.role === 'admin'}
+        canManageMembers={canManageMembers}
+        memberCount={enrollments.length}
+        responseCount={responses.length}
+        moveTargets={moveTargets}
+      />
+      {/* 피드 흐름 요약(2차 · 발주 §6.2). 기존 명단 화면은 한 줄도 건드리지 않고 아래에 덧댄다. */}
+      <div style={{ maxWidth: 'var(--w-public, 1200px)', margin: '0 auto', padding: '0 var(--space-4) var(--space-6)' }}>
+        <FeedSummary cohortId={cohortId} />
+      </div>
+    </>
   );
 }
