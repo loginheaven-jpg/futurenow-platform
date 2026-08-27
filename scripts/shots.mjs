@@ -6,6 +6,7 @@
 //   `public`  — 비인증 실라우트. 서버를 띄워 진짜 화면을 찍는다
 //   `fixture` — 인증 뒤 화면의 **표시 층을 SSR 로** 그려 찍는다(QA 계정 전의 대역)
 //   `auth`    — 인증 뒤 **실라우트**. `.env.local` 의 QA 자격으로 로그인해 찍는다
+//   `preflight` — **이 주소를 절차서에 적어도 되는가**를 먼저 잰다(↓)
 //   `all`     — public + fixture
 //
 // **`fixture` 를 "브라우저에서 확인했다"로 적지 않는다.** 같은 부품·같은 조립을 실제 CSS 로
@@ -65,13 +66,15 @@ const IMG_MS = Number(process.env.SHOT_IMG_MS ?? 1500);
 /** 한 장 캡처 상한(ms). **걸리면 조용히 멈추지 말고 시끄럽게 실패한다.** */
 const SHOT_MS = Number(process.env.SHOT_TIMEOUT_MS ?? 30_000);
 
-if (!['public', 'fixture', 'auth', 'all'].includes(MODE) || !OUT) {
-  console.error('사용법: node scripts/shots.mjs <public|fixture|auth|all> <출력 디렉터리>');
+if (MODE === 'preflight') {
+  // 출력 디렉터리가 필요 없다 — 찍지 않고 재기만 한다.
+} else if (!['public', 'fixture', 'auth', 'all'].includes(MODE) || !OUT) {
+  console.error('사용법: node scripts/shots.mjs <public|fixture|auth|preflight|all> <출력 디렉터리>');
   process.exit(2);
 }
 
 const dir = (g) => `${OUT}/${g}`;
-mkdirSync(OUT, { recursive: true });
+if (OUT) mkdirSync(OUT, { recursive: true });
 
 /** `.env.local` 을 읽는다. **값을 출력하지 않는다** — 자격은 로그에도 남기지 않는다(발주 §0.3). */
 function env() {
@@ -257,15 +260,78 @@ async function captureAuth(browser) {
   }
 }
 
+/**
+ * **이 주소를 절차서에 적어도 되는가.** 셋을 잰다 — 배포된 커밋 · QA 로그인 · QA 차수 노출.
+ *
+ * **확인하지 않은 URL 을 절차서에 적으면 사람이 엉뚱한 화면을 본다.**
+ * 운영에는 아직 브랜치가 안 나가 있고 프리뷰에는 나가 있는 상황이 실제로 있었다(4차 F-5).
+ * 그래서 *"열리더라"* 가 아니라 **무엇이 열렸는지**를 잰다.
+ */
+async function preflight(browser) {
+  const e = env();
+  console.log("");
+  console.log(`[preflight] ${BASE}`);
+  let ok = true;
+
+  // ① 배포 신원 — 어느 커밋이 서 있는가
+  const ctx0 = await browser.newContext();
+  const p0 = await ctx0.newPage();
+  const res = await p0.goto(`${BASE}/api/version`, { waitUntil: 'commit' }).catch(() => null);
+  if (!res || !res.ok()) { console.error('  X 열리지 않는다(인증 보호이거나 미배포)'); ok = false; }
+  else {
+    const v = JSON.parse(await p0.locator('body').innerText());
+    console.log(`  O 배포 ${v.commitShort} · ref=${v.ref} · env=${v.env}`);
+    console.log(`    (브랜치 최신과 대조는 호출한 쪽이 한다 — git rev-parse origin/<브랜치>)`);
+  }
+  await ctx0.close();
+  if (!ok) return false;
+
+  // ② QA 로그인 · ③ QA 차수 노출
+  const missing = ['QA_USER_EMAIL', 'QA_USER_PASSWORD'].filter((k) => !e[k]);
+  if (missing.length) { console.error(`  X .env.local 에 ${missing.join(', ')} 가 없다`); return false; }
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(`${BASE}/login`, { waitUntil: 'commit' });
+  await settle(page, 'preflight login');
+  try {
+    await page.getByLabel(/이메일/).fill(e.QA_USER_EMAIL);
+    await page.getByLabel(/비밀번호/).fill(e.QA_USER_PASSWORD);
+    await page.getByRole('button', { name: /로그인/ }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20_000 });
+    console.log('  O QA 참여자 로그인');
+  } catch {
+    console.error('  X QA 참여자 로그인 실패');
+    await ctx.close();
+    return false;
+  }
+  await page.goto(`${BASE}/home`, { waitUntil: 'commit' });
+  await settle(page, 'preflight home');
+  const body = await page.locator('body').innerText();
+  const hasQa = body.includes('[QA]');
+  const hasReal = body.includes('예봄 2기');
+  console.log(hasQa ? '  O QA 차수가 보인다' : '  X QA 차수가 안 보인다');
+  if (hasReal) console.error('  X 실기수(예봄 2기)가 보인다 — 계정을 잘못 잡았다');
+  await ctx.close();
+  return hasQa && !hasReal;
+}
+
 const browser = await chromium.launch();
 try {
   if (MODE === 'public' || MODE === 'all') await capturePublic(browser);
   if (MODE === 'fixture' || MODE === 'all') await captureFixture(browser);
   if (MODE === 'auth') await captureAuth(browser);
+  if (MODE === 'preflight') {
+    const ok = await preflight(browser);
+    console.log("");
+    console.log(ok ? 'O 이 주소를 절차서에 적어도 된다' : 'X 이 주소를 절차서에 적으면 안 된다');
+    if (!ok) process.exitCode = 6;
+  }
 } finally {
   await browser.close();
 }
 
+// preflight 은 찍지 않으므로 캡처 요약도 산출 안내도 뜻이 없다.
+if (MODE !== 'preflight') {
 // 요약 — **없는 것을 없다고 말한다.** 개별 실패는 그때그때 찍히지만,
 //   끝에서 한 번 더 세지 않으면 스크롤에 묻힌다.
 console.log("");
@@ -278,3 +344,4 @@ console.log(`\n산출: ${OUT}/`);
 console.log('  public/       — 비인증 실라우트(진짜 화면)');
 console.log('  auth-fixture/ — 인증 뒤 화면의 표시 층(대역)');
 console.log('  auth/         — 인증 뒤 실라우트(QA 자격 필요)');
+}
