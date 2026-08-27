@@ -237,8 +237,33 @@ feed_comments      -- 1단 댓글. **parent_id 컬럼이 없다**(대댓글 금�
 feed_reactions     -- 이모지 응원. PK(post_id,user_id) = 한 사람 한 반응(수가 점수가 되지 않게).
                    --   CHECK 는 feed_emojis() 단일 출처를 본다. TS FEED_EMOJI 와는 통합테스트가 짝을 잠근다.
 news_comments      -- 소식 댓글. 비로그인 읽기 ○ / 쓰기 ✕. 발행된 글에만 붙는다.
+
+-- ── 3차 T-6 에서 채운 누락분 ─────────────────────────────────────────────────
+-- **본 저장소 소유**
+checkins           -- 회차 갈무리(ADR-80). (cohort_id,user_id,session_no) · answers(JSONB)
+                   --   ·has_content(쓰기 시점 계산)·submitted_at·edit_count. 쓰기 전량 DEFINER RPC.
+cohort_sessions    -- 회차 일정(ADR-80). (cohort_id,session_no) PK · held_at·opens_at·closes_at.
+                   --   행이 없으면 '준비 중'(정상 상태). 개폐 판정의 유일한 출처.
+report_interpretations -- 코치 리포트 해석(ADR-36). ai_content(불변·감사) + coach_content(수정본).
+                   --   유효 문구 = coach_content ?? ai_content. 코치·운영자만(RLS).
+user_consents      -- 개인정보 동의(ADR-76). (user_id,type) · version·agreed_at.
+                   --   type: privacy_use · sensitive_use · coach_pledge · forum_match(ADR-122).
+
+-- **본 저장소 밖에서 적용됨** — 파일이 supabase/migrations 에 없다(3차 T-6 발견)
+deltanote_preregistrations -- 원장 `20260816231058`. 저장소에 CREATE 가 없다.
+
+-- **SAIL 소유 · 본 작업공간 불가침**(CLAUDE §4). public 스키마를 공유한다.
+results            -- SAIL 결과(immutable). 원장 `20260528000000`. 위 '불변 원칙'이 계승했다는 그 표다.
+groups             -- SAIL 그룹. 원장 `20260528120000`
+group_members      -- SAIL 그룹 참여. 원장 `20260528120000`
 ```
 
+> **§4 드리프트 정정 2차(2026-08-27 · 3차 T-6).** 위 "3차 T-6 에서 채운 누락분" 여덟은
+> **2차 정정에서도 빠져 있었다.** 그때 채운 것은 1·2차가 만든 표뿐이고, 그보다 **먼저 있던 것**
+> (갈무리·해석·동의)과 **다른 주인의 것**(SAIL 셋 · 저장소 밖 하나)은 세지 않았다.
+> **"무엇을 세는가"를 정하지 않고 세면 두 번 세도 빠진다.** 이번에는 라이브 `information_schema`
+> 전수(26)와 대조했다 — 문서 18 → 26, 차이 0.
+>
 > **§4 드리프트 정정(2026-08-27).** S-1~S-4 의 신설 표 넷(`memberships`·`news_posts`·`library_items`
 > ·`contact_messages`)이 ADR 행에만 적히고 이 블록에는 올라오지 않았다. 2차 표 넷을 넣으면서 함께 채웠다.
 > 이 블록이 스키마의 단일 진실이라고 적어 두고 실제와 어긋나 있으면, 다음 사람은 여기를 믿지 않고 DB 를 다시 센다.
@@ -831,6 +856,14 @@ interface AlertPlugin<S = unknown> {
 ---
 
 ## 12. 용어집
+
+- **불변식(invariant)** — 번호로 인용되는 절대 규칙(예: *"불변식 17 — matcher 를 좁히지 말 것"*).
+  **번호를 정의하는 목록이 이 저장소 어디에도 없다**(3차 T-6 발견). 문서·발주서·코드 주석에서
+  **14개 번호가 참조**된다 — 4·6·7·8·9·10·11·13·15·17·18·19·20·24. 가장 큰 번호가 24 이므로
+  1~24 의 목록이 어딘가에 있었거나 있어야 한다. **참조는 살아 있는데 정의가 없다.**
+  뜻은 문맥에서 읽히지만(§9.3 게이트 판정 · §6.2 전화번호 격리 등) 그것은 복원이지 정의가 아니다.
+  **추정으로 목록을 만들지 않는다**(ADR-121 정신 — 추정치를 문서에 박지 않는다).
+  지휘부가 원본을 갖고 있으면 그것을 싣고, 없으면 참조 14개에서 초안을 만들어 승인받는다.
 
 - **프로파일 특징(플래그)**: 인도자 박스에 뜨는 **축의 사실**(예 `원씽 낮음`). 원형 가설의 재료이고 원형 판정이 아니다 — 판정은 인도자가 가이드 식별표로 한다(ADR-114).
 - **코어 / 런타임**: 채점하지 않는 1층 공유 인프라(인증·차수·코치·응답봉투·알림·UI).
