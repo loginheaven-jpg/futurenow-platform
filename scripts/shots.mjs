@@ -133,6 +133,19 @@ async function shot(ctx, url, w, out, full, label, open) {
       FAILED.push(`${label}-${w}(open)`);
     }
   }
+  // **가로 넘침 검사** — F-5 게이트의 "깨짐 0" 을 눈이 아니라 수로 잰다.
+  //   `body` 가 뷰포트보다 넓으면 가로 스크롤이 생긴다 = 레이아웃이 터진 것이다.
+  //   88장을 눈으로만 보는 것은 신뢰할 수 없다 — **사람은 32번째쯤에서 안 본다.**
+  const over = await page
+    .evaluate(() => {
+      const d = document.documentElement;
+      return Math.max(d.scrollWidth, document.body.scrollWidth) - d.clientWidth;
+    })
+    .catch(() => 0);
+  if (over > 1) {
+    console.error(`    ✕ ${label} ${w}px 가로 넘침 ${over}px`);
+    OVERFLOW.push(`${label}-${w}(+${over}px)`);
+  }
   try {
     // `animations: 'disabled'` + 상한 — 함정 ③(fixed + 긴 full-page)이 여기서 걸린다.
     await page.screenshot({ path: out, fullPage: full, timeout: SHOT_MS, animations: 'disabled' });
@@ -147,6 +160,8 @@ async function shot(ctx, url, w, out, full, label, open) {
 
 /** 실패한 장 목록 — 끝에 모아 알린다. 빠진 것을 못 본 것으로 두지 않는다. */
 const FAILED = [];
+/** 가로로 넘친 화면 — "깨짐 0" 판정의 객관 지표다. */
+const OVERFLOW = [];
 
 // ── public — 비인증 실라우트 ─────────────────────────────────────────────
 async function capturePublic(browser) {
@@ -250,6 +265,14 @@ try {
 } finally {
   await browser.close();
 }
+
+// 요약 — **없는 것을 없다고 말한다.** 개별 실패는 그때그때 찍히지만,
+//   끝에서 한 번 더 세지 않으면 스크롤에 묻힌다.
+console.log("");
+console.log(FAILED.length ? "X 캡처 실패 " + FAILED.length + "장: " + FAILED.join(", ") : "O 캡처 실패 0");
+console.log(OVERFLOW.length
+  ? "X 가로 넘침 " + OVERFLOW.length + "건: " + OVERFLOW.join(", ")
+  : "O 가로 넘침 0 — 전 화면 전 폭에서 가로 스크롤이 생기지 않는다");
 
 console.log(`\n산출: ${OUT}/`);
 console.log('  public/       — 비인증 실라우트(진짜 화면)');
