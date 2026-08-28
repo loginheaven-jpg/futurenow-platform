@@ -18,6 +18,10 @@ export default async function AccountPage() {
   // KPC 는 코치·운영자(set_my_coach_kpc RPC 가 coach|admin 게이트 — 2026-07-09). 멤버(user)는 조회·섹션 생략.
   const canKpc = me.role === 'coach' || me.role === 'admin';
   const kpc = canKpc ? await ctx.getMyCoachKpc().catch(() => null) : null;
+  // 5차 T-4 — **값만** 읽어 내린다. 문자열 조립은 화면이 한다(최박사 지시).
+  //   실패하면 구획을 통째로 안 그린다 — 등급이 안 보이는 것과 내 정보가 안 열리는 것은
+  //   심각도가 전혀 다르다(피드 사진 서명 실패와 같은 계열).
+  const membership = await ctx.getMyMembershipView().catch(() => undefined);
   // 홈 복귀 = 통합 홈 /home(A′-2 — 역할 무관 단일 홈. 콘솔·본부는 홈의 운영 카드로 진입).
   const homeHref = '/home';
 
@@ -32,6 +36,7 @@ export default async function AccountPage() {
         initialProfile={profile}
         initialKpc={kpc ?? ''}
         allowKpc={canKpc}
+        membership={membership}
       />
     </div>
   );

@@ -48,12 +48,15 @@ import type {
   Wave,
   ChatRequest,
   ChatResponse,
+  CohortRole,
+  MembershipView,
 } from '@/contracts';
 import { z } from 'zod';
 import { gatewayChat } from './ai/gateway';
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
 import { toMemberState } from './membership';
+import { toMembershipView } from './membershipVocab';
 import {
   rowToAlert,
   rowToCoachApplication,
@@ -1243,6 +1246,35 @@ class SupabaseCoreContext implements CoreContext {
     const { data, error } = await this.sb.rpc('member_state');
     if (error) throw new CoreError(`getMyMemberState 실패: ${error.message}`);
     return toMemberState(data);
+  }
+
+  /**
+   * 5차 T-3·T-4 — 표시용 회원 상태.
+   *
+   * **판정을 다시 하지 않는다.** tier·underReview 는 `member_state()` 의 결과를 옮긴 것이고
+   * (`toMembershipView` 순수), 소속은 **T-5 와 같은 입력**에서 온다 —
+   * 참여는 `listMyCohorts()`(RPC `my_cohorts`), 인도는 `listCohortsByCoach(me)`.
+   * *입력이 같고 출력이 다른 두 함수* 라는 지휘부 정리가 그 뜻이다.
+   *
+   * **활성 기수만 담는다.** 끝난 기수를 소속으로 계속 세우면 *지금 무엇인가* 를 묻는 줄이
+   * 이력이 된다(T-5 가 `status === 'active'` 만 본 것과 같은 기준).
+   */
+  async getMyMembershipView(): Promise<MembershipView> {
+    const me = await this.currentUser();
+    if (!me) throw new CoreError('로그인이 필요합니다');
+    const state = await this.getMyMemberState();
+    const mine = await this.listMyCohorts();
+    const roles: CohortRole[] = mine
+      .filter((c) => c.status === 'active')
+      .map((c) => ({ cohortId: c.cohortId, cohortName: c.name, kind: 'participant' as const }));
+    if (me.role === 'coach' || me.role === 'admin') {
+      const led = await this.listCohortsByCoach(me.id).catch(() => []);
+      for (const c of led) {
+        if (c.status !== 'active') continue;
+        roles.push({ cohortId: c.id, cohortName: c.name, kind: 'coach' as const });
+      }
+    }
+    return toMembershipView(state, roles);
   }
 
   async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {

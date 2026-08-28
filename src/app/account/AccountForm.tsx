@@ -6,6 +6,10 @@ import { type CSSProperties } from 'react';
 import { GENDERS } from '@/contracts/vocab';
 import { RELIGIONS } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
+import type { MembershipView } from '@/contracts/domain';
+import {
+  cohortRoleLabel, PARTICIPANT_LEAD, TIER_INQUIRY_NOTE, TIER_LABEL, TIER_LEAD, UNDER_REVIEW_NOTE,
+} from '@/core/membershipVocab';
 
 const inputStyle: CSSProperties = {
   width: '100%',
@@ -84,6 +88,7 @@ export function AccountForm({
   onSavePassword,
   keepSignedIn,
   onKeepSignedIn,
+  membership,
 }: {
   name: string;
   phone: string;
@@ -106,9 +111,77 @@ export function AccountForm({
   // 소건 1-마 — **판정하지 않는다.** 값도 저장도 오케스트레이터가 한다(폼은 프레젠테이션).
   keepSignedIn: boolean;
   onKeepSignedIn: (v: boolean) => void;
+  /**
+   * 5차 T-4 — **서버가 값만 내린다.** 문자열 조립은 여기(화면)가 한다(최박사 지시).
+   * 없으면 이 구획을 통째로 그리지 않는다.
+   */
+  membership?: MembershipView;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      {/* 5차 T-4 · 내 정보 등급 표시 — **줄 둘**이다.
+          최박사 지시: *"포럼회원, 00기참여자, 00기인도자는 택일이 아니라 병행표현되어야 한다."*
+          tier 는 늘 하나이므로 **한 줄**, 소속은 여럿이므로 **칩으로 나열**한다.
+          **판정하지 않는다**(발주 §4) — 등급·대기 여부는 서버가 산출해 prop 으로 내려온다. */}
+      {membership ? (
+        <section style={section}>
+          {/* ① 자격 — 늘 한 줄 */}
+          <div>
+            <span className="t-h1" style={{ fontSize: 18 }}>{TIER_LABEL[membership.tier]}</span>
+            {/* `held` 는 tier 를 덮지 않는다 — 자격 이름 옆에 **진행 표시**로 붙는다.
+                덮으면 *보류* 가 자격 자리에 앉아 `이용 보류` 와 한 화면에서 겹친다. */}
+            {membership.underReview ? (
+              <span
+                className="t-caption"
+                style={{
+                  marginLeft: 'var(--space-2)', padding: '2px 8px', borderRadius: 999,
+                  border: 'var(--border-hair) solid var(--color-border)',
+                  background: 'var(--color-surface-2)', color: 'var(--color-text-secondary)',
+                }}
+              >
+                {UNDER_REVIEW_NOTE}
+              </span>
+            ) : null}
+          </div>
+          <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0' }}>
+            {TIER_LEAD[membership.tier]}
+          </p>
+
+          {/* ② 소속 — 여럿. **없으면 이 줄을 그리지 않는다**(T-5 의 *빈손 카드를 덧붙이지 않는다* 와 같은 결). */}
+          {membership.cohortRoles.length > 0 ? (
+            <>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                {membership.cohortRoles.map((r) => (
+                  <span
+                    key={`${r.cohortId}:${r.kind}`}
+                    className="t-caption"
+                    style={{
+                      padding: '4px 10px', borderRadius: 999,
+                      border: 'var(--border-hair) solid var(--color-border)',
+                      background: 'var(--color-surface-2)',
+                    }}
+                  >
+                    {cohortRoleLabel(r)}
+                  </span>
+                ))}
+              </div>
+              {/* 참여자 설명은 **최박사 원문**이다. 인도자 칩에는 붙이지 않는다 —
+                  원문이 참여자에 대해 한 말이고 인도자용 문장은 확정에 없다. */}
+              {membership.cohortRoles.some((r) => r.kind === 'participant') ? (
+                <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0' }}>
+                  {PARTICIPANT_LEAD}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+
+          {/* ③ 문의 안내 — 최박사 지시로 노출한다. */}
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-3) 0 0' }}>
+            {TIER_INQUIRY_NOTE}
+          </p>
+        </section>
+      ) : null}
+
       {/* 이름 */}
       <section style={section}>
         <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>

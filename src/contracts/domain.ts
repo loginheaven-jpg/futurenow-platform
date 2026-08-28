@@ -267,6 +267,52 @@ export interface ValueAssessmentRow extends ValueAssessment {
 //   **판정 결과**를 담는 타입이지 저장 값을 담는 타입이 아니기 때문이다.
 export type MemberState = 'pending' | 'individual' | 'cohort' | 'expired' | 'held';
 
+// ── 회원 표시(5차 T-3·T-4 · 최박사 승인 2026-08-29 · 불변식 3) ──────────────
+//
+// **`MemberState` 를 대체하지 않는다.** 저 다섯은 **판정**(DB `member_state()` 가 유일 구현)이고,
+//   아래 셋은 그 판정을 **표시 축으로 편 것**이다. 산출·`member_can_assess`·RLS·진실표는
+//   **한 줄도 바뀌지 않았고 마이그레이션은 0** 이다.
+//
+// **왜 축을 나눴나 — `participant` 를 tier 값으로 두지 않는다.**
+//   참여는 **기수마다 하나씩 여럿**이라 택일 필드에 들어갈 수 없다. 실측이 그렇다(2026-08-29):
+//   기수를 이끌면서 참여도 하는 사람 **2명**(`cohorts.coach_id` 기준), 포럼회원이면서 참여자 **3명**.
+//   최박사 지시가 그것을 문장으로 못 박았다 — *"포럼회원, 00기참여자, 00기인도자는
+//   택일이 아니라 병행표현되어야 한다."*
+
+/** 자격 — **늘 하나**. 택일 축이다. */
+export type MemberTier = 'visitor' | 'forum' | 'suspended';
+
+/** 소속에서의 역할 — 기수마다 붙는다. */
+export type CohortRoleKind = 'participant' | 'coach';
+
+/**
+ * 소속 한 칸. **기수와 역할을 한 항목으로 묶는다** — 화면 표기가 늘 붙어 다니기 때문이다
+ * (`2기 참여자` · `1기 인도자`). 따로 두면 조립할 때 다시 짝지어야 한다(최박사 지시).
+ */
+export interface CohortRole {
+  cohortId: string;
+  cohortName: string;
+  kind: CohortRoleKind;
+}
+
+/**
+ * 내 정보·현관 칩·운영자 화면이 함께 읽는 **표시용 회원 상태**.
+ *
+ * **문자열을 담지 않는다** — 값만 내리고 조립은 화면이 한다(최박사 지시).
+ * 문언이 서버에 박히면 단일 출처가 둘이 된다.
+ */
+export interface MembershipView {
+  tier: MemberTier;
+  /**
+   * `held` 의 **진행 표시**. `tier` 를 덮지 않는다 — 보류 중인 사람도 tier 는 `visitor` 다.
+   * 이것이 별도 불리언인 이유: 덮으면 *보류* 라는 말이 자격 이름 자리에 앉아
+   * `suspended`(이용 보류)와 한 화면에서 겹친다.
+   */
+  underReview: boolean;
+  /** 소속 — **여럿**. 없으면 빈 배열이고, 화면은 그 줄을 그리지 않는다. */
+  cohortRoles: CohortRole[];
+}
+
 // 응시 계열. 여정 = 사전·사후 체크, 상시 = 가치 카드·그림자·사랑의 언어.
 export type AssessmentKind = 'journey' | 'standing';
 

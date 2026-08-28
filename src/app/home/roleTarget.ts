@@ -8,6 +8,7 @@
 // **목적지를 한 곳도 바꾸지 않았다**(기존 기능 회귀 0). 옮긴 것은 계산이 서는 자리이지 결론이 아니다.
 //   문구만 시안 B `.role-card` 의 슬롯 넷(소속 · 제목 · 부제 · CTA)에 맞춰 늘렸다.
 import type { MyCohortSummary, Role } from '@/contracts';
+import { COHORT_ROLE_LABEL } from '@/core/membershipVocab';
 
 export interface RoleTarget {
   href: string;
@@ -20,7 +21,15 @@ export interface RoleTarget {
   ctaLabel: string;
 }
 
-const ROLE_WORD: Record<Role, string> = { admin: '운영자', coach: '인도자', user: '참여자' };
+// **역할 이름은 단일 출처에서 읽는다**(5차 T-3 · 지휘부 지시).
+//   *"사본이 될 수 있는 자리는 어휘뿐이다. 기수명 표기와 역할 이름이 그것이고,
+//    그래서 그 둘을 단일 출처에 두고 양쪽이 읽게 하라. 그러면 세 번째로 데지 않는다."*
+//   `운영자` 만 여기 남는다 — 그것은 소속 역할이 아니라 시스템 권한이라 `COHORT_ROLE_LABEL` 에 없다.
+const ROLE_WORD: Record<Role, string> = {
+  admin: '운영자',
+  coach: COHORT_ROLE_LABEL.coach,
+  user: COHORT_ROLE_LABEL.participant,
+};
 
 /**
  * 역할과 내 차수로 거점을 고른다.

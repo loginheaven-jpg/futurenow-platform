@@ -8,6 +8,7 @@ import { createBrowserSupabase } from '@/core/supabase/client';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { AccountForm, type AccountBusy } from './AccountForm';
 import { setContactAction, setKpcAction, setNameAction, setProfileAction } from './actions';
+import type { MembershipView } from '@/contracts/domain';
 import {
   authCookieRewrites,
   persistServerSnapshot,
@@ -25,6 +26,7 @@ export function AccountClient({
   initialProfile,
   initialKpc,
   allowKpc,
+  membership,
 }: {
   initialName: string;
   initialPhone: string;
@@ -33,6 +35,8 @@ export function AccountClient({
   initialProfile: UserProfile | null;
   initialKpc: string;
   allowKpc: boolean; // role==='coach' — KPC 섹션 노출·저장 허용
+  /** 5차 T-4 — 서버가 산출해 내려 준 표시용 회원 상태. 여기서 판정하지 않는다. */
+  membership?: MembershipView;
 }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const toast = useToast();
@@ -183,6 +187,7 @@ export function AccountClient({
       onSaveName={onSaveName}
       onSaveContact={onSaveContact}
       onSavePassword={onSavePassword}
+      membership={membership}
       keepSignedIn={keepSignedIn}
       onKeepSignedIn={onKeepSignedIn}
     />
