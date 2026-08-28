@@ -38,6 +38,17 @@ export default async function CoachValuesPage({ params }: { params: Promise<{ co
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
+      {/* **부제를 본문 첫 줄이 든다**(최박사 결재 2026-09-01 · U-3 후속).
+          헤더가 껍데기로 가며 `subtitle` 이 사라졌다 — 표는 라우트의 성질만 들고
+          기수 이름 같은 **서버 데이터**를 못 들기 때문이다. 실측상 그때 이 화면 어디에도
+          기수 이름이 없었다(헤더·탭 줄·본문·시트 전부 X).
+          **새 부품을 만들지 않았다** — 이 화면이 이미 쓰던 `t-caption` 보조 줄 패턴이다.
+          제목은 헤더가 들고 있으므로 `t-h1` 을 또 두면 제목이 둘이 된다.
+          헤더 부제 통로가 서면 U-4 에서 옮길지 판단한다(표에 그 사실을 적었다). */}
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-1)' }}>
+        {cohort.name}
+      </p>
+
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)' }}>
         마친 분 {done.length}명 · 진행 중 {rows.length - done.length}명
       </p>
