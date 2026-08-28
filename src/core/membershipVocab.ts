@@ -63,7 +63,7 @@ export const UPGRADE_HOWTO = '촉진자포럼에 가입하고 정회원자격을
 export const TIER_LEAD: Record<MemberTier, string> = {
   visitor: '승인을 기다리는 중입니다. 세미나 참여와 포럼회원 신청을 하실 수 있습니다.',
   forum: '포럼회원자격 유지기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.',
-  suspended: '계정 이용이 보류되었습니다. 문의해 주세요.',
+  suspended: '이용이 보류되었습니다. 운영자에게 문의해 주십시오.', // 최박사 확정 2026-08-30 · SQL 사본은 `20260831100000`
 };
 
 /** 소속 역할 이름 둘. T-5 `roleTargets` 도 이 어휘를 읽는다(사본 방지). */

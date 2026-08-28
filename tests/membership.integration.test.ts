@@ -314,6 +314,49 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
   });
 });
 
+describe.skipIf(!ENABLED)('cohorts_select — 미인증 가드 (실DB · ADR-149)', () => {
+  // **상주로 둔다**(지휘부 지시 2026-08-30). 일회성 확인으로 끝내면 나중에 누가 `anon` 정책을
+  //   추가할 때 **아무것도 울지 않는다.** 상주면 그때 레드가 되어 *의도적 변경임을 밝히도록* 강제된다.
+  //
+  // **`open()` 을 쓰지 않는다.** 그 헬퍼는 `SETUP` 을 돌리고 그 안에서 JWT 를 만진다 —
+  //   같은 트랜잭션에 `request.jwt.claims` 가 남아 있으면 `auth.uid()` 가 NULL 이 아니고
+  //   **미인증을 재는 것이 아니게 된다.** 실제로 한 번 그렇게 잘못 쟀다(계열 ①~⑥).
+  //   그래서 **JWT 를 한 번도 설정하지 않은 깨끗한 연결**을 따로 연다.
+  it('**`anon` 은 오류가 아니라 빈 결과를 받는다** — 함수 이름이 계획에 들어가지 않는다', async () => {
+    const fresh = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await fresh.connect();
+    try {
+      await fresh.query('begin');
+      await fresh.query('set local role anon');
+
+      // ① **대조군** — 미인증이 실제로 미인증인지 먼저 확인한다. 이것이 NULL 이 아니면
+      //    아래 `0행` 은 *가드가 통했다* 가 아니라 *다른 것을 쟀다* 는 뜻이다.
+      const uid = (await fresh.query(`select auth.uid() as u`)).rows[0].u;
+      expect(uid, '깨끗한 연결이어야 한다 — JWT 가 남아 있으면 미인증을 재는 것이 아니다').toBeNull();
+
+      // ② **오류가 아니라 빈 결과.** `TO authenticated` 가 없으면 여기서 42501 이 난다
+      //    (함수 EXECUTE 권한은 **실행 시점이 아니라 계획 시점**에 검사되므로,
+      //     `CASE` 로 실행을 건너뛰어도 소용이 없다 — 실측으로 확인했다).
+      const n = (await fresh.query(`select count(*)::int as n from public.cohorts`)).rows[0].n;
+      expect(n, '미인증에게 기수가 보이면 안 된다').toBe(0);
+
+      await fresh.query('rollback');
+    } finally { await fresh.end(); }
+  });
+
+  it('**정책이 `TO authenticated` 로 서 있다** — 이 `TO` 를 지우면 위 테스트가 42501 로 터진다', async () => {
+    const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await c.connect();
+    try {
+      const r = await c.query(`select polroles::regrole[]::text[] as roles
+                                 from pg_policy
+                                where polrelid='public.cohorts'::regclass and polname='cohorts_select'`);
+      // `{-}` 는 PUBLIC(= `TO` 절 없음)이다. 그 상태로 돌아가면 미인증이 다시 터진다.
+      expect(r.rows[0].roles, '역할 한정이 사라졌다').toContain('authenticated');
+    } finally { await c.end(); }
+  });
+});
+
 describe.skipIf(!ENABLED)('자동 전이 폐지와 쓰기 봉쇄 (실DB)', () => {
   // **자동 전이가 폐지됐다**(마이그레이션 `20260830090000` · 최박사 확정 2026-08-30).
   //   포럼회원은 **오직 운영자가 지정해야** 되는 것이므로, 마감이 등록자 전원을 승급시키던

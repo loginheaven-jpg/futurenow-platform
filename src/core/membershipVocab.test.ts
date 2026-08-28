@@ -34,7 +34,7 @@ describe('문안 — 최박사 원문 그대로 (한 글자도 다듬지 않는�
   it('tier 별 한 줄 설명', () => {
     expect(TIER_LEAD.visitor).toBe('승인을 기다리는 중입니다. 세미나 참여와 포럼회원 신청을 하실 수 있습니다.');
     expect(TIER_LEAD.forum).toBe('포럼회원자격 유지기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.');
-    expect(TIER_LEAD.suspended).toBe('계정 이용이 보류되었습니다. 문의해 주세요.');
+    expect(TIER_LEAD.suspended).toBe('이용이 보류되었습니다. 운영자에게 문의해 주십시오.');
   });
 
   it('**좁히지 않았다** — `진단` 이 아니라 `진단 등 모든 도구` 다', () => {

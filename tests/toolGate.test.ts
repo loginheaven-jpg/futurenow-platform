@@ -168,8 +168,11 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
   const sql = readFileSync(FILE, 'utf8');
 
   it('**`is_admin` 자리가 미확정임을 적어 두었다** — 다음 사람이 의도로 오해하지 않게', () => {
-    expect(sql).toContain('이 자리는 미확정이다');
-    expect(sql).toContain('의도가 아니라 보류다');
+    // **절반이 확정됐다**(2026-08-30) — 대상은 정해졌고 콘솔 영향이 미정이다.
+    //   문구가 바뀌었으므로 이 잠금도 함께 옮긴다. **의도적 변경이다.**
+    expect(sql).toContain('여전히 의도가 아니라 보류다');
+    expect(sql).toContain('대상은 확정됐다');
+    expect(sql).toContain('콘솔에서 무엇을 잃는지는 미정이다');
   });
 
   it('**RLS 정책의 함수 호출 위험과 그 근거를 적어 두었다**', () => {
@@ -201,7 +204,10 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
     // InitPlan 은 행이 0개여도 평가하므로 **가드 없이 적용하면 지금보다 나빠진다.**
     expect(follow, '미인증 가드가 없다').toContain('TO authenticated');
     expect(follow, '성능 정정이 없다').toContain('(SELECT public.member_state(auth.uid()))');
-    expect(follow, '아직 적용 전이어야 한다').toContain('아직 적용되지 않았다');
+    // **적용됐다**(2026-08-30). 잠금을 *적용 전* 에서 *적용 뒤 기록* 으로 옮긴다 — 의도적 변경이다.
+    //   파일이 스스로 적용 사실과 검증 결과를 들고 있어야 대조가 파일 안에서 끝난다(ADR-122 ⑨).
+    expect(follow, '적용 사실이 파일에 없다').toContain('적용됨 2026-08-30');
+    expect(follow, '주석만 고쳤다는 사실이 없다').toContain('DDL 은 한 글자도 바뀌지 않았다');
     for (const item of ['빈 결과', 'InitPlan 1', '적용 전후 동일']) {
       expect(follow, `검증 항목에 ${item} 가 없다`).toContain(item);
     }
@@ -232,6 +238,19 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
     }
     // **매퍼의 거르는 한 줄은 남아 있어야 한다** — 코드 선배포 창을 닫는 장치다.
     expect(readFileSync('src/core/context.ts', 'utf8')).toContain("filter((r) => r.bucket === 'pending')");
+  });
+
+  it('**`이용 보류` 문안 사본 둘이 한 글자도 다르지 않다** — 불변식 23', () => {
+    // 같은 문장이 DB(`feed_assert_writable`)와 화면(`TIER_LEAD.suspended`) 둘에 산다.
+    //   **문안은 얼어야 하는 값**이므로 잠금을 함께 둔다(§11 ⑵).
+    const HOLD = '이용이 보류되었습니다. 운영자에게 문의해 주십시오.';
+    expect(readFileSync('supabase/migrations/20260831100000_hold_message.sql', 'utf8'),
+      'DB 쪽 문안이 다르다').toContain(`'${HOLD}'`);
+    expect(readFileSync('src/core/membershipVocab.ts', 'utf8'),
+      '화면 쪽 문안이 다르다').toContain(`'${HOLD}'`);
+    // **`held` 문장은 함께 바뀌지 않아야 한다** — 두 상태가 한 문장으로 뭉개지면 안 된다.
+    expect(readFileSync('supabase/migrations/20260831100000_hold_message.sql', 'utf8'))
+      .toContain('계정 확인이 필요해 지금은 글을 올릴 수 없어요.');
   });
 
   it('**존재하지 않는 함수를 부르지 않는다** — 미완으로 두었던 자리의 회귀 잠금', () => {

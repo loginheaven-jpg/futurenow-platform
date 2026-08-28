@@ -199,7 +199,7 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
   it('`이용 보류` 는 자격 이름 자리에 선다', () => {
     const html = render({ membership: view({ tier: 'suspended' }) });
     expect(html).toContain('이용 보류');
-    expect(html).toContain('계정 이용이 보류되었습니다. 문의해 주세요.');
+    expect(html).toContain('이용이 보류되었습니다. 운영자에게 문의해 주십시오.');
     expect(html).not.toContain('확인이 필요한 신청입니다.');
   });
 
@@ -266,7 +266,7 @@ describe('승급 안내 병기 (최박사 확정 2026-08-30)', () => {
   it('이용 보류에게도 붙이지 않는다 — 문의 안내가 따로 있다', () => {
     const html = render({ membership: view({ tier: 'suspended' }) });
     expect(html).not.toContain('촉진자포럼에 가입하고');
-    expect(html).toContain('계정 이용이 보류되었습니다. 문의해 주세요.');
+    expect(html).toContain('이용이 보류되었습니다. 운영자에게 문의해 주십시오.');
   });
 
   it('**종료된 회기 참여자도 방문회원 tier 라 병기가 붙는다** — 승급 길을 잃지 않는다', () => {
