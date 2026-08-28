@@ -20,6 +20,8 @@ const cfg = JSON.parse(readFileSync('scripts/shellExceptions.json', 'utf8')) as 
   /** 껍데기 «바깥» — 예외도 면제도 아니고, 껍데기가 애초에 두르지 않는 자리다. */
   exemptOutside: string[];
   exceptions: { file: string; chunk: string; why: string }[];
+  /** **이월** — 예외와 같은 형식이다. 비면 완성이고, 적지 않으면 이월이 영구가 된다. */
+  carryOver: { item: string; chunk: string; why: string }[];
 };
 // U-4 는 **이름과 문**을 다루는 덩이다(공통 규칙 3·4). `/join`·`/signup` 의 뒤로 제어가 거기 산다.
 const CHUNKS = ['U-1', 'U-2', 'U-3', 'U-4'];
@@ -124,5 +126,20 @@ describe('무헤더 라우트 목록이 문서와 실측에서 같다', () => {
     }
     // **수는 박지 않는다**(값의 두 분류 ⑴) — 목록만 박고 수는 산출로 얻는다.
     expect(doc, '산출 명령이 없다').toContain('node scripts/shellAudit.mjs --routes');
+  });
+});
+
+describe('이월 목록 — 비면 완성이다 (U-3 → U-4)', () => {
+  it('**모든 이월에 덩이와 사유가 있다** — 적지 않으면 영구가 된다', () => {
+    for (const c of cfg.carryOver) {
+      expect(c.chunk.length, `${c.item} 에 덩이가 없다`).toBeGreaterThan(0);
+      expect(c.why.length, `${c.item} 에 사유가 없다`).toBeGreaterThan(30);
+    }
+  });
+
+  it('**부제 손실이 기록돼 있다** — 화면에서 사라진 것은 잊히면 안 된다', () => {
+    const sub = cfg.carryOver.find((c) => c.item.includes('subtitle'));
+    expect(sub, '부제 이월이 사라졌다 — 되살렸으면 항목을 지우고, 아니면 남긴다').toBeTruthy();
+    expect(sub!.why, '어디에도 기수 이름이 없다는 실측이 빠졌다').toContain('전부 X');
   });
 });
