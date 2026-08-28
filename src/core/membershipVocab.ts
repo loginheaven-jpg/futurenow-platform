@@ -17,7 +17,7 @@
 // **문안은 최박사 원문이다. 한 글자도 다듬지 않았다.**
 //   좁히지 않는다 — *진단* 이 아니라 **진단 등 모든 도구**다. 원문이 초안보다 넓다.
 // ─────────────────────────────────────────────────────────────────────────────
-import type { CohortRole, CohortRoleKind, MemberState, MemberTier, MembershipView } from '@/contracts/domain';
+import type { CohortRole, CohortRoleKind, MemberTier, MembershipStatus, MembershipView } from '@/contracts/domain';
 
 /**
  * **`held` 의 뜻 — 한 줄.**
@@ -89,26 +89,39 @@ export function cohortRoleLabel(r: CohortRole): string {
 }
 
 /**
- * **판정을 표시 축으로 편다.** 산출은 여전히 DB `member_state()` 하나뿐이고
- * 여기서는 그 결과를 **읽어 옮길 뿐** 다시 계산하지 않는다.
+ * **자격 저장값을 표시 축으로 편다.**
  *
- * | `MemberState` | tier | underReview |
+ * ── 입력이 무엇인지가 이 함수의 전부다 ──────────────────────────────────────
+ *
+ * 입력은 **`memberships.status` 저장값**이고, 행이 없으면 `null` 이다.
+ * **`member_state()` 산출값이 아니다.**
+ *
+ * 처음 판은 산출값을 받았고 그래서 `cohort` 가 `forum` 으로 앉았다 —
+ * **승인받은 적 없는 사람이 화면에 `포럼회원` 으로 표시됐다.** 최박사가 기각하신 바로 그것이다:
+ * *"포럼회원이라는 이름을 붙이는 순간 아닌 것을 그렇다고 말한 것이 된다."*
+ * 실측으로 18명이 그 경우였다(`member_state`=`cohort` 인데 `memberships` 행이 없다).
+ *
+ * **`cohort` 는 권한이지 자격이 아니므로 tier 의 입력이 될 수 없다.**
+ * 지금 세미나에 참여 중이라는 사실은 `cohortRoles` 가 말한다 — 축이 둘인 이유가 이것이다.
+ *
+ * | 저장값 | tier | underReview |
  * |---|---|---|
+ * | `individual` | `forum` | false |
+ * | `expired` | `suspended` | false |
  * | `pending` | `visitor` | false |
  * | `held` | `visitor` | **true** — tier 를 덮지 않는다 |
- * | `individual` | `forum` | false |
- * | `cohort` | `forum` | false |
- * | `expired` | `suspended` | false |
+ * | (행 없음 · `null`) | `visitor` | false |
  *
- * **`cohort` 가 `forum` 인 이유**: `cohort` 는 *지금 세미나에 참여 중* 이라는 **소속**의 사실이고,
- * 그 사실은 `cohortRoles` 가 이미 말한다. 자격 축에서 이 사람은 **도구를 다 쓸 수 있는 쪽**이라
- * `forum` 과 같은 칸에 선다(`member_can_assess` 도 `cohort` 에 여정+상시를 준다 — 가장 넓다).
- * 축이 둘이므로 **같은 사실을 두 번 말하지 않는다.**
+ * **권한 판정은 무변경이다** — `member_state()` 산출 · `member_can_assess` · RLS · 진실표를
+ * 이 함수는 읽지도 바꾸지도 않는다.
+ *
+ * **이 매핑은 저장소에 여기 한 곳뿐이다**(2026-08-29 전수 확인). 사본이 생기면 그때부터
+ * 두 화면이 같은 사람을 다르게 부른다.
  */
-export function toMembershipView(state: MemberState, cohortRoles: CohortRole[]): MembershipView {
+export function toMembershipView(stored: MembershipStatus | null, cohortRoles: CohortRole[]): MembershipView {
   const tier: MemberTier =
-    state === 'expired' ? 'suspended'
-      : state === 'individual' || state === 'cohort' ? 'forum'
-        : 'visitor'; // pending · held
-  return { tier, underReview: state === 'held', cohortRoles };
+    stored === 'individual' ? 'forum'
+      : stored === 'expired' ? 'suspended'
+        : 'visitor'; // pending · held · 행 없음
+  return { tier, underReview: stored === 'held', cohortRoles };
 }

@@ -4,7 +4,8 @@
 // *"문안을 좁히지 마라. 진단이 아니라 진단 등 모든 도구다. 최박사 문장이 자네 초안보다 넓다."*
 // 다듬으면 다음 사람이 그것을 원문으로 배운다. 그래서 글자 그대로 박아 둔다.
 import { describe, expect, it } from 'vitest';
-import type { CohortRole, MemberState } from '@/contracts/domain';
+import type { CohortRole, MembershipStatus } from '@/contracts/domain';
+import { MEMBERSHIP_STATUSES } from './membership';
 import {
   cohortRoleLabel,
   COHORT_ROLE_LABEL,
@@ -75,19 +76,38 @@ describe('cohortRoleLabel — 기수명을 **그대로** 쓴다', () => {
   });
 });
 
-describe('toMembershipView — 판정을 표시 축으로 편다 (다시 계산하지 않는다)', () => {
-  const view = (s: MemberState) => toMembershipView(s, []);
+describe('toMembershipView — **자격 저장값**을 표시 축으로 편다', () => {
+  // **입력이 저장값이라는 것이 이 절의 전부다.**
+  //   처음 판은 `member_state()` 산출값을 넣었고 테스트도 같은 것을 넣어 **초록이었다.**
+  //   그래서 승인받은 적 없는 18명이 `포럼회원` 으로 표시되는 것을 아무도 못 봤다.
+  //   *초록은 대상이 실재한다는 증거가 아니다* — 여기서는 **입력이 옳다는 증거가 아니었다.**
+  const view = (stored: MembershipStatus | null) => toMembershipView(stored, []);
 
   it.each([
+    ['individual' as const, 'forum', false],
+    ['expired' as const, 'suspended', false],
     ['pending' as const, 'visitor', false],
     ['held' as const, 'visitor', true],
-    ['individual' as const, 'forum', false],
-    ['cohort' as const, 'forum', false],
-    ['expired' as const, 'suspended', false],
-  ])('%s → tier %s · underReview %s', (state, tier, review) => {
-    const v = view(state);
+    [null, 'visitor', false],
+  ])('저장값 %s → tier %s · underReview %s', (stored, tier, review) => {
+    const v = view(stored);
     expect(v.tier).toBe(tier);
     expect(v.underReview).toBe(review);
+  });
+
+  it('**행이 없어도 방문회원이다** — 실측 18명이 그 경우다(세미나 참여 중이지만 승인받은 적 없다)', () => {
+    const v = view(null);
+    expect(v.tier).toBe('visitor');
+    expect(TIER_LABEL[v.tier]).toBe('방문회원');
+    expect(TIER_LABEL[v.tier], '승인받은 적 없는 사람을 포럼회원이라 부르지 않는다').not.toBe('포럼회원');
+  });
+
+  it('**저장 가능한 값이 전수 덮였다** — DB CHECK 넷 + 행 없음', () => {
+    const covered = [...MEMBERSHIP_STATUSES, null];
+    expect(MEMBERSHIP_STATUSES).toEqual(['pending', 'individual', 'expired', 'held']);
+    for (const stored of covered) expect(() => view(stored)).not.toThrow();
+    // `cohort` 는 **저장되지 않는다** — 목록에 없는 것이 그 사실이다.
+    expect(MEMBERSHIP_STATUSES as readonly string[]).not.toContain('cohort');
   });
 
   it('**`held` 가 tier 를 덮지 않는다** — 덮으면 `보류` 가 자격 자리에 앉아 `이용 보류` 와 겹친다', () => {
@@ -98,7 +118,7 @@ describe('toMembershipView — 판정을 표시 축으로 편다 (다시 계산�
   });
 
   it('**`participant` 는 tier 값이 아니다** — 택일 축에 여럿이 들어갈 수 없다', () => {
-    const tiers = (['pending', 'held', 'individual', 'cohort', 'expired'] as const).map((s) => view(s).tier);
+    const tiers = [...MEMBERSHIP_STATUSES, null].map((s) => view(s).tier);
     expect(new Set(tiers)).toEqual(new Set(['visitor', 'forum', 'suspended']));
     expect(tiers).not.toContain('participant');
   });
@@ -108,7 +128,7 @@ describe('toMembershipView — 판정을 표시 축으로 편다 (다시 계산�
       { cohortId: 'c1', cohortName: '1기', kind: 'coach' },
       { cohortId: 'c2', cohortName: '2기', kind: 'participant' },
     ];
-    expect(toMembershipView('cohort', roles).cohortRoles).toEqual(roles);
+    expect(toMembershipView(null, roles).cohortRoles).toEqual(roles);
   });
 
   it('소속이 없으면 빈 배열 — 화면이 그 줄을 안 그린다', () => {
@@ -116,8 +136,7 @@ describe('toMembershipView — 판정을 표시 축으로 편다 (다시 계산�
   });
 
   it('**문자열을 담지 않는다** — 값만 내리고 조립은 화면이 한다', () => {
-    const v = toMembershipView('forum' === 'forum' ? 'individual' : 'individual', []);
-    const json = JSON.stringify(v);
+    const json = JSON.stringify(view('individual'));
     for (const copy of [TIER_LABEL.forum, TIER_LEAD.forum, PARTICIPANT_LEAD, UNDER_REVIEW_NOTE]) {
       expect(json, '서버 값에 문언이 섞이면 단일 출처가 둘이 된다').not.toContain(copy);
     }

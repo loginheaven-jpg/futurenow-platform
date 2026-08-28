@@ -55,7 +55,7 @@ import { z } from 'zod';
 import { gatewayChat } from './ai/gateway';
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
-import { toMemberState } from './membership';
+import { toMemberState, toMembershipStatus } from './membership';
 import { toMembershipView } from './membershipVocab';
 import {
   rowToAlert,
@@ -1251,18 +1251,33 @@ class SupabaseCoreContext implements CoreContext {
   /**
    * 5차 T-3·T-4 — 표시용 회원 상태.
    *
-   * **판정을 다시 하지 않는다.** tier·underReview 는 `member_state()` 의 결과를 옮긴 것이고
-   * (`toMembershipView` 순수), 소속은 **T-5 와 같은 입력**에서 온다 —
-   * 참여는 `listMyCohorts()`(RPC `my_cohorts`), 인도는 `listCohortsByCoach(me)`.
-   * *입력이 같고 출력이 다른 두 함수* 라는 지휘부 정리가 그 뜻이다.
+   * **입력이 `member_state()` 산출값이 아니라 `memberships.status` 저장값이다.**
+   * 처음 판은 산출값을 넣었고, 그래서 승인받은 적 없는 18명이 화면에 `포럼회원` 으로 표시됐다
+   * (`member_state`=`cohort` → `forum`). 최박사가 기각하신 그것이다 —
+   * *"포럼회원이라는 이름을 붙이는 순간 아닌 것을 그렇다고 말한 것이 된다."*
+   * `cohort` 는 **권한**이지 자격이 아니므로 tier 의 입력이 될 수 없다.
    *
-   * **활성 기수만 담는다.** 끝난 기수를 소속으로 계속 세우면 *지금 무엇인가* 를 묻는 줄이
-   * 이력이 된다(T-5 가 `status === 'active'` 만 본 것과 같은 기준).
+   * **권한 판정은 손대지 않았다** — `member_state()`·`member_can_assess`·RLS·진실표 무변경.
+   * 이 메서드는 저장 행을 읽기만 한다(RLS `memberships_select`: 본인 + 운영자).
+   *
+   * 소속은 **T-5 와 같은 입력**에서 온다 — 참여는 `listMyCohorts()`(RPC `my_cohorts`),
+   * 인도는 `listCohortsByCoach(me)`. *입력이 같고 출력이 다른 두 함수* 라는 정리 그대로다.
+   * **활성 기수만** 담는다(T-5 가 `status === 'active'` 만 본 것과 같은 기준) — 끝난 기수를
+   * 소속으로 계속 세우면 *지금 무엇인가* 를 묻는 줄이 이력이 된다.
    */
   async getMyMembershipView(): Promise<MembershipView> {
     const me = await this.currentUser();
     if (!me) throw new CoreError('로그인이 필요합니다');
-    const state = await this.getMyMemberState();
+
+    // 저장값. **행이 없을 수 있다** — 실측 18명이 그 경우이고, 그때가 `visitor` 다.
+    const { data, error } = await this.sb
+      .from('memberships')
+      .select('status')
+      .eq('user_id', me.id)
+      .maybeSingle();
+    if (error) throw new CoreError(`getMyMembershipView 실패: ${error.message}`);
+    const stored = toMembershipStatus((data as { status?: unknown } | null)?.status ?? null);
+
     const mine = await this.listMyCohorts();
     const roles: CohortRole[] = mine
       .filter((c) => c.status === 'active')
@@ -1274,7 +1289,7 @@ class SupabaseCoreContext implements CoreContext {
         roles.push({ cohortId: c.id, cohortName: c.name, kind: 'coach' as const });
       }
     }
-    return toMembershipView(state, roles);
+    return toMembershipView(stored, roles);
   }
 
   async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {

@@ -279,6 +279,17 @@ export type MemberState = 'pending' | 'individual' | 'cohort' | 'expired' | 'hel
 //   최박사 지시가 그것을 문장으로 못 박았다 — *"포럼회원, 00기참여자, 00기인도자는
 //   택일이 아니라 병행표현되어야 한다."*
 
+/**
+ * `memberships.status` **저장값**. DB CHECK 를 그대로 비춘다
+ * (`status IN ('pending','individual','expired','held')` · `20260826160000_membership.sql:79`).
+ *
+ * **`MemberState` 와 다른 것이다.** 저 다섯은 **판정**(`held > cohort > 저장 > pending`)이고
+ * 이것은 **저장된 자격**이다. `cohort` 가 여기 없는 이유가 그 차이다 — `cohort` 는
+ * *지금 세미나에 등록돼 있다* 는 **권한**의 사실이지 누가 준 **자격**이 아니다.
+ * 행이 아예 없을 수 있으므로 `null` 과 함께 쓴다.
+ */
+export type MembershipStatus = 'pending' | 'individual' | 'expired' | 'held';
+
 /** 자격 — **늘 하나**. 택일 축이다. */
 export type MemberTier = 'visitor' | 'forum' | 'suspended';
 
