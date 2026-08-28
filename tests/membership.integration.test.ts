@@ -389,10 +389,15 @@ describe('회원자격 보류 — 강퇴 모델 (실DB · ADR-152)', () => {
   it.skipIf(!ON)('**슈퍼어드민 상수가 한 곳에 있다** — 이메일이 코드에 박힌 자리는 하나다', async () => {
     const client = await open();
     try {
-      const n = await scalarAs(client, ADMIN,
-        `select count(*)::text as s from pg_proc p join pg_namespace ns on ns.oid=p.pronamespace
-          where ns.nspname='public' and p.prosrc like '%loginheaven@gmail.com%'`);
-      expect(n, '이메일 상수가 둘 이상이면 바꿀 자리가 하나가 아니다').toBe('1');
+      // **실물은 둘이다**(2026-08-31 실측 · 이 테스트가 찾았다).
+      //   `is_super_admin` — 이번에 만든 것. 슈퍼어드민 판정.
+      //   `handle_new_user` — **예전부터 있던 것.** 가입 시 그 이메일이면 `role='admin'` 을 준다.
+      //   목적이 다르지만 **상수는 같다** — 이메일이 바뀌면 **둘 다** 고쳐야 한다(불변식 23).
+      //   그래서 개수가 아니라 **알려진 집합**을 잠근다. 셋째가 생기면 여기서 레드가 난다.
+      const fns = (await client.query(
+        `select p.proname from pg_proc p join pg_namespace ns on ns.oid=p.pronamespace
+          where p.prosrc like '%loginheaven@gmail.com%' order by 1`)).rows.map((r: { proname: string }) => r.proname);
+      expect(fns, '슈퍼어드민 이메일이 새로운 자리에 또 박혔다').toEqual(['handle_new_user', 'is_super_admin']);
       // 픽스처 계정은 슈퍼어드민이 아니다 — 대조군.
       expect(await scalarAs(client, ADMIN, `select public.is_super_admin('${ADMIN}')::text as s`)).toBe('false');
     } finally { await close(client); }
@@ -428,8 +433,11 @@ describe('회원자격 보류 — 강퇴 모델 (실DB · ADR-152)', () => {
       await client.query(
         `insert into auth.sessions (id, user_id, created_at, updated_at)
          values (gen_random_uuid(), '${MEMBER}', now(), now())`);
-      const sessions = () => scalarAs(client, ADMIN,
-        `select count(*)::text as s from auth.sessions where user_id='${MEMBER}'`);
+      // **`scalarAs` 로 읽지 않는다** — 그것은 `authenticated` 로 역할을 바꾸는데
+      //   `auth.sessions` 는 그 역할에 권한이 없다(실측: permission denied).
+      //   **재는 자리가 권한을 못 가지면 재지 못한다** — 소유자 연결로 직접 읽는다.
+      const sessions = async () => String((await client.query(
+        `select count(*)::int as n from auth.sessions where user_id='${MEMBER}'`)).rows[0].n);
       expect(await sessions(), '대조군 · 끊기 전에는 세션이 있다').not.toBe('0');
 
       await runAs(client, ADMIN, `select public.decide_membership('${MEMBER}','expired',null,'사유')`);
@@ -444,8 +452,9 @@ describe('회원자격 보류 — 강퇴 모델 (실DB · ADR-152)', () => {
   it.skipIf(!ON)('**계정이 잠기고, 되돌리면 풀린다** — 푸는 것까지 재지 않으면 반쪽이다', async () => {
     const client = await open();
     try {
-      const banned = () => scalarAs(client, ADMIN,
-        `select coalesce((select banned_until::text from auth.users where id='${MEMBER}'),'-') as s`);
+      // `auth.users` 도 같다 — `authenticated` 는 못 읽는다. 소유자 연결로 읽는다.
+      const banned = async () => String((await client.query(
+        `select coalesce((select banned_until::text from auth.users where id='${MEMBER}'),'-') as s`)).rows[0].s);
       expect(await banned(), '대조군 · 처음에는 잠겨 있지 않다').toBe('-');
       await runAs(client, ADMIN, `select public.decide_membership('${MEMBER}','expired',null,'사유')`);
       expect(await banned(), '보류하면 로그인이 막힌다').not.toBe('-');
