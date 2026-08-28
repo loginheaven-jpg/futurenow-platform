@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SHEET_FIXTURE } from '@/app/(member)/home/homeFixture';
+import { readFileSync } from 'node:fs';
+import { HOME_DOOR, CONSOLE_DOOR } from '@/app/_vocab/doors';
 
 // 회원 껍데기 — **화면에서 옮겨온 단언이 사는 자리** (U-2).
 //
@@ -59,5 +61,34 @@ describe('회원 껍데기 — 표를 읽어 헤더를 그린다', () => {
     const { MemberShell: Shell } = await import('./MemberShell');
     const html = renderToStaticMarkup(<Shell sheet={SHEET_FIXTURE}><div id="본문" /></Shell>);
     expect(html).toContain('id="본문"');
+  });
+  // ── U-4 §4 — **문은 하나씩이다.** 탐침이 아니라 잠금으로 남긴다.
+  //   실측으로 잡은 결함이다: `sub` + `actions` 세 화면이 한 바에 홈을 **둘** 그렸다.
+  //   `AppHeader` 가 `sub` 에서 홈 아이콘을 그리는데 껍데기가 `HeaderActions` 에도 홈을 넘겼다.
+  it.each(['/my/cohorts/co1/journey', '/my/cohorts/co1/report', '/my/cohorts/co1/checkin/1'])(
+    '★ %s — 상단바의 홈 문이 **하나**다',
+    async (path) => {
+      vi.resetModules(); mockNav(path, { cohortId: 'co1', session: '1' });
+      const { MemberShell: Shell } = await import('./MemberShell');
+      const html = renderToStaticMarkup(<Shell sheet={SHEET_FIXTURE}><div /></Shell>);
+      expect((html.match(/aria-label="내 홈"/g) ?? []).length, '같은 문이 둘이다').toBe(1);
+    },
+  );
+
+  it('대조군 — `root` 에서는 `HeaderActions` 가 그 문을 든다(사라지지 않았다)', async () => {
+    vi.resetModules(); mockNav('/account');
+    const { MemberShell: Shell } = await import('./MemberShell');
+    const html = renderToStaticMarkup(<Shell sheet={SHEET_FIXTURE}><div /></Shell>);
+    expect((html.match(/aria-label="내 홈"/g) ?? []).length).toBe(1);
+    expect(html, '이름은 `_vocab/doors` 가 든다').toContain(HOME_DOOR.label);
+  });
+
+  it('**이름이 사본으로 갈라지지 않는다**(불변식 23) — 두 부품이 같은 출처를 읽는다', () => {
+    for (const f of ['src/app/_screens/HeaderActions.tsx', 'src/app/_screens/AppHeader.tsx']) {
+      expect(readFileSync(f, 'utf8'), `${f} 가 문 이름을 스스로 적고 있다`).toContain("from '@/app/_vocab/doors'");
+    }
+    // 콘솔도 같다 — 시트 항목과 표의 제목이 한 말이다.
+    expect(readFileSync('src/app/_screens/console/consoleNav.ts', 'utf8')).toContain('CONSOLE_DOOR');
+    expect(readFileSync('src/app/_lib/screenChrome.ts', 'utf8')).toContain(`title: '${CONSOLE_DOOR.label}'`);
   });
 });

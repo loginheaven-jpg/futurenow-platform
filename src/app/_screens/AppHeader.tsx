@@ -28,6 +28,8 @@ const iconLink: CSSProperties = {
   fontSize: 22,
 };
 
+import { HOME_DOOR } from '@/app/_vocab/doors';
+
 export function HomeIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -97,8 +99,9 @@ export function AppHeader({
 
       {variant !== 'flow' ? (
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          {/* 이름은 `_vocab/doors` 하나에서 온다(U-4 §3) — 아이콘뿐이라 이 이름이 곧 그 문의 이름이다. */}
           {variant === 'sub' ? (
-            <Link className="ui-tappable" href={homeHref} aria-label="홈" style={iconLink}>
+            <Link className="ui-tappable" href={homeHref} aria-label={HOME_DOOR.label} style={iconLink}>
               <HomeIcon />
             </Link>
           ) : null}

@@ -6,8 +6,9 @@
 //
 // **여기서 `cookies()` 를 부르지 않는다.** 부르는 순간 `/`·`/recruit` 의 ISR 이 깨진다.
 //   세션은 `PublicGnb` 가 브라우저에서 본다(`PublicShell` 머리 참조).
+import { ChromeProvider } from '@/app/_screens/shell/chromeContext';
 import { PublicShell } from '@/app/_screens/site/PublicShell';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  return <PublicShell>{children}</PublicShell>;
+  return <ChromeProvider><PublicShell>{children}</PublicShell></ChromeProvider>;
 }

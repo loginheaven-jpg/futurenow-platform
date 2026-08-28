@@ -6,7 +6,6 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { GENDERS } from '@/contracts/vocab';
 import { RELIGIONS, KPC_RE, CURRENT_YEAR } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
-import { AppHeader } from '../AppHeader';
 import { ConsentBlock } from '@/app/_consent/ConsentBlock';
 import { FORUM_MATCH_CONSENT, PRIVACY_CONSENT, SENSITIVE_CONSENT } from '@/app/_consent/consent';
 
@@ -70,21 +69,18 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 export function AuthGate({
   allowCoachApply = false,
   allowForumMatch = false,
-  title,
   busy,
   onSignup,
   onLogin,
-  onBack,
 }: {
   allowCoachApply?: boolean;
   // `/signup`(일반 가입)에서만 켠다. `/join`(코드 가입)은 차수 코드가 곧 승인이라 대조 키가 필요 없다.
   allowForumMatch?: boolean;
-  /** **기본값을 걷었다**(U-2) — 없으면 헤더를 그리지 않는다. 껍데기가 그리는 자리에서 둘이 되지 않게. */
-  title?: string;
+  // **`title`·`onBack` 을 걷었다**(U-4 §1) — 헤더 전용 프롭이었다.
+  //   제목은 `join/joinChrome` 이 들고 뒤로는 `JoinClient` 가 껍데기에 알린다.
   busy?: boolean;
   onSignup?: (p: SignupPayload) => void;
   onLogin?: (email: string, password: string) => void;
-  onBack?: () => void; // 제공 시(/join 진입 플로우) 출구 부여 — sub 헤더(‹뒤로=이전 스텝 + 홈). 미제공(/signup)이면 flow 유지(SignupClient 가 현관 링크 제공).
 }) {
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
   const [email, setEmail] = useState('');
@@ -159,7 +155,7 @@ export function AuthGate({
     <div>
       {/* **제목이 오면 그린다.** `/join` 은 단계마다 제목이 달라 여전히 넘기고(U-4),
           `/signup` 은 표가 들어 껍데기가 그리므로 넘기지 않는다 — 그러면 헤더가 둘이 되지 않는다. */}
-      {title ? <AppHeader variant={onBack ? 'sub' : 'flow'} title={title} onBack={onBack} /> : null}
+      {/* **헤더는 껍데기가 그린다**(U-4 §1). 단계 제목·뒤로는 `join/joinChrome` 표가 들고 `useSetChrome` 이 껍데기에 알린다. */}
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
         <TabBtn active={mode === 'signup'} onClick={() => setMode('signup')}>처음이에요</TabBtn>
         <TabBtn active={mode === 'login'} onClick={() => setMode('login')}>계정이 있어요</TabBtn>

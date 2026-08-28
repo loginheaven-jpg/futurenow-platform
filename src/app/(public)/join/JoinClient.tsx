@@ -3,6 +3,8 @@
 // UX통합가입 S3: 가입 시 프로필(성별·생년…)을 metadata 로 트리거 저장. 프로필 단계는 계정값 프리필 후 motivation(계기)만.
 //   subjectProfile 박제 = saveResponse 직전 계정(getProfile) 값 복사 + motivation(사전). 참여자 화면 경고색 배제.
 import { useEffect, useMemo, useState } from 'react';
+import { useSetChrome } from '@/app/_screens/shell/chromeContext';
+import { joinChrome } from './joinChrome';
 import { useRouter } from 'next/navigation';
 import type { CohortPreviewMeta, UserProfile } from '@/contracts';
 import { createCoreContext } from '@/core/context';
@@ -211,6 +213,14 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
     }
   }
 
+  // **단계 크롬을 껍데기에 알린다**(U-4 §1) — 제목·부제·뒤로가 여기서 한 번에 선다.
+  //   표는 값만 들고(`joinChrome`) 뒤로의 **동작**은 화면이 든다 — 단계 전환은 상태이기 때문이다.
+  const c = joinChrome(step, { isGeneral: code === GENERAL_CODE, cohortName: meta?.name, hasMeta: !!meta });
+  const backStep = c?.back;
+  useSetChrome(
+    c ? { variant: c.variant, title: c.title, subtitle: c.subtitle, onBack: backStep ? () => setStep(backStep) : undefined } : null,
+  );
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {error ? (
@@ -223,8 +233,8 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
       )}
       {step === 'code' && <CodeInput onSubmit={onCode} onExperience={() => onCode(GENERAL_CODE)} />}
       {step === 'preview' && meta && <CohortPreview meta={meta} onEnter={onEnter} onCancel={() => setStep('code')} busy={busy} isGeneral={code === GENERAL_CODE} />}
-      {step === 'auth' && <AuthGate title="들어가기" onSignup={onSignup} onLogin={onLogin} busy={busy} onBack={() => setStep(meta ? 'preview' : 'code')} />}
-      {step === 'start' && meta && <StartGuide cohortName={meta.name} onStart={onStart} />}
+      {step === 'auth' && <AuthGate onSignup={onSignup} onLogin={onLogin} busy={busy} />}
+      {step === 'start' && meta && <StartGuide onStart={onStart} />}
       {step === 'profile' && <ProfileForm accountProfile={accountProfile} onSubmit={onProfileSubmit} busy={busy} />}
       {step === 'runner' && meta && (
         <ResponseRunner

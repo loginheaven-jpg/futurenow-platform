@@ -21,6 +21,7 @@
 //
 // 사용: node scripts/verify.mjs
 import { execSync } from 'node:child_process';
+import { judgeTestFiles } from './verifyJudge.mjs';
 
 const run = (cmd) => {
   try { return { out: execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }), code: 0 }; }
@@ -77,7 +78,7 @@ const say = (label, body) => { console.log(`\n── ${label} ──`); console.
   // (가) — **`failed` 가 하나라도 있으면** 그 줄이 곧 실패 판정이다(규칙 좁힘 2026-09-01).
   //   **`skipped` 는 실패가 아니다** — 우리가 `skipIf` 를 승인하며 만든 **의도된 상태**다.
   //   그것을 실패로 세면 규칙이 만들어진 다음 회차에 스스로를 문다. 다만 **수와 사유를 적는다.**
-  if (files && /failed/.test(files)) missing.push(`Test Files 에 failed: ${files.trim()}`);
+  { const why = judgeTestFiles(files); if (why) missing.push(why); }
   if (files && /\d+ skipped/.test(files)) {
     console.log('');
     console.log('  스킵 사유 — 전부 **의도된 옵트인**이다:');
@@ -96,6 +97,5 @@ const say = (label, body) => { console.log(`\n── ${label} ──`); console.
   if (!routes) missing.push('라우트 표 없음');
 }
 
-console.log('');
 if (missing.length) { console.error(`X 검증 실패 — ${missing.join(' · ')}`); process.exit(1); }
 console.log('O 네 지표 전항 통과 — 위 출력 전문을 그대로 보고에 붙인다');

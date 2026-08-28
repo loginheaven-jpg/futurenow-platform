@@ -7,6 +7,8 @@
 // `loginOutcome`·`safeReturn`·`rosterModel` 과 같은 관행이다 — 판정을 순수 함수로 떼어
 //   테스트가 닿게 한다.
 
+import { CONSOLE_DOOR } from '@/app/_vocab/doors';
+
 export interface ConsoleNavItem {
   href: string;
   label: string;
@@ -41,7 +43,7 @@ export function consoleNav(input: { role: 'user' | 'coach' | 'admin'; pathname: 
   groups.push({
     title: '인도자',
     items: [
-      { href: '/coach', label: '콘솔 홈' },
+      { href: CONSOLE_DOOR.href, label: CONSOLE_DOOR.label }, // U-4 §3 — 표의 제목과 같은 이름을 쓴다
       { href: '/coach/cohorts', label: '모든 차수' },
       { href: '/coach/new', label: '차수 개설' },
     ],

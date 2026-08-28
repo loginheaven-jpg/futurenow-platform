@@ -5,7 +5,6 @@
 //   판정한 경로). **보낼 곳이 없다.** 그래서 제출을 DB 에 적재하고 운영자가 콘솔에서 읽는다 —
 //   제출이 실재하는 곳으로 가므로 **죽은 폼이 아니다.** SMTP 가 서면 알림만 얹으면 된다.
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { createServerContext } from '@/core/supabase/server';
 import { ContactForm } from './ContactForm';
 
@@ -25,9 +24,8 @@ export default async function ContactPage() {
       </p>
       {/* 로그인 상태면 이름을 채워 둔다. 계정이 함께 기록되므로 누가 보냈는지도 남는다. */}
       <ContactForm defaultName={me?.name ?? ''} defaultEmail={me?.email ?? ''} />
-      <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-6)' }}>
-        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
-      </p>
+      {/* **「처음으로」를 걷었다**(U-4 §5) — 껍데기 로고가 같은 자리를 대신한다.
+          목적지가 같고(`/`) **4폭 전부에서 로고가 실제로 보인다**는 실브라우저 실측을 받고 걷었다. */}
     </div>
   );
 }

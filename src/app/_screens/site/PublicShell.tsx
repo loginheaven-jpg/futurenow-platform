@@ -30,6 +30,7 @@ import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { SCREEN_CHROME, patternOf } from '@/app/_lib/screenChrome';
+import { useChrome } from '@/app/_screens/shell/chromeContext';
 import {
   PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG, SITE_NAME, PUBLIC_MENU_TITLE,
   FOOTER_NOTE_HREF, FOOTER_NOTE_LEAD, FOOTER_NOTE_LINK,
@@ -42,6 +43,28 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '/';
   const params = useParams() as Record<string, string | string[] | undefined>;
   const chrome = SCREEN_CHROME[patternOf(pathname, params)];
+  // **화면이 알려 온 크롬이 표를 이긴다**(U-4 §1) — `/join` 처럼 라우트 하나에 단계가 여럿인 자리다.
+  //   통로 밖이면 `null` 이고 표가 그대로 이긴다.
+  const override = useChrome();
+  if (override) {
+    return (
+      <>
+        <AppHeader
+          variant={override.variant ?? (override.onBack || override.backHref ? 'sub' : 'flow')}
+          title={override.title}
+          subtitle={override.subtitle}
+          backHref={override.backHref}
+          onBack={override.onBack}
+        />
+        <main>{children}</main>
+      </>
+    );
+  }
+  // **표가 `none` 이면 민무늬다** — GNB 도 푸터도 그리지 않는다.
+  //   표에서 `none` 은 *껍데기 없음*이라고 이미 적혀 있었고(‘제목이 설 자리가 없다’),
+  //   그 뜻을 껍데기가 실제로 지키게 했다. **오늘 영향받는 라우트는 `/join` 하나다** —
+  //   `/c/[code]/*` 는 이 그룹 밖에 산다(실측). `/join` 의 세 단계가 여기로 온다.
+  if (chrome?.kind === 'none') return <main>{children}</main>;
   if (chrome?.kind === 'bar') {
     return (
       <>

@@ -30,6 +30,7 @@ import { MenuSheet } from '@/app/_screens/site/MenuSheet';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { consoleNav, isCurrent } from './consoleNav';
 import { SCREEN_CHROME, patternOf, resolveBack } from '@/app/_lib/screenChrome';
+import { useChrome } from '@/app/_screens/shell/chromeContext';
 
 /** 「이 기수」 묶음만 탭 줄이 든다. 나머지는 시트가 든다. */
 const TAB_GROUP = '이 기수';
@@ -46,6 +47,9 @@ export function ConsoleShell({
   const params = useParams() as Record<string, string | string[] | undefined>;
   const pattern = patternOf(pathname, params);
   const chrome = SCREEN_CHROME[pattern];
+  // **화면이 알려 온 크롬이 표를 이긴다**(U-4 §1) — `/join` 처럼 라우트 하나에 단계가 여럿인 자리다.
+  //   통로 밖이면 `null` 이고 표가 그대로 이긴다.
+  const override = useChrome();
   const groups = consoleNav({ role, pathname });
   if (groups.length === 0) return <>{children}</>; // 참여자 — 셸 없이 그대로
 
@@ -61,8 +65,8 @@ export function ConsoleShell({
           `root` 인 자리는 뒤로가 없다(홈이 제목을 겸한다) — **홈 어포던스를 둘로 두지 않는다**(규칙 4). */}
       <AppHeader
         variant={chrome?.kind === 'bar' ? chrome.variant : 'sub'}
-        title={chrome?.kind === 'bar' ? chrome.title : '콘솔'}
-        backHref={resolveBack(pattern, params)}
+        title={override?.title ?? (chrome?.kind === 'bar' ? chrome.title : '콘솔')}
+        backHref={override?.backHref ?? resolveBack(pattern, params)}
         action={
           <>
             {/* **로그아웃·내 정보를 잃지 않는다.** 사이드바 시절 화면들이 `headerActions` 로

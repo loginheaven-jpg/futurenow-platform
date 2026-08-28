@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from './LogoutButton';
 import { HomeIcon } from './AppHeader';
+import { HOME_DOOR } from '@/app/_vocab/doors';
 
 const linkStyle = {
   color: 'var(--color-text-on-accent)',
@@ -30,9 +31,10 @@ export function HeaderActions({ homeHref, navHref, navLabel }: { homeHref?: stri
     <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
       {showHome ? (
         // 홈 복귀 = 라벨드 컨트롤(아이콘 + '홈' 텍스트) — 인지성 강화(A′-5). 자기참조(현재=홈)면 위에서 생략.
-        <Link href={homeHref} aria-label="홈" className="t-caption ui-tappable" style={{ ...linkStyle, gap: 'var(--space-1)' }}>
+        // **이름은 `_vocab/doors` 하나에서 온다**(U-4 §3) — 보이는 이름과 접근성 이름이 같다.
+        <Link href={homeHref} aria-label={HOME_DOOR.label} className="t-caption ui-tappable" style={{ ...linkStyle, gap: 'var(--space-1)' }}>
           <HomeIcon />
-          홈
+          {HOME_DOOR.label}
         </Link>
       ) : null}
       {navHref && navLabel ? (
