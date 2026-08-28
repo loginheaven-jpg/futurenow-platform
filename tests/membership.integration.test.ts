@@ -405,6 +405,54 @@ describe.skipIf(!ENABLED)('자동 전이 폐지와 쓰기 봉쇄 (실DB)', () =>
     } finally { await close(client); }
   });
 
+  // ── `이용 보류` 안내 문안 (최박사 확정 2026-08-30 · `20260831100000`) ──────────────
+  //
+  //   **정의 문자열을 읽어 확인하지 않는다.** 함수 본문에 그 문장이 있다는 것과
+  //   **실제로 그 문장이 던져진다**는 것은 다른 사실이다 — 앞은 문자열의 존재이고
+  //   뒤는 동작이다. 게이트 잠금에서 *있는가/작동하는가* 를 가른 것과 같은 형식이라,
+  //   여기서는 **띄워서 받는다.**
+  it('**`expired` 는 최박사 문구를 던진다** — `held` 와 뭉개지지 않는다', async () => {
+    const client = await open();
+    try {
+      const raised = async (uid: string): Promise<{ code: string; message: string }> => {
+        await client.query('savepoint hm');
+        try {
+          await client.query(`set local role authenticated`);
+          await client.query(`select set_config('request.jwt.claims','{"sub":"${uid}","role":"authenticated"}',true)`);
+          await client.query(`select public.feed_assert_writable('${uid}')`);
+          return { code: '(안 던졌다)', message: '' };
+        } catch (e) {
+          const err = e as { code: string; message: string };
+          return { code: err.code, message: err.message };
+        } finally {
+          await client.query('rollback to savepoint hm');
+          await client.query('reset role');
+        }
+      };
+
+      // ① **대조군** — 아무 상태도 아니면 던지지 않는다. 이것이 없으면 아래 문장이
+      //    *보류라서* 나온 것인지 *원래 다 막혀서* 나온 것인지 못 가른다.
+      await client.query(`delete from public.memberships where user_id='${MEMBER}'`);
+      expect((await raised(MEMBER)).code, '대조군 · 막힐 이유가 없으면 던지지 않는다').toBe('(안 던졌다)');
+
+      // ② `expired` — **최박사 문구 그대로.**
+      await client.query(seed(MEMBER, 'expired', null));
+      const ex = await raised(MEMBER);
+      expect(ex.code).toBe('55000');
+      expect(ex.message, '최박사 확정 문안이 그대로 나와야 한다')
+        .toBe('이용이 보류되었습니다. 운영자에게 문의해 주십시오.');
+
+      // ③ `held` — **함께 바뀌지 않았다.** 두 상태는 뜻이 달라 한 문장으로 뭉개면 안 된다
+      //    (`held` 는 *확인 중*, `expired` 는 *보류됨*).
+      await client.query(seed(MEMBER, 'held', null));
+      const hd = await raised(MEMBER);
+      expect(hd.code).toBe('55000');
+      expect(hd.message, 'held 문장이 함께 바뀌면 안 된다')
+        .toBe('계정 확인이 필요해 지금은 글을 올릴 수 없어요. 아래 문의로 알려 주시면 확인해 드릴게요.');
+      expect(hd.message, '두 문장이 같아지면 상태 구분이 사라진다').not.toBe(ex.message);
+    } finally { await close(client); }
+  });
+
   it('**마감이 자격을 만들지 않는다** — 트리거 폐지 확인', async () => {
     const client = await open();
     try {
