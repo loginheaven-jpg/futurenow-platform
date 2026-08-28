@@ -62,8 +62,13 @@ export function expectedAccess(state: string, kind: AccessKind): boolean {
  *   옛: `held > cohort > 저장 > pending` · 만료는 `valid_until` 로 **산출**
  *   새: `held > **expired** > cohort > 저장 > pending` · 만료 **산출 폐지**
  *
- * 아래 표는 **새 판정 기준**으로 적혀 있다. **적용 전에는 두 행이 레드가 되는 것이 정상**이고,
- * 그것이 곧 *표가 코드보다 앞선다* 는 뜻이다 — 적용 뒤 그린이 되면 그것이 검증이다.
+ * 아래 표는 **새 판정 기준**으로 적혀 있다. 그러나 **적용 전에도 레드로 두지 않는다** —
+ * 두 행에 `needsMigration` 을 달아 소비자가 원장을 보고 **건너뛰고 사유를 출력**한다.
+ *
+ * **레드를 정상이라 부르지 않는다.** 그것은 위험한 말버릇이고, 적용이 늦어지면
+ * 그 레드가 **다른 레드를 가린다** — *원래 빨간 거야* 가 되는 순간 진짜 결함이 들어와도 안 보인다.
+ * 스킵 메시지는 계속 출력되므로 **잊히지도 않는다**(*기다림에는 끝이 있어야 한다* 의 세 조건과 맞물린다 —
+ * 조건으로 끝나고, 상한이 있고, 넘기면 시끄럽다).
  */
 export interface PriorityCase {
   label: string;
@@ -75,6 +80,15 @@ export interface PriorityCase {
   expiredDate?: boolean;
   expect: string;
   why: string;
+  /**
+   * **이 기댓값이 성립하려면 적용돼 있어야 하는 마이그레이션 버전.**
+   *
+   * 표는 새 기준으로 앞서 있어도 되지만 **테스트가 레드로 서 있으면 안 된다** —
+   * 레드가 오래 서 있으면 *원래 빨간 거야* 가 되고, 그때 **진짜 결함이 들어와도 아무도 못 본다.**
+   * 그래서 소비자가 원장을 보고 **건너뛰되 사유를 시끄럽게 출력**한다
+   * (`tests/membership.integration.test.ts`).
+   */
+  needsMigration?: string;
 }
 
 export const PRIORITY_CASES: readonly PriorityCase[] = [
@@ -95,6 +109,7 @@ export const PRIORITY_CASES: readonly PriorityCase[] = [
   //   *최박사가 지정하신 승급을 시간으로 푸는* 유일한 경로였다. 이제 보지 않는다.
   //   **적용 전에는 이 행이 레드가 되는 것이 정상이다** — 표가 코드보다 앞서 있다.
   { label: '미등록 · individual(기간 지남)', seminarEnrolled: false, stored: 'individual', expiredDate: true, expect: 'individual',
+    needsMigration: '20260830090000',
     why: '**자동 만료 폐지**(2026-08-30) — 판정이 valid_until 을 보지 않는다. 지정한 승급은 시간으로 풀리지 않는다' },
   { label: '미등록 · expired(저장)', seminarEnrolled: false, stored: 'expired', expect: 'expired',
     why: '운영자가 손으로 끊은 경우' },
@@ -105,6 +120,7 @@ export const PRIORITY_CASES: readonly PriorityCase[] = [
   //   **해당자 0명이라 지금은 실해가 없으나**, 그 사실이 곧 *잴 필요가 없다* 는 뜻이 아니다 —
   //   지금 넣지 않으면 다음 사람이 순서를 되돌려도 아무것도 울지 않는다.
   { label: '**세미나 등록 · expired(저장)**', seminarEnrolled: true, stored: 'expired', expect: 'expired',
+    needsMigration: '20260830090000',
     why: 'expired 가 cohort 를 이긴다 — expired 는 탈퇴에 준하는 처리라, 지면 기수 등록만으로 탈퇴가 무력화된다(held 를 앞에 둔 것과 같은 근거)' },
 ];
 

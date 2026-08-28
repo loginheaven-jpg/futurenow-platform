@@ -13,6 +13,26 @@ import { ACCESS_KINDS, ACCESS_TABLE, PRIORITY_CASES, expectedAccess } from './fi
 
 const ENABLED = process.env.RUN_RLS_INTEGRATION === '1' && !!process.env.SUPABASE_DB_URL;
 
+/**
+ * **적용된 마이그레이션 원장** — 새 기준 케이스를 건너뛸지 판정한다.
+ *
+ * 선례는 `tests/feedReactionsMulti.migration.test.ts` 다. **방향이 반대인 것에 주의한다** —
+ *   그쪽: **이미 적용됐으면** 롤백 검증(적용 전 전용)을 건너뛴다.
+ *   이쪽: **아직 적용 전이면** 새 기준 행을 건너뛴다.
+ * 같은 도구를 반대 방향으로 쓰는 것이므로, 베낄 때 부호를 뒤집는 것을 잊지 말 것.
+ *
+ * **레드로 두지 않는 이유**: 표는 새 기준으로 앞서 있어도 되지만 테스트가 오래 빨가면
+ * *원래 빨간 거야* 가 되고 그때 **진짜 결함이 들어와도 아무도 못 본다.**
+ * 건너뛰되 **사유를 시끄럽게 출력**한다 — 건너뛴 것과 통과한 것은 다른 사실이다.
+ */
+const APPLIED_VERSIONS: ReadonlySet<string> = ENABLED ? await (async () => {
+  const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+  await c.connect();
+  const rows = (await c.query('select version from supabase_migrations.schema_migrations')).rows;
+  await c.end();
+  return new Set<string>(rows.map((r: { version: string }) => r.version));
+})() : new Set<string>();
+
 const MEMBER = '22222222-2222-2222-2222-222222222222';
 const COACH_A = '11111111-1111-1111-1111-111111111111';
 const COACH_B = '33333333-3333-3333-3333-333333333333';
@@ -73,7 +93,13 @@ describe.skipIf(!ENABLED)('회원 상태 판정 (실DB · 역할별)', () => {
   it('member_state 우선순위가 픽스처와 한 칸도 어긋나지 않는다', async () => {
     const client = await open();
     try {
+      const pending: string[] = [];
       for (const c of PRIORITY_CASES) {
+        // **적용 전이면 새 기준 행을 건너뛴다** — 레드가 다른 레드를 가리지 않게.
+        if (c.needsMigration && !APPLIED_VERSIONS.has(c.needsMigration)) {
+          pending.push(`${c.label} (마이그레이션 ${c.needsMigration} 대기)`);
+          continue;
+        }
         await client.query('savepoint pc');
         if (!c.seminarEnrolled) await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
         if (c.stored !== null) {
@@ -83,6 +109,10 @@ describe.skipIf(!ENABLED)('회원 상태 판정 (실DB · 역할별)', () => {
         expect(await stateOf(client, MEMBER), `${c.label} — ${c.why}`).toBe(c.expect);
         await client.query('rollback to savepoint pc');
         await client.query('release savepoint pc');
+      }
+      // **조용히 넘어가지 않는다.** 스킵 메시지가 계속 나오므로 잊히지 않는다.
+      if (pending.length > 0) {
+        console.log(`[진실표] 적용 대기 중 — ${pending.length} 행 건너뜀: ${pending.join(' · ')}`);
       }
     } finally { await close(client); }
   });
