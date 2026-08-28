@@ -598,3 +598,132 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 ---
 
 > **정합 갱신(2026-07-01)**: 본 문서를 v1.0 구현 현실에 맞췄다 — X1 색 확정·라이트 고정(다크 폐기)·`--color-text-on-gold`·`--space-5/7/8`·AppHeader `variant`·부제 navy-300·본부=root 셸(`--hq-*` 폐기)·PDF 팔레트 동기화 의무. 감사 근거는 지휘부 요청 감사(design-system-audit).
+
+---
+
+## 12. 껍데기 (App Shell) — 규약과 이관 (U-0)
+
+> **상위 방향(최박사)** — *"방문자·참여자·인도자 모두 동일한 UX 환경에서 동일한 서비스의
+> 다른 방에 있다는 느낌으로 쓰게 한다."* 껍데기는 하나이고 **방마다 담기는 항목만 다르다.**
+> 메뉴는 **한 자리에서만** 열린다. PC 콘솔도 예외가 아니다 — **좌측 사이드바를 없애고 상단바 하나**,
+> 항목이 많으면 상단바 아래 **탭 줄 한 단계까지만**.
+
+### 12.1 껍데기 셋 — 이름과 대상
+
+| 껍데기 | 대상 라우트 | 상단바 | 메뉴 진입 | 푸터 |
+|---|---|---|---|---|
+| **공개** | 미인증·공개 화면(`/` `/about` `/recruit` `/news` `/library` `/contact` `/join` `/login` `/signup` `/reset`) | 로고 + 우측 행동 하나 | 없음(항목이 적다) | 있음 |
+| **회원** | `/home` 이하 · `/my` · `/feed` · `/account` · `/c/[code]` · `/pending` | 로고 + `내 홈` + 메뉴 | **상단바 메뉴 하나** | 없음 |
+| **콘솔** | `/coach` · `/admin` | 로고 + `콘솔` + 메뉴 | **상단바 메뉴 하나**(사이드바 없음) | 없음 |
+
+### 12.2 화면이 껍데기를 선언하는 방법
+
+화면은 **자기가 어느 껍데기에 사는지만** 선언하고 **그리지 않는다.**
+선언은 **라우트 세그먼트의 `layout`** 이 진다(U-1 부터 만든다) — 화면 파일에 표시를 두지 않는다.
+경로가 곧 선언이므로 **화면이 잊어버릴 수가 없다.**
+
+### 12.3 규칙 넷
+
+1. **화면은 헤더를 그리지 않는다.** 어느 껍데기에 사는지만 선언하고 껍데기가 그린다.
+2. **껍데기는 겹치지 않는다.** 한 화면은 정확히 하나에 산다. **헤더 두 줄은 이 규칙 위반이다.**
+3. **이름을 셋으로 가른다** — 로고는 **처음 화면**(이동만 · 로그아웃 아님) ·
+   회원 껍데기의 홈은 **내 홈** · 콘솔의 홈은 **콘솔**.
+4. **껍데기 사이의 문은 한 곳씩** — 회원 → 콘솔은 **회원 메뉴 안 하나**,
+   콘솔 → 회원은 **상단바 `내 홈` 하나**, 어디서든 공개는 **로고**.
+
+### 12.4 이관 예외 목록 — **비면 완성이다**
+
+**정본은 `scripts/shellExceptions.json`** 이고 `tests/shellLock.test.ts` 가 실측과 대조한다.
+수를 여기 박지 않는다(따라가야 하는 값) — 산출은 `node scripts/shellAudit.mjs`.
+
+**배정 규칙**: **컴포넌트는 그것을 쓰는 화면과 같은 덩이에서 걷는다.**
+그러면 항목마다 따로 판단하지 않아도 되고, 화면이 늘어도 규칙이 그대로 선다.
+**걷는 덩이를 적지 않은 예외를 만들지 않는다** — 적지 않으면 예외가 영구가 된다.
+
+#### U-1 에서 걷는다 (공개)
+
+| 파일 | 덩이 |
+|---|---|
+| `/page.tsx` | U-1 |
+| `/about/page.tsx` | U-1 |
+| `/_screens/entry/AuthGate.tsx` | U-1 |
+| `/_screens/entry/CodeInput.tsx` | U-1 |
+| `/_screens/entry/CohortPreview.tsx` | U-1 |
+| `/_screens/entry/ProfileForm.tsx` | U-1 |
+| `/_screens/entry/StartGuide.tsx` | U-1 |
+
+#### U-2 에서 걷는다 (회원)
+
+| 파일 | 덩이 |
+|---|---|
+| `/account/page.tsx` | U-2 |
+| `/feed/page.tsx` | U-2 |
+| `/pending/page.tsx` | U-2 |
+| `/my/values/page.tsx` | U-2 |
+| `/my/cohorts/page.tsx` | U-2 |
+| `/my/cohorts/[cohortId]/checkin/[session]/page.tsx` | U-2 |
+| `/my/cohorts/[cohortId]/journey/page.tsx` | U-2 |
+| `/my/cohorts/[cohortId]/report/page.tsx` | U-2 |
+| `/my/cohorts/[cohortId]/values/page.tsx` | U-2 |
+| `/_consent/ConsentGate.tsx` | U-2 |
+| `/home/HomeScreen.tsx` | U-2 |
+| `/home/assessments/AssessmentsScreen.tsx` | U-2 |
+| `/my/cohorts/[cohortId]/CohortHomeScreen.tsx` | U-2 |
+
+#### U-3 에서 걷는다 (콘솔)
+
+| 파일 | 덩이 |
+|---|---|
+| `/coach/cohort/[cohortId]/checkin/page.tsx` | U-3 |
+| `/coach/cohort/[cohortId]/checkin/preview/page.tsx` | U-3 |
+| `/coach/cohort/[cohortId]/group/page.tsx` | U-3 |
+| `/coach/cohort/[cohortId]/matrix/page.tsx` | U-3 |
+| `/coach/cohort/[cohortId]/member/[userId]/page.tsx` | U-3 |
+| `/coach/cohort/[cohortId]/report/[responseId]/page.tsx` | U-3 |
+| `/coach/cohort/[cohortId]/values/page.tsx` | U-3 |
+| `/coach/CoachInfoGate.tsx` | U-3 |
+| `/admin/AdminMembers.tsx` | U-3 |
+| `/_screens/console/ConsoleHome.tsx` | U-3 |
+| `/_screens/console/AllCohorts.tsx` | U-3 |
+| `/_screens/console/CohortDetail.tsx` | U-3 |
+| `/_screens/console/CreateCohort.tsx` | U-3 |
+
+**면제 둘**(예외가 아니라 면제다 — 걷을 대상이 아니다):
+`_screens/site/PublicGnb.tsx`(부품 자신) · `_screens/site/SiteGallery.tsx`(`/preview` 전용).
+후자는 **두 겹으로 잠근다** — 선언(`preview/layout` 의 *운영 라우트 아님* + `PROTECTED_PREFIXES` 에 `/preview`)과
+**사실**(그 파일에 닿는 라우트가 전부 `/preview` 인가). **선언은 의도를 말하고 설정은 사실을 말한다.**
+
+### 12.5 무헤더 라우트 — 이관의 다른 쪽 지표
+
+껍데기가 서면 이 화면들은 **비로소 헤더를 갖는다**. 목록만 박고 수는 산출로 얻는다
+(`node scripts/shellAudit.mjs --routes`).
+
+- `/admin/approvals`
+- `/c/[code]/[session]`
+- `/c/[code]/values`
+- `/contact`
+- `/library`
+- `/login`
+- `/news/[id]`
+- `/news`
+- `/preview`
+- `/preview/report`
+- `/recruit`
+- `/reset/confirm`
+- `/reset`
+
+⚠ **이 목록은 실측이며 발주 초안과 다르다**(2026-08-31). 초안의 `/join`·`/signup`·
+`/my/cohorts/[cohortId]` 는 **두 단계 아래에서 헤더를 그리므로 무헤더가 아니다.**
+대신 `/admin/approvals`·`/preview`·`/preview/report` 가 무헤더다.
+
+### 12.6 콘솔이 지금 어떻게 생겼는가 — U-3 착수 전 실측
+
+**`ConsoleShell` 은 사이드바를 그리지 상단바를 그리지 않는다**(`console-nav`).
+그래서 `/admin`·`/coach/cohorts`·`/coach/new`·`/coach/cohort/[cohortId]` 가
+**헤더 없이 보이는 것은 사고가 아니라 설계**다 — 상단바 자리에 사이드바가 있었다.
+
+그리고 `/coach/cohort/[cohortId]/*` 일곱 화면은 그 사이드바 **위에 `AppHeader` 를 얹는다** —
+`coach/layout` 이 감싸므로 **지금 그 일곱은 내비가 두 겹**이고, 그것이 §12.3 규칙 2가 금지하는 상태다.
+
+→ **U-3 은 「없는 것을 세우고」와 「두 겹을 하나로」가 함께 있는 덩이다.**
+   세우는 쪽이 먼저다 — 고치면서 세우면 회귀가 크다.
