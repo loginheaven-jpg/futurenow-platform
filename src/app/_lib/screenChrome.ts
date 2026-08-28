@@ -24,7 +24,30 @@ import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
  */
 export type ChromeKind =
   | { kind: 'gnb'; menu: true }
-  | { kind: 'bar'; variant: 'root' | 'sub' | 'flow'; title: string; back?: string; menu: boolean; actions?: true }
+  | {
+      kind: 'bar';
+      variant: 'root' | 'sub' | 'flow';
+      title: string;
+      back?: string;
+      menu: boolean;
+      actions?: true;
+      /**
+       * **`flow` 아래 한 칸**(지휘부 판정 2026-08-29 · U-4 §5 후속).
+       *
+       * `flow` 가 뜻하는 것은 «진입 선형 플로우에서 **중간에 새는 것**을 막는다» 이지
+       *   «나가는 길이 **하나도** 없다» 가 아니다. 둘을 한 낱말로 부르던 것이 표기의 오류였고,
+       *   **표가 틀렸지 실물이 틀린 것이 아니다** — 화면은 그대로 두고 표를 실물에 맞춘다.
+       *
+       * 여기 적는 것은 **되돌아가는 문 하나**다. 가입을 그만두는 사람이 갈 곳이고,
+       *   없으면 **가입을 시작한 사람이 갇힌다.**
+       *   `sub` 로 올려 GNB 를 세우는 길을 쓰지 않는 이유가 여기 있다 —
+       *   **되돌아가는 문 하나와 여섯으로 흩어지는 문은 다르다.**
+       *
+       * 문은 **본문이 든다**(화면을 바꾸지 않았다). 이 칸은 *그 문이 있어야 한다* 는 선언이고
+       *   잠금이 그것을 잰다 — 걷히면 레드다.
+       */
+      exit?: { label: string; href: string; why: string };
+    }
   /**
    * **껍데기를 두르지 않는다.** 표에서 빼지 않고 여기 둔다 —
    *   *예외가 규약 밖에 살면 다음 사람이 못 본다*(지휘부 판정 · `flow` 둘에 준 근거와 같다).
@@ -63,7 +86,16 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   // ── 공개 영역이나 표를 함께 읽는다(지휘부 판정) — 껍데기가 하나이므로 표도 하나다.
   //   `/signup` 은 **단계가 없다**(실측: `step` 상태 0 · `AuthGate` 하나). 그래서 표로 풀린다.
   //   제목·모드는 `SignupClient` 가 넘기던 값 그대로다 — `title="회원가입"` · `onBack` 없음 → `flow`.
-  '/signup': { kind: 'bar', variant: 'flow', title: '회원가입', menu: false },
+  //   **`flow` 이나 되돌아가는 문 하나가 있다**(지휘부 판정 2026-08-29). 아래 `exit` 이 그것이다.
+  //   U-4 §5 에서 **4폭 실브라우저로 재어** 이 화면에는 로고가 서지 않음을 확인했다(로고 수 0) —
+  //   그래서 여섯 화면에서 걷은 「처음으로」를 **여기서만 남겼다.** 걷었으면 유일한 출구가 사라진다.
+  '/signup': {
+    kind: 'bar', variant: 'flow', title: '회원가입', menu: false,
+    exit: {
+      label: '처음으로', href: '/',
+      why: '가입을 그만두는 사람이 갈 곳. GNB 가 서지 않아(실측 로고 0) 이 문이 유일한 출구다.',
+    },
+  },
 
   // ── 껍데기 없음 — **제목이 설 자리가 없다**(실측 2026-09-01 · 지휘부 요구대로 재고 확정).
   //
@@ -76,6 +108,13 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   //   그 안내는 **자기 문장을 이미 들고 있고 제목 슬롯이 없다.** 껍데기를 씌우면
   //   *안내 한 줄* 위에 제목 바가 얹혀 오히려 이상해진다 — 그래서 **문안 결재가 필요 없다.**
   //   지나가는 길이지 머무는 화면이 아니다.
+  // ── `/join` — **표가 정할 수 없는 자리**(U-4 §1). URL 은 하나인데 화면이 여덟이다.
+  //   단계 크롬은 `(public)/join/joinChrome` 이 들고 화면이 통로로 알려 온다(표를 이긴다).
+  //   여기 `none` 은 *크롬이 없다* 가 아니라 **표가 들지 않는다**는 뜻이고,
+  //   통로가 `null` 을 주는 세 단계(`resolving`·`runner`·`done`)에서 실제로 민무늬가 된다 —
+  //   **오늘과 같다.** 진입 선형 플로우에 GNB·푸터를 새로 달지 않는다(위 `flow` 둘과 같은 근거).
+  '/join': { kind: 'none', why: '단계마다 크롬이 다르다 — 통로(useSetChrome)가 든다. 표는 라우트의 성질만 적는다.' },
+
   '/c/[code]/[session]': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
   '/c/[code]/values': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
 

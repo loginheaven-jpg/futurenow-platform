@@ -32,9 +32,8 @@ export default async function NewsListPage() {
           ))}
         </div>
       )}
-      <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-6)' }}>
-        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
-      </p>
+      {/* **「처음으로」를 걷었다**(U-4 §5) — 껍데기 로고가 같은 자리를 대신한다.
+          목적지가 같고(`/`) **4폭 전부에서 로고가 실제로 보인다**는 실브라우저 실측을 받고 걷었다. */}
     </div>
   );
 }

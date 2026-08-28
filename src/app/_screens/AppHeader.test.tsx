@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+// **문 이름은 한 곳에서 온다**(U-4 §3) — 단언도 그 출처를 읽는다. 값을 손으로 옮기면 사본이 둘이다.
+import { HOME_DOOR } from '@/app/_vocab/doors';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AppHeader } from './AppHeader';
 
@@ -17,7 +19,7 @@ describe('AppHeader 모드 셸 (X2a — 동선 규칙 강제)', () => {
     const html = renderToStaticMarkup(<AppHeader variant="sub" title="봄 1기" subtitle="진행 중" backHref="/coach" homeHref="/coach" />);
     expect(html).toContain('봄 1기');
     expect(html).toContain('aria-label="뒤로"');
-    expect(html).toContain('aria-label="홈"'); // 홈 복귀 항상 열림
+    expect(html).toContain(`aria-label="${HOME_DOOR.label}"`); // 홈 복귀 항상 열림
     expect(html).toContain('href="/coach"');
   });
 
@@ -32,7 +34,7 @@ describe('AppHeader 모드 셸 (X2a — 동선 규칙 강제)', () => {
     expect(html).toContain('참여 코드');
     expect(html).toContain('--navy-300'); // 부제 옅은 네이비(골드 아님)
     expect(html).not.toContain('aria-label="뒤로"'); // 출구 없음
-    expect(html).not.toContain('aria-label="홈"');
+    expect(html).not.toContain(`aria-label="${HOME_DOOR.label}"`);
     expect(html).not.toContain('--color-accent'); // 레거시 골드 부제 제거됨
   });
 });

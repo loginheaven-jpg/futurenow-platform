@@ -558,7 +558,12 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 
 ## 11. 미확정 (다음 세션)
 
-- **코치 등록 신청(신청자 측)** 화면·승인 후 알림 — 미정(운영자 측 승인/거절 `decide_coach_application`·AdminMembers는 구현).
+- **코치 등록 신청(신청자 측)** — **반은 닫혔다**(U-4 §7 실측 2026-08-29 · *문장이 아니라 코드를 열어 갈랐다*).
+  · **신청 화면은 있다** — `/signup` 의 `AuthGate allowCoachApply`(`grep -n allowCoachApply src/app/(public)/signup/SignupClient.tsx`).
+    `/login` 이 그 자리를 안내한다 — *「인도자 신청도 이곳에서 함께 하실 수 있습니다」*.
+  · **승인 후 알림은 여전히 없다** — `decide_coach_application` 본문에 `alerts` 가 **0건**이다
+    (`grep -c alerts supabase/migrations/20260628095527_decide_coach_application.sql`).
+    승인은 조용히 일어나고 신청자는 다시 들어와 봐야 안다. **미해소로 남긴다.**
 - ~~**면 위의 면이 없다**~~ · ~~**`--color-text-muted` 가 §10 대비 기준을 어긴다**~~ ·
   ~~**`--color-border-strong` = `--color-text-muted`**~~ — **셋 다 4차 F-0 에서 닫혔다**(2026-08-27).
   `surface-2` 가 `gray-100`(1.18)이 되어 카드가 면으로 서고, `text-muted` 가 `gray-600`(5.77)으로
@@ -589,9 +594,24 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
   `--color-text-secondary`(4.89)로 내렸다 — **골드 정체성이 그 자리에서 사라졌다.**
   해소하려면 `gold-800` 급(예 #8A5F10 → surface-2 위 4.78 · 흰 바탕 5.64)을 신설해야 하고
   그것은 팔레트 확장이라 **지휘부 확정 사항**이다. 임의로 만들지 않았다.
+  **U-4 §7 재실측(2026-08-29) — 그대로다.** `--gold-800` 은 `globals.css` 에 **없고**
+  키커는 여전히 내려간 색을 쓴다(`grep -n site-recruit__k src/app/_screens/site/site.css`
+  → `color: var(--color-text-secondary)`). **문장이 아니라 토큰과 클래스를 열어 확인했다.**
 - **다크 팔레트** — 라이트 고정(§1.3)이 현 정책. 필요해지면 X1 기준 직접 큐레이션 + 수동 토글 검토.
-- **B③ 코치 리포트 해석 문구** — AI 초안 생성·저장(구현) + 코치 수정 UI(B③-3) + 첫 열람 비차단 로딩 + PDF 반영(B③-4).
+  **미해소가 아니라 «닫아 둔 것»이다**(U-4 §7 실측) — 코드가 정책을 강제한다:
+  `globals.css` 의 `prefers-color-scheme` 등장 **1회**가 전부이고 그것은 *반전을 막는 사유 주석*이며,
+  실제 차단은 `color-scheme: only light` + `layout.tsx` 의 `viewport.colorScheme` 이다.
+  **부채 목록에 두되 «미정»과 구별한다** — 정하지 않은 것이 아니라 정해서 막아 둔 것이다.
+- **B③ 코치 리포트 해석 문구** — **셋으로 갈라 잰다**(U-4 §7 실측 2026-08-29):
+  · **코치 수정 UI(B③-3) — 있다.** `InterpretationPanel.tsx` 가 `saveCoachInterpretationAction` 을 부르고
+    「확정 저장」 단추가 선다(`grep -n saveEdit src/app/coach/cohort/[cohortId]/report/[responseId]/InterpretationPanel.tsx`).
+  · **첫 열람 비차단 로딩 — 없다.** 그 라우트에 `loading.tsx` 가 **부재**한다
+    (`ls src/app/coach/cohort/[cohortId]/report/[responseId]/loading.tsx`).
+  · **PDF 반영(B③-4) — 없다.** `report/pdf.tsx` 에 해석문을 싣는 자리가 없다
+    (`grep -ni interpret src/instruments/futurenow/report/pdf.tsx` → 주석 1줄뿐).
 - **PDF 라이브**(renderToBuffer 라우트) + 팔레트 X1 동기화(§1.1 노트) — 3.6 단위.
+  **미해소 확인**(U-4 §7 실측) — 앱의 API 라우트는 `src/app/api/version/route.ts` **하나**다
+  (`find src/app/api -name route.ts`). 지금 나가는 길은 인쇄(`ReportPrintButton`)뿐이다.
 
 > 해소됨(기록): 색 1차 팔레트(X1 확정 §1.1)·CohortPreview 계약(ADR-22 `CohortPreviewMeta` 추가)·다크 방향(라이트 고정 §1.3).
 
@@ -656,18 +676,18 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 #### U-3 에서 걷는다 (콘솔) — **비었다. 끝났다.**
 
 
-#### U-4 에서 걷는다 (이름과 문)
+#### U-4 에서 걷는다 (이름과 문) — **비었다. 목록이 다 비었으므로 이관이 끝났다.**
 
-| 파일 | 덩이 |
-|---|---|
-| `/_screens/entry/AuthGate.tsx` | U-4 |
-| `/_screens/entry/CodeInput.tsx` | U-4 |
-| `/_screens/entry/CohortPreview.tsx` | U-4 |
-| `/_screens/entry/ProfileForm.tsx` | U-4 |
-| `/_screens/entry/StartGuide.tsx` | U-4 |
+다섯(`_screens/entry/*`)이 함께 걷혔다(2026-08-29). 부품은 헤더를 그만 그리고,
+`/join` 의 단계 제목·부제·뒤로는 **표가 아니라 통로**가 든다 —
+`(public)/join/joinChrome.ts`(값) + `_screens/shell/chromeContext.tsx`(통로).
+**화면이 알려 온 크롬이 표를 이긴다.** `/join` 은 표에 `none` 으로 서고,
+그 뜻대로 공개 껍데기가 **민무늬**를 그리므로 GNB·푸터가 새로 생기지 않는다.
 
-**면제 둘**(예외가 아니라 면제다 — 걷을 대상이 아니다):
-`_screens/site/PublicGnb.tsx`(부품 자신) · `_screens/site/SiteGallery.tsx`(`/preview` 전용).
+**면제**(예외가 아니라 면제다 — 걷을 대상이 아니다):
+`_screens/site/PublicGnb.tsx`(부품 자신) · `_screens/site/SiteGallery.tsx`(`/preview` 전용) ·
+**`preview/entry/page.tsx`**(U-4 에서 늘었다 — 부품이 헤더를 그만 그리자 갤러리에서 제목이 사라질 자리라
+**지우지 않고 같은 표에서 읽어** 스스로 그린다. 사본을 만들지 않았다).
 후자는 **두 겹으로 잠근다** — 선언(`preview/layout` 의 *운영 라우트 아님* + `PROTECTED_PREFIXES` 에 `/preview`)과
 **사실**(그 파일에 닿는 라우트가 전부 `/preview` 인가). **선언은 의도를 말하고 설정은 사실을 말한다.**
 

@@ -2,7 +2,6 @@
 // §7.1 코드 입력 — OtpInput 5칸. 5칸 미완성 시 확인 비활성.
 import { useState } from 'react';
 import { Button, OtpInput } from '@/core/ui';
-import { AppHeader } from '../AppHeader';
 import { TOOL } from '@/app/_vocab/tool';
 
 export function CodeInput({ onSubmit, onExperience }: { onSubmit?: (code: string) => void; onExperience?: () => void }) {
@@ -10,7 +9,7 @@ export function CodeInput({ onSubmit, onExperience }: { onSubmit?: (code: string
   return (
     <div>
       {/* 진입 스텝도 출구(홈) 제공 — 전진밖에 없는 화면 보완. sub=우상단 홈 아이콘(/home). 코드는 첫 스텝이라 뒤로 없음. */}
-      <AppHeader variant="sub" title="참여 코드" />
+      {/* **헤더는 껍데기가 그린다**(U-4 §1). 단계 제목·뒤로는 `join/joinChrome` 표가 들고 `useSetChrome` 이 껍데기에 알린다. */}
       <p className="t-body-lg" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-6)' }}>
         인도자에게 받으신 5자리 코드를 입력해 주세요.
       </p>

@@ -10,40 +10,16 @@
   ],
   "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다. PublicShell 은 공개 껍데기 자신이다 — 껍데기를 만드는 파일까지 막으면 만들 수가 없다. ConsoleShell 은 콘솔 껍데기 자신이다(U-3).",
   "exemptDeclared": [
-    "src/app/_screens/site/SiteGallery.tsx"
+    "src/app/_screens/site/SiteGallery.tsx",
+    "src/app/preview/entry/page.tsx"
   ],
-  "exemptDeclaredWhy": "/preview 전용 — 운영 라우트가 아니다. 시안 갤러리에 운영 껍데기를 강제하면 갤러리를 못 쓴다. 면제는 두 겹으로 잠근다: 선언(preview/layout 의 '운영 라우트 아님' + PROTECTED_PREFIXES 에 /preview) 과 사실(이 파일에 닿는 라우트가 전부 /preview 인가).",
-  "exceptions": [
-    {
-      "file": "src/app/_screens/entry/AuthGate.tsx",
-      "chunk": "U-4",
-      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
-    },
-    {
-      "file": "src/app/_screens/entry/CodeInput.tsx",
-      "chunk": "U-4",
-      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
-    },
-    {
-      "file": "src/app/_screens/entry/CohortPreview.tsx",
-      "chunk": "U-4",
-      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
-    },
-    {
-      "file": "src/app/_screens/entry/ProfileForm.tsx",
-      "chunk": "U-4",
-      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
-    },
-    {
-      "file": "src/app/_screens/entry/StartGuide.tsx",
-      "chunk": "U-4",
-      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
-    }
-  ],
+  "exemptDeclaredWhy": "/preview 전용 — 운영 라우트가 아니다. 시안 갤러리에 운영 껍데기를 강제하면 갤러리를 못 쓴다. 면제는 두 겹으로 잠근다: 선언(preview/layout 의 '운영 라우트 아님' + PROTECTED_PREFIXES 에 /preview) 과 사실(이 파일에 닿는 라우트가 전부 /preview 인가). **U-4 에서 하나 늘었다** — `preview/entry` 는 부품이 헤더를 그만 그리자 갤러리에서 제목이 사라질 자리라, 지우지 않고 **같은 표(`joinChrome`)에서 읽어** 스스로 그린다. `SiteGallery` 와 같은 근거이고 같은 두 겹 잠금 아래 있다(선언: /preview 전용 · 사실: 이 파일에 닿는 라우트가 전부 /preview).",
+  "exceptions": [],
   "exemptOutside": [
     "src/app/_consent/ConsentGate.tsx"
   ],
   "exemptOutsideWhy": "**껍데기 바깥**이라 예외가 아니다(지휘부 판정 2026-09-01). `ConsentGate` 는 회원 영역에 들어가기 «전에» 서는 문이므로 안에 있지 않다. `(member)/layout` 이 동의 미완이면 껍데기를 두르지 않아 헤더가 겹치지 않고, 그 파일은 한 줄도 바뀌지 않는다(§4 무접촉과 §2 걷기가 함께 지켜진다). 잠금은 문자열이 아니라 **사실**을 잰다 — layout 이 동의 판정 뒤 맨 children 을 돌려주는가.",
   "carryOver": [],
-  "carryOverNote": "**비면 완성이다** — 예외 목록과 같은 형식이다. 적지 않으면 이월이 영구가 된다."
+  "carryOverNote": "**비면 완성이다** — 예외 목록과 같은 형식이다. 적지 않으면 이월이 영구가 된다.",
+  "exceptionsNote": "**비었다 — U-4 에서 다섯이 함께 걷혔다**(2026-08-29). `_screens/entry/*` 다섯은 헤더를 그만 그리고, 단계 제목·부제·뒤로는 `(public)/join/joinChrome` + 통로(`_screens/shell/chromeContext`)가 든다. 목록이 비면 껍데기 이관이 끝난다 — 다시 채우려면 chunk 를 먼저 적어라."
 }

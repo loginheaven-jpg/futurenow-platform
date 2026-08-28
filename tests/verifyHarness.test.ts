@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
+// 순수 판정 함수(.mjs) — **도구를 도구로 재기 위해 직접 부른다.**
+import { judgeTestFiles } from '../scripts/verifyJudge.mjs';
 
 // **검증 도구 자신을 잠근다**(지휘부 규칙 ㉣ · U-0 주석 도구 선례).
 //
@@ -15,10 +17,30 @@ describe('검증 도구 — 네 지표를 다 뽑는가', () => {
     }
   });
 
-  it('★ **`Test Files` 줄을 본다** — 안 보는 형태로 고치면 여기서 레드가 난다', () => {
-    expect(src, 'Test Files 줄을 뽑지 않는다 — 수집 실패가 숨는다').toMatch(/Test Files/);
-    // 그리고 **판정에 쓴다.** 뽑기만 하고 안 보면 U-2 에서 겪은 그대로다.
-    expect(src, 'Test Files 를 실패 판정에 쓰지 않는다').toMatch(/failed|todo/);
+  // ★★ **도구에 실물을 먹인다**(U-4 2026-08-29 · 이 잠금이 한 번 새 나갔다).
+  //   전에는 *`files &&` 와 `missing.push` 가 한 줄에 있는가* 를 **문자열로** 쟀다.
+  //   그래서 판정 정규식이 `/failed/`(백스페이스 문자)로 박혀 **아무것도 매치하지 않는데도**
+  //   초록이었고, `Test Files 8 failed` 인 회차에 도구가 **「전항 통과」와 exit 0** 을 냈다.
+  //   **쓰이는 모양은 맞았고 값이 틀렸다.** 이제 **판정 함수를 직접 불러** 실패 줄과 통과 줄을
+  //   **둘 다** 넣는다 — 대조군 없는 초록을 만들지 않는다.
+  it('★ 실패 줄을 넣으면 **실패라고 답한다**', () => {
+    expect(judgeTestFiles('Test Files  8 failed | 112 passed | 5 skipped (125)')).toMatch(/failed/);
+    expect(judgeTestFiles('Test Files  1 failed (1)')).toBeTruthy();
+  });
+
+  it('대조군 — 통과 줄과 스킵 줄에는 `null` 이다(스킵은 실패가 아니다)', () => {
+    expect(judgeTestFiles('Test Files  120 passed (120)')).toBeNull();
+    expect(judgeTestFiles('Test Files  115 passed | 5 skipped (120)')).toBeNull();
+  });
+
+  it('줄 자체가 없으면 실패다 — 없는 것을 통과로 읽지 않는다', () => {
+    expect(judgeTestFiles(undefined)).toBeTruthy();
+    expect(judgeTestFiles('')).toBeTruthy();
+  });
+
+  it('그리고 스크립트가 그 판정을 **실제로 부른다** — 부르지 않으면 위 셋이 헛돈다', () => {
+    expect(src, 'verify.mjs 가 judgeTestFiles 를 부르지 않는다').toContain('judgeTestFiles(files)');
+    expect(src, '판정 결과를 빠짐 목록에 넣지 않는다').toMatch(/missing\.push\(why\)/);
   });
 
   it('vitest 세 줄을 다 요구한다 — 하나라도 빠지면 스크립트가 실패한다(㉢)', () => {

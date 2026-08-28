@@ -18,6 +18,7 @@ import { redirect } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
 import { buildMemberSheet } from '@/app/_lib/memberSheet';
+import { ChromeProvider } from '@/app/_screens/shell/chromeContext';
 import { MemberShell } from '@/app/_screens/shell/MemberShell';
 import { COHORT_ROLE_LABEL } from '@/core/membershipVocab';
 
@@ -48,5 +49,10 @@ export default async function MemberLayout({ children }: { children: React.React
       }
     : null;
 
-  return <MemberShell sheet={sheet}>{children}</MemberShell>;
+  return (
+    // **통로가 껍데기와 화면을 함께 감싼다**(U-4 §1) — 화면이 알려 온 크롬을 껍데기가 읽는다.
+    <ChromeProvider>
+      <MemberShell sheet={sheet}>{children}</MemberShell>
+    </ChromeProvider>
+  );
 }

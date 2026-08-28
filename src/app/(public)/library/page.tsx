@@ -6,7 +6,6 @@
 // **목록은 RLS 가 가른다.** 여기에 role 분기를 쓰지 않는다 — 쓰면 판정이 두 곳이 되고,
 //   화면이 감추는 것은 안전장치가 아니다. 파일 접근은 `library_can_read` 가 한 번 더 막는다.
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { createServerContext } from '@/core/supabase/server';
 import type { LibraryTier } from '@/contracts/domain';
 import { LibraryList } from './LibraryList';
@@ -50,9 +49,8 @@ export default async function LibraryPage() {
         <p className="t-body" style={{ ...muted, marginTop: 'var(--space-5)' }}>아직 올라온 자료가 없습니다.</p>
       ) : null}
 
-      <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-6)' }}>
-        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
-      </p>
+      {/* **「처음으로」를 걷었다**(U-4 §5) — 껍데기 로고가 같은 자리를 대신한다.
+          목적지가 같고(`/`) **4폭 전부에서 로고가 실제로 보인다**는 실브라우저 실측을 받고 걷었다. */}
     </div>
   );
 }

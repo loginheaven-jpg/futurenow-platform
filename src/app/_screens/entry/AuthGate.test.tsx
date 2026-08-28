@@ -36,19 +36,17 @@ describe('AuthGate — 통합 가입/로그인 폼(S3)', () => {
     expect(html).not.toMatch(/--care|--danger|--warning/);
   });
 
-  // **U-2 에서 축이 하나 바뀌었다** — 헤더를 그리는 조건이 `title` 이다.
-  //   `/join` 은 단계마다 제목이 달라 여전히 넘기고(U-4), `/signup` 은 표가 들어
-  //   **껍데기가 그리므로 넘기지 않는다.** 뜻은 그대로다 — 출구는 `onBack` 이 가른다.
-  it('출구: 제목+onBack 이면(/join) 뒤로+홈, 제목이 없으면(/signup) 헤더 자체가 없다', () => {
-    const withBack = renderToStaticMarkup(<AuthGate title="들어가기" onSignup={noop} onLogin={noop} onBack={noop} />);
-    expect(withBack).toContain('aria-label="뒤로"');
-    expect(withBack).toContain('aria-label="홈"');
-    // 제목이 있고 onBack 이 없으면 `flow` — 출구가 없다(전과 같다).
-    const flowOnly = renderToStaticMarkup(<AuthGate title="들어가기" onSignup={noop} onLogin={noop} />);
-    expect(flowOnly).not.toContain('aria-label="홈"');
-    // 제목이 없으면 **헤더를 아예 안 그린다** — 껍데기가 그리는 자리다(헤더 두 줄 방지).
+  // **U-4 에서 축이 하나 더 바뀌었다** — 이 부품은 **이제 헤더를 그리지 않는다.**
+  //   `/join` 단계 제목·뒤로는 `join/joinChrome` + 통로(`useSetChrome`)가 들고
+  //   `/signup` 은 표가 든다. **단언을 지우지 않고 뜻을 옮겼다**(U-1 §7 선례):
+  //     ⑴ 여기서는 *헤더가 없다* 를 잠근다 — 헤더 두 줄이 나지 않는 근거다
+  //     ⑵ *뒤로+홈이 있다* 는 `joinChrome.test.ts` 가 `auth` 단계의 `back` 으로 잠근다
+  it('헤더를 그리지 않는다 — 껍데기가 그리는 자리다(헤더 두 줄 방지)', () => {
     const shellDraws = renderToStaticMarkup(<AuthGate onSignup={noop} onLogin={noop} />);
     expect(shellDraws).not.toContain('<header');
+    // `title` 프롭이 되살아나면 여기서 잡힌다 — 걷은 프롭은 걷힌 채로 있어야 한다.
+    const withCoach = renderToStaticMarkup(<AuthGate allowCoachApply onSignup={noop} onLogin={noop} />);
+    expect(withCoach).not.toContain('<header');
   });
 });
 

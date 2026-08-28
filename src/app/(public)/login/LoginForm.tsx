@@ -116,9 +116,8 @@ export function LoginForm({
         아직 계정이 없으신가요? <Link href="/signup" style={{ color: 'var(--color-primary)' }}>회원가입</Link>
         <span style={{ opacity: 0.8 }}> — 인도자 신청도 이곳에서 함께 하실 수 있습니다.</span>
       </p>
-      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-4)', textAlign: 'center' }}>
-        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
-      </p>
+      {/* **「처음으로」를 걷었다**(U-4 §5) — 껍데기 로고가 같은 자리를 대신한다.
+          목적지가 같고(`/`) **4폭 전부에서 로고가 실제로 보인다**는 실브라우저 실측을 받고 걷었다. */}
     </div>
   );
 }

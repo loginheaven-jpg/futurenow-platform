@@ -2,7 +2,6 @@
 // §7.2 차수 미리보기 — resolve_cohort_by_code 공개 메타. 민감정보 미노출. 비로그인 표시 가능.
 import type { CohortPreviewMeta } from '@/contracts';
 import { Button } from '@/core/ui';
-import { AppHeader } from '../AppHeader';
 import { SeminarIntro } from '../SeminarIntro';
 import { instrumentDisplay } from '../types';
 import { TOOL } from '@/app/_vocab/tool';
@@ -21,7 +20,7 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
   return (
     <div>
       {/* 출구(홈) 제공 — sub 우상단 홈 아이콘(/home). 뒤로는 아래 '아니에요'(→코드)로. */}
-      <AppHeader variant="sub" title={isGeneral ? TOOL.trial : '이 모임에 들어갑니다'} />
+      {/* **헤더는 껍데기가 그린다**(U-4 §1). 단계 제목·뒤로는 `join/joinChrome` 표가 들고 `useSetChrome` 이 껍데기에 알린다. */}
       <div
         style={{
           background: 'var(--color-surface-2)',

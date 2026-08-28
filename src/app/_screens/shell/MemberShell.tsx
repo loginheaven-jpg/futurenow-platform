@@ -13,12 +13,14 @@
 import { usePathname, useParams } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
+import { HOME_DOOR } from '@/app/_vocab/doors';
 import { useState } from 'react';
 import { SiteGnb } from '@/app/_screens/site/SiteGnb';
 import { MenuSheet } from '@/app/_screens/site/MenuSheet';
 import type { MenuGroup } from '@/app/_screens/site/MenuSheet';
 import type { SessionChip } from '@/app/_screens/site/SessionChipStrip';
 import { SCREEN_CHROME, patternOf, resolveBack } from '@/app/_lib/screenChrome';
+import { useChrome } from './chromeContext';
 
 export interface ShellSheet {
   name: string;
@@ -34,6 +36,9 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
   const params = useParams() as Record<string, string | string[] | undefined>;
   const pattern = patternOf(pathname, params);
   const chrome = SCREEN_CHROME[pattern];
+  // **화면이 알려 온 크롬이 표를 이긴다**(U-4 §1) — `/join` 처럼 라우트 하나에 단계가 여럿인 자리다.
+  //   통로 밖이면 `null` 이고 표가 그대로 이긴다.
+  const override = useChrome();
 
   // 표에 없거나 «껍데기 없음» 이면 **그리지 않는다.** 빈 제목을 그리면 조용히 이상해지고,
   //   표에 없는 라우트는 `tests/screenChrome.test.ts` 가 이미 레드로 잡는다.
@@ -71,13 +76,20 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
   return (
     <>
       <AppHeader
-        variant={chrome.variant}
-        title={chrome.title}
-        backHref={resolveBack(pattern, params)}
+        variant={override ? (override.variant ?? (override.onBack || override.backHref ? 'sub' : 'flow')) : chrome.variant}
+        title={override?.title ?? chrome.title}
+        subtitle={override?.subtitle}
+        onBack={override?.onBack}
+        backHref={override?.backHref ?? resolveBack(pattern, params)}
         action={
           chrome.actions || menuButton ? (
             <>
-              {chrome.actions ? <HeaderActions homeHref="/home" /> : null}
+              {/* **문은 하나씩이다**(U-4 §4 · 공통 규칙 4). `sub` 는 `AppHeader` 가 이미 홈 아이콘을 그린다 —
+                  거기에 홈을 또 넘기면 한 바에 같은 문이 둘이다. **실측으로 잡았다**: `journey`·`report`·
+                  `checkin/[session]` 세 화면이 홈 2개였다(`aria-label` 2 · `href="/home"` 2).
+                  `HeaderActions` 자신의 주석이 «sub 화면은 homeHref 를 넘기지 않는다» 라고 이미 적고 있었고
+                  U-2 가 그 조건을 빠뜨렸다. 규칙이 아니라 **조건**이 막는다. */}
+              {chrome.actions ? <HeaderActions homeHref={chrome.variant === 'sub' ? undefined : HOME_DOOR.href} /> : null}
               {menuButton}
             </>
           ) : undefined

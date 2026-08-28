@@ -93,8 +93,8 @@ export function ResetConfirmForm({
       {/* 출구 — 어느 단계에서도 로그인·현관으로 나갈 수 있게(A′-3) */}
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-6)', textAlign: 'center' }}>
         <Link href="/login" style={{ color: 'var(--color-primary)' }}>로그인</Link>
-        {' · '}
-        <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>
+      {/* **「처음으로」를 걷었다**(U-4 §5) — 껍데기 로고가 같은 자리를 대신한다.
+          목적지가 같고(`/`) **4폭 전부에서 로고가 실제로 보인다**는 실브라우저 실측을 받고 걷었다. */}
       </p>
     </div>
   );

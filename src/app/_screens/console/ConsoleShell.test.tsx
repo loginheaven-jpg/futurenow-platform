@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+// **문 이름은 한 곳에서 온다**(U-4 §3) — 단언도 그 출처를 읽는다. 값을 손으로 옮기면 사본이 둘이다.
+import { HOME_DOOR } from '@/app/_vocab/doors';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 // 콘솔 껍데기 — **화면에서 옮겨온 단언이 사는 자리** (U-3).
@@ -27,7 +29,7 @@ describe('콘솔 껍데기 — 상단바 하나 + 탭 줄 한 단계', () => {
     vi.resetModules(); mockNav('/coach/cohorts');
     const { ConsoleShell } = await import('./ConsoleShell');
     const html = renderToStaticMarkup(<ConsoleShell role="coach"><div /></ConsoleShell>);
-    expect(html).toContain('aria-label="홈"');
+    expect(html).toContain(`aria-label="${HOME_DOOR.label}"`);
     expect(html, '메뉴 여는 자리가 없다').toContain('site-gnb__burger');
   });
 
