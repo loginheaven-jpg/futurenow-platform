@@ -4,8 +4,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
 import { RawAnswers } from '@/instruments/futurenow/report/RawAnswers';
@@ -37,7 +35,6 @@ export default async function CoachReportPage({
   if (!resp) notFound(); // RLS 차단(비소유 코치)·부재 → 404
 
   const scores = futurenowScoring.score(resp.answers, { wave: resp.wave });
-  const backTo = `/coach/cohort/${resp.cohortId ?? cohortId}`;
 
   // PDF 문서 헤더용 메타(대상·차수·회차·날짜). 코치는 소유 차수라 getCohort·listCohortMembers 통과(RLS). 실패는 우아한 폴백.
   const [cohort, members] = await Promise.all([
@@ -72,7 +69,7 @@ export default async function CoachReportPage({
     <div className="report-print-root" style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* 앱 크롬(헤더·PDF 버튼) — 화면 전용(인쇄 제외) */}
       <div className="no-print">
-        <AppHeader variant="sub" title="개인 리포트" backHref={backTo} homeHref="/home" action={<HeaderActions />} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
         {/* 툴바 — 신상정보(팝업)·PDF. 신상정보는 홈→멤버관리 왕복 없이 리포트에서 바로(ADR-78). */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
           {/* 갈무리 왕복(ADR-118) — 나침반 점수를 보다가 '이 사람이 실제로 무엇을 하고 있지'를 물으면

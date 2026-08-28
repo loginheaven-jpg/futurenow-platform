@@ -5,9 +5,10 @@
   "exemptParts": [
     "src/app/_screens/site/PublicGnb.tsx",
     "src/app/_screens/site/PublicShell.tsx",
-    "src/app/_screens/shell/MemberShell.tsx"
+    "src/app/_screens/shell/MemberShell.tsx",
+    "src/app/_screens/console/ConsoleShell.tsx"
   ],
-  "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다. PublicShell 은 공개 껍데기 자신이다 — 껍데기를 만드는 파일까지 막으면 만들 수가 없다.",
+  "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다. PublicShell 은 공개 껍데기 자신이다 — 껍데기를 만드는 파일까지 막으면 만들 수가 없다. ConsoleShell 은 콘솔 껍데기 자신이다(U-3).",
   "exemptDeclared": [
     "src/app/_screens/site/SiteGallery.tsx"
   ],
@@ -37,75 +38,28 @@
       "file": "src/app/_screens/entry/StartGuide.tsx",
       "chunk": "U-4",
       "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/checkin/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/checkin/preview/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/group/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/matrix/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/member/[userId]/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/report/[responseId]/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/values/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/CoachInfoGate.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/admin/AdminMembers.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/ConsoleHome.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/AllCohorts.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/CohortDetail.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/CreateCohort.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
     }
   ],
   "exemptOutside": [
     "src/app/_consent/ConsentGate.tsx"
   ],
-  "exemptOutsideWhy": "**껍데기 바깥**이라 예외가 아니다(지휘부 판정 2026-09-01). `ConsentGate` 는 회원 영역에 들어가기 «전에» 서는 문이므로 안에 있지 않다. `(member)/layout` 이 동의 미완이면 껍데기를 두르지 않아 헤더가 겹치지 않고, 그 파일은 한 줄도 바뀌지 않는다(§4 무접촉과 §2 걷기가 함께 지켜진다). 잠금은 문자열이 아니라 **사실**을 잰다 — layout 이 동의 판정 뒤 맨 children 을 돌려주는가."
+  "exemptOutsideWhy": "**껍데기 바깥**이라 예외가 아니다(지휘부 판정 2026-09-01). `ConsentGate` 는 회원 영역에 들어가기 «전에» 서는 문이므로 안에 있지 않다. `(member)/layout` 이 동의 미완이면 껍데기를 두르지 않아 헤더가 겹치지 않고, 그 파일은 한 줄도 바뀌지 않는다(§4 무접촉과 §2 걷기가 함께 지켜진다). 잠금은 문자열이 아니라 **사실**을 잰다 — layout 이 동의 판정 뒤 맨 children 을 돌려주는가.",
+  "carryOver": [
+    {
+      "item": "헤더 부제(subtitle)",
+      "chunk": "U-4",
+      "why": "`/coach/cohort/[id]/matrix`·`/values` 는 헤더 부제로 **기수 이름**을 보이고 있었다. 표는 라우트의 성질만 들고 서버 데이터를 못 들어 U-3 에서 사라졌다. **실측(2026-09-01): 그 세 화면 어디에도 기수 이름이 없다** — 헤더·탭 줄·본문·시트 전부 X. 인도자가 어느 기수 화면인지 헤더에서 못 본다. 되살리려면 **화면→껍데기 부제 통로**가 필요하고 U-4 가 그 기제를 정한다(`/join` 단계 크롬과 같은 자리)."
+    },
+    {
+      "item": "`/coach/cohort/[id]/group` 부제",
+      "chunk": "U-4",
+      "why": "기수 이름이 아니라 **비교 문구**(`사전·사후 비교 · 차수 평균`)였다. 같은 통로로 함께 되살린다."
+    },
+    {
+      "item": "`/admin`·`/admin/approvals` 브라우저 실측",
+      "chunk": "U-4 이전",
+      "why": "QA 계정이 코치라 리다이렉트돼 재지 못했다. **운영자 화면 둘이 검증 밖에 있다.** 재는 방법(QA 운영자 계정 · 최박사 계정)은 다음 회차에 정한다."
+    }
+  ],
+  "carryOverNote": "**비면 완성이다** — 예외 목록과 같은 형식이다. 적지 않으면 이월이 영구가 된다."
 }

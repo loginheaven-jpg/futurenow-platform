@@ -16,7 +16,6 @@ import { SectionTitle } from '@/app/_screens/site/SectionTitle';
 import { WeekTimeline } from '@/app/_screens/site/WeekTimeline';
 import { LeaderCard } from '@/app/_screens/site/LeaderCard';
 import { BookPanel } from '@/app/_screens/site/BookPanel';
-import { PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG } from '@/app/_screens/site/publicNav';
 import { WEEK_CELLS } from '@/app/_screens/site/programCopy';
 import {
   LEADERS, BOOK_FACTS, BOOK_INTRO, BOOK_BUY, BOOK_NOTICE, BOOK_BULK,

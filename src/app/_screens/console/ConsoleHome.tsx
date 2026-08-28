@@ -1,13 +1,10 @@
 'use client';
 // §8.1 콘솔 홈 — 돌봄·할 일 중심. 먼저 챙길 분(최상단) → 진행 차수 → 모든 차수/새 차수.
-import type { ReactNode } from 'react';
 import { Button, ListRow } from '@/core/ui';
-import { AppHeader } from '../AppHeader';
 import { CohortCard } from './CohortCard';
 import type { CohortSummary, RosterMember } from '../types';
 
 export function ConsoleHome({
-  coachName,
   careMembers,
   cohorts,
   isAdmin = false,
@@ -17,7 +14,6 @@ export function ConsoleHome({
   onAllCohorts,
   onNewCohort,
   onOpenMember,
-  headerActions,
 }: {
   coachName: string;
   careMembers: RosterMember[];
@@ -29,11 +25,10 @@ export function ConsoleHome({
   onAllCohorts?: () => void;
   onNewCohort?: () => void;
   onOpenMember?: (id: string) => void;
-  headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   return (
     <div>
-      <AppHeader variant="root" title="인도자 콘솔" subtitle={coachName} homeHref="/home" action={headerActions} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
       {pendingCoachApps > 0 && (
         <button

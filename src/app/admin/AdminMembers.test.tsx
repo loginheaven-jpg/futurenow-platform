@@ -54,12 +54,9 @@ describe('AdminMembers (본부 — 승인 대기 + 멤버 관리)', () => {
     expect(empty).not.toContain('김신청');
   });
 
-  it('셸 헤더(본부) + headerActions 슬롯 전달 — Step 3.1', () => {
-    const withAction = render({ headerActions: <span>ADMIN_HDR</span> });
-    expect(withAction).toContain('본부'); // AppHeader title
-    expect(withAction).toContain('ADMIN_HDR'); // action 슬롯 전달
-    // A′-2: root 로고=통합 홈 링크(/home), 뒤로 없음
-    expect(withAction).toContain('href="/home"');
-    expect(withAction).not.toContain('aria-label="뒤로"');
+  // **셸 헤더 단언은 껍데기로 옮겼다**(U-3) — 제목 `본부` 는 `screenChrome` 표가 들고
+  //   `tests/screenChrome.test.ts` 가 잠근다. 여기서는 **화면이 더는 안 그린다**를 잰다.
+  it('**화면이 헤더를 그리지 않는다** — 껍데기가 그린다', () => {
+    expect(html, '헤더가 남아 있으면 사이드바 자리와 두 겹이 된다').not.toContain('<header');
   });
 });

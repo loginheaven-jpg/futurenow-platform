@@ -1,9 +1,8 @@
 'use client';
 // §8.2 차수 개설 — 3스텝(이름 → 정원·소개 → 완료·코드 공유). 한 화면 한 질문, 진행바.
 // 차수는 wave 중립(B-4): 사전/사후 선택 없음 — 사후는 개설이 아니라 코치가 차수 상세에서 개시(open_post_wave·ADR-55).
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Button, ProgressBar, Stepper } from '@/core/ui';
-import { AppHeader } from '../AppHeader';
 
 const inputStyle: CSSProperties = {
   width: '100%',
@@ -21,12 +20,10 @@ export function CreateCohort({
   code = 'RSTUV',
   onCreate,
   onDone,
-  headerActions,
 }: {
   code?: string;
   onCreate?: (input: { name: string; maxMembers: number; description?: string }) => Promise<{ code?: string; error?: string }>;
   onDone?: () => void;
-  headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
 }) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
@@ -88,7 +85,7 @@ export function CreateCohort({
 
   return (
     <div>
-      <AppHeader variant="sub" title="새 차수 만들기" subtitle={`${step} / 3 단계`} onBack={step > 1 ? () => setStep(step - 1) : undefined} homeHref="/home" action={headerActions} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <ProgressBar value={step} max={3} />
       </div>

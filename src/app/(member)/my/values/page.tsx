@@ -13,7 +13,6 @@
 // **게이트를 데이터보다 먼저** 통과시킨다(CLAUDE §9) — 자격 판정 뒤에야 응시 데이터를 읽는다.
 import { redirect } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
-import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 import { ValuesClient } from '@/app/(member)/my/cohorts/[cohortId]/values/ValuesClient';
 
 export const dynamic = 'force-dynamic';

@@ -4,8 +4,6 @@
 // 데이터: listResponses(wave별) → latestPerUser(재진단 dedup, 각 wave 최신 1건) → futurenowScoring.score → GroupView. 계약·DB 변경 0.
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { GroupView } from '@/instruments/futurenow/report/GroupView';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
@@ -31,11 +29,10 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
   };
   const [preScores, postScores] = await Promise.all([scoresFor('pre'), scoresFor('post')]);
   const hasComparison = postScores.length > 0;
-  const backTo = `/coach/cohort/${cohortId}`;
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title="그룹 리포트" subtitle={hasComparison ? `${TOOL.pre}·${TOOL.post} 비교 · 차수 평균` : `${TOOL.pre} · 차수 평균`} backHref={backTo} homeHref="/home" action={<HeaderActions />} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
       <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
         {preScores.length === 0 && postScores.length === 0 ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>

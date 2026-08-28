@@ -13,6 +13,9 @@ const MEMBER_ROOTS = ['home', 'account', 'feed', 'pending', 'my'];
 const ALSO_IN_TABLE: { root: string; base: string }[] = [
   { root: 'c', base: 'src/app/c' },
   { root: 'signup', base: 'src/app/(public)/signup' },
+  // **콘솔도 같은 표를 쓴다**(U-3) — 두 벌 만들지 않는다.
+  { root: 'coach', base: 'src/app/coach' },
+  { root: 'admin', base: 'src/app/admin' },
 ];
 
 /** `src/app` 아래 실제 라우트를 센다 — 주석이 아니라 **디렉터리 구조**가 정본이다. */
@@ -69,7 +72,22 @@ describe('뒤로는 값이 아니라 규칙이다 (지휘부 조건 ③)', () =>
       .filter(([, c]) => c.kind === 'bar' && c.back)
       .map(([k]) => k);
     // 늘어나면 규칙을 다시 봐야 한다는 뜻이다. 조용히 늘지 않게 수를 잠근다.
-    expect(pinned.sort()).toEqual(['/feed', '/my/cohorts/[cohortId]/report', '/pending']);
+    // 늘어나면 규칙을 다시 봐야 한다는 뜻이다. **콘솔 넷이 U-3 에서 더해졌다** —
+    //   전부 조상 규칙이 다른 곳을 가리키는 자리다(격자·기록은 갈무리 현황으로, 개설은 목록으로).
+    // **집합을 잠그고 순서는 재지 않는다** — 순서는 이 잠금이 말하려는 것이 아니다.
+    //   (한 번 순서에 매달려 세 번 헛돌았다. 재려는 것보다 좁지도 넓지도 않게.)
+    expect(pinned.sort()).toEqual([
+      '/admin/approvals',
+      '/coach/cohort/[cohortId]/matrix',
+      '/coach/cohort/[cohortId]/member/[userId]',
+      '/coach/cohort/[cohortId]/values',
+      '/coach/cohort/[cohortId]',
+      '/coach/cohorts',
+      '/coach/new',
+      '/feed',
+      '/my/cohorts/[cohortId]/report',
+      '/pending',
+    ].sort());
   });
 
   it('동적 세그먼트를 지금 값으로 되돌린다', () => {

@@ -27,6 +27,19 @@ const run = (cmd) => {
   catch (e) { return { out: `${e.stdout ?? ''}${e.stderr ?? ''}`, code: e.status ?? 1 }; }
 };
 
+/**
+ * 스킵 파일과 사유 — **형식으로 둔다**(지휘부 2026-09-01).
+ *   스킵은 실패가 아니지만 **왜 스킵인지가 보이지 않으면** 잊힌 레드와 구별되지 않는다.
+ *   파일이 늘거나 줄면 아래 목록과 실측이 갈리고, `tests/verifyHarness.test.ts` 가 그것을 잰다.
+ */
+const SKIP_REASONS = [
+  ['tests/membership.integration.test.ts', '실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다'],
+  ['tests/feed.integration.test.ts', '실DB 옵트인 — 같은 스위치'],
+  ['tests/rls.integration.test.ts', '실DB 옵트인 — 같은 스위치'],
+  ['tests/feedReactionsMulti.migration.test.ts', '적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)'],
+  ['tests/site.snapshot.test.tsx', '캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다'],
+];
+
 const missing = [];
 const say = (label, body) => { console.log(`\n── ${label} ──`); console.log(body.trim() || '(출력 없음)'); };
 
@@ -61,7 +74,15 @@ const say = (label, body) => { console.log(`\n── ${label} ──`); console.
     if (!v) missing.push(`vitest ${name} 줄 없음`);
   }
   // ㉠ — `passed`·`skipped` 밖의 상태가 하나라도 있으면 실패다. 그 줄이 곧 판정이다.
-  if (files && /\b(failed|todo)\b/.test(files)) missing.push(`Test Files 에 passed 아닌 것: ${files.trim()}`);
+  // (가) — **`failed` 가 하나라도 있으면** 그 줄이 곧 실패 판정이다(규칙 좁힘 2026-09-01).
+  //   **`skipped` 는 실패가 아니다** — 우리가 `skipIf` 를 승인하며 만든 **의도된 상태**다.
+  //   그것을 실패로 세면 규칙이 만들어진 다음 회차에 스스로를 문다. 다만 **수와 사유를 적는다.**
+  if (files && /failed/.test(files)) missing.push(`Test Files 에 failed: ${files.trim()}`);
+  if (files && /\d+ skipped/.test(files)) {
+    console.log('');
+    console.log('  스킵 사유 — 전부 **의도된 옵트인**이다:');
+    for (const [f, why] of SKIP_REASONS) console.log(`    ${f.padEnd(44)} ${why}`);
+  }
 }
 
 // ④ next build — 성공 여부 · 라우트 표

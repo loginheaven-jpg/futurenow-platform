@@ -15,7 +15,8 @@ function monthDay(iso: string): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-function Shell({ cohortId, children }: { cohortId: string; children: React.ReactNode }) {
+// `cohortId` 소품을 걷었다(U-2) — 헤더가 껍데기로 가면서 이 껍질이 쓰지 않게 됐다.
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* **헤더는 껍데기가 그린다**(U-2 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다 —
@@ -52,19 +53,19 @@ export default async function CheckinCardPage({
   // 회차 일정 조회 — 행이 없으면 '준비 중'(정상), 미래면 '아직 열리지 않음'.
   const sessions = await ctx.listCohortSessions(cohortId);
   const row = sessions.find((s) => s.sessionNo === sessionNo);
-  if (!row) return <Shell cohortId={cohortId}><Notice text="아직 준비 중입니다. 인도자가 일정을 올리면 열립니다." /></Shell>;
+  if (!row) return <Shell><Notice text="아직 준비 중입니다. 인도자가 일정을 올리면 열립니다." /></Shell>;
 
   // 서버 컴포넌트(force-dynamic)의 요청 시점 벽시계 — 회차 개폐 판정에 필수.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   if (new Date(row.opensAt).getTime() > now) {
-    return <Shell cohortId={cohortId}><Notice text={`아직 열리지 않았습니다 · ${monthDay(row.opensAt)}에 열립니다`} /></Shell>;
+    return <Shell><Notice text={`아직 열리지 않았습니다 · ${monthDay(row.opensAt)}에 열립니다`} /></Shell>;
   }
   const closed = new Date(row.closesAt).getTime() < now;
 
   // 미등록 회차는 '준비 중'(레지스트리에 없음 · ADR-85). 회차 추가 = sessionN.ts + 레지스트리 한 줄.
   const copy = getCheckinSession(sessionNo);
-  if (copy === null) return <Shell cohortId={cohortId}><Notice text="이 회차 갈무리는 준비 중입니다." /></Shell>;
+  if (copy === null) return <Shell><Notice text="이 회차 갈무리는 준비 중입니다." /></Shell>;
 
   const existing = await ctx.getMyCheckin(cohortId, sessionNo);
 
@@ -94,7 +95,7 @@ export default async function CheckinCardPage({
   });
 
   return (
-    <Shell cohortId={cohortId}>
+    <Shell>
       {/* **key 가 '고쳐 쓰기'를 살린다**(3차 T-2 · 발현을 테스트로 증명 2026-08-27 · 지휘부 사전 허가).
           `?edit=1` 은 **같은 라우트의 쿼리 변경**이라 재마운트가 없다. 그런데 카드는
           `useState(initialMode)` 로 모드를 잡고 `setMode` 는 둘 다 `'read'` 로만 간다 —

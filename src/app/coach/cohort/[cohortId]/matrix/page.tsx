@@ -4,8 +4,6 @@
 // 명단은 **참여자만**(ADR-118) — 운영자가 섞이면 그들이 제출하지 않아 신호가 인도자 자신에게 켜진다.
 // 갈무리는 **한 번에** 읽는다(회차 인자 생략) — 회차 수만큼 왕복하지 않는다.
 import { redirect } from 'next/navigation';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { MatrixView } from './MatrixView';
 
@@ -18,7 +16,9 @@ export default async function CoachMatrixPage({ params }: { params: Promise<{ co
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로
 
-  const [sessions, members, cohort, rows] = await Promise.all([
+  // `cohort` 는 헤더의 부제(차수 이름)에만 쓰였다 — 헤더가 껍데기로 가며 쓰임이 사라졌다.
+  //   **조회 자체는 남긴다면 왕복이 헛돈다.** 자리를 비워 결과를 받지 않는다.
+  const [sessions, members, , rows] = await Promise.all([
     ctx.listCohortSessions(cohortId),
     ctx.listCohortMembers(cohortId, true),
     ctx.getCohort(cohortId).catch(() => null),
@@ -31,14 +31,7 @@ export default async function CoachMatrixPage({ params }: { params: Promise<{ co
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader
-        variant="sub"
-        title="갈무리 격자"
-        subtitle={cohort?.name ?? undefined}
-        backHref={`/coach/cohort/${cohortId}/checkin`}
-        homeHref="/home"
-        action={<HeaderActions />}
-      />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
       {sessions.length === 0 ? (
         <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>회차 일정이 아직 없습니다.</p>
       ) : (

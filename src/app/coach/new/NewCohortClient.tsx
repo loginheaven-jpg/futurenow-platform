@@ -7,5 +7,5 @@ import { createCohortAction } from './actions';
 
 export function NewCohortClient() {
   const router = useRouter();
-  return <CreateCohort onCreate={createCohortAction} onDone={() => router.push('/coach')} headerActions={<HeaderActions />} />;
+  return <CreateCohort onCreate={createCohortAction} onDone={() => router.push('/coach')} />;
 }

@@ -21,7 +21,6 @@ export default async function AccountPage() {
   //   심각도가 전혀 다르다(피드 사진 서명 실패와 같은 계열).
   const membership = await ctx.getMyMembershipView().catch(() => undefined);
   // 홈 복귀 = 통합 홈 /home(A′-2 — 역할 무관 단일 홈. 콘솔·본부는 홈의 운영 카드로 진입).
-  const homeHref = '/home';
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>

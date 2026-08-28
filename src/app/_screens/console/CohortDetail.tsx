@@ -4,7 +4,6 @@
 import Link from 'next/link';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, Stepper } from '@/core/ui';
-import { AppHeader } from '../AppHeader';
 import { GENERAL_CODE } from '../entry/general';
 import type { CohortSummary, RosterMember } from '../types';
 import { RosterRow } from './RosterRow';
@@ -56,7 +55,6 @@ export function CohortDetail({
   status = 'active',
   maxMembers = 100,
   postOpened = false,
-  backHref,
   onOpenMember,
   onArchive,
   actionPending = false,
@@ -69,7 +67,6 @@ export function CohortDetail({
   onDelete,
   onRemoveMember,
   canManageMembers = false,
-  headerActions,
   isAdmin = false,
   memberCount = 0,
   responseCount = 0,
@@ -94,7 +91,6 @@ export function CohortDetail({
   onDelete?: () => void | Promise<void>; // 차수 하드삭제(파괴적) → deleteCohort. ADR-67
   onRemoveMember?: (userId: string, name: string) => void | Promise<void>; // 참여자 제거(휴지통) → removeCohortMember. ADR-73
   canManageMembers?: boolean; // 휴지통 노출 — 해당 차수 코치 또는 운영자만(서버 판정)
-  headerActions?: ReactNode; // 셸 헤더 우측(로그아웃·내 정보). 미리보기는 미전달 → 렌더 0.
   isAdmin?: boolean; // 운영자 = 데이터 있는 차수도 삭제 가능(코치는 빈 차수만). ADR-67
   memberCount?: number; // 참여 수(삭제 가능 판정·컨펌 영향)
   responseCount?: number; // 응답 수(동)
@@ -208,7 +204,7 @@ export function CohortDetail({
 
   return (
     <div>
-      <AppHeader variant="sub" title={cohort.name} subtitle={archived ? '마감됨' : '진행 중'} backHref={backHref} homeHref="/home" action={headerActions} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
       {/* 관리(마감·정원) — 헤더 메뉴. 인도자 화면이라 의미색 허용 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>

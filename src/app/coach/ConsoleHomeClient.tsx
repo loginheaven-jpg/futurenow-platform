@@ -3,7 +3,6 @@
 // 먼저 챙길 분의 id 는 `${cohortId}__${responseId}` 합성(리포트 진입에 cohortId 필요) — 여기서 분해.
 import { useRouter } from 'next/navigation';
 import { ConsoleHome } from '@/app/_screens/console/ConsoleHome';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
 
 export function ConsoleHomeClient({
@@ -28,7 +27,6 @@ export function ConsoleHomeClient({
       isAdmin={isAdmin}
       pendingCoachApps={pendingCoachApps}
       onGoAdmin={() => router.push('/admin')}
-      headerActions={<HeaderActions homeHref="/home" navHref={isAdmin ? '/admin' : undefined} navLabel={isAdmin ? '본부' : undefined} />}
       onOpenCohort={(id) => router.push(`/coach/cohort/${id}?from=console`)}
       onAllCohorts={() => router.push('/coach/cohorts')}
       onNewCohort={() => router.push('/coach/new')}

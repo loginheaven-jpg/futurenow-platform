@@ -6,8 +6,6 @@
 //   보호 라우트에 둔다. /preview 계열은 스스로 '운영 라우트 아님'이라 선언한 자리이고 인증이 없어,
 //   공식 UI 가 링크하면 미확정 회차 문안이 링크만으로 열린다(ADR-89 '미확정 참조는 넣지 않는다'와 같은 계열).
 import { redirect } from 'next/navigation';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { CheckinPreviewClient } from './CheckinPreviewClient';
 
@@ -32,13 +30,7 @@ export default async function CheckinPreviewPage({
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader
-        variant="sub"
-        title="갈무리 카드 미리보기"
-        backHref={`/coach/cohort/${cohortId}/checkin`}
-        homeHref="/home"
-        action={<HeaderActions />}
-      />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
       <CheckinPreviewClient cohortId={cohortId} initialSession={initialSession} />
     </div>
   );
