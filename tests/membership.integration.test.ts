@@ -38,6 +38,13 @@ const COACH_A = '11111111-1111-1111-1111-111111111111';
 const COACH_B = '33333333-3333-3333-3333-333333333333';
 const ADMIN = '44444444-4444-4444-4444-444444444444';
 const COHORT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+/**
+ * **대조군 기수** — `MEMBER` 가 **속하지 않은** 세미나 기수(2026-08-30 신설).
+ *
+ * 차단 검증에 `false` 하나만 보면 *막혔다* 와 *원래 없다* 를 못 가른다.
+ * 자기 기수(열림)와 이 기수(원래 닫힘)를 **함께** 재야 측정이 무엇을 쟀는지 말할 수 있다.
+ */
+const OTHER_COHORT = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
 // 세미나 차수 하나 + 네 역할. cohorts.kind 는 DEFAULT 'seminar' 라 명시하지 않는다 —
 //   기본값이 곧 판정의 축임을 픽스처가 함께 증명한다.
@@ -57,7 +64,10 @@ insert into public.users (id,email,name,nickname,role) values
  ('${COACH_B}','coachB@t.test','CoachB','cb','coach'),
  ('${ADMIN}','admin@t.test','Admin','ad','admin');
 insert into public.cohorts (id,coach_id,instrument_id,name,code,status,max_members) values
- ('${COHORT}','${COACH_A}','__mstest__','MS','MSTUV','active',10);
+ ('${COHORT}','${COACH_A}','__mstest__','MS','MSTUV','active',10),
+ -- 대조군 — MEMBER 를 등록하지 않는다. 같은 kind·status 라 **다른 조건이 소속뿐**이어야
+ --   그 차이가 곧 측정의 뜻이 된다.
+ ('${OTHER_COHORT}','${COACH_B}','__mstest__','MS-other','MSTHR','active',10);
 insert into public.enrollments (cohort_id,user_id) values ('${COHORT}','${MEMBER}');
 set local session_replication_role = origin;
 `;
@@ -272,6 +282,48 @@ describe.skipIf(!ENABLED)('자동 전이 폐지와 쓰기 봉쇄 (실DB)', () =>
   //   트리거를 지웠다. 아래 두 테스트는 그 폐지를 **확인하는 쪽으로 뒤집었다** —
   //   지우는 대신 뒤집은 이유: *마감이 무엇을 하지 않는가* 를 아무도 재지 않으면
   //   다음 사람이 트리거를 되살려도 조용하다.
+  // ── **대조 쌍 강제** (지휘부 권고 2026-08-30) ────────────────────────────────
+  //
+  //   같은 회차에 오측을 **세 번** 했고 셋 다 뿌리가 같았다 — **값 하나만 보고 판단했다.**
+  //     ⑴ 운영자를 골랐다 → 본 것은 *첫 OR 통과*, 놓친 것은 *차단 검사가 아니라는 사실*
+  //     ⑵ 남의 기수를 쟀다 → 본 것은 `피드읽기=false`, 놓친 것은 *차단인지 애초에 남의 방인지*
+  //     ⑶ 주석을 셌다   → 본 것은 *문자열 개수*, 놓친 것은 *실코드인지*
+  //
+  //   **⑵ 가 답을 준다**: `false` 하나로는 *막혔다* 와 *원래 없다* 를 못 가른다.
+  //   같은 사람의 **자기 기수**에서 `true` 가 나와야 차단이 증명된다.
+  //   **대조군 없는 측정은 무엇을 쟀는지 말하지 못한다** — 한쪽만 재고 기대값과 같으면 우연일 수 있다.
+  //
+  //   그래서 넷을 함께 잰다: 자기 기수 × 남의 기수 · expired 전 × 후.
+  //   이 넷이면 세 번의 오측이 **전부** 잡혔을 것이다.
+  it('**expired 차단을 대조 쌍으로 증명한다** — 자기/남의 기수 × 전/후 넷', async () => {
+    const client = await open();
+    try {
+      // 대조군이 성립하려면 **운영자가 아니어야** 한다 — is_admin 이 첫 OR 라 통과해 버린다.
+      const role = await scalarAs(client, MEMBER, `select role as s from public.users where id='${MEMBER}'`);
+      expect(role, '대조가 성립하려면 운영자가 아니어야 한다').not.toBe('admin');
+
+      const mine = COHORT;                       // 자기 기수
+      const other = OTHER_COHORT;                // 남의 기수 — 대조군
+      const feed = (coh: string) =>
+        scalarAs(client, MEMBER, `select public.feed_can_access('${coh}','${MEMBER}')::text as s`);
+
+      // ① 차단 전 — **자기 기수는 true, 남의 기수는 false**.
+      //    이 한 쌍이 *측정이 실제로 무언가를 재고 있다* 는 증거다.
+      expect(await feed(mine), '차단 전 · 자기 기수는 열려 있어야 측정이 성립한다').toBe('true');
+      expect(await feed(other), '차단 전 · 남의 기수는 원래 닫혀 있다(대조군)').toBe('false');
+
+      // ② 차단 후 — 자기 기수가 **true → false** 로 바뀌어야 차단이 증명된다.
+      await client.query(seed(MEMBER, 'expired', null));
+      expect(await feed(mine), '차단 후 · 자기 기수가 닫힌다 — **이 변화가 곧 차단이다**').toBe('false');
+      expect(await feed(other), '차단 후 · 남의 기수는 여전히 닫혀 있다(변화 없음)').toBe('false');
+
+      // ③ 되돌리면 자기 기수만 다시 열린다 — 우연이 아님을 한 번 더 못 박는다.
+      await client.query(`delete from public.memberships where user_id='${MEMBER}'`);
+      expect(await feed(mine), '되돌리면 자기 기수만 다시 열린다').toBe('true');
+      expect(await feed(other), '남의 기수는 끝까지 닫혀 있다').toBe('false');
+    } finally { await close(client); }
+  });
+
   it('**마감이 자격을 만들지 않는다** — 트리거 폐지 확인', async () => {
     const client = await open();
     try {

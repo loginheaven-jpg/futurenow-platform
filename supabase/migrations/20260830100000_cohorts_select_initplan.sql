@@ -35,6 +35,36 @@
 -- **판정 결과는 한 글자도 바뀌지 않는다** — 같은 함수를 같은 인자로 부르고 평가 횟수만 준다.
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ⚠ **적용 전에 반드시 읽을 것 — 지휘부가 짚은 차이 하나**
+--
+-- 값은 같지만 **평가 시점이 다르다.** InitPlan 은 **쿼리 시작에 한 번** 평가되므로
+-- **대상 행이 0개여도 호출된다.** 지금(Filter)은 행이 없으면 호출되지 않는다.
+-- 그러므로 `member_state` 가 **어떤 입력에도 예외를 던지지 않아야** 실해가 없다.
+--
+-- **실측했다(2026-08-30) — 던진다.**
+--     select public.member_state(null);   →  ❌ SQLSTATE 22023 'no subject'
+--   `member_state` 첫 줄이 `IF p_uid IS NULL THEN RAISE EXCEPTION 'no subject'` 다.
+--
+-- **그런데 이 위험은 후속안이 만드는 것이 아니라 이미 있다.** 앞 마이그레이션
+-- (`20260830090000`)이 정책에 함수 호출을 넣은 순간 생겼다. 지금 실측:
+--     role=anon           → ❌ 42501 permission denied for function member_state
+--                            (`anon` 에 EXECUTE 가 REVOKE 돼 있다 · ADR-122)
+--     role=authenticated  → JWT 있으면 ✅ · JWT 없으면 ❌ 22023
+--
+-- **실해가 없는 이유**(실측): 미인증이 `cohorts` 를 **직접 SELECT 하는 경로가 없다.**
+--   공개 경로는 전부 `SECURITY DEFINER` RPC 이고 DEFINER 는 **정책을 타지 않는다** —
+--   `resolve_cohort_by_code`(✅ uuid 반환) · `cohort_seats_taken`(✅ 7) 을 `anon` 으로 확인했다.
+--   운영 공개 4경로도 200 이다(`/` · `/recruit` · `/join?code=` · `/about`).
+--
+-- **그래도 이것은 잠재 회귀다** — 앞으로 누가 `anon` 으로 `cohorts` 를 읽는 경로를 만들면
+--   그날 조용히 42501 이 난다. **적용 전에 판단이 필요한 자리**이고, 고르는 길은 셋이다:
+--     ⓐ `member_state` 를 NULL 에 관대하게(예: `pending` 반환) — **판정 함수 변경이라 파장이 넓다**
+--     ⓑ 정책을 `auth.uid() IS NOT NULL AND (select …)` 로 감싼다 — NULL 이면 함수를 안 부른다
+--     ⓒ `anon` 에게 `member_state` EXECUTE 를 준다 — **최소권한을 넓히는 방향이라 권하지 않는다**
+--   **내가 정하지 않는다.** 지휘부·최박사 판단을 청한다.
+-- ─────────────────────────────────────────────────────────────────────────────
+
 DROP POLICY IF EXISTS cohorts_select ON public.cohorts;
 CREATE POLICY cohorts_select ON public.cohorts FOR SELECT
   USING (
