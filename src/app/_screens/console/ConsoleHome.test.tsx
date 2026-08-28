@@ -9,16 +9,11 @@ const cohorts: CohortSummary[] = [
 const care: RosterMember[] = [{ id: 'm1', userId: 'u1', name: '이참여', status: 'care', note: '안부' }];
 
 describe('ConsoleHome (인도자 콘솔 셸 — Step 3.1)', () => {
-  it('헤더 액션 슬롯 전달(로그아웃·내 정보 자리) + 제목·코치명', () => {
-    const html = renderToStaticMarkup(
-      <ConsoleHome coachName="김코치" careMembers={care} cohorts={cohorts} headerActions={<span>HDR_ACT</span>} />,
-    );
-    expect(html).toContain('인도자 콘솔');
-    expect(html).toContain('김코치');
-    expect(html).toContain('HDR_ACT'); // AppHeader action 슬롯으로 전달됨
-    // A′-2: root 로고=통합 홈 링크(/home), 뒤로 없음
-    expect(html).toContain('href="/home"');
-    expect(html).not.toContain('aria-label="뒤로"');
+  // **헤더 단언은 껍데기로 옮겼다**(U-3). 제목 `콘솔` 은 `screenChrome` 표가 들고
+  //   로그아웃·내 정보는 `ConsoleShell` 이 `HeaderActions` 로 그린다.
+  it('**화면이 헤더를 그리지 않는다** — 껍데기가 그린다', () => {
+    expect(renderToStaticMarkup(<ConsoleHome coachName="김코치" careMembers={[]} cohorts={[]} />))
+      .not.toContain('<header');
   });
 
   it('headerActions 미전달 시 액션 렌더 0(미리보기 안전)', () => {

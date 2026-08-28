@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CoachApplication, MemberSummary } from '@/contracts';
 import { useToast } from '@/app/_toast/ToastProvider';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { AdminMembers } from './AdminMembers';
 import { decideCoachApplicationAction, deleteMemberAction, setMemberPasswordAction, setUserRoleAction } from './actions';
 
@@ -87,7 +86,6 @@ export function AdminClient({
       busyId={busyId}
       appBusyId={appBusyId}
       notices={notices}
-      headerActions={<HeaderActions homeHref="/home" navHref="/coach" navLabel="인도자 콘솔" />}
       onPromote={(id) => change(id, 'coach')}
       onDemote={(id) => change(id, 'user')}
       onDelete={remove}

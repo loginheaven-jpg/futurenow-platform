@@ -78,6 +78,24 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   //   지나가는 길이지 머무는 화면이 아니다.
   '/c/[code]/[session]': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
   '/c/[code]/values': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
+
+  // ── 콘솔(U-3) — **제목·뒤로는 각 화면이 쓰던 값 그대로다.** 소스에서 뽑아 옮겼다.
+  //   `subtitle` 은 표가 들지 않는다(차수 이름 등 서버 데이터라 라우트의 성질이 아니다) —
+  //   **그 셋이 이번에 사라지는 유일한 것**이고 보고에 목록으로 올린다.
+  '/coach': { kind: 'bar', variant: 'root', title: '콘솔', menu: true },
+  '/coach/cohorts': { kind: 'bar', variant: 'sub', title: '모든 차수', back: '/coach', menu: true },
+  '/coach/new': { kind: 'bar', variant: 'sub', title: '차수 개설', back: '/coach/cohorts', menu: true },
+  '/coach/cohort/[cohortId]': { kind: 'bar', variant: 'sub', title: '기수 대시보드', back: '/coach/cohorts', menu: true },
+  '/coach/cohort/[cohortId]/checkin': { kind: 'bar', variant: 'sub', title: '회차 갈무리 현황', menu: true },
+  '/coach/cohort/[cohortId]/checkin/preview': { kind: 'bar', variant: 'sub', title: '갈무리 카드 미리보기', menu: true },
+  '/coach/cohort/[cohortId]/group': { kind: 'bar', variant: 'sub', title: '그룹 리포트', menu: true },
+  '/coach/cohort/[cohortId]/matrix': { kind: 'bar', variant: 'sub', title: '갈무리 격자', back: '/coach/cohort/[cohortId]/checkin', menu: true },
+  '/coach/cohort/[cohortId]/member/[userId]': { kind: 'bar', variant: 'sub', title: '갈무리 기록', back: '/coach/cohort/[cohortId]/checkin', menu: true },
+  '/coach/cohort/[cohortId]/report/[responseId]': { kind: 'bar', variant: 'sub', title: '개인 리포트', menu: true },
+  '/coach/cohort/[cohortId]/values': { kind: 'bar', variant: 'sub', title: VALUE_TOOL, back: '/coach/cohort/[cohortId]', menu: true },
+  '/admin': { kind: 'bar', variant: 'root', title: '본부', menu: true },
+  // **신설 하나** — 지금 헤더가 없다. 승인 큐 «내용» 은 5-3 이 다루고 U-3 은 헤더만 세운다.
+  '/admin/approvals': { kind: 'bar', variant: 'sub', title: '가입 승인', back: '/admin', menu: true },
 };
 
 /** 가장 가까운 조상 라우트 — 뒤로의 **규칙**. 값으로 박지 않는다. */

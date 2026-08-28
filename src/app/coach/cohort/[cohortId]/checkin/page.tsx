@@ -3,8 +3,6 @@
 //   지각은 submitted_at > closes_at 파생(컬럼 없음). care 의미색은 연락요청·돌봄 표시에만.
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { anonNoticeText, buildCheckinRead, readAnonSuggestion } from '@/instruments/futurenow/checkin/readModel';
@@ -127,7 +125,7 @@ export default async function CoachCheckinPage({
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title="회차 갈무리 현황" backHref={`/coach/cohort/${cohortId}`} homeHref="/home" action={<HeaderActions />} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
       {/* 격자(ADR-118) — 명단 × 회차를 한 화면에. 이탈 조기 발견·소그룹 편성·연락 대상 고르기. */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>

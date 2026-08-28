@@ -5,9 +5,10 @@
   "exemptParts": [
     "src/app/_screens/site/PublicGnb.tsx",
     "src/app/_screens/site/PublicShell.tsx",
-    "src/app/_screens/shell/MemberShell.tsx"
+    "src/app/_screens/shell/MemberShell.tsx",
+    "src/app/_screens/console/ConsoleShell.tsx"
   ],
-  "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다. PublicShell 은 공개 껍데기 자신이다 — 껍데기를 만드는 파일까지 막으면 만들 수가 없다.",
+  "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다. PublicShell 은 공개 껍데기 자신이다 — 껍데기를 만드는 파일까지 막으면 만들 수가 없다. ConsoleShell 은 콘솔 껍데기 자신이다(U-3).",
   "exemptDeclared": [
     "src/app/_screens/site/SiteGallery.tsx"
   ],
@@ -37,71 +38,6 @@
       "file": "src/app/_screens/entry/StartGuide.tsx",
       "chunk": "U-4",
       "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/checkin/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/checkin/preview/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/group/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/matrix/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/member/[userId]/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/report/[responseId]/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/cohort/[cohortId]/values/page.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
-    },
-    {
-      "file": "src/app/coach/CoachInfoGate.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/admin/AdminMembers.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/ConsoleHome.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/AllCohorts.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/CohortDetail.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
-    },
-    {
-      "file": "src/app/_screens/console/CreateCohort.tsx",
-      "chunk": "U-3",
-      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
     }
   ],
   "exemptOutside": [

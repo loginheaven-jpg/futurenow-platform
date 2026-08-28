@@ -13,15 +13,17 @@ const noop = () => {};
 describe('AllCohorts (모든 차수 — Step 3.2)', () => {
   it('목록: 차수 카드(이름) + 헤더 액션 슬롯 전달, 빈 상태 아님', () => {
     const html = renderToStaticMarkup(
-      <AllCohorts cohorts={cohorts} headerActions={<span>HDR_ACT</span>} onNewCohort={noop} />,
+      <AllCohorts cohorts={cohorts} onNewCohort={noop} />,
     );
-    expect(html).toContain('모든 차수');
+    // **제목은 껍데기가 든다**(U-3) — `screenChrome` 표의 `/coach/cohorts` 가 정본이고
+    //   `tests/screenChrome.test.ts` 가 그것을 잠근다. 여기서는 **본문**만 잰다.
+    expect(html, '화면이 헤더를 그리면 두 겹이 된다').not.toContain('<header');
     expect(html).toContain('봄 1기');
     expect(html).toContain('청년부 2기');
-    expect(html).toContain('HDR_ACT'); // AppHeader action 슬롯
+
     expect(html).not.toContain('아직 만든 차수가 없어요');
-    // X2b: sub 모드 — 우측 홈 아이콘(항상 홈 복귀) 노출
-    expect(html).toContain('aria-label="홈"');
+    // **홈 아이콘 단언은 껍데기로 옮겼다**(U-3) — `ConsoleShell.test.tsx` 가 잰다.
+    //   화면은 본문만 그리므로 여기서 재면 «화면이 헤더를 그린다» 는 뜻이 된다.
   });
 
   it('빈 상태: 차수 0 → 안내 + 새 차수 버튼', () => {

@@ -19,7 +19,6 @@ import { CardBand3 } from '@/app/_screens/site/CardBand3';
 import { WeekTimeline } from '@/app/_screens/site/WeekTimeline';
 import { NewsRow, type NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { RecruitCard } from '@/app/_screens/site/RecruitCard';
-import { PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG } from '@/app/_screens/site/publicNav';
 import { recentNews } from '@/app/_lib/publicNews';
 import { CURRENT_INTAKE } from '@/app/(public)/recruit/intake';
 import { shortDate } from '@/app/_lib/shortDate';

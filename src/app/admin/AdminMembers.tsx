@@ -1,11 +1,10 @@
 'use client';
 // 본부(프레젠테이션 — 부수효과 없음). 운영자 화면(§8.6). 의미색 허용(참여자 화면 아님). 두 섹션 구분:
 //   ① 승인 대기 — 코치 신청(user→coach) 승인/거절(decide_coach_application). ② 멤버 관리 — 역할 직접 승격/강등.
-// 본인(운영자) 행은 강등 미제공(자기강등 가드의 UI 반영). 셸 통일(Step 3.1): AppHeader + headerActions.
+// 본인(운영자) 행은 강등 미제공(자기강등 가드의 UI 반영). 셸 통일(Step 3.1) → **U-3 에서 헤더가 껍데기로 갔다**(화면은 본문만 그린다).
 import type { ReactNode } from 'react';
 import { Button } from '@/core/ui';
 import type { CoachApplication, MemberSummary } from '@/contracts';
-import { AppHeader } from '@/app/_screens/AppHeader';
 import { MemberRow } from './MemberRow';
 
 const rowStyle = {
@@ -30,7 +29,6 @@ export function AdminMembers({
   onSetPassword,
   onApprove,
   onReject,
-  headerActions,
   notices,
 }: {
   members: MemberSummary[];
@@ -44,13 +42,12 @@ export function AdminMembers({
   onSetPassword: (id: string, password: string) => Promise<{ ok: boolean }>;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
-  headerActions?: ReactNode;
   /** 헤더 아래 한 줄짜리 알림 슬롯(S-4 후속). 운영자가 어차피 오는 자리에 숫자를 놓는다. */
   notices?: ReactNode;
 }) {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="root" title="본부" subtitle="인도자 신청·멤버 관리" homeHref="/home" action={headerActions} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
       {notices}
 

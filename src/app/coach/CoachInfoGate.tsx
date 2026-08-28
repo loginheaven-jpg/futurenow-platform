@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { Button } from '@/core/ui';
-import { AppHeader } from '@/app/_screens/AppHeader';
 import { ConsentBlock } from '@/app/_consent/ConsentBlock';
 import { COACH_PLEDGE, CONSENT_VERSION } from '@/app/_consent/consent';
 
@@ -58,7 +57,7 @@ export function CoachInfoGate({ userId, initialPhone, initialKpc, needPledge = f
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title="인도자 정보 확인" subtitle="인도자 콘솔을 열기 전에 몇 가지만 확인할게요" homeHref="/home" />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
       {error ? <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>{error}</p> : null}
 

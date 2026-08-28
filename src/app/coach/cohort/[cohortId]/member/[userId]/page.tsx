@@ -6,8 +6,6 @@
 // 게이트는 회차 현황(`../checkin/page.tsx`)과 같다 — 코치/운영자 전용, 멤버는 자기 집으로.
 //   데이터 접근은 그 뒤에 온다(게이트-데이터 순서 · CLAUDE §9).
 import { redirect } from 'next/navigation';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { ReportPrintButton } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintButton';
 import { ReportPrintHeader } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintHeader';
@@ -55,13 +53,7 @@ export default async function CoachMemberJourneyPage({ params }: { params: Promi
     <div className="journey-print-root" style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* 앱 크롬 — 화면 전용. PDF 본문에는 브랜드 문서 헤더가 대신 온다(리포트와 같은 선례). */}
       <div className="no-print">
-        <AppHeader
-          variant="sub"
-          title="갈무리 기록"
-          backHref={`/coach/cohort/${cohortId}/checkin`}
-          homeHref="/home"
-          action={<HeaderActions />}
-        />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
           <ReportPrintButton />
         </div>

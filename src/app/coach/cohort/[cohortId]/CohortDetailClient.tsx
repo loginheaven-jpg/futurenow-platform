@@ -4,7 +4,6 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/core/ui';
 import { CohortDetail } from '@/app/_screens/console/CohortDetail';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { useToast } from '@/app/_toast/ToastProvider';
 import type { CohortSummary, RosterMember } from '@/app/_screens/types';
 import { archiveCohortAction, deleteCohortAction, moveMemberAction, openPostWaveAction, removeCohortMemberAction, renameCohortAction, reopenCohortAction, setCohortCapAction, setCohortDescriptionAction } from './actions';
@@ -153,7 +152,6 @@ export function CohortDetailClient({
         status={status}
         maxMembers={maxMembers}
         postOpened={postOpened}
-        headerActions={<HeaderActions />}
         backHref={backHref}
         isAdmin={isAdmin}
         canManageMembers={canManageMembers}

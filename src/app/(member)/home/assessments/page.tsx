@@ -16,7 +16,6 @@
 import { redirect } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
 import { AssessmentsScreen, type AssessSection } from './AssessmentsScreen';
-import { buildMemberSheet } from '@/app/_lib/memberSheet';
 import { assessmentAccess } from '@/app/_lib/assessmentAccess';
 import { TOOL } from '@/app/_vocab/tool';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
@@ -107,8 +106,6 @@ export default async function AssessmentsPage() {
     },
   ];
 
-  // eslint-disable-next-line react-hooks/purity
-  const sheet = await buildMemberSheet(ctx, cohorts, { hasFeed: active.length > 0, now: Date.now() });
 
   return (
     <AssessmentsScreen

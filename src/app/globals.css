@@ -310,39 +310,26 @@ body {
    사람이 대조한다(§3.1 · ADR-123 ⑧).
    현재 항목은 **색만으로 말하지 않는다**(§10 v4): 골드 + 왼쪽 띠 + aria-current 셋을 함께 쓴다. */
 .console-shell { display: block; }
-.console-nav {
+
+/* **탭 줄 한 단계**(U-3 · 최박사 확정 2026-09-01) — 좌측 세로 사이드메뉴를 걷은 자리다.
+   4차 T-4 가 지은 `.console-nav`(lg↑ 250px 고정 사이드바)를 없앴다. PC 도 예외 없다.
+   두 단계를 만들지 않는다 — 넘치는 항목은 상단바 메뉴 시트가 든다.
+   현재 항목은 **색만으로 말하지 않는다**(§10 v4): 골드 + 아래 띠 + aria-current 셋을 함께 쓴다. */
+.console-tabs {
   display: flex; gap: var(--space-1); overflow-x: auto;
-  padding: var(--space-2) var(--space-3); background: var(--navy-900);
+  padding: 0 var(--space-3) var(--space-2); background: var(--navy-900);
 }
-.console-navgroup { display: flex; gap: var(--space-1); align-items: center; }
-.console-navtitle {
-  font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em;
-  color: var(--navy-300); padding: 0 var(--space-2); white-space: nowrap;
-}
-.console-navlink {
+.console-tab {
   display: flex; align-items: center; min-height: var(--tap-min);
   padding: 0 var(--space-3); border-radius: var(--radius);
   font-size: 13.5px; font-weight: 600; color: var(--navy-300);
-  text-decoration: none; white-space: nowrap; border-left: 3px solid transparent;
+  text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent;
 }
-.console-navlink.is-current {
+.console-tab.is-current {
   background: rgba(219, 176, 90, 0.16); color: var(--gold-300);
-  border-left-color: var(--gold-300);
+  border-bottom-color: var(--gold-300);
 }
-.console-navlink:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-
-@media (min-width: 1024px) {
-  .console-shell {
-    display: grid; grid-template-columns: 250px 1fr; align-items: start; min-height: 100vh;
-  }
-  .console-nav {
-    flex-direction: column; align-items: stretch; gap: 2px; overflow: visible;
-    padding: var(--space-5) var(--space-3); min-height: 100vh; position: sticky; top: 0;
-  }
-  .console-navgroup { flex-direction: column; align-items: stretch; gap: 2px; margin-bottom: var(--space-4); }
-  .console-navtitle { padding: 0 var(--space-3) var(--space-2); }
-  .console-main { min-width: 0; }
-}
+.console-tab:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 /* 인쇄에는 내비를 싣지 않는다 — 리포트 인쇄(ADR-69)가 문서여야 한다. */
-@media print { .console-nav { display: none; } .console-shell { display: block; } }
+@media print { .console-tabs { display: none; } .console-shell { display: block; } }

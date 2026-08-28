@@ -5,7 +5,6 @@
 //   차수 홈(`../page.tsx`)이 쓰는 것과 같은 방식이고, 게이트를 데이터보다 **먼저** 통과시킨다(CLAUDE §9).
 import { redirect } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
-import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 import { ValuesClient } from './ValuesClient';
 
 export const dynamic = 'force-dynamic';

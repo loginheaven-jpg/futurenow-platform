@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 // **검증 도구 자신을 잠근다**(지휘부 규칙 ㉣ · U-0 주석 도구 선례).
 //
@@ -39,5 +39,18 @@ describe('검증 도구 — 네 지표를 다 뽑는가', () => {
 
   it('**왜 형식인가**를 파일이 스스로 적고 있다 — 근거가 사라지면 다음 사람이 되돌린다', () => {
     expect(src).toContain('판정의 근거가 판정하려는 것보다 좁다');
+  });
+
+  it('**스킵 사유가 실측과 갈리지 않는다** — 스킵은 실패가 아니지만 잊혀서도 안 된다', () => {
+    // 규칙(2026-09-01): `failed` 만 실패다. `skipped` 는 의도된 상태이나 **사유를 적는다.**
+    expect(src, 'skipped 를 실패로 세면 우리가 승인한 skipIf 가 스스로를 문다').not.toMatch(/failed\|todo/);
+    expect(src, 'failed 판정이 없다').toMatch(/\bfailed\b/);
+    const listed = [...src.matchAll(/\['(tests\/[^']+)', '/g)].map((m) => m[1]).sort();
+    const actual = readdirSync('tests')
+      .filter((f) => /\.test\.tsx?$/.test(f))
+      .map((f) => `tests/${f}`)
+      .filter((f) => /integration|migration|snapshot/.test(f))
+      .sort();
+    expect(listed, '스킵 사유 목록이 실측과 다르다').toEqual(actual);
   });
 });

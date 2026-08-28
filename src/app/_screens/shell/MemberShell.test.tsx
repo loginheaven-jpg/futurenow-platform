@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MemberShell } from './MemberShell';
 import { SHEET_FIXTURE } from '@/app/(member)/home/homeFixture';
 
 // 회원 껍데기 — **화면에서 옮겨온 단언이 사는 자리** (U-2).

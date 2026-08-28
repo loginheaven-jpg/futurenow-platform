@@ -20,9 +20,7 @@ import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
-import { narrowLabel } from '@/core/membershipVocab';
 import { roleTargets } from './roleTarget';
-import { buildMemberSheet } from '@/app/_lib/memberSheet';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,14 +68,11 @@ export default async function MemberHomePage() {
 
   const targets = roleTargets(me.role, cohorts); // 5차 T-5 — 겸직자는 여럿이다
   // 좁은 자리(시트 머리) 값. 실패해도 화면이 멈추지 않게 기본값으로 받는다.
-  const membership = await ctx.getMyMembershipView().catch(() => ({ cohortRoles: [], isAdmin: false } as const));
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
 
   // 시트 자료는 **한 곳에서 만든다**(`buildMemberSheet`) — /home·차수 홈·진단 홈이 같은 시트를
   //   각자 조립하면 메뉴 하나가 늘 때 세 곳이 어긋난다(불변식 23).
-  // eslint-disable-next-line react-hooks/purity
-  const sheet = await buildMemberSheet(ctx, cohorts, { hasFeed: feedCohorts.length > 0, now: Date.now() });
 
   // 시안 B `.quick-grid` — 네 칸. **갈 수 없는 곳은 칸을 만들지 않는다.**
   const tiles: QuickTile[] = [

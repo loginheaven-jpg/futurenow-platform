@@ -10,12 +10,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CohortHomeScreen, type CohortListRow } from './CohortHomeScreen';
 import { sessionPartLabel } from './sessionPart';
-import { buildMemberSheet } from '@/app/_lib/memberSheet';
 import { createServerContext } from '@/core/supabase/server';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { PastSessionsClient } from './PastSessionsClient';
 import { buildProgress, openedSessionNos } from './progress';
-import { buildSessionChips } from '@/app/(member)/home/sessionChips';
 import { TOOL } from '@/app/_vocab/tool';
 import { HOME_CARD, VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 
@@ -168,8 +166,6 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   const sessionTitle = c.openSessionNo != null ? (getCheckinSession(c.openSessionNo)?.cover.subtitle ?? null) : null;
   // 시트 자료는 공용(`buildMemberSheet`)이나, **회차 칩만은 이 화면이 이미 가진 것을 쓴다** —
   //   위에서 `submittedNos` 를 뽑아 두었으므로 같은 조회를 두 번 하지 않는다.
-  const sheet = await buildMemberSheet(ctx, mine, { hasFeed: true, now });
-  const chips = buildSessionChips({ cohortId, sessions, submitted: submittedNos, openSessionNo: c.openSessionNo, now });
 
   // 시안 C `.my-list` — 나의 기록 넷.
   //   **`회차 자료` 는 시안 문구를 그대로 쓰지 않았다** — 회차별 자료 라우트가 없어

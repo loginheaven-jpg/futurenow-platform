@@ -614,7 +614,7 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 |---|---|---|---|---|
 | **공개** | 미인증·공개 화면(`/` `/about` `/recruit` `/news` `/library` `/contact` `/login` `/signup` `/reset`) | 로고 + 우측 행동 하나 | md↑ 가로 메뉴 · **md↓ 시트 하나**(회원과 같은 부품) | 있음 |
 | **회원** | `/home` 이하 · `/my` · `/feed` · `/account` · `/c/[code]` · `/pending` | 로고 + `내 홈` + 메뉴 | **상단바 메뉴 하나** | 없음 |
-| **콘솔** | `/coach` · `/admin` | 로고 + `콘솔` + 메뉴 | **상단바 메뉴 하나**(사이드바 없음) | 없음 |
+| **콘솔** | `/coach` · `/admin` | `콘솔` + 메뉴 · **항목이 많으면 탭 줄 한 단계** | **상단바 메뉴 하나**(사이드바 없음) | 없음 |
 
 ### 12.2 화면이 껍데기를 선언하는 방법
 
@@ -653,23 +653,8 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 #### U-2 에서 걷는다 (회원) — **비었다. 끝났다.**
 
 
-#### U-3 에서 걷는다 (콘솔)
+#### U-3 에서 걷는다 (콘솔) — **비었다. 끝났다.**
 
-| 파일 | 덩이 |
-|---|---|
-| `/coach/cohort/[cohortId]/checkin/page.tsx` | U-3 |
-| `/coach/cohort/[cohortId]/checkin/preview/page.tsx` | U-3 |
-| `/coach/cohort/[cohortId]/group/page.tsx` | U-3 |
-| `/coach/cohort/[cohortId]/matrix/page.tsx` | U-3 |
-| `/coach/cohort/[cohortId]/member/[userId]/page.tsx` | U-3 |
-| `/coach/cohort/[cohortId]/report/[responseId]/page.tsx` | U-3 |
-| `/coach/cohort/[cohortId]/values/page.tsx` | U-3 |
-| `/coach/CoachInfoGate.tsx` | U-3 |
-| `/admin/AdminMembers.tsx` | U-3 |
-| `/_screens/console/ConsoleHome.tsx` | U-3 |
-| `/_screens/console/AllCohorts.tsx` | U-3 |
-| `/_screens/console/CohortDetail.tsx` | U-3 |
-| `/_screens/console/CreateCohort.tsx` | U-3 |
 
 #### U-4 에서 걷는다 (이름과 문)
 
@@ -691,9 +676,9 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 껍데기가 서면 이 화면들은 **비로소 헤더를 갖는다**. 목록만 박고 수는 산출로 얻는다
 (`node scripts/shellAudit.mjs --routes`).
 
-- `/admin/approvals`
 - `/c/[code]/[session]`
 - `/c/[code]/values`
+- `/preview/console`
 - `/preview`
 - `/preview/report`
 
@@ -705,7 +690,21 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 그 `AppHeader` 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어 걷으면
 내용과 동작이 사라지고, 대체할 뒤로 관용구가 저장소에 없다(불변식 20). 판정 대기다.
 
-### 12.6 콘솔이 지금 어떻게 생겼는가 — U-3 착수 전 실측
+### 12.6 콘솔 — **사이드바를 걷었다**(U-3 · 최박사 확정 2026-09-01)
+
+**두 자리가 무엇을 나눠 갖는가**
+
+| 자리 | 무엇이 담기는가 |
+|---|---|
+| **탭 줄**(한 단계) | 「이 기수」 문맥 — 기수 대시보드 · 회차 갈무리 · 진단 결과 · 가치 카드 · 동행. **차수 밖에서는 서지 않는다**(갈 곳 없는 탭을 그리지 않는다) |
+| **시트**(상단바 메뉴) | 콘솔 전역 — 「인도자」(콘솔 홈 · 모든 차수 · 차수 개설) · 「운영」(본부 · 가입 승인 · 자료실) |
+
+**사이드바 11 항목이 전부 옮겨 갔다 — 사라진 항목 0.**
+실측상 다섯(가치 카드·동행·본부·가입 승인·자료실)이 **사이드바에만** 있었으므로 시트가 없었다면 그 다섯이 사라졌다.
+
+**시트는 회원 껍데기와 같은 `MenuSheet` 한 벌**이다 — 담기는 항목만 다르다.
+
+### 12.7 착수 전 실측 (U-3 §0)
 
 **`ConsoleShell` 은 사이드바를 그리지 상단바를 그리지 않는다**(`console-nav`).
 그래서 `/admin`·`/coach/cohorts`·`/coach/new`·`/coach/cohort/[cohortId]` 가

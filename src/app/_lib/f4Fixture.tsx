@@ -2,7 +2,6 @@
 //   둘이 다른 데이터를 쓰면 캡처와 육안 확인이 서로 다른 것을 본다(`homeFixture` 와 같은 이유).
 import type { CohortHomeScreenProps } from '@/app/(member)/my/cohorts/[cohortId]/CohortHomeScreen';
 import type { AssessmentsScreenProps } from '@/app/(member)/home/assessments/AssessmentsScreen';
-import { HOME_FIXTURE } from '@/app/(member)/home/homeFixture';
 
 // **`WHO`·`SHEET` 를 걷었다**(U-2 §3) — 시트 자료는 껍데기가 들고 화면이 나르지 않는다.
 

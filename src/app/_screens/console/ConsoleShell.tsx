@@ -1,16 +1,38 @@
 'use client';
-// 콘솔 셸 — 사이드바(lg 이상) / 상단 탭(미만) (3차 T-4 · design_system §3.1·§9.4).
+// 콘솔 껍데기 — **상단바 하나 + 탭 줄 한 단계** (U-3 · 최박사 확정 2026-09-01).
 //
-// **참여자 화면에는 들어가지 않는다.** `/coach`·`/admin` 레이아웃에서만 감싼다(발주 §5).
+// **좌측 세로 사이드메뉴를 없앴다.** 4차 T-4 가 지은 `console-nav` 사이드바를 걷고
+//   상단바 하나로 간다 — *PC 콘솔도 예외 없다*(최박사).
 //
-// 시안 P2 의 구조를 따른다 — 네이비-900 면, 현재 항목은 골드. 다만 **색만으로 말하지 않는다**
-//   (design_system §10 v4) — 현재 항목은 `aria-current="page"` 와 **왼쪽 굵은 띠**를 함께 갖는다.
-//   §1.6 이 실측한 대로, 색 하나에 기대면 그 색이 배경과 같아지는 날 조용히 사라진다.
+// ─────────────────────────────────────────────────────────────────────────────
+// **두 자리가 무엇을 나눠 갖는가**(지휘부 요구 2026-09-01):
 //
-// **인쇄에서 사라진다.** 리포트 인쇄(ADR-69)에 내비가 끼면 문서가 아니다.
+//   **탭 줄** — 「이 기수」 문맥이 쓴다. 지금 보고 있는 기수 안에서 오가는 항목이고,
+//     차수 밖에서는 탭 줄 자체가 서지 않는다(갈 곳이 없는 탭을 그리지 않는다).
+//   **시트** — 콘솔 전역 항목이 든다. 「인도자」·「운영」 묶음이 그것이고,
+//     상단바 메뉴 하나로 열린다(공통 규칙 2 — 메뉴는 한 자리에서만 열린다).
+//
+//   **사라지는 항목이 없다.** 사이드바가 들던 11개가 탭 줄과 시트로 전부 옮겨 간다.
+//   실측으로 다섯(가치 카드·동행·본부·가입 승인·자료실)이 **사이드바에만** 있었으므로,
+//   시트가 없으면 그 다섯이 사라졌을 것이다.
+//
+// **부품을 두 벌 만들지 않는다** — 시트는 회원 껍데기가 쓰는 것과 **같은 `MenuSheet`** 이고
+//   담기는 항목만 다르다(최박사 상위 확정 — *껍데기는 하나이고 방마다 담기는 항목만 다르다*).
+//
+// **`consoleNav` 는 손대지 않는다** — 경로를 인자로 받는 순수 함수 그대로다(4차 확정).
+//   무엇을 어디에 담을지는 여기서 나눈다.
+// ─────────────────────────────────────────────────────────────────────────────
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { consoleNav, isCurrent, type ConsoleNavGroup } from './consoleNav';
+import { usePathname, useParams } from 'next/navigation';
+import { AppHeader } from '@/app/_screens/AppHeader';
+import { MenuSheet } from '@/app/_screens/site/MenuSheet';
+import { HeaderActions } from '@/app/_screens/HeaderActions';
+import { consoleNav, isCurrent } from './consoleNav';
+import { SCREEN_CHROME, patternOf, resolveBack } from '@/app/_lib/screenChrome';
+
+/** 「이 기수」 묶음만 탭 줄이 든다. 나머지는 시트가 든다. */
+const TAB_GROUP = '이 기수';
 
 export function ConsoleShell({
   role,
@@ -19,39 +41,76 @@ export function ConsoleShell({
   role: 'user' | 'coach' | 'admin';
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
   const pathname = usePathname() ?? '';
+  const params = useParams() as Record<string, string | string[] | undefined>;
+  const pattern = patternOf(pathname, params);
+  const chrome = SCREEN_CHROME[pattern];
   const groups = consoleNav({ role, pathname });
   if (groups.length === 0) return <>{children}</>; // 참여자 — 셸 없이 그대로
 
+  const tabs = groups.find((g) => g.title === TAB_GROUP);
+  const sheetGroups = groups
+    .filter((g) => g.title !== TAB_GROUP)
+    .map((g) => ({ title: g.title ?? '콘솔', items: g.items }));
+
   return (
     <div className="console-shell">
-      <nav className="console-nav" aria-label="콘솔 메뉴">
-        {groups.map((g, i) => (
-          <Group key={g.title ?? `g${i}`} group={g} pathname={pathname} groups={groups} />
-        ))}
-      </nav>
-      <div className="console-main">{children}</div>
-    </div>
-  );
-}
-
-function Group({ group, pathname, groups }: { group: ConsoleNavGroup; pathname: string; groups: ConsoleNavGroup[] }) {
-  return (
-    <div className="console-navgroup">
-      {group.title ? <div className="console-navtitle">{group.title}</div> : null}
-      {group.items.map((it) => {
-        const on = isCurrent(it, pathname, groups);
-        return (
-          <Link
-            key={it.href}
-            href={it.href}
-            aria-current={on ? 'page' : undefined}
-            className={`console-navlink${on ? ' is-current' : ''}`}
+      {/* **제목·뒤로는 표가 든다**(§3) — U-2 가 만든 `screenChrome` 을 콘솔도 쓴다. 두 벌 만들지 않는다.
+          **콘솔의 홈은 `콘솔` 이다**(공통 규칙 3) — 표의 `/coach` 항목이 그 이름을 든다.
+          `root` 인 자리는 뒤로가 없다(홈이 제목을 겸한다) — **홈 어포던스를 둘로 두지 않는다**(규칙 4). */}
+      <AppHeader
+        variant={chrome?.kind === 'bar' ? chrome.variant : 'sub'}
+        title={chrome?.kind === 'bar' ? chrome.title : '콘솔'}
+        backHref={resolveBack(pattern, params)}
+        action={
+          <>
+            {/* **로그아웃·내 정보를 잃지 않는다.** 사이드바 시절 화면들이 `headerActions` 로
+                넘기던 것이 이 자리다 — 회원 껍데기와 같은 부품을 같은 슬롯에 둔다.
+                **`homeHref` 를 넘기지 않는다** — `AppHeader` 의 `sub` 가 이미 홈 아이콘을 그린다.
+                넘기면 홈 어포던스가 둘이 되고, 규칙 4(문은 한 곳씩)를 어긴다. */}
+            <HeaderActions />
+            <button
+            type="button"
+            className="site-gnb__burger"
+            onClick={() => setOpen(true)}
+            aria-label="전체 메뉴 열기"
+            aria-expanded={open}
+            style={{ display: 'inline-flex' }}
           >
-            {it.label}
-          </Link>
-        );
-      })}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="1.8" strokeLinecap="round" aria-hidden focusable="false">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            </button>
+          </>
+        }
+      />
+
+      {/* **탭 줄은 한 단계다.** 두 단계를 만들지 않는다(최박사 확정). */}
+      {tabs && tabs.items.length > 0 ? (
+        <nav className="console-tabs" aria-label={TAB_GROUP}>
+          {tabs.items.map((it) => (
+            <Link
+              key={it.href}
+              href={it.href}
+              aria-current={isCurrent(it, pathname, groups) ? 'page' : undefined}
+              className={`console-tab${isCurrent(it, pathname, groups) ? ' is-current' : ''}`}
+            >
+              {it.label}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
+
+      <MenuSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        name="콘솔"
+        groups={sheetGroups}
+      />
+
+      <div className="console-main">{children}</div>
     </div>
   );
 }

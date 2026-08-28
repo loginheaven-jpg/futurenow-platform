@@ -5,11 +5,9 @@
 //   다른 차수 인도자는 정책에서 막히므로 여기서 빈 목록을 본다. 페이지도 역할을 한 번 더 본다(심층 방어).
 // 참여자가 적은 원문(대조 세 칸·라벨)이 그대로 보인다 — 그래서 참여자 화면에 열람 고지를 넣었다(§5-3).
 import { redirect } from 'next/navigation';
-import { AppHeader } from '@/app/_screens/AppHeader';
-import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { createServerContext } from '@/core/supabase/server';
 import { CARD_BY_ID } from '@/instruments/futurenow/values';
-import { COMPARE, VALUE_TOOL } from '@/instruments/futurenow/values/copy';
+import { COMPARE } from '@/instruments/futurenow/values/copy';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,8 +36,7 @@ export default async function CoachValuesPage({ params }: { params: Promise<{ co
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <AppHeader variant="sub" title={VALUE_TOOL} subtitle={cohort.name}
-        backHref={`/coach/cohort/${cohortId}`} homeHref="/home" action={<HeaderActions />} />
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)' }}>
         마친 분 {done.length}명 · 진행 중 {rows.length - done.length}명
