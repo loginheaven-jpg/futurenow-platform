@@ -116,6 +116,18 @@ export interface MemberSummary {
   email: string;
   name: string | null;
   role: Role;
+  /**
+   * 회원 상태 — **판정**이다(저장값이 아니다). 5-3 에서 더했다(지휘부 승인).
+   *
+   * **화면이 계산하지 않는다.** `member_state` 가 내린 값을 서버가 그대로 실어 보내고
+   * 화면은 어휘로 옮겨 그리기만 한다 — 사본이 둘이 되지 않게(불변식 23).
+   */
+  memberState: MemberState;
+  /**
+   * 슈퍼어드민인가 — **서버가 내린다**(5-3). 화면이 이메일로 판정하지 않는다.
+   * 이메일 상수는 `is_super_admin` 한 곳에만 있고, 화면이 그것을 베끼면 사본이 셋이 된다.
+   */
+  isSuperAdmin: boolean;
 }
 
 // 차수 멤버 신상정보(코치 조원 열람 — §10 완화, 자기 차수 한정). cohort_member_detail(DEFINER) RPC. ADR-75

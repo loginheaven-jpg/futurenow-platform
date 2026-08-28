@@ -553,7 +553,29 @@ describe('본부 멤버 역할 (listUsers / setUserRole)', () => {
     });
     const list = await ctx.listUsers();
     expect(list).toHaveLength(2);
-    expect(list[1]).toEqual({ id: 'u1', email: 'u@t.test', name: null, role: 'user' });
+    // **회원 상태와 슈퍼어드민 표시가 더해졌다**(5-3) — 둘 다 **서버가 산출**한다.
+    //   목 RPC 가 없으니 상태는 `pending` 으로 접히고 슈퍼어드민은 `false` 다 —
+    //   **그 접힘 자체가 규율이다**: 한 사람을 못 읽어도 목록 전체가 무너지지 않는다.
+    expect(list[1]).toEqual({
+      id: 'u1', email: 'u@t.test', name: null, role: 'user',
+      memberState: 'pending', isSuperAdmin: false,
+    });
+  });
+
+  it('**한 사람의 상태를 못 읽어도 목록이 무너지지 않는다** — 대조군', async () => {
+    const { ctx } = ctxWith({
+      authUser: { id: 'a1' },
+      tableResolver: (c) =>
+        c.table === 'users'
+          ? { data: [{ id: 'u1', email: 'u@t.test', name: null, role: 'user' }], error: null }
+          : { data: null, error: null },
+      rpcResolver: (name) => (name === 'member_state'
+        ? { data: null, error: { message: 'boom' } }
+        : { data: null, error: null }),
+    });
+    const list = await ctx.listUsers();
+    expect(list).toHaveLength(1);
+    expect(list[0].memberState, '못 읽으면 pending 으로 접는다 — 던지지 않는다').toBe('pending');
   });
 
   it('setUserRole 은 RPC set_user_role 에 매핑 전달', async () => {

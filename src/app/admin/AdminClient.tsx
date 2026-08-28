@@ -6,23 +6,43 @@ import { useRouter } from 'next/navigation';
 import type { CoachApplication, MemberSummary } from '@/contracts';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { AdminMembers } from './AdminMembers';
-import { decideCoachApplicationAction, deleteMemberAction, setMemberPasswordAction, setUserRoleAction } from './actions';
+import { decideCoachApplicationAction, deleteMemberAction, setMemberPasswordAction, setUserRoleAction , decideMembershipAction } from './actions';
 
 export function AdminClient({
   members,
   applications,
   currentUserId,
+  isSuperAdmin,
   notices,
 }: {
   members: MemberSummary[];
   applications: CoachApplication[];
   currentUserId: string;
+  /** 서버가 내린 값 — 화면이 이메일로 판정하지 않는다. */
+  isSuperAdmin: boolean;
   notices?: ReactNode;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [appBusyId, setAppBusyId] = useState<string | null>(null);
+
+  // **승급·보류** — 둘 다 같은 액션을 지난다(5-3). 실패 사유는 서버 문장을 그대로 보인다:
+  //   «슈퍼어드민만 하실 수 있습니다» 같은 가드 문장이 화면 안내와 어긋나면 안 되기 때문이다.
+  async function decideMember(userId: string, decision: 'individual' | 'expired', note: string) {
+    setBusyId(userId);
+    try {
+      const res = await decideMembershipAction(userId, decision, note);
+      if (res.ok) {
+        toast.success(decision === 'individual' ? '포럼회원으로 승급했어요.' : '이용을 보류했어요.');
+        router.refresh();
+      } else {
+        toast.error(res.error ?? '회원 자격 변경에 실패했어요.');
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function change(userId: string, role: 'coach' | 'user') {
     setBusyId(userId);
@@ -83,6 +103,8 @@ export function AdminClient({
       members={members}
       applications={applications}
       currentUserId={currentUserId}
+      isSuperAdmin={isSuperAdmin}
+      onDecide={decideMember}
       busyId={busyId}
       appBusyId={appBusyId}
       notices={notices}
