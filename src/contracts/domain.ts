@@ -267,6 +267,79 @@ export interface ValueAssessmentRow extends ValueAssessment {
 //   **판정 결과**를 담는 타입이지 저장 값을 담는 타입이 아니기 때문이다.
 export type MemberState = 'pending' | 'individual' | 'cohort' | 'expired' | 'held';
 
+// ── 회원 표시(5차 T-3·T-4 · 최박사 승인 2026-08-29 · 불변식 3) ──────────────
+//
+// **`MemberState` 를 대체하지 않는다.** 저 다섯은 **판정**(DB `member_state()` 가 유일 구현)이고,
+//   아래 셋은 그 판정을 **표시 축으로 편 것**이다. 산출·`member_can_assess`·RLS·진실표는
+//   **한 줄도 바뀌지 않았고 마이그레이션은 0** 이다.
+//
+// **왜 축을 나눴나 — `participant` 를 tier 값으로 두지 않는다.**
+//   참여는 **기수마다 하나씩 여럿**이라 택일 필드에 들어갈 수 없다. 실측이 그렇다(2026-08-29):
+//   기수를 이끌면서 참여도 하는 사람 **2명**(`cohorts.coach_id` 기준), 포럼회원이면서 참여자 **3명**.
+//   최박사 지시가 그것을 문장으로 못 박았다 — *"포럼회원, 00기참여자, 00기인도자는
+//   택일이 아니라 병행표현되어야 한다."*
+
+/**
+ * `memberships.status` **저장값**. DB CHECK 를 그대로 비춘다
+ * (`status IN ('pending','individual','expired','held')` · `20260826160000_membership.sql:79`).
+ *
+ * **`MemberState` 와 다른 것이다.** 저 다섯은 **판정**(`held > cohort > 저장 > pending`)이고
+ * 이것은 **저장된 자격**이다. `cohort` 가 여기 없는 이유가 그 차이다 — `cohort` 는
+ * *지금 세미나에 등록돼 있다* 는 **권한**의 사실이지 누가 준 **자격**이 아니다.
+ * 행이 아예 없을 수 있으므로 `null` 과 함께 쓴다.
+ */
+export type MembershipStatus = 'pending' | 'individual' | 'expired' | 'held';
+
+/** 자격 — **늘 하나**. 택일 축이다. */
+export type MemberTier = 'visitor' | 'forum' | 'suspended';
+
+/** 소속에서의 역할 — 기수마다 붙는다. */
+export type CohortRoleKind = 'participant' | 'coach';
+
+/**
+ * 소속 한 칸. **기수와 역할을 한 항목으로 묶는다** — 화면 표기가 늘 붙어 다니기 때문이다
+ * (`2기 참여자` · `1기 인도자`). 따로 두면 조립할 때 다시 짝지어야 한다(최박사 지시).
+ */
+export interface CohortRole {
+  cohortId: string;
+  cohortName: string;
+  kind: CohortRoleKind;
+  /**
+   * 첫 회차일(ISO date) — **최근 기수를 재는 기준**(최박사 확정 2026-08-30).
+   *
+   * 좁은 자리에 하나만 들어갈 때 *가장 최근 기수의 포지션* 을 고르는 데 쓴다.
+   * **이름 끝의 숫자로 재지 않는다** — 끝이 `n기` 가 아닌 기수가 섞이면 못 가린다.
+   * 회차가 없는 기수는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
+   */
+  firstSessionAt: string | null;
+}
+
+/**
+ * 내 정보·현관 칩·운영자 화면이 함께 읽는 **표시용 회원 상태**.
+ *
+ * **문자열을 담지 않는다** — 값만 내리고 조립은 화면이 한다(최박사 지시).
+ * 문언이 서버에 박히면 단일 출처가 둘이 된다.
+ */
+export interface MembershipView {
+  tier: MemberTier;
+  /**
+   * `held` 의 **진행 표시**. `tier` 를 덮지 않는다 — 보류 중인 사람도 tier 는 `visitor` 다.
+   * 이것이 별도 불리언인 이유: 덮으면 *보류* 라는 말이 자격 이름 자리에 앉아
+   * `suspended`(이용 보류)와 한 화면에서 겹친다.
+   */
+  underReview: boolean;
+  /** 소속 — **여럿**. 없으면 빈 배열이고, 화면은 그 줄을 그리지 않는다. */
+  cohortRoles: CohortRole[];
+  /**
+   * 운영자 — **넷째 축**(최박사가 표시 대상에 넣으셨다 · 2026-08-29).
+   *
+   * `cohortRoles` 에 넣을 수 없다 — 운영자는 **기수에 매이지 않아** `cohortId` 가 없다.
+   * 값은 `users.role` 에서 온다(권한 축). 자격(`tier`)·소속(`cohortRoles`)과 **또 다른 축**이라
+   * 별도 칸이다. 실측(2026-08-29): `users.role='admin'` **2명**.
+   */
+  isAdmin: boolean;
+}
+
 // 응시 계열. 여정 = 사전·사후 체크, 상시 = 가치 카드·그림자·사랑의 언어.
 export type AssessmentKind = 'journey' | 'standing';
 
@@ -274,9 +347,12 @@ export type AssessmentKind = 'journey' | 'standing';
 //   앞은 초기 상태라 되돌릴 일이 아니고, 뒤는 산출이라 결정할 수 있는 것이 아니다.
 export type MembershipDecision = 'individual' | 'held' | 'expired';
 
-// 승인 큐 한 행(대기 + 만료 임박). `list_membership_queue` 가 두 갈래를 함께 돌려준다.
+// 승인 큐 한 행 — **대기 갈래뿐이다.**
+//   `expiring`(만료 임박)은 걷혔다(최박사 승인 2026-08-30 · `20260831090000`).
+//   **자동 만료가 폐지되자 임박도 뜻을 잃었다** — 한 번 뜨면 사라지지 않고 운영자가 할 일도 없었다.
+//   열을 남긴 것은 되돌릴 자리이자 **배포 창을 닫는 장치**다(매퍼가 이 값으로 거른다).
 export interface MembershipQueueRow {
-  bucket: 'pending' | 'expiring';
+  bucket: 'pending';
   userId: string;
   name: string | null;
   email: string | null;

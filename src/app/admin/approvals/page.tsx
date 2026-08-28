@@ -20,7 +20,7 @@ export default async function ApprovalsPage() {
   if (me.role === 'user') redirect('/home');
   if (me.role !== 'admin') redirect('/coach');
 
-  const rows = await ctx.listMembershipQueue(30);
+  const rows = await ctx.listMembershipQueue(); // 대기 갈래뿐 — 창 인자가 없어졌다(2026-08-30)
 
   // 서버 경계에서 마스킹. 이 map 을 지나면 원값은 더 이상 존재하지 않는다.
   const view: QueueRowView[] = rows.map((r) => ({

@@ -16,10 +16,10 @@ export const HOME_COHORTS: MyCohortSummary[] = [
 
 export const HOME_FIXTURE: HomeScreenProps = {
   who: { name: '김서온', role: '참여자', cohort: '예봄 2기' },
-  role: {
+  roles: [{
     badge: '예봄 2기', who: '참여자', title: '내 기수로 가기',
     sub: '2회차 갈무리가 열려 있습니다', href: '/my/cohorts/c1', ctaLabel: '기수 홈',
-  },
+  }],
   tiles: [
     { icon: 'checkin', title: '오늘의 갈무리', hint: '2회차', href: '/my/cohorts/c1/checkin/2' },
     { icon: 'mirror', title: '되비추기', hint: '나의 기록', href: '/my/cohorts/c1/journey' },

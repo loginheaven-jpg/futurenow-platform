@@ -6,6 +6,11 @@ import { type CSSProperties } from 'react';
 import { GENDERS } from '@/contracts/vocab';
 import { RELIGIONS } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
+import type { MembershipView } from '@/contracts/domain';
+import {
+  ADMIN_LABEL, cohortRoleLabel, PARTICIPANT_LEAD, TIER_INQUIRY_NOTE, TIER_LABEL, TIER_LEAD,
+  UNDER_REVIEW_NOTE, UPGRADE_HOWTO,
+} from '@/core/membershipVocab';
 
 const inputStyle: CSSProperties = {
   width: '100%',
@@ -84,6 +89,7 @@ export function AccountForm({
   onSavePassword,
   keepSignedIn,
   onKeepSignedIn,
+  membership,
 }: {
   name: string;
   phone: string;
@@ -106,9 +112,117 @@ export function AccountForm({
   // 소건 1-마 — **판정하지 않는다.** 값도 저장도 오케스트레이터가 한다(폼은 프레젠테이션).
   keepSignedIn: boolean;
   onKeepSignedIn: (v: boolean) => void;
+  /**
+   * 5차 T-4 — **서버가 값만 내린다.** 문자열 조립은 여기(화면)가 한다(최박사 지시).
+   * 없으면 이 구획을 통째로 그리지 않는다.
+   */
+  membership?: MembershipView;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      {/* 5차 T-4 · 내 정보 등급 표시 — **줄 둘**이다.
+          최박사 지시: *"포럼회원, 00기참여자, 00기인도자는 택일이 아니라 병행표현되어야 한다."*
+          tier 는 늘 하나이므로 **한 줄**, 소속은 여럿이므로 **칩으로 나열**한다.
+          **판정하지 않는다**(발주 §4) — 등급·대기 여부는 서버가 산출해 prop 으로 내려온다. */}
+      {membership ? (
+        <section style={section}>
+          {/* ① 자격 — 늘 한 줄.
+              **층 나눔을 유지한다**(390px 실측 판단 2026-08-29).
+              최박사 예시는 `00기참여자. 포럼회원.` 을 나란히 쓴 모양이라 한 층도 가능하나,
+              390 에서 실제로 렌더해 재 보니 이렇다:
+
+                축약됨 · 소속2+운영자      한 층 1줄 56px  |  두 층 2줄 95px
+                **축약 안 됨** · 소속2     한 층 **2줄** 88px |  두 층 2줄 95px
+
+              한 층은 **내용에 따라 줄 수가 흔들린다**(1→2줄). 두 층은 언제나 2줄로 **모양이 고정**된다.
+              그리고 한 층에서 줄이 접히면 `[QA] 검증 전용 참여자` 와 `포럼회원` 이 같은 굵기·같은 층으로
+              **줄만 바뀐 채** 서서, 어디까지가 소속이고 어디부터가 자격인지 읽는 사람이 알 수 없다.
+              **축이 둘이라는 사실이 시각에서 사라진다** — 그것이 최박사가 처음부터 막으신 합침이다.
+              높이 차이는 39px 한 번뿐이고, 그 값으로 **경계가 늘 보이는 것**을 산다. */}
+          <div>
+            <span className="t-h1" style={{ fontSize: 18 }}>{TIER_LABEL[membership.tier]}</span>
+            {/* `held` 는 tier 를 덮지 않는다 — 자격 이름 옆에 **진행 표시**로 붙는다.
+                덮으면 *보류* 가 자격 자리에 앉아 `이용 보류` 와 한 화면에서 겹친다. */}
+            {membership.underReview ? (
+              <span
+                className="t-caption"
+                style={{
+                  marginLeft: 'var(--space-2)', padding: '2px 8px', borderRadius: 999,
+                  border: 'var(--border-hair) solid var(--color-border)',
+                  background: 'var(--color-surface-2)', color: 'var(--color-text-secondary)',
+                }}
+              >
+                {UNDER_REVIEW_NOTE}
+              </span>
+            ) : null}
+          </div>
+          {/* **설명문은 소속이 있으면 소속 기준으로 바뀐다** — 이름은 바뀌지 않는다.
+              최박사 확정: *"18명 모두 참여자 이다. 포럼회원(정회원)은 없다."*
+              그 사실을 그대로 읽으면 `승인을 기다리는 중입니다. 세미나 참여와…` 는
+              **이미 참여 중인 사람에게 어긋난다.**
+
+              ⚠ **이 대체는 지휘부의 읽기이지 최박사 문장이 아니다**(2026-08-29 명시).
+              최박사께 한 마디 더 여쭙는 중이고, `나` 로 정정되면 **바꿀 곳은 이 줄 하나**다.
+
+              **이름은 방문회원 그대로다** — 승인받은 적이 없기 때문이다. 이름까지 `참여자` 로
+              바꾸면 자격과 소속을 다시 한 줄로 합치는 것이고, 그것이 최박사가 처음부터
+              금지하신 것이다. 바뀌는 것은 **설명문뿐**이다. */}
+          <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0' }}>
+            {membership.cohortRoles.some((r) => r.kind === 'participant')
+              ? PARTICIPANT_LEAD
+              : TIER_LEAD[membership.tier]}
+          </p>
+          {/* 승급 방법 **병기**(최박사 확정 2026-08-30) —
+              *"정회원 승급 신청을 하지 않은 방문회원도 있다 그냥 승급방법 안내면 병기하면 된다."*
+              방문회원에게만 붙인다. 이미 포럼회원인 사람에게 승급 방법은 뜻이 없고,
+              이용 보류에게는 문의 안내가 따로 있다. */}
+          {membership.tier === 'visitor' ? (
+            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-1) 0 0' }}>
+              {UPGRADE_HOWTO}
+            </p>
+          ) : null}
+
+          {/* ② 소속 — 여럿. **없으면 이 줄을 그리지 않는다**(T-5 의 *빈손 카드를 덧붙이지 않는다* 와 같은 결).
+              **칩은 이름만 단다**(최박사 확정 4번) — 설명은 위 자격 줄이 든다. */}
+          {membership.cohortRoles.length > 0 || membership.isAdmin ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                {/* 운영자 — **넷째 축**이라 기수 칩과 같은 줄에 서되 기수명이 없다.
+                    맨 앞에 둔다: 기수에 매이지 않는 것이 매인 것들보다 먼저 읽히는 편이 자연스럽다. */}
+                {membership.isAdmin ? (
+                  <span
+                    className="t-caption"
+                    style={{
+                      padding: '4px 10px', borderRadius: 999,
+                      border: 'var(--border-hair) solid var(--color-border)',
+                      background: 'var(--color-surface-2)',
+                    }}
+                  >
+                    {ADMIN_LABEL}
+                  </span>
+                ) : null}
+                {membership.cohortRoles.map((r) => (
+                  <span
+                    key={`${r.cohortId}:${r.kind}`}
+                    className="t-caption"
+                    style={{
+                      padding: '4px 10px', borderRadius: 999,
+                      border: 'var(--border-hair) solid var(--color-border)',
+                      background: 'var(--color-surface-2)',
+                    }}
+                  >
+                    {cohortRoleLabel(r)}
+                  </span>
+              ))}
+            </div>
+          ) : null}
+
+          {/* ③ 문의 안내 — 최박사 지시로 노출한다. */}
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-3) 0 0' }}>
+            {TIER_INQUIRY_NOTE}
+          </p>
+        </section>
+      ) : null}
+
       {/* 이름 */}
       <section style={section}>
         <label className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>

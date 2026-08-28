@@ -13,11 +13,38 @@ import { ACCESS_KINDS, ACCESS_TABLE, PRIORITY_CASES, expectedAccess } from './fi
 
 const ENABLED = process.env.RUN_RLS_INTEGRATION === '1' && !!process.env.SUPABASE_DB_URL;
 
+/**
+ * **적용된 마이그레이션 원장** — 새 기준 케이스를 건너뛸지 판정한다.
+ *
+ * 선례는 `tests/feedReactionsMulti.migration.test.ts` 다. **방향이 반대인 것에 주의한다** —
+ *   그쪽: **이미 적용됐으면** 롤백 검증(적용 전 전용)을 건너뛴다.
+ *   이쪽: **아직 적용 전이면** 새 기준 행을 건너뛴다.
+ * 같은 도구를 반대 방향으로 쓰는 것이므로, 베낄 때 부호를 뒤집는 것을 잊지 말 것.
+ *
+ * **레드로 두지 않는 이유**: 표는 새 기준으로 앞서 있어도 되지만 테스트가 오래 빨가면
+ * *원래 빨간 거야* 가 되고 그때 **진짜 결함이 들어와도 아무도 못 본다.**
+ * 건너뛰되 **사유를 시끄럽게 출력**한다 — 건너뛴 것과 통과한 것은 다른 사실이다.
+ */
+const APPLIED_VERSIONS: ReadonlySet<string> = ENABLED ? await (async () => {
+  const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+  await c.connect();
+  const rows = (await c.query('select version from supabase_migrations.schema_migrations')).rows;
+  await c.end();
+  return new Set<string>(rows.map((r: { version: string }) => r.version));
+})() : new Set<string>();
+
 const MEMBER = '22222222-2222-2222-2222-222222222222';
 const COACH_A = '11111111-1111-1111-1111-111111111111';
 const COACH_B = '33333333-3333-3333-3333-333333333333';
 const ADMIN = '44444444-4444-4444-4444-444444444444';
 const COHORT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+/**
+ * **대조군 기수** — `MEMBER` 가 **속하지 않은** 세미나 기수(2026-08-30 신설).
+ *
+ * 차단 검증에 `false` 하나만 보면 *막혔다* 와 *원래 없다* 를 못 가른다.
+ * 자기 기수(열림)와 이 기수(원래 닫힘)를 **함께** 재야 측정이 무엇을 쟀는지 말할 수 있다.
+ */
+const OTHER_COHORT = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
 // 세미나 차수 하나 + 네 역할. cohorts.kind 는 DEFAULT 'seminar' 라 명시하지 않는다 —
 //   기본값이 곧 판정의 축임을 픽스처가 함께 증명한다.
@@ -37,7 +64,10 @@ insert into public.users (id,email,name,nickname,role) values
  ('${COACH_B}','coachB@t.test','CoachB','cb','coach'),
  ('${ADMIN}','admin@t.test','Admin','ad','admin');
 insert into public.cohorts (id,coach_id,instrument_id,name,code,status,max_members) values
- ('${COHORT}','${COACH_A}','__mstest__','MS','MSTUV','active',10);
+ ('${COHORT}','${COACH_A}','__mstest__','MS','MSTUV','active',10),
+ -- 대조군 — MEMBER 를 등록하지 않는다. 같은 kind·status 라 **다른 조건이 소속뿐**이어야
+ --   그 차이가 곧 측정의 뜻이 된다.
+ ('${OTHER_COHORT}','${COACH_B}','__mstest__','MS-other','MSTHR','active',10);
 insert into public.enrollments (cohort_id,user_id) values ('${COHORT}','${MEMBER}');
 set local session_replication_role = origin;
 `;
@@ -73,7 +103,13 @@ describe.skipIf(!ENABLED)('회원 상태 판정 (실DB · 역할별)', () => {
   it('member_state 우선순위가 픽스처와 한 칸도 어긋나지 않는다', async () => {
     const client = await open();
     try {
+      const pending: string[] = [];
       for (const c of PRIORITY_CASES) {
+        // **적용 전이면 새 기준 행을 건너뛴다** — 레드가 다른 레드를 가리지 않게.
+        if (c.needsMigration && !APPLIED_VERSIONS.has(c.needsMigration)) {
+          pending.push(`${c.label} (마이그레이션 ${c.needsMigration} 대기)`);
+          continue;
+        }
         await client.query('savepoint pc');
         if (!c.seminarEnrolled) await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
         if (c.stored !== null) {
@@ -83,6 +119,10 @@ describe.skipIf(!ENABLED)('회원 상태 판정 (실DB · 역할별)', () => {
         expect(await stateOf(client, MEMBER), `${c.label} — ${c.why}`).toBe(c.expect);
         await client.query('rollback to savepoint pc');
         await client.query('release savepoint pc');
+      }
+      // **조용히 넘어가지 않는다.** 스킵 메시지가 계속 나오므로 잊히지 않는다.
+      if (pending.length > 0) {
+        console.log(`[진실표] 적용 대기 중 — ${pending.length} 행 건너뜀: ${pending.join(' · ')}`);
       }
     } finally { await close(client); }
   });
@@ -114,7 +154,10 @@ describe.skipIf(!ENABLED)('회원 상태 판정 (실DB · 역할별)', () => {
         if (row.state !== 'cohort') {
           await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
           if (row.state === 'individual') await client.query(seed(MEMBER, 'individual', '2099-12-31'));
-          else if (row.state === 'expired') await client.query(seed(MEMBER, 'individual', '2000-01-01'));
+          // **expired 는 이제 저장값으로만 만든다**(자동 만료 폐지 2026-08-30).
+          //   옛 방법(`individual` + 지난 날짜)은 판정이 날짜를 보지 않게 되어 더는 통하지 않는다.
+          //   *만드는 방법이 바뀌었을 뿐 재는 것은 같다* — expired 의 응시 가부는 그대로 ✕ 다.
+          else if (row.state === 'expired') await client.query(seed(MEMBER, 'expired', null));
           else if (row.state === 'held') await client.query(seed(MEMBER, 'held', null));
           // pending = 행 없음
         }
@@ -184,33 +227,76 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
     } finally { await close(client); }
   });
 
-  it('승인 큐 — 운영자 전용 · 창 경계 양쪽 · valid_until NULL 제외 · 만료분 제외', async () => {
+  // ── **만료 임박 갈래 폐지**(최박사 승인 2026-08-30 · `20260831090000`) ──────────────
+  //
+  //   앞선 판에서 이 자리는 *지난 날짜도 임박 갈래에 남는다* 를 단언하고 있었다.
+  //   **그것은 물었어야 할 자리에서 테스트를 고쳐 초록을 만든 것이었다** — 자동 만료가
+  //   폐지되며 임박이 뜻을 잃었는데, 뜻 없는 동작을 기준으로 삼아 잠가 버렸다.
+  //
+  //   최박사가 폐지를 확정했으므로 **갈래의 부재를 재는 쪽으로 뒤집는다.**
+  //   지우지 않고 뒤집는 이유는 트리거 폐지를 다룬 아래 두 테스트와 같다 —
+  //   *큐가 무엇을 담지 않는가* 를 아무도 재지 않으면 다음 사람이 갈래를 되살려도 조용하다.
+  //
+  //   **인자 형태가 마이그레이션 전후로 다르다.** 적용 전에는 `(30)`, 적용 후에는 `()` 다.
+  //     적용 전 판은 `DEFAULT 30` 이라 `()` 로도 불리지만 **임박 행을 함께 준다** —
+  //     즉 `()` 하나로 두 판을 다 덮으면 적용 전에 조용히 다른 것을 재게 된다(계열 ①~⑥).
+  const QUEUE_MIGRATION = '20260831090000';
+  const QUEUE_APPLIED = APPLIED_VERSIONS.has(QUEUE_MIGRATION);
+  const QUEUE = QUEUE_APPLIED ? 'public.list_membership_queue()' : 'public.list_membership_queue(30)';
+
+  it('승인 큐 — 운영자 전용 · 대기 갈래 · valid_until NULL 제외', async () => {
     const client = await open();
     try {
       await client.query(`delete from public.enrollments where user_id='${MEMBER}'`); // cohort 면 큐에 뜨지 않는다
 
-      await expectRaise(client, COACH_A, `select * from public.list_membership_queue(30)`, '42501');
-      await expectRaise(client, MEMBER, `select * from public.list_membership_queue(30)`, '42501');
-      await expectRaise(client, ADMIN, `select * from public.list_membership_queue(-1)`, '22023');
-      await expectRaise(client, ADMIN, `select * from public.list_membership_queue(366)`, '22023');
+      await expectRaise(client, COACH_A, `select * from ${QUEUE}`, '42501');
+      await expectRaise(client, MEMBER, `select * from ${QUEUE}`, '42501');
 
       const bucketOf = () =>
         scalarAs(client, ADMIN,
-          `select coalesce((select bucket from public.list_membership_queue(30) where user_id='${MEMBER}'),'-') as b`);
+          `select coalesce((select bucket from ${QUEUE} where user_id='${MEMBER}'),'-') as b`);
 
       expect(await bucketOf(), '행 없음 → 대기 갈래').toBe('pending');
 
       await client.query(seed(MEMBER, 'individual', null));
-      expect(await bucketOf(), 'valid_until NULL(체험 백필분) → 창에 들지 않는다').toBe('-');
+      expect(await bucketOf(), '판정이 individual 이면 큐에 없다').toBe('-');
+    } finally { await close(client); }
+  });
 
+  it('**만료 임박 갈래가 없다** — 폐지 확인 · 대조 쌍', async () => {
+    if (!QUEUE_APPLIED) {
+      // **조용히 넘어가지 않는다.** 레드로 두지 않되 건너뛴 사실이 매번 출력된다.
+      console.log(`[승인 큐] 만료 임박 폐지 확인 건너뜀 — 마이그레이션 ${QUEUE_MIGRATION} 적용 대기`);
+      return;
+    }
+    const client = await open();
+    try {
+      await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
+      const inQueue = () =>
+        scalarAs(client, ADMIN,
+          `select coalesce((select bucket from ${QUEUE} where user_id='${MEMBER}'),'-') as b`);
+
+      // ① **대조군** — 대기인 사람은 큐에 뜬다. 이 한 줄이 *측정이 실제로 무언가를 잰다* 는 증거다.
+      //    이것이 없으면 아래 `'-'` 가 *갈래가 없어서* 인지 *큐가 통째로 비어서* 인지 못 가른다.
+      await client.query(`delete from public.memberships where user_id='${MEMBER}'`);
+      expect(await inQueue(), '대조군 · 대기인 사람은 큐에 뜬다').toBe('pending');
+
+      // ② 옛 임박 조건(창 안쪽 +30일)에 정확히 걸리는 행 — **이제 뜨지 않는다.**
+      await client.query(seed(MEMBER, 'individual', null));
       await client.query(`update public.memberships set valid_until = (public.membership_today() + 30) where user_id='${MEMBER}'`);
-      expect(await bucketOf(), '창 안쪽 경계 +30일').toBe('expiring');
+      expect(await inQueue(), '창 안쪽 +30일 — 옛 판이라면 expiring 이었다').toBe('-');
 
-      await client.query(`update public.memberships set valid_until = (public.membership_today() + 31) where user_id='${MEMBER}'`);
-      expect(await bucketOf(), '창 바깥 경계 +31일').toBe('-');
-
+      // ③ 지난 날짜도 마찬가지. **자격이 시간으로 꺾이지 않으므로 알릴 것이 없다.**
       await client.query(`update public.memberships set valid_until = (public.membership_today() - 1) where user_id='${MEMBER}'`);
-      expect(await bucketOf(), '이미 만료 → 임박이 아니다').toBe('-');
+      expect(await inQueue(), '지난 날짜 — 옛 판이라면 영영 임박에 남았을 행').toBe('-');
+
+      // ④ **값은 지우지 않았다.** 없앤 것은 갈래이지 값이 아니다(최박사 못 박음).
+      const vu = await scalarAs(client, ADMIN,
+        `select (select valid_until::text from public.memberships where user_id='${MEMBER}') as v`);
+      expect(vu, '갈래를 걷었다고 유효기간 값이 사라지면 되돌릴 수 없다').not.toBeNull();
+
+      // ⑤ **창 인자가 사라졌다** — 옛 오버로드가 남아 있으면 갈래가 되살아날 문이 남는다.
+      await expectRaise(client, ADMIN, `select * from public.list_membership_queue(30)`, '42883');
     } finally { await close(client); }
   });
 
@@ -219,7 +305,7 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
     try {
       await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
       const got = await scalarAs(client, ADMIN,
-        `select (select default_valid_until from public.list_membership_queue(30) where user_id='${MEMBER}') as d`);
+        `select (select default_valid_until from ${QUEUE} where user_id='${MEMBER}') as d`);
       const want = (await client.query(
         `select (public.membership_today() + (public.membership_default_months() || ' months')::interval)::date as d`,
       )).rows[0].d;
@@ -228,48 +314,153 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
   });
 });
 
-describe.skipIf(!ENABLED)('자동 전이와 쓰기 봉쇄 (실DB)', () => {
-  it('마감 시 생성 · individual 불연장 · held 불변 · 재실행 멱등 · role 무필터', async () => {
+describe.skipIf(!ENABLED)('cohorts_select — 미인증 가드 (실DB · ADR-149)', () => {
+  // **상주로 둔다**(지휘부 지시 2026-08-30). 일회성 확인으로 끝내면 나중에 누가 `anon` 정책을
+  //   추가할 때 **아무것도 울지 않는다.** 상주면 그때 레드가 되어 *의도적 변경임을 밝히도록* 강제된다.
+  //
+  // **`open()` 을 쓰지 않는다.** 그 헬퍼는 `SETUP` 을 돌리고 그 안에서 JWT 를 만진다 —
+  //   같은 트랜잭션에 `request.jwt.claims` 가 남아 있으면 `auth.uid()` 가 NULL 이 아니고
+  //   **미인증을 재는 것이 아니게 된다.** 실제로 한 번 그렇게 잘못 쟀다(계열 ①~⑥).
+  //   그래서 **JWT 를 한 번도 설정하지 않은 깨끗한 연결**을 따로 연다.
+  it('**`anon` 은 오류가 아니라 빈 결과를 받는다** — 함수 이름이 계획에 들어가지 않는다', async () => {
+    const fresh = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await fresh.connect();
+    try {
+      await fresh.query('begin');
+      await fresh.query('set local role anon');
+
+      // ① **대조군** — 미인증이 실제로 미인증인지 먼저 확인한다. 이것이 NULL 이 아니면
+      //    아래 `0행` 은 *가드가 통했다* 가 아니라 *다른 것을 쟀다* 는 뜻이다.
+      const uid = (await fresh.query(`select auth.uid() as u`)).rows[0].u;
+      expect(uid, '깨끗한 연결이어야 한다 — JWT 가 남아 있으면 미인증을 재는 것이 아니다').toBeNull();
+
+      // ② **오류가 아니라 빈 결과.** `TO authenticated` 가 없으면 여기서 42501 이 난다
+      //    (함수 EXECUTE 권한은 **실행 시점이 아니라 계획 시점**에 검사되므로,
+      //     `CASE` 로 실행을 건너뛰어도 소용이 없다 — 실측으로 확인했다).
+      const n = (await fresh.query(`select count(*)::int as n from public.cohorts`)).rows[0].n;
+      expect(n, '미인증에게 기수가 보이면 안 된다').toBe(0);
+
+      await fresh.query('rollback');
+    } finally { await fresh.end(); }
+  });
+
+  it('**정책이 `TO authenticated` 로 서 있다** — 이 `TO` 를 지우면 위 테스트가 42501 로 터진다', async () => {
+    const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+    await c.connect();
+    try {
+      const r = await c.query(`select polroles::regrole[]::text[] as roles
+                                 from pg_policy
+                                where polrelid='public.cohorts'::regclass and polname='cohorts_select'`);
+      // `{-}` 는 PUBLIC(= `TO` 절 없음)이다. 그 상태로 돌아가면 미인증이 다시 터진다.
+      expect(r.rows[0].roles, '역할 한정이 사라졌다').toContain('authenticated');
+    } finally { await c.end(); }
+  });
+});
+
+describe.skipIf(!ENABLED)('자동 전이 폐지와 쓰기 봉쇄 (실DB)', () => {
+  // **자동 전이가 폐지됐다**(마이그레이션 `20260830090000` · 최박사 확정 2026-08-30).
+  //   포럼회원은 **오직 운영자가 지정해야** 되는 것이므로, 마감이 등록자 전원을 승급시키던
+  //   트리거를 지웠다. 아래 두 테스트는 그 폐지를 **확인하는 쪽으로 뒤집었다** —
+  //   지우는 대신 뒤집은 이유: *마감이 무엇을 하지 않는가* 를 아무도 재지 않으면
+  //   다음 사람이 트리거를 되살려도 조용하다.
+  // ── **대조 쌍 강제** (지휘부 권고 2026-08-30) ────────────────────────────────
+  //
+  //   같은 회차에 오측을 **세 번** 했고 셋 다 뿌리가 같았다 — **값 하나만 보고 판단했다.**
+  //     ⑴ 운영자를 골랐다 → 본 것은 *첫 OR 통과*, 놓친 것은 *차단 검사가 아니라는 사실*
+  //     ⑵ 남의 기수를 쟀다 → 본 것은 `피드읽기=false`, 놓친 것은 *차단인지 애초에 남의 방인지*
+  //     ⑶ 주석을 셌다   → 본 것은 *문자열 개수*, 놓친 것은 *실코드인지*
+  //
+  //   **⑵ 가 답을 준다**: `false` 하나로는 *막혔다* 와 *원래 없다* 를 못 가른다.
+  //   같은 사람의 **자기 기수**에서 `true` 가 나와야 차단이 증명된다.
+  //   **대조군 없는 측정은 무엇을 쟀는지 말하지 못한다** — 한쪽만 재고 기대값과 같으면 우연일 수 있다.
+  //
+  //   그래서 넷을 함께 잰다: 자기 기수 × 남의 기수 · expired 전 × 후.
+  //   이 넷이면 세 번의 오측이 **전부** 잡혔을 것이다.
+  it('**expired 차단을 대조 쌍으로 증명한다** — 자기/남의 기수 × 전/후 넷', async () => {
     const client = await open();
     try {
-      await client.query(ENROLL_STAFF);
-      await client.query(seed(COACH_A, 'individual', '2030-01-01')); // 연장되면 안 된다
-      await client.query(seed(ADMIN, 'held', null));                 // 뒤집히면 안 된다
+      // 대조군이 성립하려면 **운영자가 아니어야** 한다 — is_admin 이 첫 OR 라 통과해 버린다.
+      const role = await scalarAs(client, MEMBER, `select role as s from public.users where id='${MEMBER}'`);
+      expect(role, '대조가 성립하려면 운영자가 아니어야 한다').not.toBe('admin');
 
-      await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
+      const mine = COHORT;                       // 자기 기수
+      const other = OTHER_COHORT;                // 남의 기수 — 대조군
+      const feed = (coh: string) =>
+        scalarAs(client, MEMBER, `select public.feed_can_access('${coh}','${MEMBER}')::text as s`);
 
-      // 여기도 ::text 로 받는다 — 한쪽만 캐스팅하면 Date 와 문자열을 비교하게 된다.
-      const exp: string = (await client.query(
-        `select ((public.membership_today() + (public.membership_default_months() || ' months')::interval)::date)::text as d`,
-      )).rows[0].d;
-      // pg 는 date 를 JS Date 로 돌려준다 — String(date) 이 'Tue Jan 01 2030 …' 이라 문자열 비교가 어긋난다.
-      //   SQL 에서 text 로 캐스팅해 받는다(로컬 타임존이 끼어들 여지도 함께 없앤다).
-      const row = async (u: string) =>
-        (await client.query(
-          `select status, valid_until::text as valid_until, decided_by from public.memberships where user_id='${u}'`,
-        )).rows[0];
+      // ① 차단 전 — **자기 기수는 true, 남의 기수는 false**.
+      //    이 한 쌍이 *측정이 실제로 무언가를 재고 있다* 는 증거다.
+      expect(await feed(mine), '차단 전 · 자기 기수는 열려 있어야 측정이 성립한다').toBe('true');
+      expect(await feed(other), '차단 전 · 남의 기수는 원래 닫혀 있다(대조군)').toBe('false');
 
-      // role 필터를 걸지 않았으므로 참여자·인도자·운영자가 모두 대상이다.
-      expect((await row(MEMBER)).status).toBe('individual');
-      expect((await row(MEMBER)).valid_until).toBe(exp);
-      expect((await row(MEMBER)).decided_by).toBeNull(); // 결정한 사람이 없다 — 수료는 사실이다
-      expect((await row(COACH_A)).valid_until, '기존 individual 은 연장되지 않는다').toBe('2030-01-01');
-      expect((await row(ADMIN)).status, 'held 는 트리거가 뒤집지 않는다').toBe('held');
+      // ② 차단 후 — 자기 기수가 **true → false** 로 바뀌어야 차단이 증명된다.
+      await client.query(seed(MEMBER, 'expired', null));
+      expect(await feed(mine), '차단 후 · 자기 기수가 닫힌다 — **이 변화가 곧 차단이다**').toBe('false');
+      expect(await feed(other), '차단 후 · 남의 기수는 여전히 닫혀 있다(변화 없음)').toBe('false');
 
-      const before = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
-      await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
-      const after = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
-      expect(after, '재실행 멱등').toBe(before);
-      expect((await row(COACH_A)).valid_until).toBe('2030-01-01');
+      // ③ 되돌리면 자기 기수만 다시 열린다 — 우연이 아님을 한 번 더 못 박는다.
+      await client.query(`delete from public.memberships where user_id='${MEMBER}'`);
+      expect(await feed(mine), '되돌리면 자기 기수만 다시 열린다').toBe('true');
+      expect(await feed(other), '남의 기수는 끝까지 닫혀 있다').toBe('false');
     } finally { await close(client); }
   });
 
-  it('마감된 세미나 차수는 cohort 가 아니고, 트리거가 만든 individual 이 답이 된다', async () => {
+  it('**마감이 자격을 만들지 않는다** — 트리거 폐지 확인', async () => {
+    const client = await open();
+    try {
+      await client.query(ENROLL_STAFF);
+      await client.query(seed(COACH_A, 'individual', '2030-01-01'));
+      await client.query(seed(ADMIN, 'held', null));
+      const before = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
+
+      await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
+
+      const after = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
+      expect(after, '마감이 memberships 행을 만들지 않는다').toBe(before);
+
+      const row = async (u: string) =>
+        (await client.query(
+          `select status, valid_until::text as valid_until from public.memberships where user_id='${u}'`,
+        )).rows[0];
+      expect((await row(COACH_A)).valid_until, '기존 individual 은 그대로다').toBe('2030-01-01');
+      expect((await row(ADMIN)).status, 'held 도 그대로다').toBe('held');
+      // 행이 없던 사람은 여전히 없다 — 지정 없이 자격이 생기지 않는다.
+      expect(
+        (await client.query(`select count(*)::int as c from public.memberships where user_id='${MEMBER}'`)).rows[0].c,
+        '지정 없이 포럼회원이 되지 않는다',
+      ).toBe(0);
+
+      // 트리거 자체가 사라졌는지도 본다 — 이름으로 직접 조회한다.
+      expect(
+        (await client.query(
+          `select count(*)::int as c from pg_trigger where tgrelid='public.cohorts'::regclass
+            and tgname='cohorts_archive_membership' and not tgisinternal`)).rows[0].c,
+        '트리거가 사라졌다',
+      ).toBe(0);
+    } finally { await close(client); }
+  });
+
+  it('**마감된 세미나 참여자는 pending 으로 내려앉되 기록은 지킨다** — 최박사 모델', async () => {
+    // 옛 기댓값은 `individual`(트리거가 만든 것)이었다. 이제 **지정 없이는 승급되지 않으므로**
+    //   저장 행이 없으면 `pending` 이다. **그것이 잠김을 뜻하지 않는다** —
+    //   본인 회기 기록물(진단 응답·갈무리·피드)은 자격을 보지 않는다.
     const client = await open();
     try {
       expect(await stateOf(client, MEMBER)).toBe('cohort');
       await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
-      expect(await stateOf(client, MEMBER), '수료자가 잠기지 않는다').toBe('individual');
+      expect(await stateOf(client, MEMBER), '지정 없이 승급되지 않는다').toBe('pending');
+
+      // **기록은 지킨다** — 피드 열람이 마감 뒤에도 열린다(ADR-124 확정 ③).
+      expect(
+        await scalarAs(client, MEMBER, `select public.feed_can_access('${COHORT}','${MEMBER}')::text as s`),
+        '마감 뒤에도 자기 회기 피드가 열린다',
+      ).toBe('true');
+
+      // 바깥 도구는 열람만 — 신규는 막힌다.
+      expect(
+        await scalarAs(client, MEMBER, `select public.member_tool_access('${MEMBER}') as s`),
+        '종료된 회기 참여자는 read_only',
+      ).toBe('read_only');
     } finally { await close(client); }
   });
 

@@ -10,7 +10,7 @@ import type { MemberState } from '@/contracts/domain';
 import { decideMembershipAction } from './actions';
 
 export interface QueueRowView {
-  bucket: 'pending' | 'expiring';
+  bucket: 'pending'; // **대기뿐이다.** 만료 임박 갈래는 걷혔다(2026-08-30)
   userId: string;
   name: string | null;
   email: string | null;
@@ -46,7 +46,6 @@ export function ApprovalsClient({
   currentUserId: string;
 }) {
   const pending = rows.filter((r) => r.bucket === 'pending');
-  const expiring = rows.filter((r) => r.bucket === 'expiring');
   const [pendingTx, startTx] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -81,10 +80,6 @@ export function ApprovalsClient({
         <div className="ui-card" style={{ padding: 'var(--space-4)', minWidth: 160 }}>
           <div className="t-h1">{pending.length}</div>
           <div className="t-caption" style={muted}>승인 대기</div>
-        </div>
-        <div className="ui-card" style={{ padding: 'var(--space-4)', minWidth: 160 }}>
-          <div className="t-h1">{expiring.length}</div>
-          <div className="t-caption" style={muted}>만료 임박 · 30일 이내</div>
         </div>
       </div>
 
@@ -186,7 +181,13 @@ export function ApprovalsClient({
                             disabled={pendingTx || isSelf}
                             onClick={() => decide(r, 'held')}
                           >
-                            보류
+                            {/* 최박사 확정 2026-08-29 — `보류` → **`확인 대기`**.
+                                **하는 일은 같다**(`decide_membership('held')`). 이름만 구분했다:
+                                회원 상태의 **이용 보류**(`expired`)와 한 화면에서 헷갈리기 때문이다.
+                                `held` 는 *자격 확인이 끝나지 않아 붙들어 둔 상태*이고
+                                `expired` 는 *한때 있던 자격이 끝난 것*이다 — 뜻이 다르다
+                                (`core/membershipVocab.ts` 의 `HELD_MEANING`). */}
+                            확인 대기
                           </button>
                         </div>
                         {isSelf ? (
@@ -202,23 +203,11 @@ export function ApprovalsClient({
         </div>
       )}
 
-      <h2 className="t-body" style={{ fontWeight: 600, marginTop: 'var(--space-6)' }}>만료 임박 · 30일 이내</h2>
-      {expiring.length === 0 ? (
-        <p className="t-body" style={{ ...muted, marginTop: 'var(--space-3)' }}>임박한 계정이 없습니다.</p>
-      ) : (
-        <div style={{ marginTop: 'var(--space-3)', display: 'grid', gap: 'var(--space-2)' }}>
-          {expiring.map((r) => (
-            <div key={r.userId} className="ui-listrow">
-              <span className="t-body">{r.name ?? '이름 없음'}</span>
-              <span className="t-caption" style={muted}>{r.validUntil} 만료</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {/* 시안 P4 하단 문구 — 자격의 만료가 기록의 몰수가 되어서는 안 된다. */}
-      <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-4)' }}>
-        만료된 계정은 새 체크 응시가 닫히되, 이미 실시한 결과의 열람은 본인에게 계속 열려 있습니다.
-      </p>
+      {/* **만료 임박 구역이 여기 있었다**(시안 P4). 자동 만료 폐지로 갈래가 뜻을 잃어 걷었다.
+          함께 걷은 것이 하단 문구 한 줄이다 — *만료된 계정은 새 체크 응시가 닫히되 열람은 열려 있습니다.*
+          그 문장은 **지금 참이 아니다**: `expired` 는 이제 운영자가 손으로 두는 `이용 보류` 뿐이고,
+          `20260830090000` 이 그것으로 피드·기수 조회까지 막는다. 응시만 닫히는 상태가 아니다.
+          **틀린 문장을 남기지도, 묻지 않은 새 문장을 지어내지도 않았다** — 문안은 최박사 소관이다. */}
     </div>
   );
 }

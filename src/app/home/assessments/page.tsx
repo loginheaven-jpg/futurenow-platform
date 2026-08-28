@@ -28,11 +28,24 @@ export default async function AssessmentsPage() {
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
 
-  // 게이트를 데이터보다 먼저(CLAUDE §9). 자격이 없으면 목록을 그리기 전에 대기 안내로 받는다.
+  // **화면 게이트를 걷었다**(최박사 확정 2026-08-30).
+  //
+  //   최박사 말씀: *"퓨처나우 메인 서비스 입장에서는 해당 메뉴 클릭을 막을 이유가 없다.
+  //   각 도구 진입을 막지는 말고, 진입하는 사람이 어떤 자격자인지만 패러미터가 넘어가면 된다."*
+  //
+  //   **옛 게이트가 열람까지 막고 있었다.** 종료된 회기 참여자는 `pending` 이 되어
+  //   `standing`·`journey` 둘 다 불가라 이 자리에서 `/pending` 으로 튕겼고,
+  //   **자기 검사 데이터를 보러 들어갈 문이 그 문 하나뿐**이었다.
+  //   최박사 모델은 *본인의 검사데이터는 볼 수 있지만 신규검사는 안 됨* 이므로 어긋난다.
+  //
+  //   **걷어도 안전하다** — 화면은 전 항목을 그리고 링크만 `undefined` 가 되며,
+  //   신규 응시의 진짜 강제는 RPC 안의 `member_can_assess`(→ `member_tool_access`)다.
+  //   *화면에서 버튼을 감추는 것은 안전장치가 아니다*(발주서 §4.4)의 뒷면이다 —
+  //   감추기를 걷어도 서버가 이미 막는다.
+  //
+  //   **잠금이 먼저 섰다**(`tests/toolGate.test.ts`) — 걷는 일과 잠금은 한 쌍이고
+  //   서버 게이트가 유일한 방어선이 되므로 그 방어선에 강제가 있는지를 테스트가 잰다.
   const state = await ctx.getMyMemberState();
-  if (!assessmentAccess(state, 'standing') && !assessmentAccess(state, 'journey')) {
-    redirect('/pending?returnTo=/home/assessments');
-  }
 
   const cohorts = await ctx.listMyCohorts();
   // 여정은 **활성 차수**에만 붙는다. 마감된 기수는 여정이 끝났고 상시만 남는다.

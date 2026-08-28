@@ -7,22 +7,56 @@
 // **기다림에는 끝이 있어야 하고, 끝났는지 확인할 수 있어야 한다**(`CLAUDE.md` §11).
 //   폴링에 **상한**이 있고(`DEPLOY_WAIT_MS`), 넘기면 **시끄럽게 실패**한다 — 조용히 5건으로 넘어가지 않는다.
 //
+// ─────────────────────────────────────────────────────────────────────────────
+// **규율: 적히는 모든 값은 둘 중 하나다** — 따라가야 하는 값이거나, 얼어야 하는 값이거나.
+//   (`CLAUDE.md` §11)
+//
+//   **기대 커밋은 따라가야 하는 값인데 여태 손으로 박고 있었다.** 절차서 해시 건에서
+//   *고정 해시는 push 할 때마다 낡는다* 는 규율을 세워 놓고 **이 도구에는 적용하지 않았다** —
+//   규율이 문서에만 살고 도구에 내려오지 않은 채로 한 회차를 더 돌았다.
+//
+//   실제로 값을 냈다(2026-08-30): `main` 이 이미 `71fa30c` 인데 낡은 인수를 그대로 넘겨
+//   *배포 신원 불일치* 로 읽었다. **사고가 아니라 인수 착오였고, 배포는 멀쩡했다** —
+//   그러나 도구가 낸 것은 "틀렸다"는 신호였고 그 신호를 쫓는 데 시간을 썼다.
+//
+//   → **인수를 지우고 얻는 방법을 적는다.** 기대 커밋은 `git ls-remote origin main` 에서 뽑는다.
+//     손으로 넘기고 싶으면 여전히 넘길 수 있으나(핫픽스·프리뷰), **기본값은 조회다.**
+// ─────────────────────────────────────────────────────────────────────────────
+//
 // 사용:
-//   node scripts/postdeploy.mjs <기대 커밋(짧은 해시)> [기준 URL]
-//   예) node scripts/postdeploy.mjs 1bb05f3 https://future.yebom.org
+//   node scripts/postdeploy.mjs [기대 커밋] [기준 URL]
+//   예) node scripts/postdeploy.mjs                      # 기대 커밋 = origin/main 조회값
+//       node scripts/postdeploy.mjs 1bb05f3              # 손으로 지정(예외)
 //
 // **자격을 쓰지 않는다** — 전부 비인증으로 재는 것들이다(게이트 확인 포함).
 import { setTimeout as sleep } from 'node:timers/promises';
+import { execFileSync } from 'node:child_process';
 
-const WANT = process.argv[2];
+/**
+ * 기대 커밋 — **원격에서 얻는다.** 로컬 `git log` 를 보지 않는 이유는 `CLAUDE.md` §11 과 같다:
+ *   로컬 해시는 push 의 증거가 아니다. **배포가 서빙할 것은 원격이 들고 있는 것**이다.
+ * 브랜치를 인수로 받지 않는다 — 이 도구는 **운영 배포 확인용**이고 운영은 `main` 하나다.
+ */
+function wantFromRemote() {
+  const out = execFileSync('git', ['ls-remote', 'origin', 'main'], { encoding: 'utf8' }).trim();
+  const sha = out.split(/\s+/)[0];
+  if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error(`origin/main 해시를 읽지 못했다: ${JSON.stringify(out)}`);
+  return sha.slice(0, 7); // `/api/version` 의 commitShort 와 같은 자릿수(route.ts 가 slice(0,7))
+}
+
+const ARG = process.argv[2];
 const BASE = process.argv[3] ?? 'https://future.yebom.org';
-const WAIT_MS = Number(process.env.DEPLOY_WAIT_MS ?? 10 * 60 * 1000); // 상한 10분
-const POLL_MS = Number(process.env.DEPLOY_POLL_MS ?? 10_000);
-
-if (!WANT) {
-  console.error('사용법: node scripts/postdeploy.mjs <기대 커밋> [기준 URL]');
+let WANT;
+try {
+  WANT = ARG ?? wantFromRemote();
+  if (!ARG) console.log(`[기대 커밋] git ls-remote origin main → ${WANT}`);
+  else console.log(`[기대 커밋] 손으로 지정 → ${WANT}  (기본은 origin/main 조회다)`);
+} catch (e) {
+  console.error(`X 기대 커밋을 얻지 못했다: ${e.message}`);
   process.exit(2);
 }
+const WAIT_MS = Number(process.env.DEPLOY_WAIT_MS ?? 10 * 60 * 1000); // 상한 10분
+const POLL_MS = Number(process.env.DEPLOY_POLL_MS ?? 10_000);
 
 const fails = [];
 const ok = (label, detail) => console.log(`  O ${label.padEnd(28)} ${detail}`);

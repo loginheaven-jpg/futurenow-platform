@@ -48,12 +48,15 @@ import type {
   Wave,
   ChatRequest,
   ChatResponse,
+  CohortRole,
+  MembershipView,
 } from '@/contracts';
 import { z } from 'zod';
 import { gatewayChat } from './ai/gateway';
 import { satisfiesRole, canAccessContact } from './authz';
 import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError } from './errors';
-import { toMemberState } from './membership';
+import { toMemberState, toMembershipStatus } from './membership';
+import { toMembershipView } from './membershipVocab';
 import {
   rowToAlert,
   rowToCoachApplication,
@@ -1245,11 +1248,79 @@ class SupabaseCoreContext implements CoreContext {
     return toMemberState(data);
   }
 
-  async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {
-    const { data, error } = await this.sb.rpc('list_membership_queue', { p_expiring_days: expiringDays });
+  /**
+   * 5차 T-3·T-4 — 표시용 회원 상태.
+   *
+   * **입력이 `member_state()` 산출값이 아니라 `memberships.status` 저장값이다.**
+   * 처음 판은 산출값을 넣었고, 그래서 승인받은 적 없는 18명이 화면에 `포럼회원` 으로 표시됐다
+   * (`member_state`=`cohort` → `forum`). 최박사가 기각하신 그것이다 —
+   * *"포럼회원이라는 이름을 붙이는 순간 아닌 것을 그렇다고 말한 것이 된다."*
+   * `cohort` 는 **권한**이지 자격이 아니므로 tier 의 입력이 될 수 없다.
+   *
+   * **권한 판정은 손대지 않았다** — `member_state()`·`member_can_assess`·RLS·진실표 무변경.
+   * 이 메서드는 저장 행을 읽기만 한다(RLS `memberships_select`: 본인 + 운영자).
+   *
+   * 소속은 **T-5 와 같은 입력**에서 온다 — 참여는 `listMyCohorts()`(RPC `my_cohorts`),
+   * 인도는 `listCohortsByCoach(me)`. *입력이 같고 출력이 다른 두 함수* 라는 정리 그대로다.
+   * **활성 기수만** 담는다(T-5 가 `status === 'active'` 만 본 것과 같은 기준) — 끝난 기수를
+   * 소속으로 계속 세우면 *지금 무엇인가* 를 묻는 줄이 이력이 된다.
+   */
+  async getMyMembershipView(): Promise<MembershipView> {
+    const me = await this.currentUser();
+    if (!me) throw new CoreError('로그인이 필요합니다');
+
+    // 저장값. **행이 없을 수 있다** — 실측 18명이 그 경우이고, 그때가 `visitor` 다.
+    const { data, error } = await this.sb
+      .from('memberships')
+      .select('status')
+      .eq('user_id', me.id)
+      .maybeSingle();
+    if (error) throw new CoreError(`getMyMembershipView 실패: ${error.message}`);
+    const stored = toMembershipStatus((data as { status?: unknown } | null)?.status ?? null);
+
+    const mine = await this.listMyCohorts();
+    const roles: Omit<CohortRole, 'firstSessionAt'>[] = mine
+      .filter((c) => c.status === 'active')
+      .map((c) => ({ cohortId: c.cohortId, cohortName: c.name, kind: 'participant' as const }));
+    if (me.role === 'coach' || me.role === 'admin') {
+      const led = await this.listCohortsByCoach(me.id).catch(() => []);
+      for (const c of led) {
+        if (c.status !== 'active') continue;
+        roles.push({ cohortId: c.id, cohortName: c.name, kind: 'coach' as const });
+      }
+    }
+
+    // **첫 회차일 — 최근 기수를 재는 기준**(최박사 확정 2026-08-30).
+    //   *"1기참여자 5기운영자 이면 5기운영자인 것이다. 최신의 정보가 중요하니까."*
+    //   이름 끝의 숫자로 재지 않는다 — 끝이 `n기` 가 아닌 기수가 섞이면 못 가린다.
+    //   회차가 없는 기수는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
+    //   **읽지 못해도 표시가 멈추지 않는다** — `null` 이면 그 기수가 *최근* 을 주장하지 못할 뿐이다.
+    const withDates: CohortRole[] = [];
+    for (const r of roles) {
+      const sessions = await this.listCohortSessions(r.cohortId).catch(() => []);
+      const first = sessions.reduce<string | null>(
+        (acc, s) => (acc === null || s.heldAt < acc ? s.heldAt : acc),
+        null,
+      );
+      withDates.push({ ...r, firstSessionAt: first });
+    }
+
+    // 운영자는 **새로 읽어 올 것이 없다** — `currentUser()` 가 이미 `role` 을 들고 있다.
+    return toMembershipView(stored, withDates, me.role === 'admin');
+  }
+
+  async listMembershipQueue(): Promise<MembershipQueueRow[]> {
+    // **인자 없이 부른다.** 만료 임박 갈래가 걷히며 창 인자도 함께 사라졌다(`20260831090000`).
+    const { data, error } = await this.sb.rpc('list_membership_queue', {});
     if (error) throw new CoreError(`listMembershipQueue 실패: ${error.message}`);
-    return ((data ?? []) as MembershipQueueDbRow[]).map((r) => ({
-      bucket: r.bucket === 'expiring' ? 'expiring' : 'pending',
+    return ((data ?? []) as MembershipQueueDbRow[])
+      // **배포 창을 닫는 한 줄이다 — 방어적 잡음이 아니다.**
+      //   코드가 먼저 나가고 마이그레이션이 나중에 적용되는 사이, 옛 함수는 `DEFAULT 30` 이라
+      //   인자 없는 호출에도 응답하며 **임박 행을 함께 준다.** 그 행을 여기서 버린다.
+      //   적용이 끝나면 걸릴 것이 없어지고, 지우면 그 창에서 화면에 유령 행이 뜬다.
+      .filter((r) => r.bucket === 'pending')
+      .map((r) => ({
+      bucket: 'pending' as const,
       userId: r.user_id,
       name: r.name,
       email: r.email,
