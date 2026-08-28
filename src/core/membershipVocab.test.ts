@@ -34,7 +34,11 @@ describe('문안 — 최박사 원문 그대로 (한 글자도 다듬지 않는�
   it('tier 별 한 줄 설명', () => {
     // **대체됐다**(최박사 위임 · 지휘부 작성 2026-08-30) — 방문회원은 기다리는 사람이 아니라
     //   아직 아무것도 하지 않은 사람이라 `기다리는 중` 이 사실과 어긋났다.
-    expect(TIER_LEAD.visitor).toBe('세미나에 참여하시거나 촉진자포럼에 가입하시면 진단 등 모든 도구를 이용하실 수 있습니다.');
+    expect(TIER_LEAD.visitor).toBe(
+      '세미나에 참여하시는 동안, 또는 촉진자포럼에 가입해 포럼회원으로 승인받으시면 진단 등 모든 도구를 이용하실 수 있습니다.',
+    );
+    // **승인까지 말해야 한다** — *가입하시면* 만 두면 `UPGRADE_HOWTO` 와 조건이 어긋난다.
+    expect(TIER_LEAD.visitor).toContain('승인받으시면');
     expect(TIER_LEAD.visitor, '옛 문장이 남으면 안 된다').not.toContain('기다리는 중');
     expect(TIER_LEAD.forum).toBe('포럼회원자격 유지기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.');
     expect(TIER_LEAD.suspended).toBe('이용이 보류되었습니다. 운영자에게 문의해 주십시오.');

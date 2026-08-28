@@ -177,8 +177,21 @@ BEGIN
   --   기한을 두지 않는다: 보류는 기간이 아니라 상태다. 푸는 것은 사람의 결정이다.
   IF p_decision = 'expired' THEN
     UPDATE auth.users SET banned_until = 'infinity'::timestamptz WHERE id = p_user_id;
+    -- **신설 (라) — 이미 열린 세션도 끊는다.**
+    --   `banned_until` 은 **새 로그인과 토큰 갱신만** 막는다. 이미 발급된 세션을 그대로 두면
+    --   그 사람은 갱신 시점까지 살아 있는 채로 남는다. 그 창을 0으로 만드는 것이 이 두 줄이다.
+    --   **이것이 근본 처리다**(지휘부 판정 2026-08-30) — 이것이 없으면 창 안에서
+    --   앱의 역할 검사 21곳이 화면 껍데기를 그리고, 더 중요하게는 **보류를 보지 않는
+    --   비운영자 쓰기 경로**(자기 자신·코치 소유)가 살아 있다. 아래 주를 함께 볼 것.
+    DELETE FROM auth.sessions WHERE user_id = p_user_id;
+    -- `refresh_tokens.session_id` 는 `ON DELETE CASCADE` 라 위 한 줄로 대부분 사라진다(실측).
+    --   그래도 **`session_id` 가 NULL 인 옛 행이 남을 수 있어** 사용자 기준으로 한 번 더 지운다.
+    --   지우는 것이 더 안전한 쪽이고, 없으면 아무것도 지우지 않는다.
+    DELETE FROM auth.refresh_tokens WHERE user_id::text = p_user_id::text;
   ELSE
     UPDATE auth.users SET banned_until = NULL WHERE id = p_user_id;
+    -- 세션은 **되살리지 않는다.** 지운 것을 되돌릴 수 없고, 되돌릴 필요도 없다 —
+    --   풀린 사람은 다시 로그인하면 된다. 그것이 가장 단순하고 틀릴 자리가 없다.
   END IF;
 END; $fn$;
 
@@ -222,7 +235,46 @@ END; $fn$;
 --   (7) **계정 잠금과 해제** — `expired` 로 `banned_until` 이 서고, 다른 결정으로 **풀리는지.**
 --        푸는 것까지 재지 않으면 *되돌렸는데 로그인이 안 된다* 가 남는다.
 --
+--   (7-2) **세션이 실제로 끊기는지** — 보류 대상의 `auth.sessions` 행이 0이 되는지.
+--        **이것이 창을 0으로 만드는 줄이다.** 아래 주가 왜 그것이 근본 처리인지 말한다.
+--
 --   (8) **기존 `expired` 계정 백필이 필요한가** — 실측 시점 `expired` 저장 행은 **0개**라 불필요하다.
 --        적용 시점에 다시 세고, 0이 아니면 그 계정들을 함께 잠근다.
 --
 --   **실기수와 실계정은 건드리지 않는다** — [계정] 항목은 테스트 픽스처로 잰다.
+--
+-- ============================================================
+-- 왜 세션 무효화가 근본 처리인가 — **실측으로 확인한 것**
+-- ============================================================
+--
+-- 지휘부가 앱의 역할 검사 21곳을 물었다. 실측 결과는 그보다 넓다.
+--
+--   **앱 21곳**: 전부 DB 뒷받침이 있다(게이트·표시·`coach||admin` 쓰기 가드).
+--     *역할만 보고 쓰기를 허용하는데 DB 가 안 막는 자리* 는 **0개**다.
+--
+--   **그러나 DB 쪽에 다른 층의 구멍이 있다**: `auth.uid()` 로 통과하는 쓰기 정책 중
+--     `member_state` 를 보지 않는 것이 **51개**다(실측 2026-08-31 · 산출 명령은 아래).
+--     `is_admin` 을 고쳐도 **자기 자신 경로**(`user_id = auth.uid()`)와
+--     **코치 소유 경로**(`coach_id = auth.uid()` · `is_cohort_coach(...)`)는 닫히지 않는다.
+--     예: `cohorts_update`·`cohorts_delete` 는 `(coach_id = auth.uid()) OR is_admin(...)` 이라
+--     **보류된 코치가 자기 차수를 그대로 고칠 수 있다.**
+--
+--     산출:
+--       select count(*) from pg_policy
+--        where polcmd in ('w','a','d','*')
+--          and coalesce(pg_get_expr(polqual,polrelid),'')||coalesce(pg_get_expr(polwithcheck,polrelid),'')
+--              not like '%member_state%'
+--          and coalesce(pg_get_expr(polqual,polrelid),'')||coalesce(pg_get_expr(polwithcheck,polrelid),'')
+--              like '%auth.uid()%';
+--
+--   **그러므로 보류의 완결성은 RLS 가 아니라 로그인·세션 차단에 달려 있다.**
+--     51곳에 조건을 하나씩 붙이는 길도 있으나 그것은 **규칙을 51곳에 두는 일**이고,
+--     세션을 끊으면 **호출 자체가 성립하지 않아** 51곳이 한 번에 닫힌다.
+--     `currentUser()` 와 미들웨어가 둘 다 `auth.getUser()` 를 부르므로(로컬 디코드가 아니라
+--     GoTrue 왕복이다) 세션이 사라진 뒤에는 신원 자체가 서지 않는다.
+--
+--   ⚠ **남는 것 하나** — 이미 발급된 액세스 토큰의 잔여 수명.
+--     세션 행을 지우면 갱신이 막히지만, JWT 는 서명으로 검증되므로 **만료 전 한 번은
+--     통과할 수 있다.** `getUser()` 가 GoTrue 를 거치므로 실제로는 거기서 막힐 가능성이 높으나
+--     **그것을 실측하지 못했다**(살아 있는 계정을 잠가야 잴 수 있다).
+--     **확인하지 않은 것을 안전하다고 적지 않는다** — 적용 시점에 테스트 계정으로 잰다. [계정]

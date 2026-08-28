@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import {
-  holdConfirm, holdCanProceed, LOSES_ADMIN, LOSES_MEMBER, NOTE_REQUIRED, UNDO_ADMIN, UNDO_MEMBER,
-} from './holdConfirm';
+import { holdConfirm, holdCanProceed, LOSES_ADMIN, LOSES_MEMBER, NOTE_REQUIRED } from './holdConfirm';
 
-describe('이용 보류 확인 — 넷을 다 보여 준다', () => {
+describe('이용 보류 확인 — 셋을 보여 준다', () => {
   it('**대상이 누구인지가 빠지지 않는다** — 잘못 고른 것이 여기서 드러난다', () => {
     const c = holdConfirm({ name: '홍길동', email: 'a@b.test', targetIsAdmin: false });
     expect(c.who.name).toBe('홍길동');
@@ -23,14 +21,20 @@ describe('이용 보류 확인 — 넷을 다 보여 준다', () => {
     expect(LOSES_ADMIN).not.toBe(LOSES_MEMBER);
     // 둘 다 **로그인이 막힌다**는 사실을 말해야 한다 — 그것이 이 모델의 핵심이다.
     for (const s of [LOSES_ADMIN, LOSES_MEMBER]) expect(s).toContain('로그인하실 수 없게');
-    // 운영자 문장만 되돌리는 주체를 좁힌다.
-    expect(LOSES_ADMIN).toContain('슈퍼어드민');
-    expect(LOSES_MEMBER).not.toContain('슈퍼어드민');
+    // 운영자 문장만 운영 화면을 말한다.
+    expect(LOSES_ADMIN).toContain('운영 화면');
+    expect(LOSES_MEMBER).not.toContain('운영 화면');
   });
 
-  it('**되돌리는 법이 대상에 따라 다르다**', () => {
-    expect(holdConfirm({ name: 'a', email: 'e', targetIsAdmin: true }).undo).toBe(UNDO_ADMIN);
-    expect(holdConfirm({ name: 'a', email: 'e', targetIsAdmin: false }).undo).toBe(UNDO_MEMBER);
+  // **최박사가 「불필요」라 하신 것은 문장이 아니라 그 정보다.**
+  //   자리를 남겨 두면 다음 사람이 다른 문장을 지어 넣고, 그것은 걷으라 하신 것을
+  //   다른 말로 되살리는 셈이다. 그래서 **항목째 없음**을 잰다.
+  it('**되돌리는 법이 항목째 없다** — 문장만 걷고 자리를 남기지 않았다', () => {
+    for (const targetIsAdmin of [true, false]) {
+      const c = holdConfirm({ name: 'a', email: 'e', targetIsAdmin });
+      expect(Object.keys(c).sort()).toEqual(['loses', 'noteRequired', 'who']);
+      expect(JSON.stringify(c), '되돌리는 법이 다른 말로 되살아났다').not.toContain('되돌리');
+    }
   });
 
   it('**근거 메모 안내가 늘 붙는다** — 일반 회원에게도 같은 확인이다', () => {

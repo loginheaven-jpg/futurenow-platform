@@ -99,33 +99,40 @@ async function close(client: Client): Promise<void> {
 
 const stateOf = (c: Client, u: string) => scalarAs(c, u, `select public.member_state('${u}') as s`);
 
+/** 진실표 한 벌을 돈다. **재는 방식이 둘로 갈리지 않게** 두 테스트가 이것을 공유한다. */
+async function runPriorityCases(cases: typeof PRIORITY_CASES): Promise<void> {
+  const client = await open();
+  try {
+    for (const c of cases) {
+      await client.query('savepoint pc');
+      if (!c.seminarEnrolled) await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
+      if (c.stored !== null) {
+        const vu = c.stored === 'individual' ? (c.expiredDate ? '2000-01-01' : '2099-12-31') : null;
+        await client.query(seed(MEMBER, c.stored, vu));
+      }
+      expect(await stateOf(client, MEMBER), `${c.label} — ${c.why}`).toBe(c.expect);
+      await client.query('rollback to savepoint pc');
+      await client.query('release savepoint pc');
+    }
+  } finally { await close(client); }
+}
+
 describe.skipIf(!ENABLED)('회원 상태 판정 (실DB · 역할별)', () => {
   it('member_state 우선순위가 픽스처와 한 칸도 어긋나지 않는다', async () => {
-    const client = await open();
-    try {
-      const pending: string[] = [];
-      for (const c of PRIORITY_CASES) {
-        // **적용 전이면 새 기준 행을 건너뛴다** — 레드가 다른 레드를 가리지 않게.
-        if (c.needsMigration && !APPLIED_VERSIONS.has(c.needsMigration)) {
-          pending.push(`${c.label} (마이그레이션 ${c.needsMigration} 대기)`);
-          continue;
-        }
-        await client.query('savepoint pc');
-        if (!c.seminarEnrolled) await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
-        if (c.stored !== null) {
-          const vu = c.stored === 'individual' ? (c.expiredDate ? '2000-01-01' : '2099-12-31') : null;
-          await client.query(seed(MEMBER, c.stored, vu));
-        }
-        expect(await stateOf(client, MEMBER), `${c.label} — ${c.why}`).toBe(c.expect);
-        await client.query('rollback to savepoint pc');
-        await client.query('release savepoint pc');
-      }
-      // **조용히 넘어가지 않는다.** 스킵 메시지가 계속 나오므로 잊히지 않는다.
-      if (pending.length > 0) {
-        console.log(`[진실표] 적용 대기 중 — ${pending.length} 행 건너뜀: ${pending.join(' · ')}`);
-      }
-    } finally { await close(client); }
+    await runPriorityCases(PRIORITY_CASES.filter((c) => !c.needsMigration));
   });
+
+  // **적용 대기 행은 별도 `it` 으로 가른다**(지휘부 판정 2026-08-30).
+  //   앞서는 한 테스트 안 루프에서 `continue` + `console.log` 로 건너뛰었는데,
+  //   **그러면 집계가 움직이지 않고 기본 리포터가 출력을 삼켜** 건너뛴 것이 통과로 보인다.
+  //   `it.skipIf` 는 **스킵 수를 움직이고 리포터가 그것을 삼키지 않는다** —
+  //   *시끄럽다* 의 정의를 출력이 아니라 **집계**로 옮긴 것이다.
+  const GATED = PRIORITY_CASES.filter((c) => !!c.needsMigration);
+  const GATED_READY = GATED.every((c) => APPLIED_VERSIONS.has(c.needsMigration!));
+  it.skipIf(!GATED_READY || GATED.length === 0)(
+    `member_state 진실표 — 적용 대기였던 ${GATED.length} 행`, async () => {
+      await runPriorityCases(GATED);
+    });
 
   it('held 가 cohort 를 이긴다 — 참여자·인도자·운영자 모두', async () => {
     // 자동 전이에 role 필터를 걸지 않기로 한 결정(초안 §3-⑤)과 맞물리는 자리다.
@@ -263,12 +270,8 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
     } finally { await close(client); }
   });
 
-  it('**만료 임박 갈래가 없다** — 폐지 확인 · 대조 쌍', async () => {
-    if (!QUEUE_APPLIED) {
-      // **조용히 넘어가지 않는다.** 레드로 두지 않되 건너뛴 사실이 매번 출력된다.
-      console.log(`[승인 큐] 만료 임박 폐지 확인 건너뜀 — 마이그레이션 ${QUEUE_MIGRATION} 적용 대기`);
-      return;
-    }
+  // **조기 반환이 아니라 `skipIf` 다** — 건너뛴 것이 통과로 세어지면 초록의 뜻이 달라진다.
+  it.skipIf(!QUEUE_APPLIED)('**만료 임박 갈래가 없다** — 폐지 확인 · 대조 쌍', async () => {
     const client = await open();
     try {
       await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
@@ -327,7 +330,7 @@ describe('회원자격 보류 — 강퇴 모델 (실DB · ADR-152)', () => {
   //   출력이 삼켜져 **건너뛴 것이 통과로 세어진다**(실측). `skipIf` 는 스킵 수를 움직인다.
   const MIG = '20260831110000';
   const ON = ENABLED && APPLIED_VERSIONS.has(MIG);
-  if (ENABLED && !ON) console.log(`[회원자격 보류] 건너뜀 — 마이그레이션 ${MIG} 적용 대기`);
+  // 사유를 `console.log` 로 알리지 않는다 — 기본 리포터가 삼킨다. **스킵 수가 사유다.**
 
   it.skipIf(!ON)('★ **`pending` 운영자가 통과한다** — 조건을 승인 기준으로 쓰지 않았다', async () => {
     const client = await open();
@@ -413,6 +416,28 @@ describe('회원자격 보류 — 강퇴 모델 (실DB · ADR-152)', () => {
       await runAs(client, ADMIN, `select public.decide_membership('${COACH_B}','individual',null,'복구')`);
       expect(await scalarAs(client, ADMIN,
         `select status as s from public.memberships where user_id='${COACH_B}'`)).toBe('individual');
+    } finally { await close(client); }
+  });
+
+  it.skipIf(!ON)('**이미 열린 세션도 끊긴다** — 이것이 창을 0으로 만든다', async () => {
+    const client = await open();
+    try {
+      // `banned_until` 은 **새 로그인과 갱신만** 막는다. 열린 세션을 두면 그 사람은
+      //   갱신 시점까지 살아 있고, 그 창에서 **보류를 보지 않는 비운영자 쓰기 경로**
+      //   (자기 자신 · 코치 소유)가 그대로 열려 있다. 그래서 세션을 함께 끊는다.
+      await client.query(
+        `insert into auth.sessions (id, user_id, created_at, updated_at)
+         values (gen_random_uuid(), '${MEMBER}', now(), now())`);
+      const sessions = () => scalarAs(client, ADMIN,
+        `select count(*)::text as s from auth.sessions where user_id='${MEMBER}'`);
+      expect(await sessions(), '대조군 · 끊기 전에는 세션이 있다').not.toBe('0');
+
+      await runAs(client, ADMIN, `select public.decide_membership('${MEMBER}','expired',null,'사유')`);
+      expect(await sessions(), '보류하면 열린 세션이 사라진다').toBe('0');
+
+      // **되살리지 않는다** — 지운 것을 되돌릴 수 없고, 풀린 사람은 다시 로그인하면 된다.
+      await runAs(client, ADMIN, `select public.decide_membership('${MEMBER}','individual',null,'복구')`);
+      expect(await sessions(), '세션을 되살리려 들지 않는다').toBe('0');
     } finally { await close(client); }
   });
 

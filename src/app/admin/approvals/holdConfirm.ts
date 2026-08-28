@@ -16,7 +16,14 @@
 //   강제한다. **그쪽이 실제 방어선**이고 여기는 사람이 실수하지 않게 돕는 자리다.
 //   화면에서 버튼을 감추는 것은 안전장치가 아니다(발주 §4.4).
 
-/** 확인 화면이 보여 줄 것 넷. 화면은 이 값을 그리기만 한다 — 문장을 만들지 않는다. */
+/**
+ * 확인 화면이 보여 줄 것 **셋**. 화면은 이 값을 그리기만 한다 — 문장을 만들지 않는다.
+ *
+ * **넷이었다가 셋이 됐다**(최박사 *"불필요"* · 2026-08-30). `되돌리는 법` 을 **항목째** 뺐다 —
+ *   문장만 걷고 자리를 남기면 **다른 문장을 지어 넣게 되고**, 그것은 걷으라 하신 것을
+ *   다른 말로 되살리는 셈이다. **일반 회원에만 남기는 안도 택하지 않았다** —
+ *   두 경로가 갈리면 한쪽만 고치는 날이 온다.
+ */
 export interface HoldConfirm {
   /** (1) 대상이 누구인지 — 잘못 고른 것이 여기서 드러난다 */
   who: { name: string; email: string };
@@ -24,8 +31,6 @@ export interface HoldConfirm {
   loses: string;
   /** (3) 근거 메모가 필수라는 안내 */
   noteRequired: string;
-  /** (4) 되돌리는 법 — 누가 풀 수 있는지 한 줄 */
-  undo: string;
 }
 
 /** (2) 일반 회원 — 지휘부 초안 · 최박사 확정 전 */
@@ -33,15 +38,10 @@ export const LOSES_MEMBER =
   '이 분은 로그인하실 수 없게 되고, 세미나·진단·기록을 모두 이용하실 수 없습니다.';
 
 /** (2) 운영자 — 지휘부 초안 · 최박사 확정 전 */
-export const LOSES_ADMIN =
-  '이 분은 로그인하실 수 없게 되고, 운영 화면도 함께 닫힙니다. 되돌리는 것은 슈퍼어드민만 하실 수 있습니다.';
+export const LOSES_ADMIN = '이 분은 로그인하실 수 없게 되고, 운영 화면도 함께 닫힙니다.';
 
 /** (3) 지휘부 초안 · 최박사 확정 전 */
 export const NOTE_REQUIRED = '근거 메모를 남기셔야 진행됩니다. 왜 보류하시는지 한 줄로 적어 주십시오.';
-
-/** (4) 지휘부 초안 · 최박사 확정 전 */
-export const UNDO_MEMBER = '되돌리는 것은 운영자가 하실 수 있습니다.';
-export const UNDO_ADMIN = '되돌리는 것은 슈퍼어드민만 하실 수 있습니다.';
 
 /**
  * 확인 내용을 만든다. **순수 함수다** — 화면이 문장을 짜지 않게 한다.
@@ -60,7 +60,6 @@ export function holdConfirm(input: {
     who: { name: input.name ?? '(이름 없음)', email: input.email ?? '(계정 정보 없음)' },
     loses: input.targetIsAdmin ? LOSES_ADMIN : LOSES_MEMBER,
     noteRequired: NOTE_REQUIRED,
-    undo: input.targetIsAdmin ? UNDO_ADMIN : UNDO_MEMBER,
   };
 }
 
