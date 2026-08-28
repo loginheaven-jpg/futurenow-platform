@@ -31,7 +31,7 @@ import { usePathname, useParams } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { SCREEN_CHROME, patternOf } from '@/app/_lib/screenChrome';
 import {
-  PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG,
+  PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG, SITE_NAME, PUBLIC_MENU_TITLE,
   FOOTER_NOTE_HREF, FOOTER_NOTE_LEAD, FOOTER_NOTE_LINK,
 } from './publicNav';
 
@@ -55,15 +55,16 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
     <>
       {/* `currentPath` 를 넘기지 않는다 — `PublicGnb` 가 `usePathname()` 으로 스스로 안다.
           껍데기가 화면마다 다른 값을 들고 있으면 그것이 곧 사본 둘이다(불변식 23). */}
-      {/* ⚠ **모바일 메뉴가 아직 없다**(U-2 §3 미완 — 보고에 올린다).
-          `PublicGnb` 에 `sheet` 통로는 열어 두었고 `SiteGnb` 가 그것을 받으면 버거가 뜬다.
-          막힌 곳은 배선이 아니라 **문안**이다 — `MenuSheet` 은 식별 이름(`name`)과
-          묶음 제목(`MenuGroup.title`)을 **필수**로 받는데, 익명 방문자에게는 둘 다 없다.
-          지어내면 불변식 20 이므로 멈췄다. 회원 쪽 시트는 이 회차에 껍데기로 올라갔다. */}
+      {/* **모바일 메뉴가 여기서 닫힌다**(최박사 문안 확정 2026-09-01).
+          768 미만에서 내비가 푸터만 들던 자리다 — 최박사가 모바일로 쓰시고 첫 관찰이 그것이었다.
+          **부품을 두 벌 만들지 않는다** — 회원 껍데기가 쓰는 것과 **같은 `MenuSheet`** 이고
+          담기는 항목만 다르다. 머리 이름과 묶음 제목은 **이미 있는 말**을 쓴다:
+          `SITE_NAME` 은 `SITE_ORG` 의 앞부분이고, `PUBLIC_MENU_TITLE` 은 푸터 내비의 이름이다. */}
       <PublicGnb
         logo={<>퓨처<b>나우</b></>}
         en="FUTURE NOW"
         items={PUBLIC_NAV}
+        sheet={{ name: SITE_NAME, groups: [{ title: PUBLIC_MENU_TITLE, items: PUBLIC_NAV }], chips: [] }}
       />
       <main>{children}</main>
       <SiteFooter
