@@ -1309,11 +1309,18 @@ class SupabaseCoreContext implements CoreContext {
     return toMembershipView(stored, withDates, me.role === 'admin');
   }
 
-  async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {
-    const { data, error } = await this.sb.rpc('list_membership_queue', { p_expiring_days: expiringDays });
+  async listMembershipQueue(): Promise<MembershipQueueRow[]> {
+    // **인자 없이 부른다.** 만료 임박 갈래가 걷히며 창 인자도 함께 사라졌다(`20260831090000`).
+    const { data, error } = await this.sb.rpc('list_membership_queue', {});
     if (error) throw new CoreError(`listMembershipQueue 실패: ${error.message}`);
-    return ((data ?? []) as MembershipQueueDbRow[]).map((r) => ({
-      bucket: r.bucket === 'expiring' ? 'expiring' : 'pending',
+    return ((data ?? []) as MembershipQueueDbRow[])
+      // **배포 창을 닫는 한 줄이다 — 방어적 잡음이 아니다.**
+      //   코드가 먼저 나가고 마이그레이션이 나중에 적용되는 사이, 옛 함수는 `DEFAULT 30` 이라
+      //   인자 없는 호출에도 응답하며 **임박 행을 함께 준다.** 그 행을 여기서 버린다.
+      //   적용이 끝나면 걸릴 것이 없어지고, 지우면 그 창에서 화면에 유령 행이 뜬다.
+      .filter((r) => r.bucket === 'pending')
+      .map((r) => ({
+      bucket: 'pending' as const,
       userId: r.user_id,
       name: r.name,
       email: r.email,

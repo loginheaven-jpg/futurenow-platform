@@ -347,9 +347,12 @@ export type AssessmentKind = 'journey' | 'standing';
 //   앞은 초기 상태라 되돌릴 일이 아니고, 뒤는 산출이라 결정할 수 있는 것이 아니다.
 export type MembershipDecision = 'individual' | 'held' | 'expired';
 
-// 승인 큐 한 행(대기 + 만료 임박). `list_membership_queue` 가 두 갈래를 함께 돌려준다.
+// 승인 큐 한 행 — **대기 갈래뿐이다.**
+//   `expiring`(만료 임박)은 걷혔다(최박사 승인 2026-08-30 · `20260831090000`).
+//   **자동 만료가 폐지되자 임박도 뜻을 잃었다** — 한 번 뜨면 사라지지 않고 운영자가 할 일도 없었다.
+//   열을 남긴 것은 되돌릴 자리이자 **배포 창을 닫는 장치**다(매퍼가 이 값으로 거른다).
 export interface MembershipQueueRow {
-  bucket: 'pending' | 'expiring';
+  bucket: 'pending';
   userId: string;
   name: string | null;
   email: string | null;

@@ -227,47 +227,76 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
     } finally { await close(client); }
   });
 
-  it('승인 큐 — 운영자 전용 · 창 경계 양쪽 · valid_until NULL 제외 · 만료분 제외', async () => {
+  // ── **만료 임박 갈래 폐지**(최박사 승인 2026-08-30 · `20260831090000`) ──────────────
+  //
+  //   앞선 판에서 이 자리는 *지난 날짜도 임박 갈래에 남는다* 를 단언하고 있었다.
+  //   **그것은 물었어야 할 자리에서 테스트를 고쳐 초록을 만든 것이었다** — 자동 만료가
+  //   폐지되며 임박이 뜻을 잃었는데, 뜻 없는 동작을 기준으로 삼아 잠가 버렸다.
+  //
+  //   최박사가 폐지를 확정했으므로 **갈래의 부재를 재는 쪽으로 뒤집는다.**
+  //   지우지 않고 뒤집는 이유는 트리거 폐지를 다룬 아래 두 테스트와 같다 —
+  //   *큐가 무엇을 담지 않는가* 를 아무도 재지 않으면 다음 사람이 갈래를 되살려도 조용하다.
+  //
+  //   **인자 형태가 마이그레이션 전후로 다르다.** 적용 전에는 `(30)`, 적용 후에는 `()` 다.
+  //     적용 전 판은 `DEFAULT 30` 이라 `()` 로도 불리지만 **임박 행을 함께 준다** —
+  //     즉 `()` 하나로 두 판을 다 덮으면 적용 전에 조용히 다른 것을 재게 된다(계열 ①~⑥).
+  const QUEUE_MIGRATION = '20260831090000';
+  const QUEUE_APPLIED = APPLIED_VERSIONS.has(QUEUE_MIGRATION);
+  const QUEUE = QUEUE_APPLIED ? 'public.list_membership_queue()' : 'public.list_membership_queue(30)';
+
+  it('승인 큐 — 운영자 전용 · 대기 갈래 · valid_until NULL 제외', async () => {
     const client = await open();
     try {
       await client.query(`delete from public.enrollments where user_id='${MEMBER}'`); // cohort 면 큐에 뜨지 않는다
 
-      await expectRaise(client, COACH_A, `select * from public.list_membership_queue(30)`, '42501');
-      await expectRaise(client, MEMBER, `select * from public.list_membership_queue(30)`, '42501');
-      await expectRaise(client, ADMIN, `select * from public.list_membership_queue(-1)`, '22023');
-      await expectRaise(client, ADMIN, `select * from public.list_membership_queue(366)`, '22023');
+      await expectRaise(client, COACH_A, `select * from ${QUEUE}`, '42501');
+      await expectRaise(client, MEMBER, `select * from ${QUEUE}`, '42501');
 
       const bucketOf = () =>
         scalarAs(client, ADMIN,
-          `select coalesce((select bucket from public.list_membership_queue(30) where user_id='${MEMBER}'),'-') as b`);
+          `select coalesce((select bucket from ${QUEUE} where user_id='${MEMBER}'),'-') as b`);
 
       expect(await bucketOf(), '행 없음 → 대기 갈래').toBe('pending');
 
       await client.query(seed(MEMBER, 'individual', null));
-      expect(await bucketOf(), 'valid_until NULL(체험 백필분) → 창에 들지 않는다').toBe('-');
+      expect(await bucketOf(), '판정이 individual 이면 큐에 없다').toBe('-');
+    } finally { await close(client); }
+  });
 
+  it('**만료 임박 갈래가 없다** — 폐지 확인 · 대조 쌍', async () => {
+    if (!QUEUE_APPLIED) {
+      // **조용히 넘어가지 않는다.** 레드로 두지 않되 건너뛴 사실이 매번 출력된다.
+      console.log(`[승인 큐] 만료 임박 폐지 확인 건너뜀 — 마이그레이션 ${QUEUE_MIGRATION} 적용 대기`);
+      return;
+    }
+    const client = await open();
+    try {
+      await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
+      const inQueue = () =>
+        scalarAs(client, ADMIN,
+          `select coalesce((select bucket from ${QUEUE} where user_id='${MEMBER}'),'-') as b`);
+
+      // ① **대조군** — 대기인 사람은 큐에 뜬다. 이 한 줄이 *측정이 실제로 무언가를 잰다* 는 증거다.
+      //    이것이 없으면 아래 `'-'` 가 *갈래가 없어서* 인지 *큐가 통째로 비어서* 인지 못 가른다.
+      await client.query(`delete from public.memberships where user_id='${MEMBER}'`);
+      expect(await inQueue(), '대조군 · 대기인 사람은 큐에 뜬다').toBe('pending');
+
+      // ② 옛 임박 조건(창 안쪽 +30일)에 정확히 걸리는 행 — **이제 뜨지 않는다.**
+      await client.query(seed(MEMBER, 'individual', null));
       await client.query(`update public.memberships set valid_until = (public.membership_today() + 30) where user_id='${MEMBER}'`);
-      expect(await bucketOf(), '창 안쪽 경계 +30일').toBe('expiring');
+      expect(await inQueue(), '창 안쪽 +30일 — 옛 판이라면 expiring 이었다').toBe('-');
 
-      await client.query(`update public.memberships set valid_until = (public.membership_today() + 31) where user_id='${MEMBER}'`);
-      expect(await bucketOf(), '창 바깥 경계 +31일').toBe('-');
-
-      // **자동 만료 폐지 뒤 이 칸의 뜻이 바뀌었다**(2026-08-30).
-      //   옛 판정은 지난 날짜를 `expired` 로 산출해 큐에서 뺐다. 이제 판정이 날짜를 보지 않으므로
-      //   저장값이 `individual` 인 채로 남고 **임박 갈래에 계속 뜬다.**
-      //
-      //   ⚠ **이 테스트는 지금 코드가 하는 일을 잴 뿐이고, 그 동작이 옳다는 뜻은 아니다.**
-      //   만료가 없어졌으면 *임박* 도 뜻이 없다. 실측(2026-08-30): `valid_until` 3행이
-      //   2027-08-28 이라 **2027-07-29 부터 임박에 뜨기 시작해 그 뒤 사라지지 않는다** —
-      //   옛 출구(지난 날짜 → `expired`)가 없어졌기 때문이다. 운영자는 그것을 보고 할 일이 없고
-      //   (갱신할 이유가 없다) 치울 수단도 없다. **거짓 신호이자 영구히 쌓이는 신호**다.
-      //
-      //   **폐지가 맞다고 본다**(클코1 판단). 다만 `MembershipQueueRow.bucket` 계약과
-      //   운영자 화면이 함께 바뀌므로 **최박사 결정 사안**이고, 답이 올 때까지 이 테스트는
-      //   현 상태를 재는 채로 둔다. 처음에 이 단언을 뒤집어 통과시킨 것은 잘못이었다 —
-      //   **물었어야 할 자리에서 테스트를 고쳐 초록을 만들었다.**
+      // ③ 지난 날짜도 마찬가지. **자격이 시간으로 꺾이지 않으므로 알릴 것이 없다.**
       await client.query(`update public.memberships set valid_until = (public.membership_today() - 1) where user_id='${MEMBER}'`);
-      expect(await bucketOf(), '지난 날짜도 임박 갈래에 남는다 — 자격은 시간으로 풀리지 않는다').toBe('expiring');
+      expect(await inQueue(), '지난 날짜 — 옛 판이라면 영영 임박에 남았을 행').toBe('-');
+
+      // ④ **값은 지우지 않았다.** 없앤 것은 갈래이지 값이 아니다(최박사 못 박음).
+      const vu = await scalarAs(client, ADMIN,
+        `select (select valid_until::text from public.memberships where user_id='${MEMBER}') as v`);
+      expect(vu, '갈래를 걷었다고 유효기간 값이 사라지면 되돌릴 수 없다').not.toBeNull();
+
+      // ⑤ **창 인자가 사라졌다** — 옛 오버로드가 남아 있으면 갈래가 되살아날 문이 남는다.
+      await expectRaise(client, ADMIN, `select * from public.list_membership_queue(30)`, '42883');
     } finally { await close(client); }
   });
 
@@ -276,7 +305,7 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
     try {
       await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
       const got = await scalarAs(client, ADMIN,
-        `select (select default_valid_until from public.list_membership_queue(30) where user_id='${MEMBER}') as d`);
+        `select (select default_valid_until from ${QUEUE} where user_id='${MEMBER}') as d`);
       const want = (await client.query(
         `select (public.membership_today() + (public.membership_default_months() || ' months')::interval)::date as d`,
       )).rows[0].d;

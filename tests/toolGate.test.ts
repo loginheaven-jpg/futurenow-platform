@@ -209,6 +209,31 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
     expect(follow).toContain('계획 시점');
   });
 
+  it('**승인 큐 갈래 축소가 배포 순서와 검증 넷을 함께 들고 있다**', () => {
+    const q = readFileSync('supabase/migrations/20260831090000_membership_queue_pending_only.sql', 'utf8');
+    expect(q, '아직 적용 전이어야 한다').toContain('아직 적용되지 않았다');
+    // **깨지는 조합이 하나뿐임을 파일이 말해야 한다** — 순서를 모르고 적용하면 옛 코드가 터진다.
+    expect(q, '배포 순서가 없다').toContain('코드 배포 → ② 이 마이그레이션 적용');
+    // **값은 지우지 않는다**(최박사 못 박음) — 없애는 것은 갈래이지 값이 아니다.
+    expect(q).toContain('갈래이지 값이 아니다');
+    expect(q, '판정 인자는 건드리지 않는다').toContain('decide_membership');
+    for (const item of ['옛 오버로드가 남아 있지 않다', 'anon` EXECUTE 가 없다', '행 수가 갈래를 뺀 만큼만', '3행이 그대로']) {
+      expect(q, `검증 항목에 ${item} 가 없다`).toContain(item);
+    }
+  });
+
+  it('**옛 갈래가 코드에서 완전히 걷혔다** — 계약·매퍼·화면 셋 다', () => {
+    for (const f of [
+      'src/contracts/domain.ts',
+      'src/app/admin/approvals/ApprovalsClient.tsx',
+    ]) {
+      // 타입이 `'pending'` 하나로 좁아졌으므로 `'expiring'` 리터럴이 남아 있으면 안 된다.
+      expect(readFileSync(f, 'utf8'), `${f} 에 expiring 리터럴이 남았다`).not.toContain("'expiring'");
+    }
+    // **매퍼의 거르는 한 줄은 남아 있어야 한다** — 코드 선배포 창을 닫는 장치다.
+    expect(readFileSync('src/core/context.ts', 'utf8')).toContain("filter((r) => r.bucket === 'pending')");
+  });
+
   it('**존재하지 않는 함수를 부르지 않는다** — 미완으로 두었던 자리의 회귀 잠금', () => {
     // 초판은 `my_cohorts_rows()` 라는 없는 함수를 불렀다. 정본을 읽어 옮겨 고쳤다.
     expect(sql).not.toContain('my_cohorts_rows');

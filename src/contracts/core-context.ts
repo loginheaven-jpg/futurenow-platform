@@ -213,7 +213,7 @@ export interface CoreContext {
   // 5차 T-3·T-4 — **표시용 회원 상태**. 판정은 여전히 member_state() 하나이고 여기서는 축만 편다.
   //   **문자열을 담지 않는다** — 값만 내리고 조립은 화면이 한다(최박사 지시 · 단일 출처가 둘이 되지 않게).
   getMyMembershipView(): Promise<MembershipView>;
-  listMembershipQueue(expiringDays?: number): Promise<MembershipQueueRow[]>; // 운영자 전용 — 대기 + 만료 임박 한 벌(list_membership_queue)
+  listMembershipQueue(): Promise<MembershipQueueRow[]>; // 운영자 전용 — **대기 갈래뿐**(list_membership_queue). 임박은 걷혔다
   decideMembership(input: {
     userId: string;
     decision: MembershipDecision;
