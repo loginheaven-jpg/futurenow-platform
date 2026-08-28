@@ -10,14 +10,12 @@
 //   §9.7 부품과 기존 `ui-` 공용 부품 밖의 형태를 새로 짓지 않았다.
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PublicGnb } from '@/app/_screens/site/PublicGnb';
 import { SiteHero } from '@/app/_screens/site/SiteHero';
 import { GrowAxis } from '@/app/_screens/site/GrowAxis';
 import { SectionTitle } from '@/app/_screens/site/SectionTitle';
 import { WeekTimeline } from '@/app/_screens/site/WeekTimeline';
 import { LeaderCard } from '@/app/_screens/site/LeaderCard';
 import { BookPanel } from '@/app/_screens/site/BookPanel';
-import { SiteFooter } from '@/app/_screens/site/SiteFooter';
 import { PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG } from '@/app/_screens/site/publicNav';
 import { WEEK_CELLS } from '@/app/_screens/site/programCopy';
 import {
@@ -31,18 +29,11 @@ export const metadata: Metadata = { title: '퓨처나우 소개' };
 export default function AboutPage() {
   return (
     <>
-      {/* 5차 소건 1-바 — 오른쪽 골드 버튼이 **세션을 보고** 문구와 목적지를 함께 바꾼다.
-          로그인한 사람에게 `로그인` 이라고 적혀 있던 것이 *로그아웃된 것 같다* 의 나머지 절반이었다.
-          판정은 `publicHeaderAction()`(순수), 세션 읽기는 `PublicGnb`(화면 층).
-          **부품은 여전히 계산하지 않는다.** ISR 도 그대로다 — 서버에서 쿠키를 읽지 않는다. */}
-      <PublicGnb
-        logo={<>퓨처<b>나우</b></>}
-        en="FUTURE NOW"
-        items={PUBLIC_NAV}
-        currentPath="/about"
-      />
+      {/* **헤더·푸터는 껍데기가 그린다**(U-1 · `design_system.md` §12.3 규칙 1).
+          여기 있던 `PublicGnb`·`SiteFooter` 호출은 `(public)/layout.tsx` 로 올라갔다.
+          화면은 본문만 그린다 — 자기가 어느 껍데기에 사는지는 **경로가 말한다.** */}
 
-      <main>
+      <>
         {/* 히어로에는 GROW 축을 두지 않는다 — 아래 §3.3 구획이 같은 축을 **원고 문안**으로 든다.
             둘 다 두면 한 화면에 같은 축이 서로 다른 라벨로 두 번 선다(사본이 둘 · 불변식 23). */}
         <SiteHero
@@ -124,20 +115,8 @@ export default function AboutPage() {
             </span>
           </div>
         </section>
-      </main>
+      </>
 
-      <SiteFooter
-        org={SITE_ORG}
-        links={PUBLIC_FOOTER_LINKS}
-        note={
-          <>
-            인도자로 활동하실 분은{' '}
-            <Link href="/signup" style={{ color: 'var(--color-accent-strong)', textDecoration: 'underline' }}>
-              인도자 회원가입
-            </Link>
-          </>
-        }
-      />
     </>
   );
 }

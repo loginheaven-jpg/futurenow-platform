@@ -6,7 +6,9 @@
 //
 // 렌더는 `renderToStaticMarkup` 이다(이 저장소 관행 · jsdom 없음).
 //   상호작용(focus trap·ESC·바깥 탭)은 순수 판정으로 떼어 `sheetKeys.test.ts` 가 전수한다.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+// `PublicGnb` 가 U-1 부터 `usePathname()` 으로 현재 경로를 스스로 안다 — prop 이 아니다.
+vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SiteHero } from './SiteHero';
 import { GrowAxis } from './GrowAxis';
@@ -295,7 +297,7 @@ describe('15 · BookPanel', () => {
 describe('PublicGnb — 서버 렌더는 비로그인 모습이다 (ISR 무손상의 대가)', () => {
   it('정적 HTML 은 `로그인`으로 그려진다 — 캐시본과 같아야 하이드레이션이 어긋나지 않는다', () => {
     const html = renderToStaticMarkup(
-      <PublicGnb logo="로고" en="FUTURE NOW" items={[{ href: '/about', label: '소개' }]} currentPath="/" />,
+      <PublicGnb logo="로고" en="FUTURE NOW" items={[{ href: '/about', label: '소개' }]} />,
     );
     expect(html).toContain('로그인');
     expect(html).toContain('/login');
@@ -304,7 +306,7 @@ describe('PublicGnb — 서버 렌더는 비로그인 모습이다 (ISR 무손�
 
   it('부품에 login prop 을 내려 준다 — **부품은 여전히 계산하지 않는다**', () => {
     const html = renderToStaticMarkup(
-      <PublicGnb logo="로고" items={[{ href: '/about', label: '소개' }]} currentPath="/" />,
+      <PublicGnb logo="로고" items={[{ href: '/about', label: '소개' }]} />,
     );
     expect(html).toContain('site-gnb__login');
   });

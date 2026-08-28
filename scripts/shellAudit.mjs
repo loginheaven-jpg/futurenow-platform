@@ -92,9 +92,20 @@ export function routeHeaderMap() {
     }
     return hits.sort();
   };
+  // **레이아웃을 함께 본다** — 껍데기가 서면 헤더는 `layout` 이 그린다.
+  //   이것이 없으면 U-1 뒤에 `/` 와 `/about` 이 **무헤더로 세어지고**(실제로 한 번 그랬다)
+  //   진도 지표가 거꾸로 말한다. **도구가 덜 보면 없는 것을 없다고 한다** — 두 번째 사례다.
+  const layoutsFor = (pageFile) => {
+    const segs = pageFile.split('/'); const out = [];
+    for (let i = segs.length - 1; i >= 2; i--) {
+      const cand = `${segs.slice(0, i).join('/')}/layout.tsx`;
+      if (files.includes(cand)) out.push(cand);
+    }
+    return out;
+  };
   return files.filter((f) => f.endsWith('/page.tsx')).map((f) => ({
-    route: f.replace(ROOT, '').replace('/page.tsx', '') || '/',
-    hits: reach(f),
+    route: f.replace(ROOT, '').replace('/page.tsx', '').replace(/\/\([^/]+\)/g, '') || '/',
+    hits: [...new Set([...reach(f), ...layoutsFor(f).flatMap(reach)])].sort(),
   }));
 }
 
@@ -137,7 +148,9 @@ if ((process.argv[1] ?? '').endsWith('shellAudit.mjs')) {
   }
   const left = cfg.exceptions.length;
   console.log(`실측 ${found.length}개 · 면제 ${exempt.size}개 · 예외 ${left}개`);
-  for (const c of ['U-1', 'U-2', 'U-3']) {
+  // **덩이 목록을 손으로 박지 않는다** — 박아 두었더니 U-4 가 생긴 날 조용히 안 세어졌다.
+  //   데이터에서 뽑으면 낡을 수가 없다(`CLAUDE.md` §11 · 따라가야 하는 값).
+  for (const c of [...new Set(cfg.exceptions.map((e) => e.chunk))].sort()) {
     console.log(`  ${c}: ${cfg.exceptions.filter((e) => e.chunk === c).length}개`);
   }
   if (fails.length) { for (const f of fails) console.error(`  X ${f}`); process.exit(1); }

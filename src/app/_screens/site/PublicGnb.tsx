@@ -28,6 +28,7 @@
 //   게다가 `proxy` 가 **매 요청**에서 `getUser()` 로 검증·갱신하며 공개 경로도 그 matcher 안이라
 //   (불변식 17 — 좁히지 않는다) 현관을 여는 그 요청에서 이미 정리된다. 어긋나는 창이 좁다.
 import { useCallback, useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
 import { isAuthCookieName, parseCookieHeader } from '@/core/supabase/cookiePolicy';
 import { SiteGnb, type GnbItem } from './SiteGnb';
 import { publicHeaderAction } from './publicNav';
@@ -56,13 +57,15 @@ export function PublicGnb({
   logo,
   en,
   items,
-  currentPath,
 }: {
   logo: React.ReactNode;
   en?: string;
   items: GnbItem[];
-  currentPath: string;
 }) {
+  // **현재 경로를 prop 으로 받지 않는다**(U-1). 껍데기가 화면마다 다른 값을 들고 있으면
+  //   그것이 곧 사본 둘이고, 화면이 하나를 잊으면 현재 표시가 조용히 틀린다.
+  //   이 부품은 이미 클라이언트라 `usePathname()` 으로 스스로 안다.
+  const currentPath = usePathname() ?? '/';
   // 서버 스냅샷은 **비로그인**이다 — 정적 HTML 이 그렇게 캐시되므로 그것과 같아야 한다.
   const signedIn = useSyncExternalStore(subscribe, hasAuthCookie, useCallback(() => false, []));
 

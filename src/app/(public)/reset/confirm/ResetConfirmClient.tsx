@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/core/supabase/client';
-import { loginOutcome } from '@/app/login/loginOutcome';
+import { loginOutcome } from '@/app/(public)/login/loginOutcome';
 import { ResetConfirmForm, type ResetPhase } from './ResetConfirmForm';
 
 export function ResetConfirmClient() {

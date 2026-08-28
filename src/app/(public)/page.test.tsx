@@ -34,11 +34,11 @@ describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
     expect(html).toContain('프로그램 소개'); // 히어로 CTA
   });
 
-  it('로그인·인도자 진입 → /login·/signup', () => {
-    expect(html).toContain('href="/login"');
-    expect(html).toContain('로그인'); // GNB 우측 버튼이 옛 `이미 참여하셨나요?` 자리를 대신한다
-    expect(html).toContain('href="/signup"');
-    expect(html).toContain('인도자 회원가입'); // 푸터 — 인도자가 들어올 문
+  // **이 단언은 껍데기로 옮겼다**(U-1) — `PublicShell.test.tsx` 가 `/login`·`/signup` 문을 잰다.
+  //   여기서는 **화면이 더는 그것을 그리지 않는다**는 사실을 잰다(§12.3 규칙 1의 회귀 잠금).
+  it('**화면이 헤더·푸터를 그리지 않는다** — 껍데기가 그린다', () => {
+    expect(html).not.toContain('site-gnb');
+    expect(html).not.toContain('site-foot');
   });
 
   it('옛 결정화면 CTA·플레이스홀더 제거', () => {
@@ -63,10 +63,10 @@ describe('현관 공개 영역 배선 (S-4)', () => {
     expect(html).toContain('예봄 2기'); // intake.ts 단일 출처
   });
 
-  it('공개 영역 세 곳으로 가는 길이 있다', () => {
-    for (const href of ['/about', '/library', '/contact', '/news']) {
-      expect(html, href).toContain(`href="${href}"`);
-    }
+  // 공개 영역으로 가는 길은 이제 **껍데기의 내비**가 든다 — `PublicShell.test.tsx` 로 옮겼다.
+  //   화면 본문이 스스로 거는 링크(모집·소식 등)는 아래 다른 단언들이 그대로 잰다.
+  it('본문이 스스로 거는 길은 그대로다 — 모집 줄', () => {
+    expect(html).toContain('site-news__row');
   });
 
   it('소식이 없으면 `더 보기` 를 주지 않는다 — 눌러서 빈 목록을 보지 않게', () => {

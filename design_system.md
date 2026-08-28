@@ -644,8 +644,6 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 
 | 파일 | 덩이 |
 |---|---|
-| `/page.tsx` | U-1 |
-| `/about/page.tsx` | U-1 |
 | `/_screens/entry/AuthGate.tsx` | U-1 |
 | `/_screens/entry/CodeInput.tsx` | U-1 |
 | `/_screens/entry/CohortPreview.tsx` | U-1 |
@@ -701,20 +699,16 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 - `/admin/approvals`
 - `/c/[code]/[session]`
 - `/c/[code]/values`
-- `/contact`
-- `/library`
-- `/login`
-- `/news/[id]`
-- `/news`
 - `/preview`
 - `/preview/report`
-- `/recruit`
-- `/reset/confirm`
-- `/reset`
 
-⚠ **이 목록은 실측이며 발주 초안과 다르다**(2026-08-31). 초안의 `/join`·`/signup`·
-`/my/cohorts/[cohortId]` 는 **두 단계 아래에서 헤더를 그리므로 무헤더가 아니다.**
-대신 `/admin/approvals`·`/preview`·`/preview/report` 가 무헤더다.
+⚠ **U-1 이 여덟을 걷었다**(2026-08-31). 공개 껍데기가 서면서
+`/library` `/news` `/news/[id]` `/contact` `/recruit` `/login` `/reset` `/reset/confirm` 이
+비로소 헤더를 가졌다. 남은 것은 **콘솔 하나 · 참여 링크 둘 · 미리보기 둘**이다.
+
+**`/join`·`/signup` 은 여기 없다** — 이미 헤더를 갖고 있고(entry 부품), U-1 에서 **보류**했다.
+그 `AppHeader` 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어 걷으면
+내용과 동작이 사라지고, 대체할 뒤로 관용구가 저장소에 없다(불변식 20). 판정 대기다.
 
 ### 12.6 콘솔이 지금 어떻게 생겼는가 — U-3 착수 전 실측
 

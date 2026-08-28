@@ -1,50 +1,41 @@
 {
   "규약": "이 목록이 비면 껍데기 이관이 끝난다. 목록은 진도 지표다.",
-  "배정규칙": "컴포넌트는 그것을 쓰는 화면과 같은 덩이에서 걷는다. 그러면 항목마다 따로 판단하지 않아도 된다.",
+  "배정규칙": "컴포넌트는 그것을 쓰는 화면과 같은 덩이에서 걷는다. 그러면 항목마다 따로 판단하지 않아도 된다. 덩이는 U-1~U-4 다 — U-4 는 이름과 문(공통 규칙 3·4)을 다룬다.",
   "걷는덩이없는예외금지": "chunk 가 없는 항목을 만들지 마라 — 적지 않으면 예외가 영구가 된다.",
   "exemptParts": [
-    "src/app/_screens/site/PublicGnb.tsx"
+    "src/app/_screens/site/PublicGnb.tsx",
+    "src/app/_screens/site/PublicShell.tsx"
   ],
-  "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다.",
+  "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다. PublicShell 은 공개 껍데기 자신이다 — 껍데기를 만드는 파일까지 막으면 만들 수가 없다.",
   "exemptDeclared": [
     "src/app/_screens/site/SiteGallery.tsx"
   ],
   "exemptDeclaredWhy": "/preview 전용 — 운영 라우트가 아니다. 시안 갤러리에 운영 껍데기를 강제하면 갤러리를 못 쓴다. 면제는 두 겹으로 잠근다: 선언(preview/layout 의 '운영 라우트 아님' + PROTECTED_PREFIXES 에 /preview) 과 사실(이 파일에 닿는 라우트가 전부 /preview 인가).",
   "exceptions": [
     {
-      "file": "src/app/page.tsx",
-      "chunk": "U-1",
-      "why": "공개 껍데기 — 화면이 직접 그린다"
-    },
-    {
-      "file": "src/app/about/page.tsx",
-      "chunk": "U-1",
-      "why": "공개 껍데기 — 화면이 직접 그린다"
-    },
-    {
       "file": "src/app/_screens/entry/AuthGate.tsx",
-      "chunk": "U-1",
-      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+      "chunk": "U-4",
+      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
     },
     {
       "file": "src/app/_screens/entry/CodeInput.tsx",
-      "chunk": "U-1",
-      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+      "chunk": "U-4",
+      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
     },
     {
       "file": "src/app/_screens/entry/CohortPreview.tsx",
-      "chunk": "U-1",
-      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+      "chunk": "U-4",
+      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
     },
     {
       "file": "src/app/_screens/entry/ProfileForm.tsx",
-      "chunk": "U-1",
-      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+      "chunk": "U-4",
+      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
     },
     {
       "file": "src/app/_screens/entry/StartGuide.tsx",
-      "chunk": "U-1",
-      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+      "chunk": "U-4",
+      "why": "/join·/signup 이 쓰는 부품 — **U-4 로 미뤘다**(지휘부 판정 2026-08-31). 이 AppHeader 는 껍데기가 아니라 **단계 제목과 뒤로 제어**를 함께 싣고 있어(실측) 걷으면 내용과 동작이 사라진다. 대체할 뒤로 관용구가 없어 만들면 불변식 20 이다. **뒤로는 「어디서 어디로 돌아가는가」이므로 문(공통 규칙 4)의 문제이고, 그것을 다루는 자리가 U-4 다** — U-2 에서 만들면 회원 껍데기 안에서 관용구를 정하고 U-4 에서 다시 보게 된다."
     },
     {
       "file": "src/app/account/page.tsx",

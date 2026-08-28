@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createCoreContext } from '@/core/context';
 import { createBrowserSupabase } from '@/core/supabase/client';
-import { loginOutcome } from '@/app/login/loginOutcome';
+import { loginOutcome } from '@/app/(public)/login/loginOutcome';
 import { AuthGate, type SignupPayload } from '@/app/_screens/entry/AuthGate';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
 

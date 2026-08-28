@@ -23,12 +23,35 @@ import './recruit.css';
 //   요청마다 DB 를 때리는 동적 렌더는 쓰지 않는다. 남은 자리에 몇 분의 지연은 문제가 아니다.
 export const revalidate = 300;
 
+/** 카톡 미리보기 대체 텍스트 — 옛 `opengraph-image.alt.txt` 가 들던 문장 그대로다. */
+const OG_ALT = '꿈꾸는 미래를 지금 살자 · 퓨처나우 셀프코칭 세미나 예봄 2기';
+
 export const metadata: Metadata = {
   title: META.title,
   description: META.description,
-  // 카톡 링크 미리보기. og:image 는 아직 넣지 않는다 — 카드 1 PNG 는 docs/ 에 있고 그 폴더는 배포물이 아니다.
-  //   확정되면 public/ 으로 옮겨 images 를 채운다(발주서 §3.7).
-  openGraph: { title: META.title, description: META.description, type: 'website' },
+  // **카톡 링크 미리보기 — URL 을 얼린다**(U-1 후속 · 지휘부 판정 2026-08-31).
+  //
+  //   전에는 파일 관례(`opengraph-image.png`)를 썼다. 그러면 Next 가 **파일 경로에서 뽑은 값**으로
+  //   라우트를 만들고, 라우트 그룹 `(public)/` 으로 옮기자 **경로가 바뀌었다** —
+  //   `/recruit/opengraph-image.png` → `/recruit/opengraph-image-squcfl.png`.
+  //
+  //   **OG URL 은 얼어야 하는 값인데 따라가는 값(파일 경로)에 묶여 있었다**(`CLAUDE.md` §11).
+  //   그래서 이미지를 `public/` 에 두고 여기서 **직접 가리킨다.** `public/` 은 경로가 곧 URL 이라
+  //   해시가 붙지 않는다 — 이제 파일을 어디로 옮겨도 이 URL 은 안 바뀐다.
+  //
+  //   **경로를 `/recruit/opengraph-image.png` 그대로 골랐다 — 지금 배포된 것과 같은 URL 이다.**
+  //     라이브 태그가 `…/recruit/opengraph-image.png?opengraph-image.2ekk20w6t2w34.png` 이고
+  //     정적 파일은 쿼리를 무시하므로 **이미 카톡이 물고 있는 링크가 그대로 산다.**
+  //     `public/og/` 같은 새 이름을 골랐다면 옛 캐시가 전부 404 가 됐을 것이다.
+  //
+  //   ⚠ 여기 파일 이름이 Next 의 파일 관례와 같으나 **`public/` 이라 관례가 적용되지 않는다.**
+  //     같은 이름을 `src/app/.../recruit/` 아래 다시 두면 라우트가 겹친다 — 두지 말 것.
+  openGraph: {
+    title: META.title,
+    description: META.description,
+    type: 'website',
+    images: [{ url: '/recruit/opengraph-image.png', width: 1080, height: 1080, alt: OG_ALT }],
+  },
 };
 
 export default async function RecruitPage() {

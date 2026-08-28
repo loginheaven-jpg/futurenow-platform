@@ -45,6 +45,14 @@ export const SITE_ORG = '퓨처나우 · 청계로벤하임';
 export const PUBLIC_FOOTER_LINKS: PublicNavItem[] = [...PUBLIC_NAV];
 
 /**
+ * 푸터 보조 문장 — **`/` 와 `/about` 이 각자 들고 있던 같은 문장**을 한 곳으로 모았다(U-1).
+ * 껍데기가 하나이므로 문장도 하나다. 사본이 둘이면 한쪽만 고치는 날이 온다(불변식 23).
+ */
+export const FOOTER_NOTE_HREF = '/signup';
+export const FOOTER_NOTE_LEAD = '인도자로 활동하실 분은 ';
+export const FOOTER_NOTE_LINK = '인도자 회원가입';
+
+/**
  * 공개 헤더의 **오른쪽 골드 버튼** — 세션에 따라 문구와 목적지가 함께 바뀐다.
  *
  * **왜 두는가.** 4차 F-5 B행에서 최박사가 *"뒤로가기 연타에 로그아웃이 일어난다"* 고 하셨고,
