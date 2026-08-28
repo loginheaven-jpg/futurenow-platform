@@ -126,10 +126,67 @@ export function cohortRoleLabel(r: CohortRole): string {
  * **이 매핑은 저장소에 여기 한 곳뿐이다**(2026-08-29 전수 확인). 사본이 생기면 그때부터
  * 두 화면이 같은 사람을 다르게 부른다.
  */
-export function toMembershipView(stored: MembershipStatus | null, cohortRoles: CohortRole[]): MembershipView {
+export function toMembershipView(
+  stored: MembershipStatus | null,
+  cohortRoles: CohortRole[],
+  isAdmin = false,
+): MembershipView {
   const tier: MemberTier =
     stored === 'individual' ? 'forum'
       : stored === 'expired' ? 'suspended'
         : 'visitor'; // pending · held · 행 없음
-  return { tier, underReview: stored === 'held', cohortRoles };
+  return { tier, underReview: stored === 'held', cohortRoles, isAdmin };
 }
+
+// ── 좁은 자리 — **우선 규칙** (최박사 확정 2026-08-29) ────────────────────────
+//
+// 최박사 원문: *"00기참여자. 포럼회원. 이렇게 쓸수 있는 공간이 되는 곳에는 병행표현하고
+// (내정보 등). 병행해서 쓸 공간이 안되는 곳에서는 참여자, 인도자, 운영자 우선"*
+//
+// **병행이 원칙이고 우선은 자리가 좁을 때의 잘라내기 규칙이다** — 층이 다르다.
+// 앞선 0번(*택일이 아니라 병행표현*)과 부딪히지 않는다.
+//
+// **좁은 자리 전수**(2026-08-29 정본 조회 · 짐작하지 않고 셌다):
+//   ⑴ `MenuSheet` 머리의 `role` — `<small>` 한 칸. 세 화면이 먹인다:
+//        `/home`(`targets[0].who`) · 차수 홈(`'참여자'` 하드코딩) · 진단 홈(`'참여자'` 하드코딩)
+//   그 밖에는 없다. 확인한 것들:
+//     · `SiteRoleCard.who` — **좁지 않다.** T-5 로 카드가 여럿이 되어 각 카드가 자기 칸을 갖는다
+//     · 공개 현관 칩 — **실재하지 않는다**(발주 §3 이 노출 자리로 적었으나 화면에 없다)
+//     · `admin/MemberRow` 의 `ROLE_LABEL` — **남의 역할**이라 이 축이 아니다(아래 주 참조)
+//
+// **`MemberRow.ROLE_LABEL` 주의**: `{ admin:'운영자', coach:'인도자', user:'멤버' }` 로
+//   `user` 를 **멤버**라 부른다. 여기 `COHORT_ROLE_LABEL.participant`(**참여자**)와 다르다.
+//   같은 사람을 두 화면이 다르게 부르는 것이라 **사본 후보**이지만, 그쪽은 *시스템 권한*을
+//   보이는 자리이고 이쪽은 *소속에서의 역할*이라 축이 다르다. **합치지 않았고 보고에 올린다.**
+
+/**
+ * 좁은 자리에 하나만 넣을 때의 후보 — **순서를 여기서 정하지 않는다.**
+ *
+ * 최박사가 적으신 `참여자, 인도자, 운영자` 가 **우선순위인지 그냥 열거인지 갈린다.**
+ * 실제로 겸직자가 있으므로(운영 실측: 기수를 이끌면서 참여도 하는 사람 2명) 답이 필요하다.
+ * **지어내면 계열 8번이므로 값을 비워 둔다.**
+ *
+ * 답이 오면 `NARROW_PRIORITY` 한 줄에 순서를 꽂으면 되고, 그때 `narrowLabel` 이 바로 산다.
+ */
+export const NARROW_PRIORITY: readonly CohortRoleKind[] | null = null; // ← 답이 오면 한 줄로 꽂는다
+
+/**
+ * 좁은 자리 한 칸의 글자. **순서가 정해지기 전에는 아무것도 고르지 않는다.**
+ *
+ * `null` 을 돌려주면 부르는 쪽은 **지금 쓰던 값을 그대로 쓴다** — 임시 값을 넣어
+ * 화면에 내보내면 그것이 확정으로 굳는다. 비워 두는 편이 낫다.
+ */
+export function narrowLabel(roles: readonly CohortRole[], isAdmin: boolean): string | null {
+  if (!NARROW_PRIORITY) return null; // 순서 미확정 — 아래는 답이 온 뒤에만 돈다
+  for (const kind of NARROW_PRIORITY) {
+    if (roles.some((r) => r.kind === kind)) return COHORT_ROLE_LABEL[kind];
+  }
+  return isAdmin ? ADMIN_LABEL : null;
+}
+
+/**
+ * 운영자 — **넷째 축**이다(최박사가 표시 대상에 넣으셨다).
+ * 기수에 매이지 않아 `cohortRoles` 에 들어갈 수 없다(`cohortId` 가 없다).
+ * 값은 `users.role` 에서 오고 서버가 이미 손에 들고 있다.
+ */
+export const ADMIN_LABEL = '운영자';

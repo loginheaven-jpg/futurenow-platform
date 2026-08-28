@@ -322,6 +322,14 @@ export interface MembershipView {
   underReview: boolean;
   /** 소속 — **여럿**. 없으면 빈 배열이고, 화면은 그 줄을 그리지 않는다. */
   cohortRoles: CohortRole[];
+  /**
+   * 운영자 — **넷째 축**(최박사가 표시 대상에 넣으셨다 · 2026-08-29).
+   *
+   * `cohortRoles` 에 넣을 수 없다 — 운영자는 **기수에 매이지 않아** `cohortId` 가 없다.
+   * 값은 `users.role` 에서 온다(권한 축). 자격(`tier`)·소속(`cohortRoles`)과 **또 다른 축**이라
+   * 별도 칸이다. 실측(2026-08-29): `users.role='admin'` **2명**.
+   */
+  isAdmin: boolean;
 }
 
 // 응시 계열. 여정 = 사전·사후 체크, 상시 = 가치 카드·그림자·사랑의 언어.

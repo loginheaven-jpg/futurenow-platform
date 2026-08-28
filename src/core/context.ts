@@ -1289,7 +1289,8 @@ class SupabaseCoreContext implements CoreContext {
         roles.push({ cohortId: c.id, cohortName: c.name, kind: 'coach' as const });
       }
     }
-    return toMembershipView(stored, roles);
+    // 운영자는 **새로 읽어 올 것이 없다** — `currentUser()` 가 이미 `role` 을 들고 있다.
+    return toMembershipView(stored, roles, me.role === 'admin');
   }
 
   async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {

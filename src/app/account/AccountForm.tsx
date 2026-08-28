@@ -8,7 +8,7 @@ import { RELIGIONS } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
 import type { MembershipView } from '@/contracts/domain';
 import {
-  cohortRoleLabel, PARTICIPANT_LEAD, TIER_INQUIRY_NOTE, TIER_LABEL, TIER_LEAD, UNDER_REVIEW_NOTE,
+  ADMIN_LABEL, cohortRoleLabel, PARTICIPANT_LEAD, TIER_INQUIRY_NOTE, TIER_LABEL, TIER_LEAD, UNDER_REVIEW_NOTE,
 } from '@/core/membershipVocab';
 
 const inputStyle: CSSProperties = {
@@ -125,7 +125,19 @@ export function AccountForm({
           **판정하지 않는다**(발주 §4) — 등급·대기 여부는 서버가 산출해 prop 으로 내려온다. */}
       {membership ? (
         <section style={section}>
-          {/* ① 자격 — 늘 한 줄 */}
+          {/* ① 자격 — 늘 한 줄.
+              **층 나눔을 유지한다**(390px 실측 판단 2026-08-29).
+              최박사 예시는 `00기참여자. 포럼회원.` 을 나란히 쓴 모양이라 한 층도 가능하나,
+              390 에서 실제로 렌더해 재 보니 이렇다:
+
+                축약됨 · 소속2+운영자      한 층 1줄 56px  |  두 층 2줄 95px
+                **축약 안 됨** · 소속2     한 층 **2줄** 88px |  두 층 2줄 95px
+
+              한 층은 **내용에 따라 줄 수가 흔들린다**(1→2줄). 두 층은 언제나 2줄로 **모양이 고정**된다.
+              그리고 한 층에서 줄이 접히면 `[QA] 검증 전용 참여자` 와 `포럼회원` 이 같은 굵기·같은 층으로
+              **줄만 바뀐 채** 서서, 어디까지가 소속이고 어디부터가 자격인지 읽는 사람이 알 수 없다.
+              **축이 둘이라는 사실이 시각에서 사라진다** — 그것이 최박사가 처음부터 막으신 합침이다.
+              높이 차이는 39px 한 번뿐이고, 그 값으로 **경계가 늘 보이는 것**을 산다. */}
           <div>
             <span className="t-h1" style={{ fontSize: 18 }}>{TIER_LABEL[membership.tier]}</span>
             {/* `held` 는 tier 를 덮지 않는다 — 자격 이름 옆에 **진행 표시**로 붙는다.
@@ -162,8 +174,22 @@ export function AccountForm({
 
           {/* ② 소속 — 여럿. **없으면 이 줄을 그리지 않는다**(T-5 의 *빈손 카드를 덧붙이지 않는다* 와 같은 결).
               **칩은 이름만 단다**(최박사 확정 4번) — 설명은 위 자격 줄이 든다. */}
-          {membership.cohortRoles.length > 0 ? (
+          {membership.cohortRoles.length > 0 || membership.isAdmin ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                {/* 운영자 — **넷째 축**이라 기수 칩과 같은 줄에 서되 기수명이 없다.
+                    맨 앞에 둔다: 기수에 매이지 않는 것이 매인 것들보다 먼저 읽히는 편이 자연스럽다. */}
+                {membership.isAdmin ? (
+                  <span
+                    className="t-caption"
+                    style={{
+                      padding: '4px 10px', borderRadius: 999,
+                      border: 'var(--border-hair) solid var(--color-border)',
+                      background: 'var(--color-surface-2)',
+                    }}
+                  >
+                    {ADMIN_LABEL}
+                  </span>
+                ) : null}
                 {membership.cohortRoles.map((r) => (
                   <span
                     key={`${r.cohortId}:${r.kind}`}

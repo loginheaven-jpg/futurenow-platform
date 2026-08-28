@@ -106,7 +106,7 @@ describe('이 기기에서 로그인 유지 스위치 (소건 1-마)', () => {
 // ── 5차 T-4 · 내 정보 등급 표시 ────────────────────────────────────────
 describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => {
   const view = (over: Partial<MembershipView> = {}): MembershipView => ({
-    tier: 'forum', underReview: false, cohortRoles: [], ...over,
+    tier: 'forum', underReview: false, cohortRoles: [], isAdmin: false, ...over,
   });
 
   it('자격은 늘 **한 줄** — 이름과 설명이 함께 선다', () => {
@@ -213,5 +213,39 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
     const html = render();
     expect(html).not.toContain('운영자에게 문의');
     expect(html).toContain('이름 저장'); // 나머지는 그대로 산다
+  });
+});
+
+describe('운영자 — 넷째 축 (최박사가 표시 대상에 넣으셨다)', () => {
+  const view = (over: Partial<MembershipView> = {}): MembershipView => ({
+    tier: 'forum', underReview: false, cohortRoles: [], isAdmin: false, ...over,
+  });
+
+  it('운영자면 칩이 선다 — 기수에 매이지 않아 이름만 단다', () => {
+    const html = render({ membership: view({ isAdmin: true }) });
+    expect(html).toContain('운영자');
+  });
+
+  it('**소속이 없어도 운영자 칩만으로 줄이 선다** — 넷째 축은 기수와 무관하다', () => {
+    const html = render({ membership: view({ isAdmin: true, cohortRoles: [] }) });
+    expect(html).toContain('운영자');
+  });
+
+  it('운영자가 아니면 칩이 없다', () => {
+    const html = render({ membership: view({ isAdmin: false }) });
+    expect(html).not.toMatch(/>\s*운영자\s*</);
+  });
+
+  it('**운영자 칩이 소속 칩보다 앞에 선다** — 기수에 안 매인 것이 먼저 읽힌다', () => {
+    const html = render({
+      membership: view({ isAdmin: true, cohortRoles: [{ cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant' }] }),
+    });
+    expect(html.indexOf('운영자')).toBeLessThan(html.indexOf('2기 참여자'));
+  });
+
+  it('**자격 이름은 그대로다** — 운영자라고 tier 를 덮지 않는다(축이 다르다)', () => {
+    const html = render({ membership: view({ tier: 'visitor', isAdmin: true }) });
+    expect(html).toContain('방문회원');
+    expect(html).toContain('운영자');
   });
 });
