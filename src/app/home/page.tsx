@@ -20,7 +20,7 @@ import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
-import { roleTarget } from './roleTarget';
+import { roleTargets } from './roleTarget';
 import { buildMemberSheet } from '@/app/_lib/memberSheet';
 
 export const dynamic = 'force-dynamic';
@@ -67,7 +67,7 @@ export default async function MemberHomePage() {
 
   // ── 여기서부터가 F-3 이 더한 **표시용 자료**다. 위 판정에는 손대지 않았다. ──────────
 
-  const target = roleTarget(me.role, cohorts);
+  const targets = roleTargets(me.role, cohorts); // 5차 T-5 — 겸직자는 여럿이다
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
 
@@ -92,8 +92,12 @@ export default async function MemberHomePage() {
 
   return (
     <HomeScreen
-      who={{ name: greetingName, role: target.who, cohort: sheet.cohortName }}
-      role={{ badge: target.cohort, who: target.who, title: target.title, sub: target.sub, href: target.href, ctaLabel: target.ctaLabel }}
+      // 시트 머리의 `역할` 은 **그 사람의 역할**이라 첫 카드(= 옛 단일 반환)를 그대로 쓴다.
+      //   겸직이어도 시트가 *참여자* 라고 적으면 인도자에게 자기 역할이 지워진 것으로 보인다.
+      who={{ name: greetingName, role: targets[0].who, cohort: sheet.cohortName }}
+      roles={targets.map((t) => ({
+        badge: t.cohort, who: t.who, title: t.title, sub: t.sub, href: t.href, ctaLabel: t.ctaLabel,
+      }))}
       tiles={tiles}
       news={newsRows}
       groups={sheet.groups}

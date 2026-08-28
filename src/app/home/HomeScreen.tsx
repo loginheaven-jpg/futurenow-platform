@@ -20,8 +20,11 @@ import '@/app/_screens/site/site.css';
 export interface HomeScreenProps {
   /** 시트 머리에 서는 이름·역할·기수. */
   who: { name: string; role: string; cohort?: string };
-  /** 역할 카드 — `roleTarget()` 의 산출. */
-  role: { badge?: string; who: string; title: string; sub?: string; href: string; ctaLabel: string };
+  /**
+   * 역할 카드 — `roleTargets()` 의 산출. **여럿일 수 있다**(5차 T-5 · 겸직).
+   * **화면은 세지 않는다** — 몇 장을 그릴지는 배열 길이가 이미 말한다(부품은 계산하지 않는다).
+   */
+  roles: { badge?: string; who: string; title: string; sub?: string; href: string; ctaLabel: string }[];
   tiles: QuickTile[];
   news: NewsRowItem[];
   groups: MenuGroup[];
@@ -32,7 +35,7 @@ export interface HomeScreenProps {
   children?: React.ReactNode;
 }
 
-export function HomeScreen({ who, role, tiles, news, groups, chips, prompt, children }: HomeScreenProps) {
+export function HomeScreen({ who, roles, tiles, news, groups, chips, prompt, children }: HomeScreenProps) {
   return (
     <>
       <SiteGnb
@@ -46,14 +49,19 @@ export function HomeScreen({ who, role, tiles, news, groups, chips, prompt, chil
       <div className="home-shell">
         {prompt ?? null}
 
-        {/* 역할 카드 — 시안 B `.role-card`. 가두지 않는다(ADR-51): 아래 본문이 다른 길을 계속 연다. */}
-        <SiteRoleCard
-          badge={role.badge}
-          who={role.who}
-          title={role.title}
-          sub={role.sub}
-          cta={{ href: role.href, label: role.ctaLabel }}
-        />
+        {/* 역할 카드 — 시안 B `.role-card`. 가두지 않는다(ADR-51): 아래 본문이 다른 길을 계속 연다.
+            **5차 T-5 — 겸직자에게는 둘이 선다**(인도자/운영자 카드 + 참여자 카드).
+            늘어나는 것은 카드 수뿐이고 목적지는 한 곳도 바뀌지 않았다. */}
+        {roles.map((role) => (
+          <SiteRoleCard
+            key={role.href}
+            badge={role.badge}
+            who={role.who}
+            title={role.title}
+            sub={role.sub}
+            cta={{ href: role.href, label: role.ctaLabel }}
+          />
+        ))}
 
         {/* 시안 B `.quick` — 갈 수 없는 곳은 페이지가 칸을 빼고 준다. 비면 구획째 그리지 않는다. */}
         {tiles.length > 0 ? (

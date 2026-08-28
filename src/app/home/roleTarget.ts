@@ -23,21 +23,54 @@ export interface RoleTarget {
 const ROLE_WORD: Record<Role, string> = { admin: '운영자', coach: '인도자', user: '참여자' };
 
 /**
- * 역할과 내 차수로 **거점 하나**를 고른다.
+ * 역할과 내 차수로 거점을 고른다.
  *
  * **가두지 않는다**(ADR-51) — 이 카드는 *네 자리는 저기다* 라고 가리킬 뿐이고,
  * 아래 `MemberHome` 이 다른 길을 계속 연다. 그 성질은 그대로다.
+ *
+ * ── 5차 T-5 · **복수 반환** (발주 §5 · 확정 4 겸직 허용) ─────────────────
+ *
+ * **겸직은 이미 사실이다.** 운영 실측(2026-08-29): 인도자·운영자의 회기 등록이
+ * `admin 4행 + coach 3행 = 7행`, 사람으로는 **3명**. 발주 §5 가 적은 *7행* 과 일치한다.
+ * 그런데 이 함수가 거점을 **하나만** 골라서, 인도자이면서 다른 회기 참여자인 사람에게
+ * **참여자 카드가 서지 않았다.** 자기 여정으로 가는 길이 홈에서 사라진다.
+ *
+ * **목적지를 한 곳도 바꾸지 않는다** — 늘어나는 것은 **카드 수뿐**이다.
+ * 그래서 기존 다섯 경우 테스트가 그대로 통과한다(`[0]` 이 옛 반환과 같다).
+ *
+ * 순서: **운영/인도자 카드가 먼저, 참여자 카드가 뒤.** 역할이 곧 그 사람의 주 거점이고,
+ * 참여자 카드는 *덧붙는* 것이기 때문이다. 순서를 데이터가 아니라 **규칙**이 정한다.
  */
-export function roleTarget(role: Role, cohorts: MyCohortSummary[]): RoleTarget {
+export function roleTargets(role: Role, cohorts: MyCohortSummary[]): RoleTarget[] {
+  const out: RoleTarget[] = [];
   const who = ROLE_WORD[role];
 
   if (role === 'admin') {
-    return { href: '/admin', who, title: '본부', sub: '승인·회원·차수를 관리합니다.', ctaLabel: '본부로 가기' };
+    out.push({ href: '/admin', who, title: '본부', sub: '승인·회원·차수를 관리합니다.', ctaLabel: '본부로 가기' });
   }
   if (role === 'coach') {
-    return { href: '/coach', who, title: '인도자 콘솔', sub: '내 차수와 조원을 봅니다.', ctaLabel: '콘솔로 가기' };
+    out.push({ href: '/coach', who, title: '인도자 콘솔', sub: '내 차수와 조원을 봅니다.', ctaLabel: '콘솔로 가기' });
   }
 
+  // 참여자 거점. 역할이 있어도 **자기 회기가 있으면** 카드가 하나 더 선다(겸직).
+  //   `who` 는 이 카드에서 언제나 `참여자` 다 — 이 칸은 *이 카드에서 내가 무엇인가* 를 말한다.
+  const participant = participantTarget(cohorts, ROLE_WORD.user);
+  // 역할 카드가 이미 있는 사람에게 **빈손 카드**(체크 보기)를 덧붙이지 않는다 —
+  //   그것은 겸직이 아니라 *할 일 없음* 이고, 인도자 홈에서 노이즈가 된다.
+  if (out.length === 0 || participant.href !== '/home/assessments') out.push(participant);
+
+  return out;
+}
+
+/**
+ * 옛 이름 — **거점 하나**. 목적지가 바뀌지 않았음을 이 함수가 증명한다(회귀 0).
+ * 호출부가 남아 있는 동안 유지한다.
+ */
+export function roleTarget(role: Role, cohorts: MyCohortSummary[]): RoleTarget {
+  return roleTargets(role, cohorts)[0];
+}
+
+function participantTarget(cohorts: MyCohortSummary[], who: string): RoleTarget {
   // 참여자의 거점은 '차수 홈'이다. 차수가 여럿이면 목록이 거점이 된다 — 하나를 임의로 고르지 않는다.
   const active = cohorts.filter((c) => c.status === 'active');
   if (active.length === 1) {
