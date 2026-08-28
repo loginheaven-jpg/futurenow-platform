@@ -23,6 +23,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+const NL = String.fromCharCode(10); // 줄 나누기. 이스케이프를 스크립트로 심다 한 번 깨졌다.
 const CANON = 'architecture.md';
 const canon = readFileSync(CANON, 'utf8');
 
@@ -46,6 +47,23 @@ const VOID_MENTION_OK = [/^architecture\.md$/, /^docs\/reports\//, /^tests\/adrN
  */
 const VOID_FOREVER = new Map<number, string>([
   [12, '원문이 존재한 적이 없다 — architecture.md 전 리비전 131 개 전수 조회(2026-08-28). 문장의 결정 가치는 ADR-133 으로 새로 채번했다'],
+]);
+
+/**
+ * **오귀속 정정 — 두 번호의 관계는 양방향이다** (지휘부 조건 ② · 2026-08-29).
+ *
+ * `잘못 인용된 번호 → 그 결정이 새로 받은 번호`. 한쪽만 적으면 **반대편에서 들어온 사람이
+ * 길을 잃는다** — 지휘부가 조건으로 붙인 이유가 그것이다(*어느 쪽에서 들어와도 반대편에 닿게*).
+ * 약속으로 두면 다음 정정 때 한쪽을 빠뜨리므로 여기서 **양방향을 잰다.**
+ *
+ * **결번과 다른 종류다.** 결번(`VOID_FOREVER`)은 *없는 번호를 인용한 것*이고,
+ * 오귀속은 *있는 번호인데 다른 결정을 가리킨 것*이다. 그래서 옛 번호는 **살아 있고**
+ * 뜻을 덧붙이지 않는다 — 정정 주만 달린다(소급 부여가 아니다).
+ */
+const CORRECTED_ATTRIBUTIONS = new Map<number, number>([
+  // ADR-11(폐기된 `core` 스키마 격리)이 `색은 3단으로만 흐른다` 의 근거로 잘못 인용돼 왔다.
+  // 그 결정은 2026-08-29 에 ADR-139 로 채번됐다.
+  [11, 139],
 ]);
 
 interface Row { no: number; void: boolean }
@@ -126,6 +144,25 @@ describe('ADR 채번 — 중복도 미아도 소급 부여도 없다', () => {
     expect(revived, `소급 부여로 되살아난 결번: ADR-${revived.join(' · ADR-')}`).toEqual([]);
     for (const [n, why] of VOID_FOREVER) {
       expect(why.length, `ADR-${n} 이 왜 결번인지 여기에도 적어라`).toBeGreaterThan(30);
+    }
+  });
+
+  it('**오귀속 정정은 양방향이다** — 어느 쪽에서 들어와도 반대편에 닿는다(지휘부 조건 ②)', () => {
+    const rowOf = (n: number) => canon.split(NL).find((l) => l.startsWith(`| ADR-${n} |`)) ?? '';
+    for (const [wrong, correct] of CORRECTED_ATTRIBUTIONS) {
+      const wrongRow = rowOf(wrong);
+      const correctRow = rowOf(correct);
+      expect(wrongRow, `ADR-${wrong} 행이 없다`).not.toBe('');
+      expect(correctRow, `ADR-${correct} 행이 없다`).not.toBe('');
+      expect(wrongRow, `ADR-${wrong} 의 정정 주가 ADR-${correct} 를 가리켜야 한다`).toContain(`ADR-${correct}`);
+      expect(correctRow, `ADR-${correct} 본문이 ADR-${wrong} 을 가리켜야 한다(출처·경위)`).toContain(`ADR-${wrong}`);
+    }
+  });
+
+  it('오귀속된 옛 번호는 **살아 있다** — 결번으로 만들지 않는다(뜻을 덧붙이지도 않는다)', () => {
+    for (const wrong of CORRECTED_ATTRIBUTIONS.keys()) {
+      expect(defined.has(wrong), `ADR-${wrong} 행이 사라졌다`).toBe(true);
+      expect(voids.has(wrong), `ADR-${wrong} 은 결번이 아니다 — 있는 번호였고 내용도 유효하다`).toBe(false);
     }
   });
 
