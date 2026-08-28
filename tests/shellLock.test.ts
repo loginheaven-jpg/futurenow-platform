@@ -1,0 +1,116 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { scanDrawers, routeHeaderMap, stripComments, headerImportsOf } from '../scripts/shellAudit.mjs';
+import { PROTECTED_PREFIXES } from '@/proxy.guard';
+
+// 껍데기 잠금 — **화면은 헤더를 그리지 않는다** (U-0 · `design_system.md` §11).
+//
+// **`page.tsx` 만 재지 않는다.** 그렇게 하면 한 단계 아래가 그리는 것을 통과시키고,
+//   `/home` 이 그 증거였다 — 예외로 넣어도 아무것도 막지 않고 지워도 레드가 안 난다.
+//   *목록이 비면 완성* 이라는 지표가 그 순간 거짓이 된다.
+//   그래서 **`src/app` 아래 모든 `.tsx`** 를 재고 부품 자신과 면제분만 뺀다.
+//
+// **주석은 걷어내고 센다.** 이 회차에 주석 오측이 셋이었고 셋 다 다른 사람이 냈다.
+//   세는 일은 `scripts/shellAudit.mjs` 한 곳이 한다 — 테스트가 그것을 **수입해서** 쓰므로
+//   재는 방법이 둘로 갈리지 않는다(불변식 23).
+
+const cfg = JSON.parse(readFileSync('scripts/shellExceptions.json', 'utf8')) as {
+  exemptParts: string[];
+  exemptDeclared: string[];
+  exceptions: { file: string; chunk: string; why: string }[];
+};
+const CHUNKS = ['U-1', 'U-2', 'U-3'];
+
+describe('껍데기 잠금 — 화면이 헤더를 직접 그리지 않는다', () => {
+  const drawn = scanDrawers().map((r: { file: string }) => r.file);
+  const exempt = new Set([...cfg.exemptParts, ...cfg.exemptDeclared]);
+  const listed = new Map(cfg.exceptions.map((e) => [e.file, e]));
+
+  it('**새로 그리는 화면이 없다** — 목록에 없으면 레드', () => {
+    const unlisted = drawn.filter((f) => !exempt.has(f) && !listed.has(f));
+    expect(unlisted, '헤더를 그리는데 예외 목록에 없다 — 껍데기가 그리게 하라').toEqual([]);
+  });
+
+  it('**예외는 실물이어야 한다** — 더는 안 그리면 목록에서 지운다', () => {
+    const stale = cfg.exceptions.map((e) => e.file).filter((f) => !drawn.includes(f));
+    expect(stale, '이미 걷힌 항목이 목록에 남아 있다 — 지워야 진도 지표가 참이 된다').toEqual([]);
+  });
+
+  it('**모든 예외에 걷는 덩이가 박혀 있다** — 적지 않으면 예외가 영구가 된다', () => {
+    for (const e of cfg.exceptions) {
+      expect(CHUNKS, `${e.file} 의 덩이가 이상하다`).toContain(e.chunk);
+      expect(e.why.length, `${e.file} 에 사유가 없다`).toBeGreaterThan(0);
+    }
+  });
+
+  it('**부품 자신은 면제다** — 껍데기를 만드는 파일까지 막으면 만들 수가 없다', () => {
+    for (const f of cfg.exemptParts) expect(drawn, `${f} 가 실제로는 헤더를 안 쓴다`).toContain(f);
+  });
+});
+
+describe('`/preview` 면제 — 선언은 의도를 말하고 설정은 사실을 말한다', () => {
+  // **문장만 재면 부족하다.** 이 회차에 배운 것이 정확히 그 한계다 —
+  //   마이그레이션 적용 상태 잠금이 「그 문장이 있는가」를 쟀고 「사실인가」를 재지 않아
+  //   적용 뒤에도 거짓을 지켰다. 그래서 여기서는 **셋**을 잰다.
+
+  it('⑴ 선언 — `/preview` 가 스스로 운영 라우트가 아니라고 적는다', () => {
+    const layout = readFileSync('src/app/preview/layout.tsx', 'utf8');
+    expect(layout, '선언이 사라졌다 — 면제의 근거가 없어졌다').toContain('운영 라우트 아님');
+  });
+
+  it('⑵ 설정 — `/preview` 가 보호 접두사에 남아 있다', () => {
+    // 운영 라우트가 되려면 이 설정이 먼저 바뀐다. **바뀌는 순간 면제가 레드가 된다.**
+    expect(PROTECTED_PREFIXES, '/preview 가 보호에서 빠졌다 — 운영 라우트가 됐다면 면제를 걷어라')
+      .toContain('/preview');
+  });
+
+  it('⑶ **사실** — 면제된 파일에 닿는 라우트가 전부 `/preview` 다', () => {
+    // 이것이 가장 센 잠금이다. 누가 그 부품을 운영 화면에서 쓰기 시작하면
+    //   선언도 설정도 그대로인데 **사실이 먼저 바뀌고** 여기서 레드가 난다.
+    const map = routeHeaderMap() as { route: string; hits: string[] }[];
+    for (const f of cfg.exemptDeclared) {
+      const routes = map.filter((r) => r.hits.some((h) => h.startsWith(`${f}:`))).map((r) => r.route);
+      expect(routes.length, `${f} 에 닿는 라우트가 없다 — 면제가 죽은 항목이다`).toBeGreaterThan(0);
+      const operational = routes.filter((r) => !r.startsWith('/preview'));
+      expect(operational, `${f} 를 운영 라우트가 쓴다 — 더는 면제가 아니다`).toEqual([]);
+    }
+  });
+});
+
+describe('실측 도구 자신을 먼저 잰다 — 주석을 정말 걷어내는가', () => {
+  // **도구가 재는 것이 내가 재려던 것인지 한 번 확인하고 쓴다**(`CLAUDE.md` §11).
+  //   이 도구가 생긴 이유가 주석 오측 셋이므로, 그 능력 자체를 잠근다.
+  it('줄 주석·블록 주석 안의 import 는 세지 않는다', () => {
+    const src = [
+      "// import { AppHeader } from '@/app/_screens/AppHeader';",
+      '/* import { SiteGnb } from "@/app/_screens/site/SiteGnb"; */',
+      " *   `AppHeader` → `SiteGnb variant=\"member\"`,",
+      "import { Foo } from './foo';",
+    ].join('\n');
+    const out = stripComments(src);
+    expect(out).not.toContain('AppHeader');
+    expect(out).not.toContain('SiteGnb');
+    expect(out, '실제 import 까지 지우면 조용히 0이 된다').toContain('Foo');
+  });
+
+  it('`/home` 은 주석에서만 헤더를 말한다 — 실제로는 그리지 않는다', () => {
+    // 지휘부 19 · 실측 18 의 갈림이 정확히 이 파일이었다. **회귀 잠금으로 남긴다.**
+    const raw = readFileSync('src/app/home/page.tsx', 'utf8');
+    expect(raw, '주석이 사라졌으면 이 잠금의 뜻도 사라진다').toContain('`AppHeader` →');
+    expect(headerImportsOf('src/app/home/page.tsx'), 'page.tsx 는 헤더를 import 하지 않는다').toEqual([]);
+  });
+});
+
+describe('무헤더 라우트 목록이 문서와 실측에서 같다', () => {
+  it('`design_system.md` 가 실측 그대로의 목록을 들고 있다', () => {
+    const doc = readFileSync('design_system.md', 'utf8');
+    const free = (routeHeaderMap() as { route: string; hits: string[] }[])
+      .filter((r) => !r.hits.length).map((r) => r.route).sort();
+    expect(free.length, '무헤더가 하나도 없다 — 도구가 고장 났을 것이다').toBeGreaterThan(0);
+    for (const r of free) {
+      expect(doc, `무헤더 목록에 ${r} 가 없다 — 실측이 정본이다`).toContain(r);
+    }
+    // **수는 박지 않는다**(값의 두 분류 ⑴) — 목록만 박고 수는 산출로 얻는다.
+    expect(doc, '산출 명령이 없다').toContain('node scripts/shellAudit.mjs --routes');
+  });
+});

@@ -1,0 +1,180 @@
+{
+  "규약": "이 목록이 비면 껍데기 이관이 끝난다. 목록은 진도 지표다.",
+  "배정규칙": "컴포넌트는 그것을 쓰는 화면과 같은 덩이에서 걷는다. 그러면 항목마다 따로 판단하지 않아도 된다.",
+  "걷는덩이없는예외금지": "chunk 가 없는 항목을 만들지 마라 — 적지 않으면 예외가 영구가 된다.",
+  "exemptParts": [
+    "src/app/_screens/site/PublicGnb.tsx"
+  ],
+  "exemptPartsWhy": "부품 자신이다. PublicGnb 는 SiteGnb 를 감싸 세션을 읽는 껍데기 부품이지 화면이 아니다.",
+  "exemptDeclared": [
+    "src/app/_screens/site/SiteGallery.tsx"
+  ],
+  "exemptDeclaredWhy": "/preview 전용 — 운영 라우트가 아니다. 시안 갤러리에 운영 껍데기를 강제하면 갤러리를 못 쓴다. 면제는 두 겹으로 잠근다: 선언(preview/layout 의 '운영 라우트 아님' + PROTECTED_PREFIXES 에 /preview) 과 사실(이 파일에 닿는 라우트가 전부 /preview 인가).",
+  "exceptions": [
+    {
+      "file": "src/app/page.tsx",
+      "chunk": "U-1",
+      "why": "공개 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/about/page.tsx",
+      "chunk": "U-1",
+      "why": "공개 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/_screens/entry/AuthGate.tsx",
+      "chunk": "U-1",
+      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/_screens/entry/CodeInput.tsx",
+      "chunk": "U-1",
+      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/_screens/entry/CohortPreview.tsx",
+      "chunk": "U-1",
+      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/_screens/entry/ProfileForm.tsx",
+      "chunk": "U-1",
+      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/_screens/entry/StartGuide.tsx",
+      "chunk": "U-1",
+      "why": "공개 라우트 /join·/signup 이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/account/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/feed/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/pending/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/my/values/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/my/cohorts/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/my/cohorts/[cohortId]/checkin/[session]/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/my/cohorts/[cohortId]/journey/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/my/cohorts/[cohortId]/report/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/my/cohorts/[cohortId]/values/page.tsx",
+      "chunk": "U-2",
+      "why": "회원 껍데기 — 화면이 직접 그린다"
+    },
+    {
+      "file": "src/app/_consent/ConsentGate.tsx",
+      "chunk": "U-2",
+      "why": "회원 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/home/HomeScreen.tsx",
+      "chunk": "U-2",
+      "why": "회원 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/home/assessments/AssessmentsScreen.tsx",
+      "chunk": "U-2",
+      "why": "회원 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/my/cohorts/[cohortId]/CohortHomeScreen.tsx",
+      "chunk": "U-2",
+      "why": "회원 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이"
+    },
+    {
+      "file": "src/app/coach/cohort/[cohortId]/checkin/page.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
+    },
+    {
+      "file": "src/app/coach/cohort/[cohortId]/checkin/preview/page.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
+    },
+    {
+      "file": "src/app/coach/cohort/[cohortId]/group/page.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
+    },
+    {
+      "file": "src/app/coach/cohort/[cohortId]/matrix/page.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
+    },
+    {
+      "file": "src/app/coach/cohort/[cohortId]/member/[userId]/page.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
+    },
+    {
+      "file": "src/app/coach/cohort/[cohortId]/report/[responseId]/page.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
+    },
+    {
+      "file": "src/app/coach/cohort/[cohortId]/values/page.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 껍데기 — 화면이 직접 그린다. **지금 사이드바와 겹쳐 두 줄이다**"
+    },
+    {
+      "file": "src/app/coach/CoachInfoGate.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
+    },
+    {
+      "file": "src/app/admin/AdminMembers.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
+    },
+    {
+      "file": "src/app/_screens/console/ConsoleHome.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
+    },
+    {
+      "file": "src/app/_screens/console/AllCohorts.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
+    },
+    {
+      "file": "src/app/_screens/console/CohortDetail.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
+    },
+    {
+      "file": "src/app/_screens/console/CreateCohort.tsx",
+      "chunk": "U-3",
+      "why": "콘솔 화면이 쓰는 부품 — 쓰는 화면과 같은 덩이. console/* 넷은 /preview/console 도 쓰므로 걷으면 갤러리도 함께 바뀐다"
+    }
+  ]
+}
