@@ -10,10 +10,13 @@ import { SCREEN_CHROME, nearestAncestor, resolveBack, patternOf, type ChromeKind
 /** 회원 껍데기가 덮는 최상위 자리. 라우트 그룹이 서면 경로만 바뀌고 목록은 그대로다. */
 const MEMBER_ROOTS = ['home', 'account', 'feed', 'pending', 'my'];
 /** 껍데기가 안 서는 자리도 **표에는 있어야 한다** — 예외가 규약 밖에 살면 다음 사람이 못 본다. */
-const ALSO_IN_TABLE = ['c', 'signup'];
+const ALSO_IN_TABLE: { root: string; base: string }[] = [
+  { root: 'c', base: 'src/app/c' },
+  { root: 'signup', base: 'src/app/(public)/signup' },
+];
 
 /** `src/app` 아래 실제 라우트를 센다 — 주석이 아니라 **디렉터리 구조**가 정본이다. */
-function routesUnder(root: string, base = `src/app/${root}`, acc: string[] = []): string[] {
+function routesUnder(root: string, base = `src/app/(member)/${root}`, acc: string[] = []): string[] {
   for (const e of readdirSync(base)) {
     const p = `${base}/${e}`;
     if (statSync(p).isDirectory()) routesUnder(root, p, acc);
@@ -23,7 +26,10 @@ function routesUnder(root: string, base = `src/app/${root}`, acc: string[] = [])
 }
 
 describe('화면 크롬 표 — 회원 껍데기 아래 모든 라우트가 표에 있다', () => {
-  const routes = [...MEMBER_ROOTS, ...ALSO_IN_TABLE].flatMap((r) => routesUnder(r)).sort();
+  const routes = [
+    ...MEMBER_ROOTS.flatMap((r) => routesUnder(r)),
+    ...ALSO_IN_TABLE.flatMap((x) => routesUnder(x.root, x.base)),
+  ].sort();
 
   it('**빠진 라우트가 없다** — 없으면 빈 제목이 조용히 나온다', () => {
     const missing = routes.filter((r) => !SCREEN_CHROME[r]);

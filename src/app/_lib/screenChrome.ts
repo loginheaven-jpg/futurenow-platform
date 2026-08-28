@@ -65,11 +65,17 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   //   제목·모드는 `SignupClient` 가 넘기던 값 그대로다 — `title="회원가입"` · `onBack` 없음 → `flow`.
   '/signup': { kind: 'bar', variant: 'flow', title: '회원가입', menu: false },
 
-  // ── 껍데기 없음 — **문안이 없어서다. 지어내지 않았다.**
-  //   실측(2026-09-01): 둘 다 `redirect` 둘 + 사람이 읽는 분기를 가진다
-  //     `/c/[code]/[session]` — `<p>` 셋(예: `코드를 찾을 수 없어요.`)
-  //     `/c/[code]/values`   — `Notice` 둘
-  //   **그리는 것이 있으므로 제목 문안이 필요하고, 참여자가 읽는 문장이라 최박사 결재다.**
+  // ── 껍데기 없음 — **제목이 설 자리가 없다**(실측 2026-09-01 · 지휘부 요구대로 재고 확정).
+  //
+  //   **성공하면 화면을 그리지 않는다.** 둘 다 마지막이 `redirect(...)` 다 —
+  //     `/c/[code]/[session]` → `/my/cohorts/{id}/checkin/{session}`
+  //     `/c/[code]/values`   → `/my/cohorts/{id}/values`
+  //   **실패할 때만 안내 카드를 그린다.** 중앙정렬 한 덩이 + `홈으로` 하나다:
+  //     `코드를 찾을 수 없어요.` · `{기수} 참여자 명단에 없어요.` · `Notice(SHORTCUT.notFound)` 등
+  //
+  //   그 안내는 **자기 문장을 이미 들고 있고 제목 슬롯이 없다.** 껍데기를 씌우면
+  //   *안내 한 줄* 위에 제목 바가 얹혀 오히려 이상해진다 — 그래서 **문안 결재가 필요 없다.**
+  //   지나가는 길이지 머무는 화면이 아니다.
   '/c/[code]/[session]': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
   '/c/[code]/values': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
 };

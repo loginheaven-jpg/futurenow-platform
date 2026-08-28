@@ -7,7 +7,9 @@ import { PublicShell } from './PublicShell';
 // `/` 와 `/about` 의 테스트가 헤더·푸터 링크를 재고 있었다. 그 층이 껍데기로 올라갔으므로
 //   단언도 함께 올라온다 — **지우지 않고 옮겼다.** 지우면 *로그인 문이 있는가* 를
 //   아무도 재지 않게 되고, 그것이 이 이관에서 잃기 가장 쉬운 것이다.
-vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
+//  이 U-2 부터 크롬 표를 찾느라 `useParams` 도 쓴다.
+// PublicShell 이 U-2 부터 크롬 표를 찾느라 useParams 도 쓴다.
+vi.mock('next/navigation', () => ({ usePathname: () => '/', useParams: () => ({}) }));
 
 const html = renderToStaticMarkup(<PublicShell><div id="본문" /></PublicShell>);
 

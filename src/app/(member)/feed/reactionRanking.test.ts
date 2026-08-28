@@ -10,8 +10,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const CLIENT = readFileSync('src/app/feed/FeedClient.tsx', 'utf8');
-const STATE = readFileSync('src/app/feed/reactionState.ts', 'utf8');
+const CLIENT = readFileSync('src/app/(member)/feed/FeedClient.tsx', 'utf8');
+const STATE = readFileSync('src/app/(member)/feed/reactionState.ts', 'utf8');
 const MIGRATION = readFileSync('supabase/migrations/20260829090000_feed_reactions_multi.sql', 'utf8');
 
 describe('반응이 순위를 만들지 않는다 (불변식 11)', () => {
