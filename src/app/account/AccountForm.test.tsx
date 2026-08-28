@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AccountForm } from './AccountForm';
 import type { MembershipView } from '@/contracts/domain';
+// **문안을 여기에 다시 적지 않는다**(사본 셋 방지 · 불변식 23).
+//   *문장이 무엇인가* 는 `membershipVocab.test.ts` 가 글자 그대로 잠그고,
+//   이 파일은 **화면이 그 상수를 쓰는가**만 잰다. 문안이 바뀌어도 이 파일은 안 바뀐다.
+//   (실제로 2026-08-30 문안 확정 때 여기 세 곳이 하드코딩이라 함께 빨개졌다.)
+import { PARTICIPANT_LEAD, TIER_LEAD } from '@/core/membershipVocab';
 
 const noop = () => {};
 const profile = {
@@ -135,14 +140,14 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
     //   (`전화는 인도자 연락에…`) — 낱말로 재면 코드가 아니라 단언이 틀린다. 실제로 한 번 틀렸다.
     expect(html).not.toContain('기 참여자');
     expect(html).not.toContain('기 인도자');
-    expect(html).not.toContain('세미나 기간 동안');
+    expect(html).not.toContain(PARTICIPANT_LEAD);
   });
 
   // ── 최박사 확정 2번(지휘부 읽기) — 참여 칩이 있으면 **설명문만** 바뀐다 ────────
   //
   //   *"18명 모두 참여자 이다. 포럼회원(정회원)은 없다."* 그 사실을 그대로 읽으면
   //   `승인을 기다리는 중입니다…` 는 이미 참여 중인 사람에게 어긋난다.
-  //   ⚠ 이 대체는 **지휘부의 읽기**이지 최박사 문장이 아니다 — `나` 로 정정되면 이 줄 하나가 바뀐다.
+  //   ✅ 2026-08-30 최박사가 문안 작성을 지휘부에 위임하며 두 문장이 확정됐다. 분기는 그대로다.
   describe('참여 칩이 있으면 자격 줄의 **설명문**을 소속 기준으로 쓴다', () => {
     const asParticipant = (tier: MembershipView['tier'] = 'visitor') =>
       render({
@@ -154,9 +159,9 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
 
     it('실측 18명의 경우 — 방문회원인데 세미나 참여 중', () => {
       const html = asParticipant();
-      expect(html).toContain('세미나 기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.');
-      expect(html, '이미 참여 중인 사람에게 어긋나는 문장은 안 쓴다')
-        .not.toContain('승인을 기다리는 중입니다');
+      expect(html).toContain(PARTICIPANT_LEAD);
+      expect(html, '참여 중인 사람에게는 방문회원 설명을 쓰지 않는다')
+        .not.toContain(TIER_LEAD.visitor);
     });
 
     it('**이름은 방문회원 그대로다** — 자격과 소속을 다시 한 줄로 합치지 않는다', () => {
@@ -168,15 +173,15 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
 
     it('참여 칩이 없으면 자격 줄 설명문이 그대로다', () => {
       const html = render({ membership: view({ tier: 'visitor' }) });
-      expect(html).toContain('승인을 기다리는 중입니다. 세미나 참여와 포럼회원 신청을 하실 수 있습니다.');
+      expect(html).toContain(TIER_LEAD.visitor);
     });
 
     it('**인도자 칩만 있으면 대체하지 않는다** — 참여가 아니다', () => {
       const html = render({
         membership: view({ tier: 'visitor', cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach', firstSessionAt: null }] }),
       });
-      expect(html).toContain('승인을 기다리는 중입니다');
-      expect(html).not.toContain('세미나 기간 동안');
+      expect(html).toContain(TIER_LEAD.visitor);
+      expect(html).not.toContain(PARTICIPANT_LEAD);
       expect(html).toContain('1기 인도자');
     });
   });
@@ -186,7 +191,7 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
       membership: view({ cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach', firstSessionAt: null }] }),
     });
     expect(html).toContain('1기 인도자');
-    expect(html).not.toContain('세미나 기간 동안');
+    expect(html).not.toContain(PARTICIPANT_LEAD);
   });
 
   it('`held` 는 **방문회원에 진행 표시**다 — 자격 이름을 덮지 않는다', () => {
