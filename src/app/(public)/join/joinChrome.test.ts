@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { joinChrome, type JoinStep } from './joinChrome';
+import { SCREEN_CHROME } from '@/app/_lib/screenChrome';
 import { TOOL } from '@/app/_vocab/tool';
 
 const O = { isGeneral: false, cohortName: '2026 봄 미래의 나 1기', hasMeta: true };
@@ -63,11 +64,17 @@ describe('U-4 §5 — 「처음으로」는 여섯에서 걷혔고 `/signup` 에
     }
   });
 
-  it('`/signup` 에는 남는다 — 그 화면에는 로고가 없기 때문이다', () => {
+  it('`/signup` 에는 남는다 — 표가 **되돌아가는 문 하나**를 선언했기 때문이다', () => {
+    // **표기를 실물에 맞췄다**(지휘부 판정 2026-08-29) — `flow` 아래 `exit` 한 칸.
+    //   문자열이 아니라 **계약을 읽는다.** 표에서 `exit` 이 사라지면 여기서 먼저 운다.
+    const c = SCREEN_CHROME['/signup'];
+    expect(c.kind).toBe('bar');
+    const exit = c.kind === 'bar' ? c.exit : undefined;
+    expect(exit, '`/signup` 의 되돌아가는 문 선언이 사라졌다').toBeTruthy();
+    expect(exit?.href).toBe('/');
+    expect(exit?.why.length, '사유 없는 선언은 다음 사람이 못 판단한다').toBeGreaterThan(20);
+    // 그리고 **화면에 실제로 그 문이 있다** — 선언만 있고 문이 없으면 갇힌다.
     const src = readFileSync('src/app/(public)/signup/SignupClient.tsx', 'utf8');
-    expect(src).toContain('처음으로');
-    // 근거를 함께 잠근다: 표가 `/signup` 을 `flow` 로 적는 한 GNB(로고)가 서지 않는다.
-    const table = readFileSync('src/app/_lib/screenChrome.ts', 'utf8');
-    expect(table).toMatch(/'\/signup':\s*\{ kind: 'bar', variant: 'flow'/);
+    expect(src, '선언은 남고 문이 사라졌다').toContain(exit!.label);
   });
 });
