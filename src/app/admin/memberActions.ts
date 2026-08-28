@@ -9,7 +9,7 @@
 //   안전장치가 아니다 — 그래서 **감추지 않고 비활성 + 사유**로 둔다.
 //   *안 보이면 왜 없는지 모른다.*
 import type { MemberState, Role } from '@/contracts';
-import { TIER_LABEL, UNDER_REVIEW_NOTE } from '@/core/membershipVocab';
+import { TIER_LABEL, HELD_ADMIN_LABEL } from '@/core/membershipVocab';
 
 /** 목록 행에 뜨는 회원 상태 이름 — **단일 출처 어휘를 그대로 쓴다.** */
 export function memberStateLabel(state: MemberState): string {
@@ -19,8 +19,10 @@ export function memberStateLabel(state: MemberState): string {
     case 'expired':
       return TIER_LABEL.suspended;
     case 'held':
-      // `확인 대기` 는 버튼 이름이고, 상태 이름은 참여자에게 보이는 그 문장을 따른다.
-      return UNDER_REVIEW_NOTE;
+      // **열에는 문장이 아니라 이름이 들어간다.** 참여자가 읽는 문장(`확인이 필요한 신청입니다`)을
+      //   그대로 쓰면 열 하나가 문장이 된다 — 실제로 캡처에서 그렇게 나왔다.
+      //   운영자 어휘로는 승인 화면 버튼 이름 `확인 대기` 가 이미 확정돼 있다(최박사 2026-08-29).
+      return HELD_ADMIN_LABEL;
     case 'cohort':
       // 차수 회원은 **산출**이라 자격 이름이 아니다 — 소속이 곧 상태다.
       return '기수 참여 중';

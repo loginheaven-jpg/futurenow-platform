@@ -115,6 +115,14 @@ export const COHORT_ROLE_LABEL: Record<CohortRoleKind, string> = {
 export const PARTICIPANT_LEAD =
   '세미나 기간 동안 모든 도구를 이용하실 수 있습니다. 기간이 끝나도 그동안의 기록은 계속 보실 수 있습니다.';
 
+/**
+ * **운영자 화면의 `held` 이름** — 승인 화면 버튼 이름으로 최박사가 확정하신 말이다(2026-08-29).
+ *
+ * 참여자에게 보이는 문장(`UNDER_REVIEW_NOTE`)과 **뜻은 같고 자리가 다르다** —
+ * 열에는 문장이 아니라 이름이 들어가야 한다. 두 곳이 갈리지 않게 여기 한 곳에 둔다.
+ */
+export const HELD_ADMIN_LABEL = '확인 대기';
+
 /** `underReview` 진행 문안 — 참여자 문안은 **현행 유지**다(`/pending` 과 같은 문장). */
 export const UNDER_REVIEW_NOTE = '확인이 필요한 신청입니다.';
 

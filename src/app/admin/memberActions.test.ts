@@ -3,7 +3,7 @@ import {
   memberStateLabel, holdGate, promoteGate,
   REASON_SELF, REASON_SUPER_TARGET, REASON_SUPER_ONLY,
 } from './memberActions';
-import { TIER_LABEL, UNDER_REVIEW_NOTE } from '@/core/membershipVocab';
+import { TIER_LABEL, HELD_ADMIN_LABEL, UNDER_REVIEW_NOTE } from '@/core/membershipVocab';
 
 const t = (over: Partial<Parameters<typeof holdGate>[0]['target']> = {}) => ({
   id: 'u1', role: 'user' as const, memberState: 'pending' as const, isSuperAdmin: false, ...over,
@@ -17,7 +17,9 @@ describe('회원 상태 이름 — **단일 출처 어휘를 그대로 쓴다**'
     expect(memberStateLabel('individual')).toBe(TIER_LABEL.forum);
     expect(memberStateLabel('expired')).toBe(TIER_LABEL.suspended);
     expect(memberStateLabel('pending')).toBe(TIER_LABEL.visitor);
-    expect(memberStateLabel('held')).toBe(UNDER_REVIEW_NOTE);
+    // **열에는 이름이 들어간다** — 참여자가 읽는 문장을 그대로 쓰면 열 하나가 문장이 된다.
+    expect(memberStateLabel('held')).toBe(HELD_ADMIN_LABEL);
+    expect(memberStateLabel('held'), '참여자 문장을 열에 쓰지 않는다').not.toBe(UNDER_REVIEW_NOTE);
   });
 
   it('`cohort` 는 자격이 아니라 **소속**이다 — 산출값이라 자격 이름을 붙이지 않는다', () => {

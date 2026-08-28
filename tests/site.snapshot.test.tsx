@@ -17,6 +17,8 @@ import { HomeScreen } from '@/app/(member)/home/HomeScreen';
 import { MenuSheet } from '@/app/_screens/site/MenuSheet';
 import { MemberHome } from '@/app/_screens/MemberHome';
 import { HOME_FIXTURE, HOME_COHORTS, SHEET_FIXTURE } from '@/app/(member)/home/homeFixture';
+import { AdminMembers } from '@/app/admin/AdminMembers';
+import { ADMIN_FIXTURE } from '@/app/_lib/f4Fixture';
 import { CohortHomeScreen } from '@/app/(member)/my/cohorts/[cohortId]/CohortHomeScreen';
 import { AssessmentsScreen } from '@/app/(member)/home/assessments/AssessmentsScreen';
 import { COHORT_FIXTURE, ASSESS_FIXTURE } from '@/app/_lib/f4Fixture';
@@ -64,5 +66,32 @@ describe.skipIf(!DIR)('차수 홈·진단 홈(시안 C·F) 마크업', () => {
   it('둘을 따로 쓴다', () => {
     writeFileSync(`${DIR}/cohort.html`, renderToStaticMarkup(<CohortHomeScreen {...COHORT_FIXTURE} />), 'utf8');
     writeFileSync(`${DIR}/assess.html`, renderToStaticMarkup(<AssessmentsScreen {...ASSESS_FIXTURE} />), 'utf8');
+  });
+});
+
+// **본부 멤버 관리** — `/admin` 은 QA 계정이 코치라 실라우트로 못 찍는다(게이트는 U-3 에서 검증됐다).
+//   표시 층을 SSR 로 그려 대역으로 찍는다 — **레이아웃을 재지 인증 흐름을 재지 않는다.**
+describe.skipIf(!DIR)('본부 멤버 관리(5-3) 마크업', () => {
+  it('회원 상태 다섯이 한 화면에 선다', () => {
+    const noop = () => {};
+    writeFileSync(
+      `${DIR}/admin.html`,
+      renderToStaticMarkup(
+        <AdminMembers
+          members={ADMIN_FIXTURE.members}
+          applications={[]}
+          currentUserId={ADMIN_FIXTURE.currentUserId}
+          isSuperAdmin={ADMIN_FIXTURE.isSuperAdmin}
+          onPromote={noop}
+          onDemote={noop}
+          onDelete={noop}
+          onSetPassword={async () => ({ ok: true })}
+          onDecide={noop}
+          onApprove={noop}
+          onReject={noop}
+        />,
+      ),
+      'utf8',
+    );
   });
 });

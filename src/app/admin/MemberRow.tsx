@@ -20,7 +20,7 @@ const cardStyle = {
 } as const;
 
 const nameBtn = {
-  flex: 1,
+  flex: '1 1 12rem', // **줄바꿈 뒤에도 이름이 한 줄로 읽히게** — 좁아지면 글자가 세로로 선다(캡처가 잡았다)
   minWidth: 0,
   textAlign: 'left',
   background: 'none',
@@ -107,7 +107,9 @@ export function MemberRow({
   const p = detail?.profile;
   return (
     <div style={cardStyle}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+      {/* **줄바꿈을 허용한다**(5-3) — 버튼이 둘 늘면서 390 에서 48px 넘쳤다(픽스처 캡처가 잡았다).
+          색·글자·간격은 그대로이고 **한 줄 강제만 푼다** — 넘치는 것이 결함이지 간격이 결함이 아니다. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
         <button type="button" onClick={toggle} aria-expanded={open} style={nameBtn}>
           <div className="t-body" style={{ color: 'var(--color-text)' }}>
             {member.name ?? '이름 미입력'}

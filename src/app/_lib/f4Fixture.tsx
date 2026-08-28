@@ -46,3 +46,26 @@ export const ASSESS_FIXTURE: AssessmentsScreenProps = {
   ],
   privacy: <><b>이 결과는 우리 기수 인도자와 함께 봅니다.</b> 코칭에 쓰이는 재료입니다. 정답이 없으니 편하게 쓰셔도 됩니다.</>,
 };
+
+/**
+ * 본부 멤버 관리 픽스처 — **회원 상태 다섯을 한 화면에 세운다**(5-3).
+ *
+ * `/admin` 은 QA 계정이 코치라 실라우트로 못 찍는다(두 회차 연속 미실측이었다).
+ * **인증 흐름은 이미 검증됐다** — U-3 에서 코치가 `/admin` 에 가면 `/coach` 로 착지하는 것을 봤고
+ * 그것이 게이트가 작동한다는 증거다. **남은 것은 레이아웃뿐**이므로 표시 층을 SSR 로 그려 찍는다.
+ *
+ * ⚠ **픽스처 캡처는 레이아웃을 재지 인증 흐름을 재지 않는다.** 그 한계를 여기 적어 둔다.
+ */
+export const ADMIN_FIXTURE = {
+  currentUserId: 'me',
+  isSuperAdmin: false,
+  members: [
+    { id: 'me', email: 'me@t.test', name: '나(운영자)', role: 'admin' as const, memberState: 'individual' as const, isSuperAdmin: false },
+    { id: 'sa', email: 'super@t.test', name: '슈퍼어드민', role: 'admin' as const, memberState: 'pending' as const, isSuperAdmin: true },
+    { id: 'c1', email: 'coach@t.test', name: '김인도', role: 'coach' as const, memberState: 'cohort' as const, isSuperAdmin: false },
+    { id: 'u1', email: 'a@t.test', name: '이참여', role: 'user' as const, memberState: 'individual' as const, isSuperAdmin: false },
+    { id: 'u2', email: 'b@t.test', name: '박대기', role: 'user' as const, memberState: 'pending' as const, isSuperAdmin: false },
+    { id: 'u3', email: 'c@t.test', name: '최보류', role: 'user' as const, memberState: 'expired' as const, isSuperAdmin: false },
+    { id: 'u4', email: 'd@t.test', name: '정확인', role: 'user' as const, memberState: 'held' as const, isSuperAdmin: false },
+  ],
+};
