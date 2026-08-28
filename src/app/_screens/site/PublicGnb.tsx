@@ -57,10 +57,13 @@ export function PublicGnb({
   logo,
   en,
   items,
+  sheet,
 }: {
   logo: React.ReactNode;
   en?: string;
   items: GnbItem[];
+  /** 모바일 전체 메뉴(U-2 §3). **회원 껍데기와 같은 부품**이고 담기는 항목만 다르다. */
+  sheet?: React.ComponentProps<typeof SiteGnb>['sheet'];
 }) {
   // **현재 경로를 prop 으로 받지 않는다**(U-1). 껍데기가 화면마다 다른 값을 들고 있으면
   //   그것이 곧 사본 둘이고, 화면이 하나를 잊으면 현재 표시가 조용히 틀린다.
@@ -70,6 +73,6 @@ export function PublicGnb({
   const signedIn = useSyncExternalStore(subscribe, hasAuthCookie, useCallback(() => false, []));
 
   return (
-    <SiteGnb logo={logo} en={en} items={items} currentPath={currentPath} login={publicHeaderAction(signedIn)} />
+    <SiteGnb logo={logo} en={en} items={items} currentPath={currentPath} login={publicHeaderAction(signedIn)} sheet={sheet} />
   );
 }

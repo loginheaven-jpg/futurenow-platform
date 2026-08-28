@@ -17,6 +17,8 @@ import { PROTECTED_PREFIXES } from '@/proxy.guard';
 const cfg = JSON.parse(readFileSync('scripts/shellExceptions.json', 'utf8')) as {
   exemptParts: string[];
   exemptDeclared: string[];
+  /** 껍데기 «바깥» — 예외도 면제도 아니고, 껍데기가 애초에 두르지 않는 자리다. */
+  exemptOutside: string[];
   exceptions: { file: string; chunk: string; why: string }[];
 };
 // U-4 는 **이름과 문**을 다루는 덩이다(공통 규칙 3·4). `/join`·`/signup` 의 뒤로 제어가 거기 산다.
@@ -24,7 +26,7 @@ const CHUNKS = ['U-1', 'U-2', 'U-3', 'U-4'];
 
 describe('껍데기 잠금 — 화면이 헤더를 직접 그리지 않는다', () => {
   const drawn = scanDrawers().map((r: { file: string }) => r.file);
-  const exempt = new Set([...cfg.exemptParts, ...cfg.exemptDeclared]);
+  const exempt = new Set([...cfg.exemptParts, ...cfg.exemptDeclared, ...cfg.exemptOutside]);
   const listed = new Map(cfg.exceptions.map((e) => [e.file, e]));
 
   it('**새로 그리는 화면이 없다** — 목록에 없으면 레드', () => {
@@ -65,7 +67,16 @@ describe('`/preview` 면제 — 선언은 의도를 말하고 설정은 사실�
       .toContain('/preview');
   });
 
-  it('⑶ **사실** — 면제된 파일에 닿는 라우트가 전부 `/preview` 다', () => {
+  it('**껍데기 바깥은 사실로 잠근다** — layout 이 동의 미완에 껍데기를 두르지 않는가', () => {
+    // 문자열이 아니라 **동작**을 잰다. 이 분기가 사라지면 동의 화면에 헤더가 둘이 된다.
+    const layout = readFileSync('src/app/(member)/layout.tsx', 'utf8');
+    expect(layout, '동의 판정이 없다').toContain('consented');
+    expect(layout, '동의 미완에 맨 children 을 돌려주지 않는다').toMatch(/if \(!consented\) return <>\{children\}<\/>;/);
+    // 그리고 그 파일 자신은 한 줄도 안 바뀐다 — §4 무접촉은 `tests/untouched.test.ts` 가 잰다.
+    for (const f of cfg.exemptOutside) expect(readFileSync(f, 'utf8')).toContain('AppHeader');
+  });
+
+  it('⑶ **사실** — `/preview` 면제 파일에 닿는 라우트가 전부 `/preview` 다', () => {
     // 이것이 가장 센 잠금이다. 누가 그 부품을 운영 화면에서 쓰기 시작하면
     //   선언도 설정도 그대로인데 **사실이 먼저 바뀌고** 여기서 레드가 난다.
     const map = routeHeaderMap() as { route: string; hits: string[] }[];
@@ -96,9 +107,9 @@ describe('실측 도구 자신을 먼저 잰다 — 주석을 정말 걷어내�
 
   it('`/home` 은 주석에서만 헤더를 말한다 — 실제로는 그리지 않는다', () => {
     // 지휘부 19 · 실측 18 의 갈림이 정확히 이 파일이었다. **회귀 잠금으로 남긴다.**
-    const raw = readFileSync('src/app/home/page.tsx', 'utf8');
+    const raw = readFileSync('src/app/(member)/home/page.tsx', 'utf8');
     expect(raw, '주석이 사라졌으면 이 잠금의 뜻도 사라진다').toContain('`AppHeader` →');
-    expect(headerImportsOf('src/app/home/page.tsx'), 'page.tsx 는 헤더를 import 하지 않는다').toEqual([]);
+    expect(headerImportsOf('src/app/(member)/home/page.tsx'), 'page.tsx 는 헤더를 import 하지 않는다').toEqual([]);
   });
 });
 

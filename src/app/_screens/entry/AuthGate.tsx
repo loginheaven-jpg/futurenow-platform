@@ -70,7 +70,7 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 export function AuthGate({
   allowCoachApply = false,
   allowForumMatch = false,
-  title = '들어가기',
+  title,
   busy,
   onSignup,
   onLogin,
@@ -79,6 +79,7 @@ export function AuthGate({
   allowCoachApply?: boolean;
   // `/signup`(일반 가입)에서만 켠다. `/join`(코드 가입)은 차수 코드가 곧 승인이라 대조 키가 필요 없다.
   allowForumMatch?: boolean;
+  /** **기본값을 걷었다**(U-2) — 없으면 헤더를 그리지 않는다. 껍데기가 그리는 자리에서 둘이 되지 않게. */
   title?: string;
   busy?: boolean;
   onSignup?: (p: SignupPayload) => void;
@@ -156,7 +157,9 @@ export function AuthGate({
 
   return (
     <div>
-      <AppHeader variant={onBack ? 'sub' : 'flow'} title={title} onBack={onBack} />
+      {/* **제목이 오면 그린다.** `/join` 은 단계마다 제목이 달라 여전히 넘기고(U-4),
+          `/signup` 은 표가 들어 껍데기가 그리므로 넘기지 않는다 — 그러면 헤더가 둘이 되지 않는다. */}
+      {title ? <AppHeader variant={onBack ? 'sub' : 'flow'} title={title} onBack={onBack} /> : null}
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
         <TabBtn active={mode === 'signup'} onClick={() => setMode('signup')}>처음이에요</TabBtn>
         <TabBtn active={mode === 'login'} onClick={() => setMode('login')}>계정이 있어요</TabBtn>

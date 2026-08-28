@@ -135,7 +135,7 @@ if ((process.argv[1] ?? '').endsWith('shellAudit.mjs')) {
     process.exit(0);
   }
   const cfg = JSON.parse(readFileSync('scripts/shellExceptions.json', 'utf8'));
-  const exempt = new Set([...cfg.exemptParts, ...cfg.exemptDeclared]);
+  const exempt = new Set([...cfg.exemptParts, ...cfg.exemptDeclared, ...(cfg.exemptOutside ?? [])]);
   const listed = new Map(cfg.exceptions.map((e) => [e.file, e]));
   const fails = [];
   for (const r of found) {

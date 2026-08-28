@@ -248,12 +248,12 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
   });
 
   it('사진 첨부 프라이버시 고지 — 컴포넌트', () => {
-    expect(src('../../../app/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx'))
+    expect(src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx'))
       .toContain('첨부한 사진은 인도자와 운영자가 볼 수 있습니다.');
   });
 
   it('결측 안내 패널 — 컴포넌트', () => {
-    const s = src('../../../app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx');
+    const s = src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx');
     expect(s).toContain('비워 두셔도 제출됩니다.'); // 몰아세우면 이탈한다 — 여기만은 허락을 남긴다
     expect(s).toContain('채우러 가기');
     expect(s).toContain('나중에 이어 쓰기');
@@ -263,10 +263,10 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
 // ADR-102 Phase 3 — 진행·상태 표시. **이 구간은 session*.ts 밖이라 리터럴 잠금이 닿지 않는다.**
 //   Phase 2 에서 컴포넌트 존재 단언이 실제로 작동함이 음성 대조로 증명됐으므로 같은 방식으로 건다.
 describe('진행·상태 문구가 되돌아가지 않는다 (ADR-102 Phase 3)', () => {
-  const card = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx', import.meta.url), 'utf8');
-  const home = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/page.tsx', import.meta.url), 'utf8');
+  const card = readFileSync(new URL('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../../../app/(member)/my/cohorts/[cohortId]/page.tsx', import.meta.url), 'utf8');
   // 4차 F-4 — 표시 층이 갈렸다. 진행 표시·오늘 카드는 이제 화면 부품에 있다.
-  const screen = readFileSync(new URL('../../../app/my/cohorts/[cohortId]/CohortHomeScreen.tsx', import.meta.url), 'utf8');
+  const screen = readFileSync(new URL('../../../app/(member)/my/cohorts/[cohortId]/CohortHomeScreen.tsx', import.meta.url), 'utf8');
   // 금지어 검사는 **주석을 걷어내고** 본다. 규율을 설명하는 주석이 금지어를 인용하는 것은 정상이고
   //   (CheckinCardClient.tsx:4 가 '설문·진단·지각·미제출·워크북 미사용'이라 적어 둔 것이 그렇다),
   //   그것까지 잡으면 검사가 자기 문서를 때린다. koreanLiterals 와 같은 사고다.

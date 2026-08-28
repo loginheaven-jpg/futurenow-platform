@@ -9,7 +9,7 @@
 // 순서는 지휘부가 못 박았다(적용 → 검증 → 보고 → 확인 → 병합 → 배포).
 // 이 가드는 **그 순서가 지켜지지 않았을 때만** 발화하며, 조용히 틀리는 대신 멈춘다.
 import { describe, expect, it } from 'vitest';
-import { applyReaction } from '@/app/feed/reactionState';
+import { applyReaction } from '@/app/(member)/feed/reactionState';
 import type { FeedEmoji } from '@/contracts/domain';
 
 describe('왜 가드가 필요한가 — 옛 스키마에서 조용히 틀리는 모양', () => {

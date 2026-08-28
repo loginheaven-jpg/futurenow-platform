@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { RESIZE_MAX_DIM, RESIZE_QUALITY, RESIZE_MIME } from './resizeImage';
 
-const LETTER_PHOTOS = 'src/app/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx';
+const LETTER_PHOTOS = 'src/app/(member)/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx';
 
 describe('리사이즈 값은 갈무리와 피드가 같다', () => {
   const src = readFileSync(LETTER_PHOTOS, 'utf8');
