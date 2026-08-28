@@ -82,6 +82,8 @@ export function AccountForm({
   onSaveName,
   onSaveContact,
   onSavePassword,
+  keepSignedIn,
+  onKeepSignedIn,
 }: {
   name: string;
   phone: string;
@@ -101,6 +103,9 @@ export function AccountForm({
   onSaveName: () => void;
   onSaveContact: () => void;
   onSavePassword: () => void;
+  // 소건 1-마 — **판정하지 않는다.** 값도 저장도 오케스트레이터가 한다(폼은 프레젠테이션).
+  keepSignedIn: boolean;
+  onKeepSignedIn: (v: boolean) => void;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -186,6 +191,35 @@ export function AccountForm({
           </Button>
         </section>
       ) : null}
+
+      {/* 소건 1-마 · 이 기기에서 로그인 유지 —
+          **기본은 켬**이다. 이미 그렇게 동작하고 있었고(운영 실측: 인증 쿠키가 400일 영속),
+          스위치는 그 사실을 **보이게 만들고 끌 수 있게** 한다. 끄면 세션 쿠키가 되어
+          브라우저를 닫을 때 사라진다.
+          **비밀번호를 저장하는 기능이 아니다** — 앱은 자격을 들지 않는다(지휘부 판정: 자격 저장 기각).
+          공용 기기에서 끄는 용도라 위치를 비밀번호 섹션 바로 위에 둔다(계정 보안이 한자리에 모이게). */}
+      <section style={section}>
+        <label style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={keepSignedIn}
+            onChange={(e) => onKeepSignedIn(e.target.checked)}
+            // 기존 동의 체크박스(`ConsentBlock`)와 **같은 치수**다 — 새 시각 언어를 만들지 않는다(불변식 20).
+            style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }}
+          />
+          <span>
+            <span className="t-body">이 기기에서 로그인 유지</span>
+            <span className="t-caption" style={{ display: 'block', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
+              {keepSignedIn
+                ? '켜져 있습니다. 이 기기에서는 다시 로그인하지 않으셔도 됩니다.'
+                : '꺼져 있습니다. 브라우저를 닫으면 로그아웃됩니다 — 공용 기기에 알맞습니다.'}
+            </span>
+            <span className="t-caption" style={{ display: 'block', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
+              비밀번호를 저장하지는 않습니다. 이 설정은 이 기기에만 적용됩니다.
+            </span>
+          </span>
+        </label>
+      </section>
 
       {/* 비밀번호 변경(로그인 상태) */}
       <section style={section}>

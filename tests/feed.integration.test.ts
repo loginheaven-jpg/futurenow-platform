@@ -215,17 +215,44 @@ describe.skipIf(!ENABLED)('동행 피드 — 기수 격리와 자격 (실DB · �
 
       await post(client, MEM_A1, COH_A, '반응 대상');
       const pid = await idOf(client, COH_A, '반응 대상');
+      // **5차 소건 2 — 교체가 아니라 토글이다.** 넷을 차례로 누르면 넷이 다 남는다.
+      //   2차 확정("다른 이모지는 교체")의 개정이고, 그 강제는 규칙이 아니라
+      //   `PRIMARY KEY (post_id, user_id)` 였다. 3열 PK 로 넓혀 열었다.
       for (const e of FEED_EMOJI) await runAs(client, MEM_A2, `select public.feed_react('${pid}','${e}')`);
-      // 넷을 차례로 눌렀으니 마지막 하나만 남는다 — 누적이 아니라 교체다
       expect(await countAs(client, MEM_A2,
-        `select count(*) from public.feed_reactions where post_id='${pid}' and user_id='${MEM_A2}'`)).toBe(1);
+        `select count(*) from public.feed_reactions where post_id='${pid}' and user_id='${MEM_A2}'`))
+        .toBe(FEED_EMOJI.length);
+
+      // 박수와 기도를 **함께** — 최박사 요청의 원문 그대로를 한 줄로 잠근다.
+      expect(await countAs(client, MEM_A2,
+        `select count(*) from public.feed_reactions
+          where post_id='${pid}' and user_id='${MEM_A2}' and emoji in ('👏','🙏')`)).toBe(2);
+
+      // 같은 이모지 재호출 = 그것만 취소(나머지는 그대로)
+      await runAs(client, MEM_A2, `select public.feed_react('${pid}','👏')`);
+      expect(await countAs(client, MEM_A2,
+        `select count(*) from public.feed_reactions where post_id='${pid}' and user_id='${MEM_A2}'`))
+        .toBe(FEED_EMOJI.length - 1);
+      expect(await countAs(client, MEM_A2,
+        `select count(*) from public.feed_reactions
+          where post_id='${pid}' and user_id='${MEM_A2}' and emoji='👏'`)).toBe(0);
+
+      // 반환은 남은 내 반응 **전부**이고 순서는 `feed_emojis()` 선언 순서다(목록 RPC 와 같은 기준).
       expect(await scalarAs(client, MEM_A2,
-        `select emoji as e from public.feed_reactions where post_id='${pid}' and user_id='${MEM_A2}'`))
-        .toBe(FEED_EMOJI[FEED_EMOJI.length - 1]);
-      // 같은 이모지 재호출 = 취소
-      await runAs(client, MEM_A2, `select public.feed_react('${pid}','${FEED_EMOJI[FEED_EMOJI.length - 1]}')`);
-      expect(await countAs(client, MEM_A2,
-        `select count(*) from public.feed_reactions where post_id='${pid}' and user_id='${MEM_A2}'`)).toBe(0);
+        `select array_to_string(public.feed_react('${pid}','👏'), ',') as e`))
+        .toBe(FEED_EMOJI.join(','));
+
+      // 목록 RPC 도 배열로 준다 — 화면과 DB 가 같은 모양을 본다.
+      expect(await scalarAs(client, MEM_A2,
+        `select array_to_string(my_reactions, ',') as e
+           from public.feed_list('${COH_A}') where id='${pid}'`))
+        .toBe(FEED_EMOJI.join(','));
+
+      // 남의 반응은 건드리지 않는다 — 집계는 사람마다 따로 센다.
+      await runAs(client, MEM_A1, `select public.feed_react('${pid}','👏')`);
+      expect(await countAs(client, MEM_A1,
+        `select count(*) from public.feed_reactions where post_id='${pid}' and emoji='👏'`)).toBe(2);
+
       // 목록 밖 이모지는 거부
       await expectRaise(client, MEM_A2, `select public.feed_react('${pid}','🔥')`, '22023');
     } finally { await close(client); }

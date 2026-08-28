@@ -17,6 +17,7 @@ import { QuickTiles } from './QuickTiles';
 import { SessionChipStrip } from './SessionChipStrip';
 import { MenuSheet } from './MenuSheet';
 import { SiteGnb } from './SiteGnb';
+import { PublicGnb } from './PublicGnb';
 import { SectionTitle } from './SectionTitle';
 import { NewsRow } from './NewsRow';
 import { RecruitCard } from './RecruitCard';
@@ -287,5 +288,24 @@ describe('15 · BookPanel', () => {
     expect(html).not.toContain('ui-btn');
     expect(html).not.toContain('site-book__notice');
     expect(html).not.toContain('site-book__bulk');
+  });
+});
+
+// ── 5차 소건 1-바 · 공개 헤더가 세션을 본다 ────────────────────────────────
+describe('PublicGnb — 서버 렌더는 비로그인 모습이다 (ISR 무손상의 대가)', () => {
+  it('정적 HTML 은 `로그인`으로 그려진다 — 캐시본과 같아야 하이드레이션이 어긋나지 않는다', () => {
+    const html = renderToStaticMarkup(
+      <PublicGnb logo="로고" en="FUTURE NOW" items={[{ href: '/about', label: '소개' }]} currentPath="/" />,
+    );
+    expect(html).toContain('로그인');
+    expect(html).toContain('/login');
+    expect(html).not.toContain('내 홈');
+  });
+
+  it('부품에 login prop 을 내려 준다 — **부품은 여전히 계산하지 않는다**', () => {
+    const html = renderToStaticMarkup(
+      <PublicGnb logo="로고" items={[{ href: '/about', label: '소개' }]} currentPath="/" />,
+    );
+    expect(html).toContain('site-gnb__login');
   });
 });

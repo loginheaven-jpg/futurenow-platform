@@ -81,7 +81,7 @@ export async function deleteFeedPostAction(input: {
   }
 }
 
-export async function reactFeedAction(postId: string, emoji: FeedEmoji): Promise<FeedResult<FeedEmoji | null>> {
+export async function reactFeedAction(postId: string, emoji: FeedEmoji): Promise<FeedResult<FeedEmoji[]>> {
   try {
     const ctx = await createServerContext();
     return { ok: true, value: await ctx.reactToFeedPost(postId, emoji) };

@@ -6,6 +6,7 @@ import { cookies, headers } from 'next/headers';
 import type { CoreContext } from '@/contracts';
 import { createCoreContext, type CreateCoreContextOptions } from '@/core/context';
 import { VERIFIED_UID_HEADER } from '@/core/auth/verifiedIdentity';
+import { protocolFromForwarded, secureCookies } from './cookiePolicy';
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -15,10 +16,20 @@ function requireEnv(name: string): string {
 
 export async function createServerSupabase() {
   const cookieStore = await cookies();
+  // 소건 1-라 — `Secure` 는 **관측한 프로토콜**로 정한다. Vercel 뒤에서는 `x-forwarded-proto` 가 원본이다.
+  //   헤더가 없으면(빌드·로컬) 폴백이 없으므로 붙이지 않는다 — 못 붙여서 생기는 손해보다
+  //   http 에 붙여 쿠키가 통째로 저장되지 않는 쪽이 크다.
+  let proto: string | null = null;
+  try {
+    proto = protocolFromForwarded((await headers()).get('x-forwarded-proto'), null);
+  } catch {
+    /* 요청 스코프 밖(빌드 등) — 폴백 없음 */
+  }
   return createServerClient(
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
     requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     {
+      cookieOptions: { secure: secureCookies(proto) },
       cookies: {
         getAll() {
           return cookieStore.getAll();

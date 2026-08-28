@@ -73,7 +73,8 @@ export function ApprovalsClient({
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       <h1 className="t-h1">가입 승인</h1>
       <p className="t-body" style={{ ...muted, marginTop: 'var(--space-2)' }}>
-        일반 가입 신청을 촉진자포럼 명단과 대조합니다. 승인하면 상시 체크가 열립니다.
+        일반 가입 신청의 <b>가입 경위</b>를 보고 자격을 확인합니다. 포럼 정보가 함께 오면 명단과 대조합니다.
+        승인하면 상시 체크가 열립니다.
       </p>
 
       <div style={{ display: 'flex', gap: 'var(--space-4)', marginTop: 'var(--space-5)', flexWrap: 'wrap' }}>
@@ -90,9 +91,10 @@ export function ApprovalsClient({
       {msg ? <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-4)' }}>{msg}</p> : null}
 
       <h2 className="t-body" style={{ fontWeight: 600, marginTop: 'var(--space-6)' }}>승인 대기</h2>
-      {/* 시안 P4 의 캡션 — 대조 키가 신청자 자기 신고임을 운영자에게 알린다. */}
+      {/* 시안 P4 의 캡션 — 대조 키가 신청자 자기 신고임을 운영자에게 알린다.
+          **소건 4 로 대조 키가 가입 경위로 승격**됐으므로 캡션도 그 축을 말한다. */}
       <p className="t-caption" style={{ ...muted, marginTop: 'var(--space-1)' }}>
-        포럼 가입 정보는 신청자가 직접 적은 것입니다.
+        가입 경위와 포럼 정보는 모두 신청자가 직접 적은 것입니다. 포럼 정보는 선택 항목이라 비어 있을 수 있습니다.
       </p>
 
       {pending.length === 0 ? (
@@ -102,7 +104,9 @@ export function ApprovalsClient({
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
               <tr>
-                {['신청자', '계정 이메일', '포럼 가입 이름 · 연락처', '가입 경위', '신청일', '처리'].map((h) => (
+                {/* 소건 4 — **가입 경위가 대조 키다.** 열 순서가 곧 읽는 순서라 앞으로 옮긴다.
+                    포럼 칸은 보조 근거로 그 뒤에 남는다(지우지 않는다 — 기존 행이 그것만 갖고 있다). */}
+                {['신청자', '가입 경위', '포럼 가입 이름 · 연락처', '계정 이메일', '신청일', '처리'].map((h) => (
                   <th key={h} className="t-caption" style={{ ...cell, ...muted, fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
@@ -114,7 +118,22 @@ export function ApprovalsClient({
                 return (
                   <tr key={r.userId}>
                     <td className="t-body" style={cell}>{r.name ?? '이름 없음'}</td>
-                    <td className="t-caption" style={{ ...cell, ...muted }}>{r.email ?? '—'}</td>
+                    {/* 대조 키 — 승격됐으므로 본문 굵기로 읽는다. */}
+                    <td className="t-body" style={cell}>
+                      {r.signupNote ? (
+                        r.signupNote
+                      ) : (
+                        // **하위호환**: 소건 4 이전 신청은 경위 칸이 비어 있다(그때는 선택 항목이었다).
+                        //   그 행을 "부실 신청" 으로 보이게 하면 운영자가 잘못 판단한다 —
+                        //   비어 있는 것이 **신청자 탓이 아니라 그때의 양식 탓**임을 화면이 말한다.
+                        <span style={muted}>
+                          경위 미기재
+                          <span style={{ display: 'block' }}>
+                            {matched ? '포럼 정보로 대조해 주세요(양식 개편 전 신청).' : '양식 개편 전 신청입니다.'}
+                          </span>
+                        </span>
+                      )}
+                    </td>
                     <td className="t-caption" style={cell}>
                       {matched ? (
                         <>
@@ -122,10 +141,12 @@ export function ApprovalsClient({
                           <span style={muted}>{r.forumPhoneMasked ? ` · ${r.forumPhoneMasked}` : ''}</span>
                         </>
                       ) : (
-                        <span style={muted}>명단 대조 안 됨</span>
+                        // 소건 4 이후로는 **비어 있는 것이 정상**이다(선택 항목).
+                        //   옛 문구 `명단 대조 안 됨` 은 실패로 읽혀 승인을 주저하게 만든다.
+                        <span style={muted}>{r.signupNote ? '미기재(선택 항목)' : '없음'}</span>
                       )}
                     </td>
-                    <td className="t-caption" style={{ ...cell, ...muted }}>{r.signupNote ?? '—'}</td>
+                    <td className="t-caption" style={{ ...cell, ...muted }}>{r.email ?? '—'}</td>
                     <td className="t-caption" style={{ ...cell, ...muted }}>{fmtDate(r.createdAt)}</td>
                     <td style={cell}>
                       <div style={{ display: 'grid', gap: 'var(--space-2)', minWidth: 220 }}>

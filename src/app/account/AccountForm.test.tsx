@@ -25,6 +25,8 @@ const render = (over: Partial<Parameters<typeof AccountForm>[0]> = {}) =>
       pw2=""
       busy={null}
       profile={profile}
+      keepSignedIn
+      onKeepSignedIn={noop}
       onName={noop}
       onPhone={noop}
       onAddress={noop}
@@ -75,5 +77,27 @@ describe('AccountForm (내 정보)', () => {
   it('안전: role 쓰기 경로 0(역할 입력·표시 없음)', () => {
     expect(html).not.toContain('역할');
     expect(html).not.toMatch(/name="role"|>관리자<|"admin"/);
+  });
+});
+
+describe('이 기기에서 로그인 유지 스위치 (소건 1-마)', () => {
+  it('기본은 켬으로 그려지고, 비밀번호를 저장하지 않는다는 사실을 함께 적는다', () => {
+    const html = render();
+    expect(html).toContain('이 기기에서 로그인 유지');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain('checked=""');
+    expect(html).toContain('비밀번호를 저장하지는 않습니다');
+  });
+
+  it('끄면 무엇이 달라지는지 말한다 — 상태만 바꾸고 설명이 없으면 아무도 못 쓴다', () => {
+    const html = render({ keepSignedIn: false });
+    expect(html).toContain('브라우저를 닫으면 로그아웃됩니다');
+    expect(html).toContain('공용 기기');
+  });
+
+  it('**비밀번호 입력칸을 늘리지 않았다** — 자격 저장은 기각된 방향이다', () => {
+    const html = render();
+    const passwordInputs = html.match(/type="password"/g) ?? [];
+    expect(passwordInputs).toHaveLength(2); // 새 비밀번호 · 확인 — 그대로다
   });
 });

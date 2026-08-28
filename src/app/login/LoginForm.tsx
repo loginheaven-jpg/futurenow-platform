@@ -63,6 +63,11 @@ export function LoginForm({
           <input
             style={{ ...inputStyle, marginTop: 'var(--space-1)' }}
             type="email"
+            // 소건 1-다 — `autoComplete` 만으로 충분한 브라우저가 대부분이지만, 일부 안드로이드
+            //   관리자(삼성 인터넷·구형 WebView)는 `name` 을 먼저 본다. **앱은 아무것도 저장하지 않는다** —
+            //   저장·자동입력은 전적으로 브라우저·OS 관리자의 몫이고 여기서는 그것이 알아보게만 한다.
+            name="email"
+            id="login-email"
             autoComplete="email"
             placeholder="name@example.com"
             value={email}
@@ -74,6 +79,8 @@ export function LoginForm({
           <input
             style={{ ...inputStyle, marginTop: 'var(--space-1)' }}
             type={show ? 'text' : 'password'}
+            name="password"
+            id="login-password"
             autoComplete="current-password"
             placeholder="비밀번호"
             value={password}
@@ -102,8 +109,12 @@ export function LoginForm({
         처음 참여하시나요? 인도자에게 받은 코드로{' '}
         <Link href="/join" style={{ color: 'var(--color-primary)' }}>입장하기</Link>
       </p>
+      {/* 소건 3 — 회원가입 진입. 기존 줄은 '인도자로 활동하실 분은' 이라 **인도자만 쓰는 길로 읽혔다**.
+          `/signup` 은 일반 가입 경로이고 인도자 신청은 그 안의 체크박스일 뿐이다(AuthGate allowCoachApply).
+          퍼널 골격 재작업은 의제 2 몫이므로 여기서는 **문장 하나만** 고친다. */}
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
-        인도자로 활동하실 분은 <Link href="/signup" style={{ color: 'var(--color-primary)' }}>인도자 회원가입</Link>
+        아직 계정이 없으신가요? <Link href="/signup" style={{ color: 'var(--color-primary)' }}>회원가입</Link>
+        <span style={{ opacity: 0.8 }}> — 인도자 신청도 이곳에서 함께 하실 수 있습니다.</span>
       </p>
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-4)', textAlign: 'center' }}>
         <Link href="/" style={{ color: 'var(--color-text-secondary)' }}>처음으로</Link>

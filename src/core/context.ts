@@ -209,9 +209,37 @@ interface FeedCohortRow { cohort_id: string; name: string; status: string; is_co
 interface FeedPostRow {
   id: string; author_id: string | null; author_name: string | null; body: string | null;
   photo_path: string | null; created_at: string; deleted: boolean; comment_count: number;
-  reactions: Record<string, number> | null; my_reaction: string | null;
+  reactions: Record<string, number> | null; my_reactions: string[] | null;
 }
 interface FeedCommentRow { id: string; author_id: string; author_name: string | null; body: string; created_at: string }
+
+/**
+ * **순서 위반을 시끄럽게 만든다** (5차 소건 2 · 지휘부 지적).
+ *
+ * 마이그레이션(`20260829090000_feed_reactions_multi.sql`)보다 코드가 먼저 배포되면
+ * DB 는 `my_reaction text`(단일)를 주고 코드는 `my_reactions text[]` 를 기대한다.
+ * **그런데 던지지 않는다 — 조용히 틀린다.** 실측으로 재현한 모양이 이렇다:
+ *
+ *   새 RPC(배열) `['❤️']`  → `{ '❤️': 1 }`      (맞다)
+ *   옛 RPC(문자열) `'❤️'`   → `{ '❤': 1, '︎': 1 }` (쓰레기 키 둘)
+ *   옛 RPC(문자열) `'👏'`   → `{ '👏': 1 }`      (**멀쩡해 보인다**)
+ *
+ * 넷 중 셋이 맞고 하나만 틀리므로 **눈으로는 잡히지 않는다.** 그것이 가장 나쁜 실패다.
+ * 1기 졸업생도 피드를 쓰는 실사용 화면이므로, 조용히 틀리느니 **닫힌 채로 시끄럽게 실패**한다.
+ *
+ * 옛 스키마의 **정확한 모양**(`my_reactions` 부재 + `my_reaction` 존재)에서만 발화한다 —
+ * 넓게 잡으면 무관한 이유로 피드를 닫는다.
+ */
+const MULTI_REACTION_MIGRATION_MSG =
+  '피드 반응 스키마가 코드보다 옛 버전입니다(마이그레이션 20260829090000 미적용). ' +
+  '조용히 틀린 값을 보이지 않기 위해 멈췄습니다 — 운영자에게 알려 주세요.';
+
+function assertMultiReactionSchema(row: unknown): void {
+  if (typeof row !== 'object' || row === null) return;
+  if (!('my_reactions' in row) && 'my_reaction' in row) {
+    throw new CoreError(MULTI_REACTION_MIGRATION_MSG);
+  }
+}
 
 function rowToNews(r: unknown): NewsPost {
   const row = r as NewsRow;
@@ -1397,6 +1425,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`listFeed 실패: ${error.message}`);
     return (data ?? []).map((r: unknown) => {
       const row = r as unknown as FeedPostRow;
+      assertMultiReactionSchema(r);
       return {
         id: row.id,
         authorId: row.author_id,
@@ -1407,7 +1436,8 @@ class SupabaseCoreContext implements CoreContext {
         deleted: row.deleted,
         commentCount: row.comment_count,
         reactions: (row.reactions ?? {}) as FeedPost['reactions'],
-        myReaction: (row.my_reaction as FeedEmoji | null) ?? null,
+        // 빈 배열이 무반응이다 — DB 가 `ARRAY[]` 를 주지만 null 도 방어한다(경계는 엄격 · §9).
+        myReactions: (row.my_reactions ?? []) as FeedEmoji[],
       };
     });
   }
@@ -1449,10 +1479,13 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`deleteFeedComment 실패: ${error.message}`);
   }
 
-  async reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji | null> {
+  async reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji[]> {
     const { data, error } = await this.sb.rpc('feed_react', { p_post_id: postId, p_emoji: emoji });
     if (error) throw new CoreError(error.message);
-    return (data as FeedEmoji | null) ?? null; // null = 취소됨
+    // 옛 RPC 는 **문자열 하나**를 준다. 그대로 흘리면 화면의 집합 연산이 문자열을 코드포인트로
+    //   쪼개어 `❤️` 를 `❤` + 변이선택자 두 칸으로 센다 — 아래 가드의 근거다.
+    if (data !== null && !Array.isArray(data)) throw new CoreError(MULTI_REACTION_MIGRATION_MSG);
+    return (data ?? []) as FeedEmoji[]; // 빈 배열 = 무반응
   }
 
   // 목록에 URL 을 미리 싣지 않는다(S-4 §2.2 선례) — 화면이 보이는 만큼만 여기서 발급한다.
