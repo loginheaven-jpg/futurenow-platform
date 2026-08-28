@@ -33,6 +33,13 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
+      {/* **부제를 본문 첫 줄이 든다**(최박사 결재 2026-09-01 · U-3 후속).
+          잃은 것은 **비교 문구**다 — 이 화면은 원래도 기수 이름을 안 보였다(그 사실을 갈라 적었다).
+          문구는 옛 `subtitle` 과 **글자 그대로 같다**: 새로 짓지 않았다.
+          `t-caption` 보조 줄은 이 계열 화면이 이미 쓰던 패턴이다(§20 — 새 부품 0). */}
+      <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
+        {hasComparison ? `${TOOL.pre}·${TOOL.post} 비교 · 차수 평균` : `${TOOL.pre} · 차수 평균`}
+      </p>
       <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
         {preScores.length === 0 && postScores.length === 0 ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>

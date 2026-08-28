@@ -137,9 +137,19 @@ describe('이월 목록 — 비면 완성이다 (U-3 → U-4)', () => {
     }
   });
 
-  it('**부제 손실이 기록돼 있다** — 화면에서 사라진 것은 잊히면 안 된다', () => {
-    const sub = cfg.carryOver.find((c) => c.item.includes('subtitle'));
-    expect(sub, '부제 이월이 사라졌다 — 되살렸으면 항목을 지우고, 아니면 남긴다').toBeTruthy();
-    expect(sub!.why, '어디에도 기수 이름이 없다는 실측이 빠졌다').toContain('전부 X');
+  // **부제는 되살아났다**(최박사 결재 2026-09-01) — 이월에서 빠지고 **본문이 든다.**
+  //   그래서 잠금도 «이월에 있는가» 에서 «본문에 있는가» 로 옮긴다.
+  //   지우면 *기수 이름을 다시 잃어도 아무도 모른다* 가 되고, 그것이 이번에 겪은 일이다.
+  it('**부제가 본문 첫 줄에 산다** — 헤더에서 잃은 것을 본문이 받았다', () => {
+    const matrix = readFileSync('src/app/coach/cohort/[cohortId]/matrix/page.tsx', 'utf8');
+    const values = readFileSync('src/app/coach/cohort/[cohortId]/values/page.tsx', 'utf8');
+    const group = readFileSync('src/app/coach/cohort/[cohortId]/group/page.tsx', 'utf8');
+    expect(matrix, 'matrix 가 기수 이름을 안 그린다').toContain('{cohort.name}');
+    expect(values, 'values 가 기수 이름을 안 그린다').toContain('{cohort.name}');
+    expect(group, 'group 이 비교 문구를 안 그린다').toContain('차수 평균`');
+    // **새 부품을 만들지 않았다** — 이 계열이 이미 쓰던 보조 줄 패턴이다.
+    for (const [n, src] of [['matrix', matrix], ['values', values], ['group', group]] as const) {
+      expect(src, `${n} 이 새 형태를 만들었다`).toContain('className="t-caption"');
+    }
   });
 });

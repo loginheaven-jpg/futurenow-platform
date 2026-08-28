@@ -80,8 +80,12 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   '/c/[code]/values': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
 
   // ── 콘솔(U-3) — **제목·뒤로는 각 화면이 쓰던 값 그대로다.** 소스에서 뽑아 옮겼다.
-  //   `subtitle` 은 표가 들지 않는다(차수 이름 등 서버 데이터라 라우트의 성질이 아니다) —
-  //   **그 셋이 이번에 사라지는 유일한 것**이고 보고에 목록으로 올린다.
+  //
+  //   **`subtitle` 은 표가 들지 않고 본문이 든다**(최박사 결재 2026-09-01).
+  //     차수 이름·비교 문구는 **서버 데이터**라 라우트의 성질이 아니다.
+  //     `/matrix`·`/values` 는 기수 이름을, `/group` 은 비교 문구를 **본문 첫 줄**에 그린다.
+  //     **헤더 부제 통로가 서면 U-4 에서 옮길지 판단한다** — 지금은 통로가 없고,
+  //     통로를 만드는 것은 새 기제라 이 회차의 범위가 아니다.
   '/coach': { kind: 'bar', variant: 'root', title: '콘솔', menu: true },
   '/coach/cohorts': { kind: 'bar', variant: 'sub', title: '모든 차수', back: '/coach', menu: true },
   '/coach/new': { kind: 'bar', variant: 'sub', title: '차수 개설', back: '/coach/cohorts', menu: true },
