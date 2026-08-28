@@ -92,9 +92,20 @@ export function routeHeaderMap() {
     }
     return hits.sort();
   };
+  // **레이아웃을 함께 본다** — 껍데기가 서면 헤더는 `layout` 이 그린다.
+  //   이것이 없으면 U-1 뒤에 `/` 와 `/about` 이 **무헤더로 세어지고**(실제로 한 번 그랬다)
+  //   진도 지표가 거꾸로 말한다. **도구가 덜 보면 없는 것을 없다고 한다** — 두 번째 사례다.
+  const layoutsFor = (pageFile) => {
+    const segs = pageFile.split('/'); const out = [];
+    for (let i = segs.length - 1; i >= 2; i--) {
+      const cand = `${segs.slice(0, i).join('/')}/layout.tsx`;
+      if (files.includes(cand)) out.push(cand);
+    }
+    return out;
+  };
   return files.filter((f) => f.endsWith('/page.tsx')).map((f) => ({
-    route: f.replace(ROOT, '').replace('/page.tsx', '') || '/',
-    hits: reach(f),
+    route: f.replace(ROOT, '').replace('/page.tsx', '').replace(/\/\([^/]+\)/g, '') || '/',
+    hits: [...new Set([...reach(f), ...layoutsFor(f).flatMap(reach)])].sort(),
   }));
 }
 

@@ -15,8 +15,9 @@
 // **세는 단위를 먼저 정한다**(`invariants.test.ts` 의 교훈 — 갈린 것은 값이 아니라 단위였다).
 //   여기서 **부품**은 `src/app/_screens/site/` 의 `.tsx` 중 아래 `NOT_PARTS` 를 뺀 것이다.
 //   뺀 것들은 **부품을 늘어놓는 진열대**(`/preview/site`)이거나 **부품을 쓰는 화면 층**이다.
-//   (셋으로 늘었다 — 5차에 `PublicGnb.tsx` 가 더해졌다. 이 줄을 값과 함께 고친다:
-//    *그 둘* 이라고 적어 두면 셋이 된 날 문장이 조용히 거짓이 된다.)
+//   (**넷으로 늘었다** — 5차에 `PublicGnb.tsx`, U-1 에 `PublicShell.tsx` 가 더해졌다.
+//    이 줄을 값과 함께 고친다: *그 둘* 이라고 적어 두면 늘어난 날 문장이 조용히 거짓이 된다.
+//    `.test.tsx` 는 `actualParts()` 가 이미 거르므로 목록에 적지 않는다.)
 //   목록에 없는 `.tsx` 가 새로 생기면 이 테스트가 **시끄럽게 실패한다** — 부품인지 진열대인지
 //   사람이 한 번 정하라는 뜻이고, 조용히 넘어가는 것보다 낫다.
 import { readFileSync, readdirSync } from 'node:fs';
@@ -30,6 +31,7 @@ const NOT_PARTS = new Map<string, string>([
   ['SiteGallery.tsx', '/preview/site 진열 화면 — 부품을 늘어놓는 쪽이다'],
   ['galleryFixture.tsx', '진열대가 먹일 가짜 데이터 — 렌더 경로에 실려 나가지 않는다'],
   ['PublicGnb.tsx', '화면 층 오케스트레이터(5차 소건 1-바) — 세션을 읽어 SiteGnb 에 prop 으로 내려준다. 부품이 아니라 부품을 쓰는 쪽이다'],
+  ['PublicShell.tsx', '공개 껍데기 자신(U-1) — 부품을 조립해 상단바·푸터를 세우는 쪽이다. 부품 표의 항목이 아니다'],
 ]);
 
 const doc = readFileSync(DOC, 'utf8');

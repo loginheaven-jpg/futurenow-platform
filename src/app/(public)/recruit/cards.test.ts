@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { RECRUIT_CARDS } from './cards';
 
-const css = readFileSync('src/app/recruit/recruit.css', 'utf8');
-const page = readFileSync('src/app/recruit/page.tsx', 'utf8');
+const css = readFileSync('src/app/(public)/recruit/recruit.css', 'utf8');
+const page = readFileSync('src/app/(public)/recruit/page.tsx', 'utf8');
 
 describe('/recruit 카드 그리드', () => {
   it('**선정 넷과 순서가 고정이다** — 문제(2) → 문제(3) → 답(6) → 증언(7)', () => {

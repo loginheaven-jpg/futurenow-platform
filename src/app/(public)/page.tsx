@@ -12,7 +12,6 @@
 //   확정 문안이 오면 이 파일의 문자열만 바뀐다. 구조는 부품이 들고 있다.
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
-import { PublicGnb } from '@/app/_screens/site/PublicGnb';
 import { SiteHero } from '@/app/_screens/site/SiteHero';
 import { GrowAxis } from '@/app/_screens/site/GrowAxis';
 import { SectionTitle } from '@/app/_screens/site/SectionTitle';
@@ -20,10 +19,9 @@ import { CardBand3 } from '@/app/_screens/site/CardBand3';
 import { WeekTimeline } from '@/app/_screens/site/WeekTimeline';
 import { NewsRow, type NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { RecruitCard } from '@/app/_screens/site/RecruitCard';
-import { SiteFooter } from '@/app/_screens/site/SiteFooter';
 import { PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG } from '@/app/_screens/site/publicNav';
 import { recentNews } from '@/app/_lib/publicNews';
-import { CURRENT_INTAKE } from '@/app/recruit/intake';
+import { CURRENT_INTAKE } from '@/app/(public)/recruit/intake';
 import { shortDate } from '@/app/_lib/shortDate';
 import { GROW_ROWS, BAND_CARDS, WEEK_CELLS } from '@/app/_screens/site/programCopy';
 
@@ -54,18 +52,11 @@ export default async function Home() {
 
   return (
     <>
-      {/* 5차 소건 1-바 — 오른쪽 골드 버튼이 **세션을 보고** 문구와 목적지를 함께 바꾼다.
-          로그인한 사람에게 `로그인` 이라고 적혀 있던 것이 *로그아웃된 것 같다* 의 나머지 절반이었다.
-          판정은 `publicHeaderAction()`(순수), 세션 읽기는 `PublicGnb`(화면 층).
-          **부품은 여전히 계산하지 않는다.** ISR 도 그대로다 — 서버에서 쿠키를 읽지 않는다. */}
-      <PublicGnb
-        logo={<>퓨처<b>나우</b></>}
-        en="FUTURE NOW"
-        items={PUBLIC_NAV}
-        currentPath="/"
-      />
+      {/* **헤더·푸터는 껍데기가 그린다**(U-1 · `design_system.md` §12.3 규칙 1).
+          여기 있던 `PublicGnb`·`SiteFooter` 호출은 `(public)/layout.tsx` 로 올라갔다.
+          화면은 본문만 그린다 — 자기가 어느 껍데기에 사는지는 **경로가 말한다.** */}
 
-      <main>
+      <>
         <SiteHero
           eyebrow={`6주의 여정 · ${CURRENT_INTAKE.label}`}
           headline={<>미래의 나를<br />오늘로 <b>데려오다</b></>}
@@ -116,17 +107,8 @@ export default async function Home() {
             />
           </div>
         </section>
-      </main>
+      </>
 
-      <SiteFooter
-        org={SITE_ORG}
-        links={PUBLIC_FOOTER_LINKS}
-        note={
-          <>
-            인도자로 활동하실 분은 <Link href="/signup" style={{ color: 'var(--color-accent-strong)', textDecoration: 'underline' }}>인도자 회원가입</Link>
-          </>
-        }
-      />
     </>
   );
 }

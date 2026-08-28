@@ -26,7 +26,9 @@ const PARTS = [
  *  그래서 아래 순수성 가드(데이터 수입 금지 · 시간 금지)를 걸지 않는다.
  *  **이 파일이 부품 목록에 들어가면 안 된다** — 들어가면 가드가 그것을 부품으로 재게 되고,
  *  반대로 목록 어디에도 없으면 위 첫 테스트가 막는다. 둘 중 하나를 고르게 되어 있다. */
-const NOT_PARTS = ['SiteGallery.tsx', 'galleryFixture.tsx', 'PublicGnb.tsx'];
+// `PublicShell.tsx` 는 U-1 의 **공개 껍데기 자신**이다 — 부품을 조립해 상단바·푸터를 세우는 쪽이라
+//   *계산하지 않는다* 를 재는 이 표의 항목이 아니다(`designParts.test.ts` 와 같은 판단).
+const NOT_PARTS = ['SiteGallery.tsx', 'galleryFixture.tsx', 'PublicGnb.tsx', 'PublicShell.tsx'];
 
 const files = readdirSync(DIR).filter((f) => /\.tsx$/.test(f) && !f.includes('.test.'));
 
