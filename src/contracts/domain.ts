@@ -339,6 +339,9 @@ export const FEED_EMOJI = ['👏', '🙏', '💪', '❤️'] as const;
 export type FeedEmoji = (typeof FEED_EMOJI)[number];
 
 // 반응 집계 — `{'👏': 3, '🙏': 1}`. **정렬에 쓰지 않는다**(불변식 11 · 발주 §3.2).
+//   **5차 소건 2 로 복수 반응이 열리며 합계가 커질 수 있다.** 그래도 이 값은 여전히
+//   *누가 무엇을 눌렀는가*의 표시일 뿐이고 **순위를 만들지 않는다** — 정렬키·백분위·막대로
+//   쓰이는 자리가 없음을 `feed.reactions.test.ts` 가 전수로 잠근다.
 export type FeedReactionSummary = Partial<Record<FeedEmoji, number>>;
 
 // 피드 글. `deleted === true` 면 **묘비**다 — 본문·사진·작성자가 전부 null 이고 댓글만 남는다.
@@ -353,7 +356,11 @@ export interface FeedPost {
   deleted: boolean;
   commentCount: number;
   reactions: FeedReactionSummary;
-  myReaction: FeedEmoji | null;
+  // **5차 소건 2 — 복수 반응**(지휘부 사전 승인 · 불변식 3).
+  //   `FeedEmoji | null` 에서 배열로 바꿨다. **빈 배열이 무반응**이고 `null` 은 쓰지 않는다 —
+  //   "없음"을 두 가지 방법으로 표현하면 화면마다 다르게 검사하고 언젠가 한쪽을 빠뜨린다.
+  //   순서는 DB 가 `feed_emojis()` 선언 순서로 고정해 준다(목록·토글 두 경로가 같은 기준).
+  myReactions: FeedEmoji[];
 }
 
 // 댓글은 **1단**이다(발주 §3.4). `parentId` 가 없는 것이 그 강제다 — DB 에도 컬럼이 없다.

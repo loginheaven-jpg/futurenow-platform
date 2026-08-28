@@ -209,7 +209,7 @@ interface FeedCohortRow { cohort_id: string; name: string; status: string; is_co
 interface FeedPostRow {
   id: string; author_id: string | null; author_name: string | null; body: string | null;
   photo_path: string | null; created_at: string; deleted: boolean; comment_count: number;
-  reactions: Record<string, number> | null; my_reaction: string | null;
+  reactions: Record<string, number> | null; my_reactions: string[] | null;
 }
 interface FeedCommentRow { id: string; author_id: string; author_name: string | null; body: string; created_at: string }
 
@@ -1407,7 +1407,8 @@ class SupabaseCoreContext implements CoreContext {
         deleted: row.deleted,
         commentCount: row.comment_count,
         reactions: (row.reactions ?? {}) as FeedPost['reactions'],
-        myReaction: (row.my_reaction as FeedEmoji | null) ?? null,
+        // 빈 배열이 무반응이다 — DB 가 `ARRAY[]` 를 주지만 null 도 방어한다(경계는 엄격 · §9).
+        myReactions: (row.my_reactions ?? []) as FeedEmoji[],
       };
     });
   }
@@ -1449,10 +1450,10 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`deleteFeedComment 실패: ${error.message}`);
   }
 
-  async reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji | null> {
+  async reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji[]> {
     const { data, error } = await this.sb.rpc('feed_react', { p_post_id: postId, p_emoji: emoji });
     if (error) throw new CoreError(error.message);
-    return (data as FeedEmoji | null) ?? null; // null = 취소됨
+    return (data ?? []) as FeedEmoji[]; // 빈 배열 = 무반응
   }
 
   // 목록에 URL 을 미리 싣지 않는다(S-4 §2.2 선례) — 화면이 보이는 만큼만 여기서 발급한다.

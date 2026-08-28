@@ -22,7 +22,7 @@ export function LoginClient({ returnTo = null }: { returnTo?: string | null }) {
     setBusy(true);
     setError(null);
     // 로그인은 앱의 현관이다 — 여기서 버튼이 잠기면 아무 데도 못 간다.
-    //   성공 시에는 busy 를 풀지 않는다: router.push 가 도는 동안 버튼이 살아나면 이중 로그인이 눌린다.
+    //   성공 시에는 busy 를 풀지 않는다: 이동이 도는 동안 버튼이 살아나면 이중 로그인이 눌린다.
     try {
       const res = await supabase.auth.signInWithPassword({ email, password });
       const outcome = loginOutcome({ error: res.error, hasSession: !!res.data.session, returnTo });
@@ -31,7 +31,12 @@ export function LoginClient({ returnTo = null }: { returnTo?: string | null }) {
         setBusy(false);
         return;
       }
-      if (outcome.redirect) router.push(outcome.redirect);
+      // **소건 1-나 — push 가 아니라 replace 다.**
+      //   push 면 `/login` 이 히스토리에 남아, 뒤로가기 두 번이면 로그인 폼으로 되돌아간다.
+      //   세션은 살아 있는데 폼이 보이니 **로그아웃으로 읽힌다**(4차 F-5 B행 증상).
+      //   1-가(서버 리다이렉트)와 짝이다 — 가는 닿았을 때 되돌려 보내고, 나는 애초에 닿지 않게 한다.
+      //   둘 다 두는 이유: 뒤로가기 말고도 `/login` 을 북마크·링크로 여는 길이 있다.
+      if (outcome.redirect) router.replace(outcome.redirect);
       else setBusy(false);
     } catch {
       // 예외(네트워크 끊김 등) — **버튼 잠김만 푼다.**

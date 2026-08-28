@@ -1,13 +1,21 @@
 'use client';
 // 계정 수정 오케스트레이션 — 이름·전화·프로필(서버액션) + 비번(클라이언트 supabase.auth.updateUser) + (코치)KPC. 피드백은 토스트.
 // raw 에러 비노출(친화 고정 메시지). role 쓰기 경로 없음. 파싱·검증(생년·신앙연수·KPC 형식)은 여기서, 폼은 프레젠테이션만.
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import type { UserProfile } from '@/contracts';
 import { CURRENT_YEAR, KPC_RE } from '@/instruments/futurenow/profileVocab';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { useToast } from '@/app/_toast/ToastProvider';
 import { AccountForm, type AccountBusy } from './AccountForm';
 import { setContactAction, setKpcAction, setNameAction, setProfileAction } from './actions';
+import {
+  authCookieRewrites,
+  persistServerSnapshot,
+  readPersist,
+  secureCookies,
+  subscribePersist,
+  writePersist,
+} from '@/core/supabase/cookiePolicy';
 
 export function AccountClient({
   initialName,
@@ -41,6 +49,20 @@ export function AccountClient({
   const [pw1, setPw1] = useState('');
   const [pw2, setPw2] = useState('');
   const [busy, setBusy] = useState<AccountBusy>(null);
+  // 소건 1-마 — 기기 단위 선호값. **서버에 두지 않는다**: 기기마다 다른 값이고 자격이 아니다.
+  //   `useSyncExternalStore` 로 읽는다 — effect 로 초기값을 읽으면 렌더가 한 번 더 돌고(연쇄 렌더)
+  //   린트가 그것을 막는다. 서버 스냅샷이 기본값(켬)이라 SSR 불일치도 없다.
+  const keepSignedIn = useSyncExternalStore(subscribePersist, readPersist, persistServerSnapshot);
+
+  function onKeepSignedIn(next: boolean): void {
+    writePersist(next); // 구독자에게 알리며 화면 값이 따라온다(별도 setState 없음)
+    // **지금 깔려 있는 쿠키까지 바꾼다.** 다음 로그인부터 듣는다면 스위치가 거짓말을 한 것이 된다.
+    //   판정은 순수 함수가 하고 여기서는 대입만 한다.
+    if (typeof document !== 'undefined') {
+      const secure = secureCookies(typeof location === 'undefined' ? null : location.protocol);
+      for (const line of authCookieRewrites(document.cookie, next, secure)) document.cookie = line;
+    }
+  }
 
   async function onSaveName() {
     if (busy || !name.trim()) return;
@@ -161,6 +183,8 @@ export function AccountClient({
       onSaveName={onSaveName}
       onSaveContact={onSaveContact}
       onSavePassword={onSavePassword}
+      keepSignedIn={keepSignedIn}
+      onKeepSignedIn={onKeepSignedIn}
     />
   );
 }

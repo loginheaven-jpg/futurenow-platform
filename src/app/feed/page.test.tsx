@@ -19,7 +19,7 @@ const COHORT_B = 'bbbbbbbb-0000-0000-0000-00000000000b';
 
 const listFeed = vi.fn(async ({ cohortId }: { cohortId: string }) => [
   { id: `post-of-${cohortId}`, authorId: 'u', authorName: '누구', body: '글', photoPath: null,
-    createdAt: '2026-08-27T00:00:00Z', deleted: false, commentCount: 0, reactions: {}, myReaction: null },
+    createdAt: '2026-08-27T00:00:00Z', deleted: false, commentCount: 0, reactions: {}, myReactions: [] },
 ]);
 
 vi.mock('@/core/supabase/server', () => ({

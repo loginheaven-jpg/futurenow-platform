@@ -250,7 +250,8 @@ export interface CoreContext {
   listFeedComments(postId: string): Promise<FeedComment[]>;
   createFeedComment(postId: string, body: string): Promise<string>;
   deleteFeedComment(id: string): Promise<void>;
-  reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji | null>; // 같은 이모지 재호출 = 취소(null 반환)
+  // 5차 소건 2 — **토글**이다(교체가 아니다). 반환은 남은 내 반응 **전부**이고 빈 배열이 무반응.
+  reactToFeedPost(postId: string, emoji: FeedEmoji): Promise<FeedEmoji[]>;
   // 사진 — 갈무리 선례(ADR-83)와 같은 구조. 업로드 바이트는 클라이언트 직접(리사이즈 후).
   signFeedPhotos(paths: string[], expiresInSec?: number): Promise<Record<string, string>>; // 경로→만료형 URL
   deleteFeedPhoto(path: string): Promise<void>; // Storage API 경유만(ADR-87 — DB 로는 지울 수 없다)

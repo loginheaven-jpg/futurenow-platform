@@ -6,6 +6,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isProtectedPath, loginRedirectSearch } from './proxy.guard'; // 순수 판정(테스트 대상)
 import { VERIFIED_UID_HEADER } from './core/auth/verifiedIdentity';
+import { protocolFromForwarded, secureCookies } from './core/supabase/cookiePolicy'; // 소건 1-라
 
 export async function proxy(request: NextRequest) {
   // 신뢰 경계(S-1): 인입 신원 헤더를 먼저 strip — 클라이언트 위조를 무효화한다. proxy 만 검증된 값을 세팅한다.
@@ -19,7 +20,13 @@ export async function proxy(request: NextRequest) {
 
   // 세션 갱신 쿠키를 모아 최종 response 를 한 번만 빌드한다(검증 신원 헤더 + refresh 쿠키를 함께 싣기 위해).
   const refreshed: { name: string; value: string; options: CookieOptions }[] = [];
+  // 소건 1-라 — 갱신 쿠키에도 `Secure` 를 싣는다. 여기가 **가장 자주 쓰는 경로**다(매 요청 갱신).
+  //   프록시 뒤에서는 `x-forwarded-proto` 가 원 프로토콜이고, 없으면 요청 URL 의 것을 쓴다.
+  const secure = secureCookies(
+    protocolFromForwarded(request.headers.get('x-forwarded-proto'), request.nextUrl.protocol),
+  );
   const supabase = createServerClient(url, key, {
+    cookieOptions: { secure },
     cookies: {
       getAll() {
         return request.cookies.getAll();

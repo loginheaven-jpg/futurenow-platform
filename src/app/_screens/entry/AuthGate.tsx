@@ -100,7 +100,8 @@ export function AuthGate({
   const [bankAccount, setBankAccount] = useState('');
   const [consentPrivacy, setConsentPrivacy] = useState(false); // 필수 동의(미체크 시 가입 불가)
   const [consentSensitive, setConsentSensitive] = useState(false); // 선택 — 종교·신앙 입력 게이팅
-  // 포럼 대조 키(/signup 전용). 이름·연락처는 **필수**, 가입 경위는 선택(§4.3 표).
+  // 가입 경위·포럼 대조 키(/signup 전용).
+  //   **5차 소건 4 — 강제 축이 뒤집혔다.** 가입 경위가 **필수**(대조 키로 승격), 포럼 이름·연락처는 **선택**.
   const [forumName, setForumName] = useState('');
   const [forumPhone, setForumPhone] = useState('');
   const [signupNote, setSignupNote] = useState('');
@@ -112,11 +113,16 @@ export function AuthGate({
   const phoneValid = phone.trim() !== ''; // 전 참여자 필수(연락처 확보 — ADR-75). 코치는 KPC 추가.
   const coachValid = !coachOn || KPC_RE.test(kpc.trim());
   // 폼이 유일 강제 지점(DB nullable): 이름·전화·성별·생년 + **개인정보 동의(필수)**. 민감(종교·신앙)은 선택 동의로 게이팅(ADR-76).
-  // /signup 에서만 대조 키를 강제한다. §4.3 이 '선택이 아니라 필수'라 못 박았다 —
-  //   이 필드가 없으면 승인 큐는 며칠 만에 판단 불가로 쌓이고, 나중에 필드를 더해도
-  //   이미 들어온 신청 건은 영원히 대조할 수 없다.
-  const forumValid = !allowForumMatch || (forumName.trim() !== '' && forumPhone.trim() !== '' && consentForumMatch);
-  const signupValid = !!email && !!password && name.trim() !== '' && phoneValid && gender !== '' && yearValid && coachValid && consentPrivacy && forumValid;
+  // /signup 에서만 강제한다. *"이 필드가 없으면 승인 큐가 판단 불가로 쌓이고, 나중에 필드를 더해도
+  //   이미 들어온 신청 건은 영원히 대조할 수 없다"* 는 §4.3 의 근거는 그대로 유효하다 —
+  //   **바뀐 것은 그 자리를 무엇이 채우느냐다**(5차 소건 4).
+  //
+  //   포럼 이름·연락처를 필수로 두면 **포럼을 거치지 않고 온 사람이 가입할 수 없거나 지어낸다.**
+  //   지어낸 값은 대조를 돕는 게 아니라 **운영자를 헷갈리게 한다** — 명단에 없는 이름이 뜨면
+  //   오타인지 남의 것인지 판단할 수 없다. 반면 **가입 경위는 누구나 사실대로 쓸 수 있고**
+  //   포럼 경유자면 거기에 포럼이 적힌다. 그래서 대조 키를 경위로 올리고 포럼 칸을 선택으로 내린다.
+  const signupIntakeValid = !allowForumMatch || (signupNote.trim() !== '' && consentForumMatch);
+  const signupValid = !!email && !!password && name.trim() !== '' && phoneValid && gender !== '' && yearValid && coachValid && consentPrivacy && signupIntakeValid;
   const loginValid = !!email && !!password;
 
   function submit() {
@@ -258,25 +264,39 @@ export function AuthGate({
               </label>
             )}
 
-            {/* 포럼 대조 키(/signup 전용 · §4.3) — 운영자가 촉진자포럼 명단과 맞춰 볼 근거.
-                계정 이름·전화와 다를 수 있으므로 따로 받는다(덮어쓰지 않는다). */}
+            {/* 가입 경위 · 포럼 대조 키(/signup 전용 · §4.3 · 5차 소건 4 로 축 교체).
+                **가입 경위가 먼저 온다** — 필수 항목을 선택 항목 뒤에 두면 사람은 위부터 채우다
+                선택 칸에서 막힌다. 순서가 곧 안내다.
+                포럼 이름·전화는 계정 정보와 다를 수 있으므로 따로 받는다(덮어쓰지 않는다). */}
             {allowForumMatch && (
               <>
-                <div className="t-body" style={{ fontWeight: 600, marginTop: 'var(--space-2)' }}>촉진자포럼 가입 정보</div>
+                <div className="t-body" style={{ fontWeight: 600, marginTop: 'var(--space-2)' }}>가입 경위</div>
                 <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'calc(var(--space-1) * -1)' }}>
-                  포럼에 가입하실 때 쓰신 이름과 연락처를 적어 주세요. 계정 정보와 달라도 괜찮습니다.
+                  어떻게 알고 오셨는지 한 줄로 적어 주세요. 운영자가 이 줄을 보고 자격을 확인합니다.
                 </p>
                 <label className="t-caption" style={labelStyle}>
-                  포럼 가입 이름
+                  가입 경위
+                  <input
+                    value={signupNote}
+                    onChange={(e) => setSignupNote(e.target.value)}
+                    maxLength={300}
+                    placeholder="예: 촉진자포럼에서 안내받았습니다 / 000 인도자 소개"
+                    style={inputStyle}
+                  />
+                </label>
+
+                <div className="t-body" style={{ fontWeight: 600, marginTop: 'var(--space-2)' }}>촉진자포럼 가입 정보 (선택)</div>
+                <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'calc(var(--space-1) * -1)' }}>
+                  포럼을 거쳐 오셨다면 그때 쓰신 이름과 연락처를 적어 주세요. 명단 대조가 빨라집니다.
+                  포럼을 거치지 않으셨다면 비워 두셔도 됩니다.
+                </p>
+                <label className="t-caption" style={labelStyle}>
+                  포럼 가입 이름 (선택)
                   <input value={forumName} onChange={(e) => setForumName(e.target.value)} maxLength={40} style={inputStyle} />
                 </label>
                 <label className="t-caption" style={labelStyle}>
-                  포럼 가입 연락처
+                  포럼 가입 연락처 (선택)
                   <input value={forumPhone} onChange={(e) => setForumPhone(e.target.value)} inputMode="tel" maxLength={20} style={inputStyle} />
-                </label>
-                <label className="t-caption" style={labelStyle}>
-                  가입 경위 (선택)
-                  <input value={signupNote} onChange={(e) => setSignupNote(e.target.value)} maxLength={300} style={inputStyle} />
                 </label>
                 <ConsentBlock text={FORUM_MATCH_CONSENT} checked={consentForumMatch} onChange={setConsentForumMatch} />
               </>

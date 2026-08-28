@@ -10,6 +10,7 @@
 //
 // **design_system 부품 부재**(불변식 20) — 피드 입력창·아이템·이모지 바·댓글·날짜 구분선이
 //   모두 v4 미도착이다. 기능 골격만 세우고 스타일은 기존 토큰으로만 최소 적용한다.
+import { applyReaction } from './reactionState';
 import { useMemo, useState, useTransition, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { Button } from '@/core/ui';
@@ -162,19 +163,18 @@ export function FeedClient({
     });
   }
 
+  // 5차 소건 2 — **토글**이다. 서버가 돌려준 "남은 내 반응 전부"를 진실로 삼고,
+  //   집계 이동은 순수 함수(`applyReaction`)가 한다.
   function react(p: FeedPost, emoji: FeedEmoji): void {
     startTx(async () => {
       const res = await reactFeedAction(p.id, emoji);
       if (!res.ok) { setErr(res.error); return; }
       setPosts((prev) =>
-        prev.map((x) => {
-          if (x.id !== p.id) return x;
-          const counts = { ...x.reactions };
-          if (x.myReaction) counts[x.myReaction] = Math.max(0, (counts[x.myReaction] ?? 1) - 1);
-          if (res.value) counts[res.value] = (counts[res.value] ?? 0) + 1;
-          for (const k of Object.keys(counts) as FeedEmoji[]) if (!counts[k]) delete counts[k];
-          return { ...x, myReaction: res.value, reactions: counts };
-        }),
+        prev.map((x) =>
+          x.id === p.id
+            ? { ...x, myReactions: res.value, reactions: applyReaction(x.reactions, x.myReactions, res.value) }
+            : x,
+        ),
       );
     });
   }
@@ -396,13 +396,18 @@ function FeedItem({
         )
       ) : null}
 
-      {/* 이모지 넷. 수는 보이되 **정렬에 쓰지 않는다**(발주 §3.2). */}
+      {/* 이모지 넷. 수는 보이되 **정렬에 쓰지 않는다**(발주 §3.2 · 불변식 11).
+          **5차 소건 2 — 복수 선택이다**(박수와 기도를 함께). 여럿을 켤 수 있게 되면서
+          합계가 커지지만 **순위는 여전히 만들지 않는다** — 막대·게이지·백분위·정렬키가 없고
+          이 줄의 순서는 언제나 `FEED_EMOJI` 선언 순서다(수가 아니라 선언이 순서를 정한다). */}
       <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
         {FEED_EMOJI.map((e) => {
           const n = post.reactions[e] ?? 0;
-          const isMine = post.myReaction === e;
+          const isMine = post.myReactions.includes(e);
           return (
             <button key={e} type="button" onClick={() => onReact(e)} disabled={disabled} className="t-caption"
+              // 여럿을 켜고 끄는 버튼이므로 **눌린 상태를 색만으로 말하지 않는다**(§9.7 칩과 같은 규율).
+              aria-pressed={isMine}
               style={{
                 padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius)', cursor: 'pointer',
                 border: `var(--border-hair) solid ${isMine ? 'var(--color-text-secondary)' : 'var(--color-border)'}`,
