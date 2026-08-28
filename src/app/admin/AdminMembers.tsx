@@ -21,12 +21,14 @@ export function AdminMembers({
   members,
   applications,
   currentUserId,
+  isSuperAdmin,
   busyId,
   appBusyId,
   onPromote,
   onDemote,
   onDelete,
   onSetPassword,
+  onDecide,
   onApprove,
   onReject,
   notices,
@@ -34,12 +36,16 @@ export function AdminMembers({
   members: MemberSummary[];
   applications: CoachApplication[];
   currentUserId: string;
+  /** 누른 사람이 슈퍼어드민인가 — **서버가 내린 값**이다. */
+  isSuperAdmin: boolean;
   busyId?: string | null;
   appBusyId?: string | null;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
   onDelete: (id: string) => void;
   onSetPassword: (id: string, password: string) => Promise<{ ok: boolean }>;
+  /** 승급·보류 — 둘 다 `decideMembership` 을 지난다(5-3). */
+  onDecide: (id: string, decision: 'individual' | 'expired', note: string) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   /** 헤더 아래 한 줄짜리 알림 슬롯(S-4 후속). 운영자가 어차피 오는 자리에 숫자를 놓는다. */
@@ -97,6 +103,9 @@ export function AdminMembers({
               member={m}
               isSelf={m.id === currentUserId}
               busy={busyId === m.id}
+              isSuperAdmin={isSuperAdmin}
+              currentUserId={currentUserId}
+              onDecide={onDecide}
               onPromote={onPromote}
               onDemote={onDemote}
               onDelete={onDelete}

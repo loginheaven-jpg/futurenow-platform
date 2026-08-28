@@ -67,3 +67,26 @@ export async function setMemberPasswordAction(userId: string, password: string):
     return { ok: false, error: e instanceof Error ? e.message : '비밀번호 설정에 실패했습니다.' };
   }
 }
+
+/**
+ * 회원 자격 결정 — **승급·보류 둘 다 이 하나를 지난다**(5-3 §3).
+ *
+ * ★ **보류된 사람에게 `individual` 을 보내면 그것이 해제다**(최박사 확정).
+ *   별도 「해제」 액션을 만들지 않는다 — 같은 일을 하는 길이 둘이 되면 한쪽만 고쳐진다.
+ *
+ * **가드는 여기 없다.** 자기 자신 · 슈퍼어드민 대상 · 운영자 보류는 슈퍼어드민만 —
+ *   전부 `decide_membership` 안에 있고 그것이 **실제 문**이다(5-2). 화면은 안내일 뿐이다.
+ */
+export async function decideMembershipAction(
+  userId: string,
+  decision: 'individual' | 'expired',
+  note: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.decideMembership({ userId, decision, note: note.trim() || null });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : '회원 자격 변경에 실패했습니다.' };
+  }
+}

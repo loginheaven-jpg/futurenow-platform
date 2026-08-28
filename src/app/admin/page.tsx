@@ -33,5 +33,7 @@ export default async function AdminPage() {
       </div>
     ) : null;
 
-  return <AdminClient members={members} applications={applications} currentUserId={me.id} notices={notices} />;
+  return <AdminClient members={members} applications={applications} currentUserId={me.id}
+      // **서버가 내린다** — 화면이 이메일로 판정하지 않는다(이메일 상수는 `is_super_admin` 한 곳뿐).
+      isSuperAdmin={members.find((m) => m.id === me.id)?.isSuperAdmin === true} notices={notices} />;
 }

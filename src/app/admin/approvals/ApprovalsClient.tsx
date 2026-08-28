@@ -7,6 +7,7 @@
 //   새 색·새 시각 언어를 만들지 않았다 — 표는 기본 `<table>` + 역할 토큰뿐이다.
 import { useState, useTransition } from 'react';
 import type { MemberState } from '@/contracts/domain';
+import { HELD_ADMIN_LABEL } from '@/core/membershipVocab';
 import { decideMembershipAction } from './actions';
 
 export interface QueueRowView {
@@ -187,7 +188,7 @@ export function ApprovalsClient({
                                 `held` 는 *자격 확인이 끝나지 않아 붙들어 둔 상태*이고
                                 `expired` 는 *한때 있던 자격이 끝난 것*이다 — 뜻이 다르다
                                 (`core/membershipVocab.ts` 의 `HELD_MEANING`). */}
-                            확인 대기
+                            {HELD_ADMIN_LABEL}
                           </button>
                         </div>
                         {isSelf ? (

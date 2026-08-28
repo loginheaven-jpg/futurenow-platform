@@ -68,6 +68,8 @@ export const FIXTURE_FILES = {
   'home-sheet': { body: 'home-sheet.html', full: false },
   cohort: { body: 'cohort.html', full: true },
   assess: { body: 'assess.html', full: true },
+  // `/admin` 은 QA 계정이 코치라 실라우트로 못 본다 — 게이트는 U-3 에서 검증됐고 레이아웃만 남았다.
+  admin: { body: 'admin.html', full: true },
 };
 
 /** 계정이 오기 전 **못 보는** 화면 — 보고서에 그대로 적는다(빠뜨린 것과 못 본 것은 다르다). */

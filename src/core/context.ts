@@ -1001,11 +1001,43 @@ class SupabaseCoreContext implements CoreContext {
   async listUsers(): Promise<MemberSummary[]> {
     const { data, error } = await this.sb.from('users').select('id,email,name,role');
     if (error) throw new CoreError(`listUsers 실패: ${error.message}`);
-    return ((data ?? []) as { id: string; email: string | null; name: string | null; role: string }[]).map((r) => ({
+    const rows = (data ?? []) as { id: string; email: string | null; name: string | null; role: string }[];
+
+    // **회원 상태는 판정이라 여기서 얻는다**(5-3) — 화면이 계산하지 않는다.
+    //   `member_state` 를 그대로 부른다. **저장값에서 다시 유도하지 않는다** —
+    //   유도하면 판정 규칙이 SQL 과 여기 둘에 살고, 한쪽만 고쳐지는 날이 온다(불변식 23).
+    //   마이그레이션을 더하지 않기로 한 발주라 일괄 RPC 를 새로 만들지 않고 사람 수만큼 부른다
+    //   (운영자 전용 화면이고 실측 사용자 25명 · 병렬).
+    //   실패는 **한 사람만 모름**으로 남긴다 — 목록 전체가 무너지지 않게.
+    const supers = await Promise.all(
+      rows.map(async (r) => {
+        try {
+          const { data: v, error: e } = await this.sb.rpc('is_super_admin', { p_user_id: r.id });
+          return e ? false : v === true;
+        } catch {
+          return false;
+        }
+      }),
+    );
+
+    const states = await Promise.all(
+      rows.map(async (r) => {
+        try {
+          const { data: s, error: e } = await this.sb.rpc('member_state', { p_uid: r.id });
+          return e ? null : (s as MemberState);
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    return rows.map((r, i) => ({
       id: r.id,
       email: r.email ?? '',
       name: r.name,
       role: r.role as Role,
+      memberState: states[i] ?? 'pending',
+      isSuperAdmin: supers[i],
     }));
   }
 
