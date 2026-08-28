@@ -125,8 +125,8 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
       }),
     });
     expect(html).toContain('포럼회원');
-    expect(html).toContain('퓨처나우2026예봄2기 참여자');
-    expect(html).toContain('퓨처나우2026예봄1기 인도자');
+    expect(html).toContain('2기 참여자');
+    expect(html).toContain('1기 인도자');
   });
 
   it('소속이 없으면 **그 줄을 안 그린다** — 빈손 카드를 덧붙이지 않는 것과 같은 결', () => {
@@ -138,17 +138,55 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
     expect(html).not.toContain('세미나 기간 동안');
   });
 
-  it('참여자 설명은 참여 칩이 있을 때만 — 인도자 칩에는 붙이지 않는다(확정에 없다)', () => {
-    const coachOnly = render({
-      membership: view({ cohortRoles: [{ cohortId: 'c1', cohortName: '1기', kind: 'coach' }] }),
-    });
-    expect(coachOnly).toContain('1기 인도자');
-    expect(coachOnly).not.toContain('세미나 기간 동안');
+  // ── 최박사 확정 2번(지휘부 읽기) — 참여 칩이 있으면 **설명문만** 바뀐다 ────────
+  //
+  //   *"18명 모두 참여자 이다. 포럼회원(정회원)은 없다."* 그 사실을 그대로 읽으면
+  //   `승인을 기다리는 중입니다…` 는 이미 참여 중인 사람에게 어긋난다.
+  //   ⚠ 이 대체는 **지휘부의 읽기**이지 최박사 문장이 아니다 — `나` 로 정정되면 이 줄 하나가 바뀐다.
+  describe('참여 칩이 있으면 자격 줄의 **설명문**을 소속 기준으로 쓴다', () => {
+    const asParticipant = (tier: MembershipView['tier'] = 'visitor') =>
+      render({
+        membership: view({
+          tier,
+          cohortRoles: [{ cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant' }],
+        }),
+      });
 
-    const withParticipant = render({
-      membership: view({ cohortRoles: [{ cohortId: 'c2', cohortName: '2기', kind: 'participant' }] }),
+    it('실측 18명의 경우 — 방문회원인데 세미나 참여 중', () => {
+      const html = asParticipant();
+      expect(html).toContain('세미나 기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.');
+      expect(html, '이미 참여 중인 사람에게 어긋나는 문장은 안 쓴다')
+        .not.toContain('승인을 기다리는 중입니다');
     });
-    expect(withParticipant).toContain('세미나 기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.');
+
+    it('**이름은 방문회원 그대로다** — 자격과 소속을 다시 한 줄로 합치지 않는다', () => {
+      const html = asParticipant();
+      expect(html).toContain('방문회원');
+      expect(html, '이름까지 참여자로 바꾸면 최박사가 금지하신 합침이다').not.toContain('>참여자<');
+      expect(html).toContain('2기 참여자'); // 소속은 칩으로만
+    });
+
+    it('참여 칩이 없으면 자격 줄 설명문이 그대로다', () => {
+      const html = render({ membership: view({ tier: 'visitor' }) });
+      expect(html).toContain('승인을 기다리는 중입니다. 세미나 참여와 포럼회원 신청을 하실 수 있습니다.');
+    });
+
+    it('**인도자 칩만 있으면 대체하지 않는다** — 참여가 아니다', () => {
+      const html = render({
+        membership: view({ tier: 'visitor', cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach' }] }),
+      });
+      expect(html).toContain('승인을 기다리는 중입니다');
+      expect(html).not.toContain('세미나 기간 동안');
+      expect(html).toContain('1기 인도자');
+    });
+  });
+
+  it('**소속 칩은 이름만 단다**(최박사 확정 4번) — 칩 아래 설명이 없다', () => {
+    const html = render({
+      membership: view({ cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach' }] }),
+    });
+    expect(html).toContain('1기 인도자');
+    expect(html).not.toContain('세미나 기간 동안');
   });
 
   it('`held` 는 **방문회원에 진행 표시**다 — 자격 이름을 덮지 않는다', () => {

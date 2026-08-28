@@ -143,14 +143,27 @@ export function AccountForm({
               </span>
             ) : null}
           </div>
+          {/* **설명문은 소속이 있으면 소속 기준으로 바뀐다** — 이름은 바뀌지 않는다.
+              최박사 확정: *"18명 모두 참여자 이다. 포럼회원(정회원)은 없다."*
+              그 사실을 그대로 읽으면 `승인을 기다리는 중입니다. 세미나 참여와…` 는
+              **이미 참여 중인 사람에게 어긋난다.**
+
+              ⚠ **이 대체는 지휘부의 읽기이지 최박사 문장이 아니다**(2026-08-29 명시).
+              최박사께 한 마디 더 여쭙는 중이고, `나` 로 정정되면 **바꿀 곳은 이 줄 하나**다.
+
+              **이름은 방문회원 그대로다** — 승인받은 적이 없기 때문이다. 이름까지 `참여자` 로
+              바꾸면 자격과 소속을 다시 한 줄로 합치는 것이고, 그것이 최박사가 처음부터
+              금지하신 것이다. 바뀌는 것은 **설명문뿐**이다. */}
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0' }}>
-            {TIER_LEAD[membership.tier]}
+            {membership.cohortRoles.some((r) => r.kind === 'participant')
+              ? PARTICIPANT_LEAD
+              : TIER_LEAD[membership.tier]}
           </p>
 
-          {/* ② 소속 — 여럿. **없으면 이 줄을 그리지 않는다**(T-5 의 *빈손 카드를 덧붙이지 않는다* 와 같은 결). */}
+          {/* ② 소속 — 여럿. **없으면 이 줄을 그리지 않는다**(T-5 의 *빈손 카드를 덧붙이지 않는다* 와 같은 결).
+              **칩은 이름만 단다**(최박사 확정 4번) — 설명은 위 자격 줄이 든다. */}
           {membership.cohortRoles.length > 0 ? (
-            <>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
                 {membership.cohortRoles.map((r) => (
                   <span
                     key={`${r.cohortId}:${r.kind}`}
@@ -163,16 +176,8 @@ export function AccountForm({
                   >
                     {cohortRoleLabel(r)}
                   </span>
-                ))}
-              </div>
-              {/* 참여자 설명은 **최박사 원문**이다. 인도자 칩에는 붙이지 않는다 —
-                  원문이 참여자에 대해 한 말이고 인도자용 문장은 확정에 없다. */}
-              {membership.cohortRoles.some((r) => r.kind === 'participant') ? (
-                <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 0' }}>
-                  {PARTICIPANT_LEAD}
-                </p>
-              ) : null}
-            </>
+              ))}
+            </div>
           ) : null}
 
           {/* ③ 문의 안내 — 최박사 지시로 노출한다. */}

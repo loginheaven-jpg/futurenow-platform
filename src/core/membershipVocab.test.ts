@@ -8,6 +8,7 @@ import type { CohortRole, MembershipStatus } from '@/contracts/domain';
 import { MEMBERSHIP_STATUSES } from './membership';
 import {
   cohortRoleLabel,
+  shortCohortName,
   COHORT_ROLE_LABEL,
   HELD_MEANING,
   PARTICIPANT_LEAD,
@@ -59,20 +60,50 @@ describe('문안 — 최박사 원문 그대로 (한 글자도 다듬지 않는�
   });
 });
 
-describe('cohortRoleLabel — 기수명을 **그대로** 쓴다', () => {
+describe('shortCohortName — 이름 끝의 `n기` 를 뽑는다 (최박사 확정 · 가)', () => {
+  it('실물 기수명이 줄어든다', () => {
+    expect(shortCohortName('퓨처나우2026예봄1기')).toBe('1기');
+    expect(shortCohortName('퓨처나우2026예봄2기')).toBe('2기');
+  });
+
+  it('두 자리 이상도 뽑는다', () => {
+    expect(shortCohortName('퓨처나우2027가을12기')).toBe('12기');
+  });
+
+  it('**뽑히지 않는 기수는 전체 이름을 그대로 쓴다** — 규칙이 이름 형식에 의존한다', () => {
+    // 실물이다. 억지로 줄이면 없는 회차 번호를 만들어 내게 된다.
+    expect(shortCohortName('[QA] 검증 전용')).toBe('[QA] 검증 전용');
+    expect(shortCohortName('체험 진단')).toBe('체험 진단');
+    expect(shortCohortName('휴지통')).toBe('휴지통');
+    expect(shortCohortName('test')).toBe('test');
+  });
+
+  it('끝이 아니면 뽑지 않는다 — `2기` 가 이름 가운데 있어도 그대로다', () => {
+    expect(shortCohortName('2기 준비모임')).toBe('2기 준비모임');
+    expect(shortCohortName('퓨처나우2026예봄2기 보충')).toBe('퓨처나우2026예봄2기 보충');
+  });
+
+  it('이미 짧으면 그대로', () => {
+    expect(shortCohortName('2기')).toBe('2기');
+  });
+
+  it('앞뒤 공백을 다듬고 판정한다', () => {
+    expect(shortCohortName('  퓨처나우2026예봄2기  ')).toBe('2기');
+  });
+});
+
+describe('cohortRoleLabel — 축약된 기수명 + 역할', () => {
   const r = (over: Partial<CohortRole> = {}): CohortRole => ({
     cohortId: 'c1', cohortName: '퓨처나우2026예봄2기', kind: 'participant', ...over,
   });
 
-  it('기수명 + 역할', () => {
-    expect(cohortRoleLabel(r())).toBe('퓨처나우2026예봄2기 참여자');
-    expect(cohortRoleLabel(r({ kind: 'coach' }))).toBe('퓨처나우2026예봄2기 인도자');
+  it('`2기 참여자` · `2기 인도자`', () => {
+    expect(cohortRoleLabel(r())).toBe('2기 참여자');
+    expect(cohortRoleLabel(r({ kind: 'coach' }))).toBe('2기 인도자');
   });
 
-  it('**줄이지 않는다** — 축약 규칙은 확정에 없고, 지어내면 계열 8번이다', () => {
-    // `○○기` 는 자리표시자이고 실제 이름은 길다. 규칙이 정해지면 이 함수 한 곳만 고친다.
-    expect(cohortRoleLabel(r())).toContain('퓨처나우2026예봄2기');
-    expect(cohortRoleLabel(r())).not.toBe('2기 참여자');
+  it('뽑히지 않는 기수는 전체 이름 + 역할', () => {
+    expect(cohortRoleLabel(r({ cohortName: '[QA] 검증 전용' }))).toBe('[QA] 검증 전용 참여자');
   });
 });
 

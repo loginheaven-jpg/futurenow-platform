@@ -75,7 +75,7 @@ describe('하위호환 — 소건 4 이전 신청(경위 없음)', () => {
   it('옛 행도 처리 버튼이 그대로 살아 있다 — 표시가 바뀌었다고 처리가 막히면 큐가 쌓인다', () => {
     const html = render([base]);
     expect(html).toContain('승인');
-    expect(html).toContain('보류');
+    expect(html).toContain('확인 대기'); // 최박사 확정으로 `보류` 에서 이름이 바뀌었다(하는 일은 같다)
   });
 });
 
@@ -84,5 +84,24 @@ describe('전화번호는 마스킹된 값만 온다 (불변식 13)', () => {
     const html = render([{ ...base, signupNote: 'x', forumPhoneMasked: '010-****-5678' }]);
     expect(html).toContain('010-****-5678');
     expect(html).not.toContain('010-1234-5678');
+  });
+});
+
+describe('`확인 대기` 버튼 — 이름만 구분한다 (최박사 확정 2026-08-29)', () => {
+  it('버튼 이름이 `확인 대기` 다', () => {
+    const html = render([base]);
+    expect(html).toContain('확인 대기');
+  });
+
+  it('**옛 이름 `보류` 가 남아 있지 않다** — 회원 상태의 `이용 보류` 와 헷갈리지 않게', () => {
+    const html = render([base]);
+    // `이용 보류` 는 참여자 자격 이름이고 이 화면에는 없다. 버튼의 옛 이름만 본다.
+    expect(html).not.toMatch(/>\s*보류\s*</);
+  });
+
+  it('**하는 일은 같다** — 여전히 승인/확인 대기 두 갈래다', () => {
+    const html = render([base]);
+    expect(html).toContain('승인');
+    expect(html).toContain('확인 대기');
   });
 });

@@ -78,14 +78,22 @@ export const UNDER_REVIEW_NOTE = '확인이 필요한 신청입니다.';
 export const TIER_INQUIRY_NOTE = '회원등급 조정에 대해 궁금하시면 운영자에게 문의해 주세요.';
 
 /**
- * 소속 칩 한 칸의 글자 — **기수명을 그대로 쓴다.**
+ * 기수명 축약 — **이름 끝의 `n기` 를 뽑는다**(최박사 확정 2026-08-29).
  *
- * 최박사 문안의 `○○기` 는 **자리표시자**이고, 실제 기수명은 `퓨처나우2026예봄2기` 처럼 길다.
- * 짧게 줄이는 규칙은 **확정에 없다.** 지어내면 그것이 계열 8번이므로 **줄이지 않는다** —
- * 기수명 그대로 + 역할 이름이다. 축약 규칙이 정해지면 **이 함수 한 곳만** 고친다.
+ * `퓨처나우2026예봄2기` → `2기`. 화면에는 `2기 참여자` 로 뜬다.
+ *
+ * **규칙이 이름 형식에 의존하므로, 끝이 `n기` 가 아닌 기수는 전체 이름을 그대로 쓴다**
+ * (최박사 지시). 실물로 `[QA] 검증 전용` · `체험 진단` 이 그것이다 — 억지로 줄이면
+ * 없는 회차 번호를 만들어 내게 된다. **뽑히지 않는 것이 정상 경로다.**
  */
+export function shortCohortName(name: string): string {
+  const m = /(\d+기)$/.exec(name.trim());
+  return m ? m[1] : name;
+}
+
+/** 소속 칩 한 칸의 글자 — 축약된 기수명 + 역할 이름. */
 export function cohortRoleLabel(r: CohortRole): string {
-  return `${r.cohortName} ${COHORT_ROLE_LABEL[r.kind]}`;
+  return `${shortCohortName(r.cohortName)} ${COHORT_ROLE_LABEL[r.kind]}`;
 }
 
 /**

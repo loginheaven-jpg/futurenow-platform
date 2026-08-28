@@ -186,7 +186,13 @@ export function ApprovalsClient({
                             disabled={pendingTx || isSelf}
                             onClick={() => decide(r, 'held')}
                           >
-                            보류
+                            {/* 최박사 확정 2026-08-29 — `보류` → **`확인 대기`**.
+                                **하는 일은 같다**(`decide_membership('held')`). 이름만 구분했다:
+                                회원 상태의 **이용 보류**(`expired`)와 한 화면에서 헷갈리기 때문이다.
+                                `held` 는 *자격 확인이 끝나지 않아 붙들어 둔 상태*이고
+                                `expired` 는 *한때 있던 자격이 끝난 것*이다 — 뜻이 다르다
+                                (`core/membershipVocab.ts` 의 `HELD_MEANING`). */}
+                            확인 대기
                           </button>
                         </div>
                         {isSelf ? (
