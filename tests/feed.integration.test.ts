@@ -245,7 +245,7 @@ describe.skipIf(!ENABLED)('동행 피드 — 기수 격리와 자격 (실DB · �
       // 목록 RPC 도 배열로 준다 — 화면과 DB 가 같은 모양을 본다.
       expect(await scalarAs(client, MEM_A2,
         `select array_to_string(my_reactions, ',') as e
-           from public.feed_post_list('${COH_A}') where id='${pid}'`))
+           from public.feed_list('${COH_A}') where id='${pid}'`))
         .toBe(FEED_EMOJI.join(','));
 
       // 남의 반응은 건드리지 않는다 — 집계는 사람마다 따로 센다.

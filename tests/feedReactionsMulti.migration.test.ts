@@ -17,34 +17,41 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { Client } from 'pg';
-import { countAs, expectRaise, runAs, scalarAs } from './helpers/asRole';
-import { FEED_EMOJI } from '@/contracts/domain';
 
 const ENABLED = process.env.RUN_RLS_INTEGRATION === '1' && !!process.env.SUPABASE_DB_URL;
-const MIGRATION = 'supabase/migrations/20260829090000_feed_reactions_multi.sql';
+const VERSION = '20260829090000';
+const MIGRATION = `supabase/migrations/${VERSION}_feed_reactions_multi.sql`;
 
-const COACH_A = '11111111-0000-0000-0000-0000000000a1';
-const MEM_A1 = '22222222-0000-0000-0000-0000000000a1';
-const MEM_A2 = '22222222-0000-0000-0000-0000000000a2';
-const HELD = '22222222-0000-0000-0000-000000009999';
-const COH_A = 'aaaaaaaa-0000-0000-0000-00000000000a';
+/**
+ * **이 파일은 적용 *전* 에만 뜻이 있다.** 단언이 *적용 전 PK 는 두 열이다* 이므로
+ * 적용 뒤에는 통과할 수 없다 — 그것이 결함이 아니라 **이 하네스의 성격**이다.
+ *
+ * 그렇다고 영구 실패로 두면 다음 사람이 *원래 빨간 것* 으로 배우고, 그 순간 잠금이 죽는다.
+ * 그래서 **원장을 보고 스스로 건너뛴다.** 조용히 넘어가지 않게 이유를 찍는다 —
+ * 건너뛴 것과 통과한 것은 다른 사실이다(§11 집계 규율의 결).
+ */
+const APPLIED = ENABLED ? await (async () => {
+  const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
+  await c.connect();
+  const n = Number((await c.query(
+    'select count(*)::int as n from supabase_migrations.schema_migrations where version=$1', [VERSION])).rows[0].n);
+  await c.end();
+  if (n > 0) {
+    console.log(`[migration ${VERSION}] 이미 적용됨 — 롤백 검증(적용 전 전용) 건너뜀. `
+      + '적용 시점의 결과는 5차 마이그레이션 적용 보고에 있다.');
+  }
+  return n > 0;
+})() : false;
 
-// 픽스처는 통합테스트와 **같은 축**이다(seminar×active). 여기서는 반응만 보므로 최소로 줄인다.
-const SETUP = `
-set local session_replication_role = replica;
-insert into auth.users (id,email) values
- ('${COACH_A}','fa@t.test'),('${MEM_A1}','m1@t.test'),('${MEM_A2}','m2@t.test'),('${HELD}','hh@t.test');
-insert into public.users (id,email,name,nickname,role) values
- ('${COACH_A}','fa@t.test','코치A','fa','coach'),
- ('${MEM_A1}','m1@t.test','참여1','m1','user'),
- ('${MEM_A2}','m2@t.test','참여2','m2','user'),
- ('${HELD}','hh@t.test','보류','hh','user');
-update public.users set membership_state='held' where id='${HELD}';
-insert into public.cohorts (id,coach_id,instrument_id,name,code,status,max_members)
- values ('${COH_A}','${COACH_A}','futurenow','A기','AAAAA','active',10);
-insert into public.enrollments (cohort_id,user_id) values
- ('${COH_A}','${MEM_A1}'),('${COH_A}','${MEM_A2}'),('${COH_A}','${HELD}');
-`;
+
+// **여기에 픽스처를 두지 않는다.** 처음엔 두었다가 걷어냈다 —
+// ⑴ 지어낸 픽스처가 실제와 달랐다(`users.membership_state` 라고 썼는데 실제는 `public.memberships` 표다).
+//     **베끼지 않고 지어낸 것**이 원인이고, 그것이 바로 통과했다면 무엇을 잰 것인지 알 수 없었다.
+// ⑵ 고쳐서 두더라도 `feed.integration.test.ts` 의 픽스처와 **사본이 둘**이 된다(불변식 23).
+//
+// 그래서 이 파일은 **스키마 층만** 잰다 — 이름·행 수·PK·권한·되돌리는 문.
+// **동작(토글·복수 공존·게이트)은 통합테스트가 잰다**(순서상 이 파일 다음에 돈다).
+// 층을 나눈 것이지 덜 재는 것이 아니다.
 
 async function open(): Promise<Client> {
   const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
@@ -65,7 +72,29 @@ select string_agg(a.attname, ',' order by k.ord) as e
   join pg_attribute a on a.attrelid = c.conrelid and a.attnum = k.attnum
  where c.conrelid = 'public.feed_reactions'::regclass and c.contype = 'p'`;
 
-describe.skipIf(!ENABLED)('마이그레이션 롤백 검증 — 되돌리는 문이 먼저다', () => {
+describe.skipIf(!ENABLED || APPLIED)('마이그레이션 롤백 검증 — 되돌리는 문이 먼저다(적용 전 전용)', () => {
+  it('**마이그레이션이 실재하는 함수를 가리킨다** — 이름을 추측하지 않는다', async () => {
+    // 적용 전에 잡힌 실수의 회귀 잠금. 처음 판은 `feed_post_list` 를 고쳤는데 **그런 함수가 없었다.**
+    //   `DROP ... IF EXISTS` 가 조용히 지나가고 새 함수가 하나 더 생겼을 뿐,
+    //   코드가 부르는 `feed_list` 는 옛 모양 그대로 남았을 것이다 — 적용하고도 안 고쳐진다.
+    //   **테스트도 그 가짜 이름을 부르고 있었으므로 통과했을 것이다.** 도구가 재려던 것을 재지 않았다.
+    const client = await open();
+    try {
+      const sql = readFileSync(MIGRATION, 'utf8');
+      for (const fn of ['feed_list', 'feed_react']) {
+        const exists = Number((await client.query(
+          `select count(*)::int as n from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+            where n.nspname='public' and p.proname='${fn}'`)).rows[0].n);
+        expect(exists, `public.${fn} 이 DB 에 없다 — 이름이 틀렸다`).toBeGreaterThan(0);
+        expect(sql, `마이그레이션이 ${fn} 을 다루지 않는다`).toContain(`public.${fn}(`);
+      }
+      // 없는 이름을 만들어 내지 않았는지도 본다(반대 방향).
+      expect(sql, '저장소에 없는 함수 이름이 남아 있다').not.toContain('feed_post_list(');
+    } finally {
+      await close(client);
+    }
+  });
+
   it('적용 전후 실데이터 행 수가 같다 — **넓히는 변경이라는 주장의 실측**', async () => {
     const client = await open();
     try {
@@ -84,54 +113,11 @@ describe.skipIf(!ENABLED)('마이그레이션 롤백 검증 — 되돌리는 문
     }
   });
 
-  it('적용 뒤 토글이 산다 — 넷을 눌러 넷이 남고, 박수와 기도가 함께 산다', async () => {
-    const client = await open();
-    try {
-      await client.query(readFileSync(MIGRATION, 'utf8'));
-      await client.query(SETUP);
-      await runAs(client, MEM_A1, `select public.feed_post_create('${COH_A}','반응 대상')`);
-      const pid = (await client.query(
-        `select id from public.feed_posts where cohort_id='${COH_A}' order by created_at desc limit 1`)).rows[0].id;
-
-      for (const e of FEED_EMOJI) await runAs(client, MEM_A2, `select public.feed_react('${pid}','${e}')`);
-      expect(await countAs(client, MEM_A2,
-        `select count(*) from public.feed_reactions where post_id='${pid}' and user_id='${MEM_A2}'`))
-        .toBe(FEED_EMOJI.length);
-      expect(await countAs(client, MEM_A2,
-        `select count(*) from public.feed_reactions
-          where post_id='${pid}' and user_id='${MEM_A2}' and emoji in ('👏','🙏')`)).toBe(2);
-
-      // 같은 것 재호출 = 그것만 취소
-      await runAs(client, MEM_A2, `select public.feed_react('${pid}','👏')`);
-      expect(await countAs(client, MEM_A2,
-        `select count(*) from public.feed_reactions where post_id='${pid}' and user_id='${MEM_A2}'`))
-        .toBe(FEED_EMOJI.length - 1);
-
-      // 반환·목록이 같은 순서의 배열이다(선언 순서)
-      expect(await scalarAs(client, MEM_A2, `select array_to_string(public.feed_react('${pid}','👏'), ',') as e`))
-        .toBe(FEED_EMOJI.join(','));
-      expect(await scalarAs(client, MEM_A2,
-        `select array_to_string(my_reactions, ',') as e from public.feed_post_list('${COH_A}') where id='${pid}'`))
-        .toBe(FEED_EMOJI.join(','));
-
-      // 게이트가 그대로다 — 순서(쓰기 자격 → 열람 → 이모지 → 묘비)를 옛 함수와 똑같이 옮겼다
-      await expectRaise(client, HELD, `select public.feed_react('${pid}','👏')`, '55000');
-      await expectRaise(client, MEM_A2, `select public.feed_react('${pid}','🔥')`, '22023');
-
-      // 남의 반응 불가침
-      await runAs(client, MEM_A1, `select public.feed_react('${pid}','👏')`);
-      expect(await countAs(client, MEM_A1,
-        `select count(*) from public.feed_reactions where post_id='${pid}' and emoji='👏'`)).toBe(2);
-    } finally {
-      await close(client);
-    }
-  });
-
   it('권한이 원 파일과 같은 모양으로 돌아온다 — DROP 하면 옛 GRANT 도 사라진다', async () => {
     const client = await open();
     try {
       await client.query(readFileSync(MIGRATION, 'utf8'));
-      for (const fn of ['feed_react', 'feed_post_list']) {
+      for (const fn of ['feed_react', 'feed_list']) {
         const anon = (await client.query(
           `select has_function_privilege('anon', p.oid, 'execute') as e
              from pg_proc p join pg_namespace n on n.oid=p.pronamespace

@@ -83,15 +83,24 @@ END; $$;
 -- 3. 목록 RPC — my_reaction text → my_reactions text[]
 -- ============================================================
 
--- 반환 테이블의 열 이름·타입이 바뀌므로 이것도 먼저 지운다.
-DROP FUNCTION IF EXISTS public.feed_post_list(uuid, boolean, timestamptz, uuid, int);
+-- **이름은 `feed_list` 다.** 처음에 이 절을 `feed_post_list` 로 적었다 — 저장소에 없는 이름이다.
+--   `DROP ... IF EXISTS` 가 조용히 지나가고 **새 함수가 하나 더 생겼을 뿐**, 코드가 실제로 부르는
+--   `feed_list`(`context.ts:1418`)는 옛 모양 그대로 남았을 것이다. 그러면 마이그레이션을 적용하고도
+--   피드가 고쳐지지 않고, §순서 가드가 발화해 **닫힌다.**
+--   적용 직전 실물 조회(`pg_get_function_result('feed_post_list')` → `undefined`)가 이것을 잡았다.
+--   **이름은 추측하지 않고 정본에서 읽는다.**
+--
+-- 반환 테이블의 열 이름·타입이 바뀌므로 먼저 지운다.
+-- **시그니처를 원본과 한 글자도 다르지 않게 적는다** — 인자 순서가 다르면 DROP 이 빗나가고
+--   같은 이름의 함수가 둘이 된다(`20260828100000_feed.sql:402` 가 정본이다).
+DROP FUNCTION IF EXISTS public.feed_list(uuid, timestamptz, uuid, int, boolean);
 
-CREATE FUNCTION public.feed_post_list(
+CREATE FUNCTION public.feed_list(
   p_cohort_id uuid,
-  p_mine      boolean DEFAULT false,
   p_before    timestamptz DEFAULT NULL,
-  p_before_id uuid DEFAULT NULL,
-  p_limit     int DEFAULT 20
+  p_before_id uuid        DEFAULT NULL,
+  p_limit     int         DEFAULT 20,
+  p_mine      boolean     DEFAULT false
 ) RETURNS TABLE(
   id uuid, author_id uuid, author_name text, body text, photo_path text,
   created_at timestamptz, deleted boolean, comment_count int,
@@ -142,7 +151,7 @@ END; $$;
 -- 4. 권한 — 새로 만든 함수는 기본 권한이 다시 붙으므로 원복한다
 -- ============================================================
 -- DROP 하면 옛 GRANT/REVOKE 도 함께 사라진다. `20260828100000_feed.sql` 과 **같은 모양**으로 되돌린다.
-REVOKE ALL ON FUNCTION public.feed_react(uuid, text)                              FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.feed_post_list(uuid, boolean, timestamptz, uuid, int) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.feed_react(uuid, text)                            TO authenticated;
-GRANT EXECUTE ON FUNCTION public.feed_post_list(uuid, boolean, timestamptz, uuid, int) TO authenticated;
+REVOKE ALL ON FUNCTION public.feed_react(uuid, text)                        FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.feed_list(uuid, timestamptz, uuid, int, boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.feed_react(uuid, text)                      TO authenticated;
+GRANT EXECUTE ON FUNCTION public.feed_list(uuid, timestamptz, uuid, int, boolean) TO authenticated;
