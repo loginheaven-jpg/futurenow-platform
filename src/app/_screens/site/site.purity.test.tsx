@@ -19,8 +19,14 @@ const PARTS = [
   // F-2b 가 더한 둘 (§9.7 #14~#15 — 발주 F2b §3 사양 승인분)
   'LeaderCard.tsx', 'BookPanel.tsx',
 ];
-/** 부품이 아닌 동거 파일. **명시하지 않으면 통과하지 못한다** — 새 파일이 조용히 끼어들 자리를 없앤다. */
-const NOT_PARTS = ['SiteGallery.tsx', 'galleryFixture.tsx'];
+/** 부품이 아닌 동거 파일. **명시하지 않으면 통과하지 못한다** — 새 파일이 조용히 끼어들 자리를 없앤다.
+ *
+ *  `PublicGnb.tsx` 는 5차 소건 1-바 로 생겼다. **부품이 아니라 화면 층**이다 —
+ *  세션 유무를 읽어(`document.cookie`) 판정 결과를 `SiteGnb` 에 prop 으로 내려준다.
+ *  그래서 아래 순수성 가드(데이터 수입 금지 · 시간 금지)를 걸지 않는다.
+ *  **이 파일이 부품 목록에 들어가면 안 된다** — 들어가면 가드가 그것을 부품으로 재게 되고,
+ *  반대로 목록 어디에도 없으면 위 첫 테스트가 막는다. 둘 중 하나를 고르게 되어 있다. */
+const NOT_PARTS = ['SiteGallery.tsx', 'galleryFixture.tsx', 'PublicGnb.tsx'];
 
 const files = readdirSync(DIR).filter((f) => /\.tsx$/.test(f) && !f.includes('.test.'));
 

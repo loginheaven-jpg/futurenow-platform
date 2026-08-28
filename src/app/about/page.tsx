@@ -10,7 +10,7 @@
 //   §9.7 부품과 기존 `ui-` 공용 부품 밖의 형태를 새로 짓지 않았다.
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SiteGnb } from '@/app/_screens/site/SiteGnb';
+import { PublicGnb } from '@/app/_screens/site/PublicGnb';
 import { SiteHero } from '@/app/_screens/site/SiteHero';
 import { GrowAxis } from '@/app/_screens/site/GrowAxis';
 import { SectionTitle } from '@/app/_screens/site/SectionTitle';
@@ -31,12 +31,15 @@ export const metadata: Metadata = { title: '퓨처나우 소개' };
 export default function AboutPage() {
   return (
     <>
-      <SiteGnb
+      {/* 5차 소건 1-바 — 오른쪽 골드 버튼이 **세션을 보고** 문구와 목적지를 함께 바꾼다.
+          로그인한 사람에게 `로그인` 이라고 적혀 있던 것이 *로그아웃된 것 같다* 의 나머지 절반이었다.
+          판정은 `publicHeaderAction()`(순수), 세션 읽기는 `PublicGnb`(화면 층).
+          **부품은 여전히 계산하지 않는다.** ISR 도 그대로다 — 서버에서 쿠키를 읽지 않는다. */}
+      <PublicGnb
         logo={<>퓨처<b>나우</b></>}
         en="FUTURE NOW"
         items={PUBLIC_NAV}
         currentPath="/about"
-        login={{ href: '/login', label: '로그인' }}
       />
 
       <main>

@@ -484,6 +484,11 @@ export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3
 
 `src/app/_screens/site/`. **공개 현관·로그인 홈 전용 계층**이고 콘솔·측정 부품과 섞지 않는다.
 
+> 이 디렉터리에는 **부품이 아닌 파일도 산다** — 진열대(`SiteGallery`·`galleryFixture`)와
+> **화면 층 오케스트레이터**(`PublicGnb` — 세션을 읽어 `SiteGnb` 에 prop 으로 내려준다 · 5차 소건 1-바).
+> 아래 표는 **부품만** 센다. `tests/designParts.test.ts` 와 `site.purity.test.tsx` 가 양쪽에서
+> 그 경계를 잡는다 — 새 `.tsx` 는 **부품이거나 명시된 예외이거나** 둘 중 하나여야 통과한다.
+
 **열다섯 모두에 공통으로 걸리는 한 줄** — **부품은 계산하지 않는다.** 현재 회차·잠금·완료·현재 경로가
 전부 prop 이고, 부품 안에 날짜·권한·집계가 없다. 판정은 화면(page) 층이 하고 부품은 받아 그린다.
 (불변식 10 계열. §9.3 의 "현재" 칸과 같은 성격으로 **코드가 이미 한 선택을 확정한다.**)
