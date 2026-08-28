@@ -148,7 +148,9 @@ if ((process.argv[1] ?? '').endsWith('shellAudit.mjs')) {
   }
   const left = cfg.exceptions.length;
   console.log(`실측 ${found.length}개 · 면제 ${exempt.size}개 · 예외 ${left}개`);
-  for (const c of ['U-1', 'U-2', 'U-3']) {
+  // **덩이 목록을 손으로 박지 않는다** — 박아 두었더니 U-4 가 생긴 날 조용히 안 세어졌다.
+  //   데이터에서 뽑으면 낡을 수가 없다(`CLAUDE.md` §11 · 따라가야 하는 값).
+  for (const c of [...new Set(cfg.exceptions.map((e) => e.chunk))].sort()) {
     console.log(`  ${c}: ${cfg.exceptions.filter((e) => e.chunk === c).length}개`);
   }
   if (fails.length) { for (const f of fails) console.error(`  X ${f}`); process.exit(1); }

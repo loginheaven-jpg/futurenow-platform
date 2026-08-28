@@ -19,7 +19,8 @@ const cfg = JSON.parse(readFileSync('scripts/shellExceptions.json', 'utf8')) as 
   exemptDeclared: string[];
   exceptions: { file: string; chunk: string; why: string }[];
 };
-const CHUNKS = ['U-1', 'U-2', 'U-3'];
+// U-4 는 **이름과 문**을 다루는 덩이다(공통 규칙 3·4). `/join`·`/signup` 의 뒤로 제어가 거기 산다.
+const CHUNKS = ['U-1', 'U-2', 'U-3', 'U-4'];
 
 describe('껍데기 잠금 — 화면이 헤더를 직접 그리지 않는다', () => {
   const drawn = scanDrawers().map((r: { file: string }) => r.file);
