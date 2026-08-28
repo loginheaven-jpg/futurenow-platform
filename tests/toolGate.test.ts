@@ -196,6 +196,19 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
     expect(sql.slice(0, 600)).toContain('아직 적용되지 않았다');
   });
 
+  it('**cohorts_select 후속안이 미인증 가드와 성능 정정을 함께 담는다** — 순서가 강제된다', () => {
+    const follow = readFileSync('supabase/migrations/20260830100000_cohorts_select_initplan.sql', 'utf8');
+    // InitPlan 은 행이 0개여도 평가하므로 **가드 없이 적용하면 지금보다 나빠진다.**
+    expect(follow, '미인증 가드가 없다').toContain('TO authenticated');
+    expect(follow, '성능 정정이 없다').toContain('(SELECT public.member_state(auth.uid()))');
+    expect(follow, '아직 적용 전이어야 한다').toContain('아직 적용되지 않았다');
+    for (const item of ['빈 결과', 'InitPlan 1', '적용 전후 동일']) {
+      expect(follow, `검증 항목에 ${item} 가 없다`).toContain(item);
+    }
+    // **CASE 안이 통하지 않은 이유**를 파일이 들고 있어야 한다 — 다음 사람이 되돌리지 않게.
+    expect(follow).toContain('계획 시점');
+  });
+
   it('**존재하지 않는 함수를 부르지 않는다** — 미완으로 두었던 자리의 회귀 잠금', () => {
     // 초판은 `my_cohorts_rows()` 라는 없는 함수를 불렀다. 정본을 읽어 옮겨 고쳤다.
     expect(sql).not.toContain('my_cohorts_rows');
