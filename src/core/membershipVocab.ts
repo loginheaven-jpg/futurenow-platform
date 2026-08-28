@@ -51,6 +51,14 @@ export const TIER_LABEL: Record<MemberTier, string> = {
   suspended: '이용 보류',
 };
 
+/**
+ * 승급 방법 — **최박사 원문**(2026-08-30). 방문회원 설명에 **병기**한다.
+ *
+ * *"정회원 승급 신청을 하지 않은 방문회원도 있다 그냥 승급방법 안내면 병기하면 된다."*
+ * 그 안내가 이 한 문장이 전부다. 늘리지 않는다.
+ */
+export const UPGRADE_HOWTO = '촉진자포럼에 가입하고 정회원자격을 취득하시면 된다.';
+
 /** tier 별 한 줄 설명 — **최박사 원문**. */
 export const TIER_LEAD: Record<MemberTier, string> = {
   visitor: '승인을 기다리는 중입니다. 세미나 참여와 포럼회원 신청을 하실 수 있습니다.',
@@ -160,6 +168,24 @@ export function toMembershipView(
 //   보이는 자리이고 이쪽은 *소속에서의 역할*이라 축이 다르다. **합치지 않았고 보고에 올린다.**
 
 /**
+ * **최근 기수는 첫 회차일로 잰다**(최박사 확정 2026-08-30).
+ *
+ * 실측(2026-08-30 · `min(cohort_sessions.held_at)`):
+ *   `퓨처나우2026예봄1기` 2026-07-26 · `[QA] 검증 전용` 2026-08-14 · `퓨처나우2026예봄2기` 2026-09-20
+ *
+ * **이름 끝의 숫자로 재지 않는다** — 끝이 `n기` 가 아닌 기수가 섞이면 최신을 못 가린다
+ * (실물 넷이 그렇다). 첫 회차일은 **이름 형식에 의존하지 않는다.**
+ *
+ * 첫 회차일이 없는 기수(회차 0)는 **가장 오래된 것으로 친다** — 시작한 적이 없으므로
+ * *최근* 을 주장할 근거가 없다. 없는 값을 지어내지 않는다.
+ */
+export function isMoreRecent(a: CohortRole, b: CohortRole): boolean {
+  const at = a.firstSessionAt ?? '';
+  const bt = b.firstSessionAt ?? '';
+  return at > bt;
+}
+
+/**
  * 좁은 자리에 하나만 넣을 때의 후보 — **순서를 여기서 정하지 않는다.**
  *
  * 최박사가 적으신 `참여자, 인도자, 운영자` 가 **우선순위인지 그냥 열거인지 갈린다.**
@@ -168,19 +194,21 @@ export function toMembershipView(
  *
  * 답이 오면 `NARROW_PRIORITY` 한 줄에 순서를 꽂으면 되고, 그때 `narrowLabel` 이 바로 산다.
  */
-export const NARROW_PRIORITY: readonly CohortRoleKind[] | null = null; // ← 답이 오면 한 줄로 꽂는다
-
 /**
- * 좁은 자리 한 칸의 글자. **순서가 정해지기 전에는 아무것도 고르지 않는다.**
+ * 좁은 자리 동점 규칙 — **최근 기수 포지션**(최박사 확정 2026-08-30).
  *
- * `null` 을 돌려주면 부르는 쪽은 **지금 쓰던 값을 그대로 쓴다** — 임시 값을 넣어
- * 화면에 내보내면 그것이 확정으로 굳는다. 비워 두는 편이 낫다.
+ * *"1기참여자 5기운영자 이면 5기운영자인 것이다. 최신의 정보가 중요하니까."*
+ *
+ * 그래서 **역할 사이에 우선순위를 두지 않는다** — 참여자·인도자를 줄 세우는 것이 아니라
+ * **가장 최근 기수의 포지션**을 고른다. 최박사가 적으신 `참여자, 인도자, 운영자` 는
+ * 그 셋이 자격 이름보다 앞선다는 뜻이지 셋 사이의 순서가 아니었다.
  */
 export function narrowLabel(roles: readonly CohortRole[], isAdmin: boolean): string | null {
-  if (!NARROW_PRIORITY) return null; // 순서 미확정 — 아래는 답이 온 뒤에만 돈다
-  for (const kind of NARROW_PRIORITY) {
-    if (roles.some((r) => r.kind === kind)) return COHORT_ROLE_LABEL[kind];
-  }
+  // 소속이 있으면 **가장 최근 기수의 포지션**이다.
+  let best: CohortRole | null = null;
+  for (const r of roles) if (!best || isMoreRecent(r, best)) best = r;
+  if (best) return COHORT_ROLE_LABEL[best.kind];
+  // 소속이 없으면 운영자. 그것도 아니면 부르는 쪽이 쓰던 값을 그대로 쓴다.
   return isAdmin ? ADMIN_LABEL : null;
 }
 

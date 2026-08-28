@@ -8,7 +8,8 @@ import { RELIGIONS } from '@/instruments/futurenow/profileVocab';
 import { Button } from '@/core/ui';
 import type { MembershipView } from '@/contracts/domain';
 import {
-  ADMIN_LABEL, cohortRoleLabel, PARTICIPANT_LEAD, TIER_INQUIRY_NOTE, TIER_LABEL, TIER_LEAD, UNDER_REVIEW_NOTE,
+  ADMIN_LABEL, cohortRoleLabel, PARTICIPANT_LEAD, TIER_INQUIRY_NOTE, TIER_LABEL, TIER_LEAD,
+  UNDER_REVIEW_NOTE, UPGRADE_HOWTO,
 } from '@/core/membershipVocab';
 
 const inputStyle: CSSProperties = {
@@ -171,6 +172,15 @@ export function AccountForm({
               ? PARTICIPANT_LEAD
               : TIER_LEAD[membership.tier]}
           </p>
+          {/* 승급 방법 **병기**(최박사 확정 2026-08-30) —
+              *"정회원 승급 신청을 하지 않은 방문회원도 있다 그냥 승급방법 안내면 병기하면 된다."*
+              방문회원에게만 붙인다. 이미 포럼회원인 사람에게 승급 방법은 뜻이 없고,
+              이용 보류에게는 문의 안내가 따로 있다. */}
+          {membership.tier === 'visitor' ? (
+            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-1) 0 0' }}>
+              {UPGRADE_HOWTO}
+            </p>
+          ) : null}
 
           {/* ② 소속 — 여럿. **없으면 이 줄을 그리지 않는다**(T-5 의 *빈손 카드를 덧붙이지 않는다* 와 같은 결).
               **칩은 이름만 단다**(최박사 확정 4번) — 설명은 위 자격 줄이 든다. */}

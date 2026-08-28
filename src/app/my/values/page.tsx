@@ -14,7 +14,6 @@
 import { redirect } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { createServerContext } from '@/core/supabase/server';
-import { assessmentAccess } from '@/app/_lib/assessmentAccess';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 import { ValuesClient } from '@/app/my/cohorts/[cohortId]/values/ValuesClient';
 
@@ -25,8 +24,10 @@ export default async function PersonalValuesPage() {
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
 
-  const state = await ctx.getMyMemberState();
-  if (!assessmentAccess(state, 'standing')) redirect('/pending?returnTo=/my/values');
+  // **화면 게이트를 걷었다**(최박사 확정 2026-08-30 · 진단 홈과 같은 근거).
+  //   여기서 튕기면 종료된 회기 참여자가 **자기 상시 검사 결과를 볼 길이 없다** —
+  //   상시분(`cohort_id = NULL`)은 회기 경로로 갈 수 없기 때문이다.
+  //   신규 시작은 `value_save_progress`·`value_finalize` 안의 게이트가 막는다.
 
   const initial = await ctx.getMyValueAssessment(null);
 

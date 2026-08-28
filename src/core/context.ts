@@ -1279,7 +1279,7 @@ class SupabaseCoreContext implements CoreContext {
     const stored = toMembershipStatus((data as { status?: unknown } | null)?.status ?? null);
 
     const mine = await this.listMyCohorts();
-    const roles: CohortRole[] = mine
+    const roles: Omit<CohortRole, 'firstSessionAt'>[] = mine
       .filter((c) => c.status === 'active')
       .map((c) => ({ cohortId: c.cohortId, cohortName: c.name, kind: 'participant' as const }));
     if (me.role === 'coach' || me.role === 'admin') {
@@ -1289,8 +1289,24 @@ class SupabaseCoreContext implements CoreContext {
         roles.push({ cohortId: c.id, cohortName: c.name, kind: 'coach' as const });
       }
     }
+
+    // **첫 회차일 — 최근 기수를 재는 기준**(최박사 확정 2026-08-30).
+    //   *"1기참여자 5기운영자 이면 5기운영자인 것이다. 최신의 정보가 중요하니까."*
+    //   이름 끝의 숫자로 재지 않는다 — 끝이 `n기` 가 아닌 기수가 섞이면 못 가린다.
+    //   회차가 없는 기수는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
+    //   **읽지 못해도 표시가 멈추지 않는다** — `null` 이면 그 기수가 *최근* 을 주장하지 못할 뿐이다.
+    const withDates: CohortRole[] = [];
+    for (const r of roles) {
+      const sessions = await this.listCohortSessions(r.cohortId).catch(() => []);
+      const first = sessions.reduce<string | null>(
+        (acc, s) => (acc === null || s.heldAt < acc ? s.heldAt : acc),
+        null,
+      );
+      withDates.push({ ...r, firstSessionAt: first });
+    }
+
     // 운영자는 **새로 읽어 올 것이 없다** — `currentUser()` 가 이미 `role` 을 들고 있다.
-    return toMembershipView(stored, roles, me.role === 'admin');
+    return toMembershipView(stored, withDates, me.role === 'admin');
   }
 
   async listMembershipQueue(expiringDays = 30): Promise<MembershipQueueRow[]> {

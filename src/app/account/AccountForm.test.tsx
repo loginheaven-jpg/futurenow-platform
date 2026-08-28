@@ -119,8 +119,8 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
     const html = render({
       membership: view({
         cohortRoles: [
-          { cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant' },
-          { cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach' },
+          { cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant', firstSessionAt: null },
+          { cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach', firstSessionAt: null },
         ],
       }),
     });
@@ -148,7 +148,7 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
       render({
         membership: view({
           tier,
-          cohortRoles: [{ cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant' }],
+          cohortRoles: [{ cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant', firstSessionAt: null }],
         }),
       });
 
@@ -173,7 +173,7 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
 
     it('**인도자 칩만 있으면 대체하지 않는다** — 참여가 아니다', () => {
       const html = render({
-        membership: view({ tier: 'visitor', cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach' }] }),
+        membership: view({ tier: 'visitor', cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach', firstSessionAt: null }] }),
       });
       expect(html).toContain('승인을 기다리는 중입니다');
       expect(html).not.toContain('세미나 기간 동안');
@@ -183,7 +183,7 @@ describe('등급 표시 — **택일이 아니라 병행 표현** (T-4)', () => 
 
   it('**소속 칩은 이름만 단다**(최박사 확정 4번) — 칩 아래 설명이 없다', () => {
     const html = render({
-      membership: view({ cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach' }] }),
+      membership: view({ cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'coach', firstSessionAt: null }] }),
     });
     expect(html).toContain('1기 인도자');
     expect(html).not.toContain('세미나 기간 동안');
@@ -238,7 +238,7 @@ describe('운영자 — 넷째 축 (최박사가 표시 대상에 넣으셨다)'
 
   it('**운영자 칩이 소속 칩보다 앞에 선다** — 기수에 안 매인 것이 먼저 읽힌다', () => {
     const html = render({
-      membership: view({ isAdmin: true, cohortRoles: [{ cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant' }] }),
+      membership: view({ isAdmin: true, cohortRoles: [{ cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant', firstSessionAt: null }] }),
     });
     expect(html.indexOf('운영자')).toBeLessThan(html.indexOf('2기 참여자'));
   });
@@ -247,5 +247,34 @@ describe('운영자 — 넷째 축 (최박사가 표시 대상에 넣으셨다)'
     const html = render({ membership: view({ tier: 'visitor', isAdmin: true }) });
     expect(html).toContain('방문회원');
     expect(html).toContain('운영자');
+  });
+});
+
+describe('승급 안내 병기 (최박사 확정 2026-08-30)', () => {
+  const view = (over: Partial<MembershipView> = {}): MembershipView => ({
+    tier: 'visitor', underReview: false, cohortRoles: [], isAdmin: false, ...over,
+  });
+
+  it('방문회원에게 **최박사 원문 그대로** 병기한다', () => {
+    expect(render({ membership: view() })).toContain('촉진자포럼에 가입하고 정회원자격을 취득하시면 된다.');
+  });
+
+  it('포럼회원에게는 붙이지 않는다 — 이미 승급했으므로 뜻이 없다', () => {
+    expect(render({ membership: view({ tier: 'forum' }) })).not.toContain('촉진자포럼에 가입하고');
+  });
+
+  it('이용 보류에게도 붙이지 않는다 — 문의 안내가 따로 있다', () => {
+    const html = render({ membership: view({ tier: 'suspended' }) });
+    expect(html).not.toContain('촉진자포럼에 가입하고');
+    expect(html).toContain('계정 이용이 보류되었습니다. 문의해 주세요.');
+  });
+
+  it('**종료된 회기 참여자도 방문회원 tier 라 병기가 붙는다** — 승급 길을 잃지 않는다', () => {
+    const html = render({
+      membership: view({ cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'participant', firstSessionAt: '2026-07-26' }] }),
+    });
+    expect(html).toContain('1기 참여자');           // 명칭은 기수 참여자
+    expect(html).toContain('방문회원');              // 자격 이름은 그대로
+    expect(html).toContain('촉진자포럼에 가입하고');   // 승급 길이 보인다
   });
 });

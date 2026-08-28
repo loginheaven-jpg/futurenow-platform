@@ -20,6 +20,7 @@ import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
+import { narrowLabel } from '@/core/membershipVocab';
 import { roleTargets } from './roleTarget';
 import { buildMemberSheet } from '@/app/_lib/memberSheet';
 
@@ -68,6 +69,8 @@ export default async function MemberHomePage() {
   // ── 여기서부터가 F-3 이 더한 **표시용 자료**다. 위 판정에는 손대지 않았다. ──────────
 
   const targets = roleTargets(me.role, cohorts); // 5차 T-5 — 겸직자는 여럿이다
+  // 좁은 자리(시트 머리) 값. 실패해도 화면이 멈추지 않게 기본값으로 받는다.
+  const membership = await ctx.getMyMembershipView().catch(() => ({ cohortRoles: [], isAdmin: false } as const));
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
 
@@ -92,9 +95,10 @@ export default async function MemberHomePage() {
 
   return (
     <HomeScreen
-      // 시트 머리의 `역할` 은 **그 사람의 역할**이라 첫 카드(= 옛 단일 반환)를 그대로 쓴다.
-      //   겸직이어도 시트가 *참여자* 라고 적으면 인도자에게 자기 역할이 지워진 것으로 보인다.
-      who={{ name: greetingName, role: targets[0].who, cohort: sheet.cohortName }}
+      // **좁은 자리 규칙**(최박사 확정 2026-08-30) — 시트 머리는 한 칸뿐이라 병행이 안 된다.
+      //   `참여자·인도자·운영자` 를 자격 이름보다 앞세우고, 동점은 **최근 기수 포지션**이다.
+      //   `narrowLabel` 이 `null` 을 주면(소속도 운영자도 아니면) 쓰던 값을 그대로 쓴다.
+      who={{ name: greetingName, role: narrowLabel(membership.cohortRoles, membership.isAdmin) ?? targets[0].who, cohort: sheet.cohortName }}
       roles={targets.map((t) => ({
         badge: t.cohort, who: t.who, title: t.title, sub: t.sub, href: t.href, ctaLabel: t.ctaLabel,
       }))}

@@ -304,6 +304,14 @@ export interface CohortRole {
   cohortId: string;
   cohortName: string;
   kind: CohortRoleKind;
+  /**
+   * 첫 회차일(ISO date) — **최근 기수를 재는 기준**(최박사 확정 2026-08-30).
+   *
+   * 좁은 자리에 하나만 들어갈 때 *가장 최근 기수의 포지션* 을 고르는 데 쓴다.
+   * **이름 끝의 숫자로 재지 않는다** — 끝이 `n기` 가 아닌 기수가 섞이면 못 가린다.
+   * 회차가 없는 기수는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
+   */
+  firstSessionAt: string | null;
 }
 
 /**
