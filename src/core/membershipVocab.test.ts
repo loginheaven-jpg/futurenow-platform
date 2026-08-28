@@ -32,20 +32,40 @@ describe('문안 — 최박사 원문 그대로 (한 글자도 다듬지 않는�
   });
 
   it('tier 별 한 줄 설명', () => {
-    expect(TIER_LEAD.visitor).toBe('승인을 기다리는 중입니다. 세미나 참여와 포럼회원 신청을 하실 수 있습니다.');
+    // **대체됐다**(최박사 위임 · 지휘부 작성 2026-08-30) — 방문회원은 기다리는 사람이 아니라
+    //   아직 아무것도 하지 않은 사람이라 `기다리는 중` 이 사실과 어긋났다.
+    expect(TIER_LEAD.visitor).toBe(
+      '세미나에 참여하시는 동안, 또는 촉진자포럼에 가입해 포럼회원으로 승인받으시면 진단 등 모든 도구를 이용하실 수 있습니다.',
+    );
+    // **승인까지 말해야 한다** — *가입하시면* 만 두면 `UPGRADE_HOWTO` 와 조건이 어긋난다.
+    expect(TIER_LEAD.visitor).toContain('승인받으시면');
+    expect(TIER_LEAD.visitor, '옛 문장이 남으면 안 된다').not.toContain('기다리는 중');
     expect(TIER_LEAD.forum).toBe('포럼회원자격 유지기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.');
     expect(TIER_LEAD.suspended).toBe('이용이 보류되었습니다. 운영자에게 문의해 주십시오.');
   });
 
-  it('**좁히지 않았다** — `진단` 이 아니라 `진단 등 모든 도구` 다', () => {
-    for (const s of [TIER_LEAD.forum, PARTICIPANT_LEAD]) {
-      expect(s).toContain('진단 등 모든 도구');
+  // **잠금의 뜻은 그대로다 — 약속을 좁히지 않는다.** 문자열만 옮겼다.
+  //   참여자 줄이 `진단 등 모든 도구` → `모든 도구` 로 바뀌었는데 **좁아진 것이 아니다**
+  //   (`진단 등` 은 예시였고 `모든 도구` 가 그것을 포함한다). 그래서 검사를
+  //   *`모든 도구` 라고 말하는가* 로 옮긴다. 셋 다 같은 약속을 해야 한다.
+  it('**좁히지 않았다** — `진단 하나` 가 아니라 `모든 도구` 다', () => {
+    for (const s of [TIER_LEAD.visitor, TIER_LEAD.forum, PARTICIPANT_LEAD]) {
+      expect(s).toContain('모든 도구');
       expect(s).not.toMatch(/진단을 이용/);
     }
   });
 
   it('참여자 설명 · 진행 문안 · 문의 안내', () => {
-    expect(PARTICIPANT_LEAD).toBe('세미나 기간 동안 진단 등 모든 도구를 이용하실 수 있습니다.');
+    // **두 문장이다**(최박사 위임 · 지휘부 작성 2026-08-30). 뒷 문장을 빼면
+    //   *기간이 끝나면 기록도 사라진다* 로 읽힌다 — 실제로는 영구 열람이다.
+    expect(PARTICIPANT_LEAD).toBe(
+      '세미나 기간 동안 모든 도구를 이용하실 수 있습니다. 기간이 끝나도 그동안의 기록은 계속 보실 수 있습니다.',
+    );
+    expect(PARTICIPANT_LEAD, '기록이 남는다는 말이 빠지면 안 된다').toContain('기록은 계속 보실 수 있습니다');
+    // **`만료` 라는 말을 쓰지 않는다** — 자동 만료가 폐지돼 없는 개념을 가리키게 된다.
+    for (const s of [TIER_LEAD.visitor, TIER_LEAD.forum, TIER_LEAD.suspended, PARTICIPANT_LEAD]) {
+      expect(s, '만료는 폐지된 개념이다').not.toContain('만료');
+    }
     // 참여자 문안은 **현행 유지** — `/pending` 과 같은 문장이다.
     expect(UNDER_REVIEW_NOTE).toBe('확인이 필요한 신청입니다.');
     expect(TIER_INQUIRY_NOTE).toContain('운영자에게 문의');

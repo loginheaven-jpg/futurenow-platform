@@ -27,8 +27,12 @@ const MIGRATION = `supabase/migrations/${VERSION}_feed_reactions_multi.sql`;
  * 적용 뒤에는 통과할 수 없다 — 그것이 결함이 아니라 **이 하네스의 성격**이다.
  *
  * 그렇다고 영구 실패로 두면 다음 사람이 *원래 빨간 것* 으로 배우고, 그 순간 잠금이 죽는다.
- * 그래서 **원장을 보고 스스로 건너뛴다.** 조용히 넘어가지 않게 이유를 찍는다 —
- * 건너뛴 것과 통과한 것은 다른 사실이다(§11 집계 규율의 결).
+ * 그래서 **원장을 보고 스스로 건너뛴다** — `describe.skipIf` 이므로 **스킵 수가 움직이고**
+ * 기본 리포터가 그것을 삼키지 않는다. 건너뛴 것과 통과한 것은 다른 사실이다.
+ *
+ * **`console.log` 로 사유를 찍던 줄은 걷었다**(지휘부 판정 2026-08-30) — 기본 리포터가
+ * 출력을 삼키므로 *시끄럽다* 가 서지 않았다. **시끄러움의 정의는 출력이 아니라 집계다.**
+ * 이 파일은 이미 옳은 형태였고, 걷은 것은 잉여였던 한 줄뿐이다.
  */
 const APPLIED = ENABLED ? await (async () => {
   const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
@@ -36,11 +40,7 @@ const APPLIED = ENABLED ? await (async () => {
   const n = Number((await c.query(
     'select count(*)::int as n from supabase_migrations.schema_migrations where version=$1', [VERSION])).rows[0].n);
   await c.end();
-  if (n > 0) {
-    console.log(`[migration ${VERSION}] 이미 적용됨 — 롤백 검증(적용 전 전용) 건너뜀. `
-      + '적용 시점의 결과는 5차 마이그레이션 적용 보고에 있다.');
-  }
-  return n > 0;
+  return n > 0; // 적용됐으면 위 describe 가 통째로 스킵된다 — 그것이 신호다
 })() : false;
 
 

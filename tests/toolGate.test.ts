@@ -163,6 +163,19 @@ describe('도구 접근 게이트 — 목록과 실물이 갈리지 않는다', 
 //   **그러므로 이 잠금은 「목록이 있는가」를 재지 「목록대로 쟀는가」를 재지 않는다.**
 //   게이트 잠금이 *있는가/작동하는가* 를 가른 것과 **같은 형식**이다.
 //   전부 막는다고 믿으면 그것을 믿고 확인을 건너뛴다 — 그것이 이 주석의 이유다.
+/**
+ * **회원 모델 계열 마이그레이션 다섯.** 적용 상태는 여기서도 재지 않는다 — 정본은 원장이다.
+ *   목록을 손으로 들고 있는 이유: 저장소 전체를 훑으면 옛 회차 파일까지 잡혀
+ *   **지금 규율을 옛 파일에 소급**하게 된다. 규율은 세워진 날부터 적용한다.
+ */
+const MIGRATION_FILES = [
+  'supabase/migrations/20260830090000_membership_model.sql',
+  'supabase/migrations/20260830100000_cohorts_select_initplan.sql',
+  'supabase/migrations/20260831090000_membership_queue_pending_only.sql',
+  'supabase/migrations/20260831100000_hold_message.sql',
+  'supabase/migrations/20260831110000_admin_hold.sql',
+];
+
 describe('membership_model 마이그레이션 — 적용 전 점검', () => {
   const FILE = 'supabase/migrations/20260830090000_membership_model.sql';
   const sql = readFileSync(FILE, 'utf8');
@@ -195,8 +208,17 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
     expect(sql).toContain('실기수와 실계정은 건드리지 않는다');
   });
 
-  it('**적용 금지가 파일 머리에 적혀 있다** — 승인 전이다', () => {
-    expect(sql.slice(0, 600)).toContain('아직 적용되지 않았다');
+  it('**마이그레이션 파일이 적용 상태를 주장하지 않는다** — 정본은 원장이다', () => {
+    // **두 번 고친 잠금이다.** 처음에는 *아직 적용되지 않았다* 를 요구해 적용 뒤 거짓을 지켰고,
+    //   다음에는 *적용됨 <날짜>* 를 요구해 **적용 시점마다 문장과 잠금을 함께 고쳐야** 했다.
+    //   지휘부 판정(2026-08-30): **파일이 적용 상태를 아예 말하지 않게 한다.**
+    //   적용 여부는 **따라가야 하는 값**이고 파일이 복사하면 반드시 낡는다 — 조회로 얻는다.
+    //   **검증 결과는 남겨도 된다**(한 번 일어난 사실이라 얼어야 하는 값이다).
+    for (const f of MIGRATION_FILES) {
+      const body = readFileSync(f, 'utf8');
+      expect(body, `${f} 가 적용 상태를 주장한다`).not.toMatch(/아직 적용되지 않았다|적용됨 20/);
+      expect(body, `${f} 에 되돌리는 법이 없다`).toMatch(/되돌리|롤백/);
+    }
   });
 
   it('**cohorts_select 후속안이 미인증 가드와 성능 정정을 함께 담는다** — 순서가 강제된다', () => {
@@ -206,8 +228,7 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
     expect(follow, '성능 정정이 없다').toContain('(SELECT public.member_state(auth.uid()))');
     // **적용됐다**(2026-08-30). 잠금을 *적용 전* 에서 *적용 뒤 기록* 으로 옮긴다 — 의도적 변경이다.
     //   파일이 스스로 적용 사실과 검증 결과를 들고 있어야 대조가 파일 안에서 끝난다(ADR-122 ⑨).
-    expect(follow, '적용 사실이 파일에 없다').toContain('적용됨 2026-08-30');
-    expect(follow, '주석만 고쳤다는 사실이 없다').toContain('DDL 은 한 글자도 바뀌지 않았다');
+    expect(follow, '검증 결과가 없다').toContain('검증 결과는 남긴다');
     for (const item of ['빈 결과', 'InitPlan 1', '적용 전후 동일']) {
       expect(follow, `검증 항목에 ${item} 가 없다`).toContain(item);
     }
@@ -217,7 +238,7 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
 
   it('**승인 큐 갈래 축소가 배포 순서와 검증 넷을 함께 들고 있다**', () => {
     const q = readFileSync('supabase/migrations/20260831090000_membership_queue_pending_only.sql', 'utf8');
-    expect(q, '아직 적용 전이어야 한다').toContain('아직 적용되지 않았다');
+    expect(q, '배포 순서를 지켰다는 기록이 없다').toContain('코드가 먼저 나가고');
     // **깨지는 조합이 하나뿐임을 파일이 말해야 한다** — 순서를 모르고 적용하면 옛 코드가 터진다.
     expect(q, '배포 순서가 없다').toContain('코드 배포 → ② 이 마이그레이션 적용');
     // **값은 지우지 않는다**(최박사 못 박음) — 없애는 것은 갈래이지 값이 아니다.
@@ -251,6 +272,21 @@ describe('membership_model 마이그레이션 — 적용 전 점검', () => {
     // **`held` 문장은 함께 바뀌지 않아야 한다** — 두 상태가 한 문장으로 뭉개지면 안 된다.
     expect(readFileSync('supabase/migrations/20260831100000_hold_message.sql', 'utf8'))
       .toContain('계정 확인이 필요해 지금은 글을 올릴 수 없어요.');
+  });
+
+  it('**회원자격 보류 — 강퇴 모델의 조건과 순서가 파일에 있다**', () => {
+    const h = readFileSync('supabase/migrations/20260831110000_admin_hold.sql', 'utf8');
+    // ★ 조건이 「승인된 회원만」이 아니라 「보류만 막는다」여야 한다. 슈퍼어드민이 `pending` 이다.
+    expect(h, '조건 경고가 없다').toContain('승인된 회원만 통과」가 아니다');
+    expect(h).toContain("status = 'expired'");
+    // **순서** — 승급이 is_admin 변경보다 앞이어야 그 사이에 잠기는 창이 없다.
+    expect(h.indexOf('잠금 대비'), '승급이 파일에 없다').toBeGreaterThan(-1);
+    expect(h.indexOf('잠금 대비'), '승급이 is_admin 변경보다 뒤에 있다 — 그 사이에 잠기는 창이 생긴다')
+      .toBeLessThan(h.indexOf('회원자격 보류는 운영자 지위까지 박탈한다'));
+    // 이메일이 아니라 id 로 심는지 · 잡힌 수를 확인하는지
+    expect(h, '잡힌 수를 확인하지 않는다').toContain('운영자 둘을 찾지 못했다');
+    // 되돌리는 법
+    expect(h).toContain('되돌리는 문');
   });
 
   it('**존재하지 않는 함수를 부르지 않는다** — 미완으로 두었던 자리의 회귀 잠금', () => {
