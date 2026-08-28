@@ -314,47 +314,56 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
   });
 });
 
-describe.skipIf(!ENABLED)('이용 보류는 운영자에게도 적용된다 (실DB · ADR-151)', () => {
-  // **최박사 확정 2026-08-30** — 답은 한 단어였다: *"전부."*
-  //   `is_admin` 이 보류를 보므로 **정책 48개와 함수 27개가 자동으로 따른다**(라이브 실측).
-  //   자리 넷만 고쳤다면 나머지가 다음 사고의 자리가 됐다.
-  const ADMIN_HOLD_MIGRATION = '20260831110000';
-  const HOLD_APPLIED = APPLIED_VERSIONS.has(ADMIN_HOLD_MIGRATION);
+describe('회원자격 보류 — 강퇴 모델 (실DB · ADR-152)', () => {
+  // **최박사 확정 2026-08-30(모델 개정)**: 보류는 강퇴다. 로그인까지 막히고,
+  //   운영자에게 거는 권한은 슈퍼어드민만 갖는다.
+  //
+  // ★★ **조건은 「이용 보류만 막는다」이지 「승인된 회원만 통과」가 아니다.** ★★
+  //   `member_state(uid) <> 'expired'` 형태여야 한다. **실측**: 슈퍼어드민의 저장 상태가
+  //   `pending` 이라 *승인된 회원만 통과* 로 쓰면 **슈퍼어드민이 첫 희생자가 되고
+  //   그를 풀어 줄 사람이 없다.** 아래 `pending 운영자가 통과한다` 가 그것을 잰다.
+  //
+  // **`it.skipIf` 를 쓴다 — 조기 반환이 아니다.** 조기 반환 + `console.log` 는 기본 리포터에서
+  //   출력이 삼켜져 **건너뛴 것이 통과로 세어진다**(실측). `skipIf` 는 스킵 수를 움직인다.
+  const MIG = '20260831110000';
+  const ON = ENABLED && APPLIED_VERSIONS.has(MIG);
+  if (ENABLED && !ON) console.log(`[회원자격 보류] 건너뜀 — 마이그레이션 ${MIG} 적용 대기`);
 
-  // **`it.skipIf` 를 쓴다 — 조기 반환이 아니다.**
-  //   앞서 다른 곳에서 쓰던 *조기 반환 + `console.log`* 는 **기본 리포터에서 소리가 나지 않는다**
-  //   (실측: `--reporter=verbose` 에서만 4줄이 보인다). 그러면 건너뛴 것이 **통과로 세어져**
-  //   초록의 뜻이 달라진 것을 아무도 모른다 — 이 회차에 잠금이 거짓을 지킨 것과 같은 모양이다.
-  //   `skipIf` 는 **스킵 수를 움직이므로 기본 실행에서도 보인다.** 그것이 진짜 소리다.
-  const NEED = `마이그레이션 ${ADMIN_HOLD_MIGRATION} 적용 대기`;
-  if (!HOLD_APPLIED) console.log(`[운영자 보류] 넷 건너뜀 — ${NEED}`);
-
-  it.skipIf(!HOLD_APPLIED)('**대조 쌍 — 보류된 운영자 대 보류 안 된 운영자**', async () => {
+  it.skipIf(!ON)('★ **`pending` 운영자가 통과한다** — 조건을 승인 기준으로 쓰지 않았다', async () => {
     const client = await open();
     try {
-      // 운영자가 둘이어야 대조가 성립한다. `ADMIN` 을 하나 더 만든다 —
-      //   **옆 사람이 끝까지 살아 있어야** 이 측정이 *운영자 전체가 꺼진 것* 이 아님을 말한다.
+      // 슈퍼어드민의 실제 상태가 이것이다. 여기서 `false` 가 나오면 **그를 풀 사람이 없다.**
+      await client.query(seed(ADMIN, 'pending', null));
+      expect(await scalarAs(client, ADMIN, `select public.is_admin('${ADMIN}')::text as s`),
+        'pending 운영자가 막히면 조건을 「승인된 회원만」으로 쓴 것이다').toBe('true');
+      // 대조군 — `expired` 는 막힌다. 이것이 없으면 위 초록이 *아무도 안 막힌다* 여도 통과한다.
+      await client.query(seed(ADMIN, 'expired', null));
+      expect(await scalarAs(client, ADMIN, `select public.is_admin('${ADMIN}')::text as s`),
+        '대조군 · 보류는 막혀야 한다').toBe('false');
+    } finally { await close(client); }
+  });
+
+  it.skipIf(!ON)('**대조 쌍 — 보류된 운영자 대 보류 안 된 운영자**', async () => {
+    const client = await open();
+    try {
       await client.query(`update public.users set role='admin' where id='${COACH_B}'`);
       const isAdmin = (u: string) => scalarAs(client, ADMIN, `select public.is_admin('${u}')::text as s`);
-
-      expect(await isAdmin(ADMIN), '보류 전 · A 는 운영자다').toBe('true');
-      expect(await isAdmin(COACH_B), '보류 전 · B 도 운영자다(대조군)').toBe('true');
-
+      expect(await isAdmin(ADMIN), '보류 전 · A').toBe('true');
+      expect(await isAdmin(COACH_B), '보류 전 · B').toBe('true');
       await client.query(seed(ADMIN, 'expired', null));
-      expect(await isAdmin(ADMIN), '보류 후 · A 가 꺼진다 — **이 변화가 곧 차단이다**').toBe('false');
+      expect(await isAdmin(ADMIN), '보류 후 · A 가 꺼진다 — 이 변화가 곧 차단이다').toBe('false');
       expect(await isAdmin(COACH_B), '보류 후 · B 는 멀쩡하다 — 운영자 전체가 꺼진 것이 아니다').toBe('true');
-
       await client.query(`delete from public.memberships where user_id='${ADMIN}'`);
       expect(await isAdmin(ADMIN), '되돌리면 A 만 다시 켜진다').toBe('true');
     } finally { await close(client); }
   });
 
-  it.skipIf(!HOLD_APPLIED)('**등가 잠금** — 운영자에 대해 `member_state=expired` ⟺ `is_admin=false`', async () => {
+  it.skipIf(!ON)('**등가 잠금** — `member_state=expired` ⟺ `is_admin=false`', async () => {
     const client = await open();
     try {
-      // 이 등가는 **「만료를 산출하지 않는다」에 기대고 있다**(`20260831110000` 머리말).
+      // 이 등가는 **「만료를 산출하지 않는다」에 기대고 있다**(ADR-147).
       //   누가 만료 산출을 되살리면 두 곳이 조용히 갈린다 — 그것을 여기서 잡는다.
-      for (const status of ['expired', 'held', 'individual'] as const) {
+      for (const status of ['expired', 'held', 'individual', 'pending'] as const) {
         await client.query(seed(ADMIN, status, null));
         const st = await scalarAs(client, ADMIN, `select public.member_state('${ADMIN}') as s`);
         const ad = await scalarAs(client, ADMIN, `select public.is_admin('${ADMIN}')::text as s`);
@@ -363,29 +372,60 @@ describe.skipIf(!ENABLED)('이용 보류는 운영자에게도 적용된다 (실
     } finally { await close(client); }
   });
 
-  it.skipIf(!HOLD_APPLIED)('**재귀가 없다** — 보류된 운영자로 `member_state` 를 불러도 값이 돌아온다', async () => {
+  it.skipIf(!ON)('**재귀가 없다** — 보류된 운영자로 `member_state` 를 불러도 값이 돌아온다', async () => {
     const client = await open();
     try {
-      // `member_state` 는 열람 권한 검사에서 `is_admin` 을 부른다. 그 `is_admin` 이 다시
+      // `member_state` 가 열람 권한 검사에서 `is_admin` 을 부른다. 그 `is_admin` 이 다시
       //   `member_state` 를 불렀다면 **서로가 서로를 불러** 여기서 스택이 터졌을 것이다.
-      //   저장값을 직접 읽어 피했고, 이 테스트가 그 사실을 잰다.
+      await client.query(`delete from public.enrollments where user_id='${ADMIN}'`);
       await client.query(seed(ADMIN, 'expired', null));
-      expect(await scalarAs(client, ADMIN, `select public.member_state('${ADMIN}') as s`),
-        '자기 자신 조회는 p_uid = auth.uid() 라 권한 검사를 통과한다').toBe('expired');
+      expect(await scalarAs(client, ADMIN, `select public.member_state('${ADMIN}') as s`)).toBe('expired');
     } finally { await close(client); }
   });
 
-  it.skipIf(!HOLD_APPLIED)('**48개 정책이 따른다 — 표본** · 보류된 운영자는 남의 기수를 못 본다', async () => {
+  it.skipIf(!ON)('**슈퍼어드민 상수가 한 곳에 있다** — 이메일이 코드에 박힌 자리는 하나다', async () => {
     const client = await open();
     try {
-      const seen = () => scalarAs(client, ADMIN, `select count(*)::text as s from public.cohorts`);
-      const before = Number(await seen());
-      expect(before, '보류 전 · 운영자는 기수를 본다(대조군)').toBeGreaterThan(0);
+      const n = await scalarAs(client, ADMIN,
+        `select count(*)::text as s from pg_proc p join pg_namespace ns on ns.oid=p.pronamespace
+          where ns.nspname='public' and p.prosrc like '%loginheaven@gmail.com%'`);
+      expect(n, '이메일 상수가 둘 이상이면 바꿀 자리가 하나가 아니다').toBe('1');
+      // 픽스처 계정은 슈퍼어드민이 아니다 — 대조군.
+      expect(await scalarAs(client, ADMIN, `select public.is_super_admin('${ADMIN}')::text as s`)).toBe('false');
+    } finally { await close(client); }
+  });
 
-      await client.query(seed(ADMIN, 'expired', null));
-      // `cohorts_select` 를 **고치지 않았는데** 닫힌다 — `is_admin` 이 첫 `OR` 이라
-      //   그것이 꺼지면 뒤가 평가되고, 뒤도 `expired` 를 막는다. 그것이 이 설계의 요점이다.
-      expect(await seen(), '보류 후 · 자기 기수가 아니면 닫힌다').toBe('0');
+  it.skipIf(!ON)('**가드 — 슈퍼어드민은 대상이 될 수 없고, 운영자 보류는 슈퍼어드민만**', async () => {
+    const client = await open();
+    try {
+      // 일반 회원 보류는 운영자 누구나 한다 — **대조군**. 이것이 없으면 아래 42501 들이
+      //   *아무도 아무것도 못 한다* 여도 통과한다.
+      await runAs(client, ADMIN, `select public.decide_membership('${MEMBER}','expired',null,'사유')`);
+      expect(await scalarAs(client, ADMIN,
+        `select status as s from public.memberships where user_id='${MEMBER}'`)).toBe('expired');
+
+      // 운영자를 보류 — 슈퍼어드민이 아니면 막힌다.
+      await client.query(`update public.users set role='admin' where id='${COACH_B}'`);
+      await expectRaise(client, ADMIN,
+        `select public.decide_membership('${COACH_B}','expired',null,'사유')`, '42501');
+
+      // 운영자를 `individual` 로 되돌리는 것은 막지 않는다 — 막으면 복구가 좁아진다.
+      await runAs(client, ADMIN, `select public.decide_membership('${COACH_B}','individual',null,'복구')`);
+      expect(await scalarAs(client, ADMIN,
+        `select status as s from public.memberships where user_id='${COACH_B}'`)).toBe('individual');
+    } finally { await close(client); }
+  });
+
+  it.skipIf(!ON)('**계정이 잠기고, 되돌리면 풀린다** — 푸는 것까지 재지 않으면 반쪽이다', async () => {
+    const client = await open();
+    try {
+      const banned = () => scalarAs(client, ADMIN,
+        `select coalesce((select banned_until::text from auth.users where id='${MEMBER}'),'-') as s`);
+      expect(await banned(), '대조군 · 처음에는 잠겨 있지 않다').toBe('-');
+      await runAs(client, ADMIN, `select public.decide_membership('${MEMBER}','expired',null,'사유')`);
+      expect(await banned(), '보류하면 로그인이 막힌다').not.toBe('-');
+      await runAs(client, ADMIN, `select public.decide_membership('${MEMBER}','individual',null,'복구')`);
+      expect(await banned(), '되돌렸는데 로그인이 안 되면 되돌린 것이 아니다').toBe('-');
     } finally { await close(client); }
   });
 });

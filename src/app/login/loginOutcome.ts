@@ -8,8 +8,33 @@ export interface LoginOutcome {
 }
 
 import { safeReturnTo } from '@/app/_lib/safeReturn';
+import { HOLD_LOGIN_NOTICE } from '@/core/membershipVocab';
+
+/**
+ * 계정이 잠긴 것인가 — **auth 오류를 우리 문구로 번역하는 자리**(최박사 확정 2026-08-30).
+ *
+ * `decide_membership` 이 `expired` 에서 `auth.users.banned_until` 을 세우면
+ * GoTrue 가 **`user_banned`** 로 거절한다. 그것을 *이메일 또는 비밀번호를 확인해 주세요* 로
+ * 뭉개면 **보류된 사람이 자기 비밀번호를 의심하며 영영 헤맨다.**
+ *
+ * **`code` 를 먼저 본다**(`user_banned` 는 `@supabase/auth-js` 의 `ErrorCode` 에 실재한다 — 정본 확인).
+ *   메시지 문자열은 보조다: 문구는 서버 판마다 바뀔 수 있고 **문자열로만 재면 조용히 깨진다.**
+ *   둘 다 보되 **코드가 이기게** 둔다.
+ *
+ * **원시 에러를 화면에 싣지 않는다**(기존 규율) — 우리가 아는 한 가지만 번역하고 나머지는 그대로 둔다.
+ */
+function isBanned(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const e = error as { code?: unknown; message?: unknown };
+  if (e.code === 'user_banned') return true;
+  return typeof e.message === 'string' && /banned/i.test(e.message);
+}
 
 export function loginOutcome(input: { error: unknown; hasSession: boolean; returnTo?: string | null }): LoginOutcome {
+  // **잠긴 계정이 먼저다.** 아래 문구로 뭉개면 보류된 사람이 비밀번호를 의심한다.
+  if (isBanned(input.error)) {
+    return { error: HOLD_LOGIN_NOTICE };
+  }
   if (input.error || !input.hasSession) {
     return { error: '이메일 또는 비밀번호를 확인해 주세요.' };
   }
