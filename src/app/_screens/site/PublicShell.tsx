@@ -1,3 +1,6 @@
+'use client';
+// **클라이언트 부품이다**(U-2) — 현재 경로로 크롬 표를 찾아야 하기 때문이다.
+//   서버에서 쿠키를 읽지 않으므로 ISR 은 그대로다(아래 주 참조).
 // 공개 껍데기 — **화면은 헤더를 그리지 않는다** (U-1 · `design_system.md` §12).
 //
 // 상단바와 푸터가 여기 **한 곳**에 선다. 화면은 자기가 어느 껍데기에 사는지만 선언하고
@@ -24,17 +27,44 @@
 import { PublicGnb } from './PublicGnb';
 import { SiteFooter } from './SiteFooter';
 import Link from 'next/link';
+import { usePathname, useParams } from 'next/navigation';
+import { AppHeader } from '@/app/_screens/AppHeader';
+import { SCREEN_CHROME, patternOf } from '@/app/_lib/screenChrome';
 import {
   PUBLIC_NAV, PUBLIC_FOOTER_LINKS, SITE_ORG,
   FOOTER_NOTE_HREF, FOOTER_NOTE_LEAD, FOOTER_NOTE_LINK,
 } from './publicNav';
 
 export function PublicShell({ children }: { children: React.ReactNode }) {
+  // **공개 껍데기도 같은 표를 읽는다**(지휘부 판정) — 껍데기가 하나이므로 표도 하나다.
+  //   표에 `bar` 로 적힌 공개 라우트(`/signup`)는 상단바 대신 **제목 바**가 선다.
+  //   그 항목은 `flow`(출구 없음)라 **푸터도 그리지 않는다** — 푸터의 링크가 곧 출구다.
+  const pathname = usePathname() ?? '/';
+  const params = useParams() as Record<string, string | string[] | undefined>;
+  const chrome = SCREEN_CHROME[patternOf(pathname, params)];
+  if (chrome?.kind === 'bar') {
+    return (
+      <>
+        <AppHeader variant={chrome.variant} title={chrome.title} />
+        <main>{children}</main>
+      </>
+    );
+  }
+
   return (
     <>
       {/* `currentPath` 를 넘기지 않는다 — `PublicGnb` 가 `usePathname()` 으로 스스로 안다.
           껍데기가 화면마다 다른 값을 들고 있으면 그것이 곧 사본 둘이다(불변식 23). */}
-      <PublicGnb logo={<>퓨처<b>나우</b></>} en="FUTURE NOW" items={PUBLIC_NAV} />
+      {/* ⚠ **모바일 메뉴가 아직 없다**(U-2 §3 미완 — 보고에 올린다).
+          `PublicGnb` 에 `sheet` 통로는 열어 두었고 `SiteGnb` 가 그것을 받으면 버거가 뜬다.
+          막힌 곳은 배선이 아니라 **문안**이다 — `MenuSheet` 은 식별 이름(`name`)과
+          묶음 제목(`MenuGroup.title`)을 **필수**로 받는데, 익명 방문자에게는 둘 다 없다.
+          지어내면 불변식 20 이므로 멈췄다. 회원 쪽 시트는 이 회차에 껍데기로 올라갔다. */}
+      <PublicGnb
+        logo={<>퓨처<b>나우</b></>}
+        en="FUTURE NOW"
+        items={PUBLIC_NAV}
+      />
       <main>{children}</main>
       <SiteFooter
         org={SITE_ORG}

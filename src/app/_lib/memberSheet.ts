@@ -9,8 +9,8 @@
 import type { CoreContext, MyCohortSummary } from '@/contracts';
 import type { MenuGroup } from '@/app/_screens/site/MenuSheet';
 import type { SessionChip } from '@/app/_screens/site/SessionChipStrip';
-import { buildSessionChips } from '@/app/home/sessionChips';
-import { openedSessionNos } from '@/app/my/cohorts/[cohortId]/progress';
+import { buildSessionChips } from '@/app/(member)/home/sessionChips';
+import { openedSessionNos } from '@/app/(member)/my/cohorts/[cohortId]/progress';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 
 export interface MemberSheet {

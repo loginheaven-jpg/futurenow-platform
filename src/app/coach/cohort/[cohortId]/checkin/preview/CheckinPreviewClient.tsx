@@ -8,7 +8,7 @@
 // 회차 목록은 레지스트리에서 뽑으므로 4~7회차가 등록되면 이 파일은 그대로 따라온다.
 import { useState } from 'react';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
-import { CheckinCardClient } from '@/app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
+import { CheckinCardClient } from '@/app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
 
 // 되비추기 표본 — 지난 회차를 쓴 참여자를 가정한다. 실제로는 그 사람의 지난 회차 답이 들어간다.
 //   ADR-103 이후 봉투가 깊이별이라 표본도 깊이별이다. 1 = 직전 회차, 2 = 두 회차 전.

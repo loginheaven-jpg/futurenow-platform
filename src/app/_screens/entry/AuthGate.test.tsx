@@ -36,12 +36,19 @@ describe('AuthGate — 통합 가입/로그인 폼(S3)', () => {
     expect(html).not.toMatch(/--care|--danger|--warning/);
   });
 
-  it('출구(전진밖에 없는 화면 보완): onBack 있으면(/join) 뒤로+홈, 없으면(/signup) 없음', () => {
-    const withBack = renderToStaticMarkup(<AuthGate onSignup={noop} onLogin={noop} onBack={noop} />);
+  // **U-2 에서 축이 하나 바뀌었다** — 헤더를 그리는 조건이 `title` 이다.
+  //   `/join` 은 단계마다 제목이 달라 여전히 넘기고(U-4), `/signup` 은 표가 들어
+  //   **껍데기가 그리므로 넘기지 않는다.** 뜻은 그대로다 — 출구는 `onBack` 이 가른다.
+  it('출구: 제목+onBack 이면(/join) 뒤로+홈, 제목이 없으면(/signup) 헤더 자체가 없다', () => {
+    const withBack = renderToStaticMarkup(<AuthGate title="들어가기" onSignup={noop} onLogin={noop} onBack={noop} />);
     expect(withBack).toContain('aria-label="뒤로"');
     expect(withBack).toContain('aria-label="홈"');
-    const withoutBack = renderToStaticMarkup(<AuthGate onSignup={noop} onLogin={noop} />);
-    expect(withoutBack).not.toContain('aria-label="홈"'); // flow 유지(SignupClient 가 현관 링크 제공)
+    // 제목이 있고 onBack 이 없으면 `flow` — 출구가 없다(전과 같다).
+    const flowOnly = renderToStaticMarkup(<AuthGate title="들어가기" onSignup={noop} onLogin={noop} />);
+    expect(flowOnly).not.toContain('aria-label="홈"');
+    // 제목이 없으면 **헤더를 아예 안 그린다** — 껍데기가 그리는 자리다(헤더 두 줄 방지).
+    const shellDraws = renderToStaticMarkup(<AuthGate onSignup={noop} onLogin={noop} />);
+    expect(shellDraws).not.toContain('<header');
   });
 });
 

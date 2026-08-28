@@ -13,12 +13,12 @@ import { describe, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { writeFileSync } from 'node:fs';
 import { SiteGallery } from '@/app/_screens/site/SiteGallery';
-import { HomeScreen } from '@/app/home/HomeScreen';
+import { HomeScreen } from '@/app/(member)/home/HomeScreen';
 import { MenuSheet } from '@/app/_screens/site/MenuSheet';
 import { MemberHome } from '@/app/_screens/MemberHome';
-import { HOME_FIXTURE, HOME_COHORTS } from '@/app/home/homeFixture';
-import { CohortHomeScreen } from '@/app/my/cohorts/[cohortId]/CohortHomeScreen';
-import { AssessmentsScreen } from '@/app/home/assessments/AssessmentsScreen';
+import { HOME_FIXTURE, HOME_COHORTS, SHEET_FIXTURE } from '@/app/(member)/home/homeFixture';
+import { CohortHomeScreen } from '@/app/(member)/my/cohorts/[cohortId]/CohortHomeScreen';
+import { AssessmentsScreen } from '@/app/(member)/home/assessments/AssessmentsScreen';
 import { COHORT_FIXTURE, ASSESS_FIXTURE } from '@/app/_lib/f4Fixture';
 
 const DIR = process.env.SHOT_DIR;
@@ -39,7 +39,7 @@ describe.skipIf(!DIR)('로그인 홈(시안 B·E) 마크업', () => {
       `${DIR}/home.html`,
       renderToStaticMarkup(
         <HomeScreen {...HOME_FIXTURE}>
-          <MemberHome greetingName={HOME_FIXTURE.who.name} cohorts={HOME_COHORTS} role="user" />
+          <MemberHome greetingName={SHEET_FIXTURE.name} cohorts={HOME_COHORTS} role="user" />
         </HomeScreen>,
       ),
       'utf8',
@@ -48,11 +48,11 @@ describe.skipIf(!DIR)('로그인 홈(시안 B·E) 마크업', () => {
       <MenuSheet
         open
         onClose={() => {}}
-        name={HOME_FIXTURE.who.name}
-        role={HOME_FIXTURE.who.role}
-        cohort={HOME_FIXTURE.who.cohort}
-        groups={HOME_FIXTURE.groups}
-        chips={HOME_FIXTURE.chips}
+        name={SHEET_FIXTURE.name}
+        role={SHEET_FIXTURE.role}
+        cohort={SHEET_FIXTURE.cohort}
+        groups={SHEET_FIXTURE.groups}
+        chips={SHEET_FIXTURE.chips}
       />,
     );
     writeFileSync(`${DIR}/home-sheet.html`, sheet, 'utf8');

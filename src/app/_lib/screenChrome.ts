@@ -24,7 +24,13 @@ import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
  */
 export type ChromeKind =
   | { kind: 'gnb'; menu: true }
-  | { kind: 'bar'; variant: 'root' | 'sub' | 'flow'; title: string; back?: string; menu: boolean; actions?: true };
+  | { kind: 'bar'; variant: 'root' | 'sub' | 'flow'; title: string; back?: string; menu: boolean; actions?: true }
+  /**
+   * **껍데기를 두르지 않는다.** 표에서 빼지 않고 여기 둔다 —
+   *   *예외가 규약 밖에 살면 다음 사람이 못 본다*(지휘부 판정 · `flow` 둘에 준 근거와 같다).
+   *   빼면 잠금이 그 라우트를 안 세고, 다음 사람은 **왜 없는지도** 못 본다.
+   */
+  | { kind: 'none'; why: string };
 
 /**
  * 라우트 패턴 → 크롬. 키는 Next 라우트 패턴 그대로다.
@@ -53,6 +59,19 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   //   *모든 화면에 메뉴가 있다* 가 아니므로 부딪히지 않는다(지휘부 판정 2026-08-31).
   '/my/values': { kind: 'bar', variant: 'flow', title: VALUE_TOOL, menu: false },
   '/my/cohorts/[cohortId]/values': { kind: 'bar', variant: 'flow', title: VALUE_TOOL, menu: false },
+
+  // ── 공개 영역이나 표를 함께 읽는다(지휘부 판정) — 껍데기가 하나이므로 표도 하나다.
+  //   `/signup` 은 **단계가 없다**(실측: `step` 상태 0 · `AuthGate` 하나). 그래서 표로 풀린다.
+  //   제목·모드는 `SignupClient` 가 넘기던 값 그대로다 — `title="회원가입"` · `onBack` 없음 → `flow`.
+  '/signup': { kind: 'bar', variant: 'flow', title: '회원가입', menu: false },
+
+  // ── 껍데기 없음 — **문안이 없어서다. 지어내지 않았다.**
+  //   실측(2026-09-01): 둘 다 `redirect` 둘 + 사람이 읽는 분기를 가진다
+  //     `/c/[code]/[session]` — `<p>` 셋(예: `코드를 찾을 수 없어요.`)
+  //     `/c/[code]/values`   — `Notice` 둘
+  //   **그리는 것이 있으므로 제목 문안이 필요하고, 참여자가 읽는 문장이라 최박사 결재다.**
+  '/c/[code]/[session]': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
+  '/c/[code]/values': { kind: 'none', why: '알림·리다이렉트 진입점. 사람이 읽는 제목이 없다 — 문안 미정(최박사 결재).' },
 };
 
 /** 가장 가까운 조상 라우트 — 뒤로의 **규칙**. 값으로 박지 않는다. */

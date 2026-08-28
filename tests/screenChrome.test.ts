@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync, statSync } from 'node:fs';
-import { SCREEN_CHROME, nearestAncestor, resolveBack, patternOf } from '@/app/_lib/screenChrome';
+import { SCREEN_CHROME, nearestAncestor, resolveBack, patternOf, type ChromeKind } from '@/app/_lib/screenChrome';
 
 // 크롬 표 잠금 — **표에 없는 라우트가 생기면 운다** (U-2 · 지휘부 조건 ①).
 //
@@ -9,6 +9,8 @@ import { SCREEN_CHROME, nearestAncestor, resolveBack, patternOf } from '@/app/_l
 
 /** 회원 껍데기가 덮는 최상위 자리. 라우트 그룹이 서면 경로만 바뀌고 목록은 그대로다. */
 const MEMBER_ROOTS = ['home', 'account', 'feed', 'pending', 'my'];
+/** 껍데기가 안 서는 자리도 **표에는 있어야 한다** — 예외가 규약 밖에 살면 다음 사람이 못 본다. */
+const ALSO_IN_TABLE = ['c', 'signup'];
 
 /** `src/app` 아래 실제 라우트를 센다 — 주석이 아니라 **디렉터리 구조**가 정본이다. */
 function routesUnder(root: string, base = `src/app/${root}`, acc: string[] = []): string[] {
@@ -21,7 +23,7 @@ function routesUnder(root: string, base = `src/app/${root}`, acc: string[] = [])
 }
 
 describe('화면 크롬 표 — 회원 껍데기 아래 모든 라우트가 표에 있다', () => {
-  const routes = MEMBER_ROOTS.flatMap((r) => routesUnder(r)).sort();
+  const routes = [...MEMBER_ROOTS, ...ALSO_IN_TABLE].flatMap((r) => routesUnder(r)).sort();
 
   it('**빠진 라우트가 없다** — 없으면 빈 제목이 조용히 나온다', () => {
     const missing = routes.filter((r) => !SCREEN_CHROME[r]);
@@ -37,6 +39,14 @@ describe('화면 크롬 표 — 회원 껍데기 아래 모든 라우트가 표�
     for (const [route, c] of Object.entries(SCREEN_CHROME)) {
       if (c.kind !== 'bar') continue;
       expect(c.title.trim().length, `${route} 의 제목이 비었다`).toBeGreaterThan(0);
+    }
+  });
+
+  it('**껍데기 없음에는 사유가 붙어 있다** — 목록만 있는 예외는 다음 사람이 못 판단한다', () => {
+    const none = Object.entries(SCREEN_CHROME).filter(([, c]) => c.kind === 'none');
+    expect(none.length, '없어졌으면 이 잠금도 다시 봐야 한다').toBe(2);
+    for (const [route, c] of none) {
+      expect(c.kind === 'none' && c.why.length, `${route} 에 사유가 없다`).toBeGreaterThan(20);
     }
   });
 });
@@ -71,15 +81,18 @@ describe('flow 둘은 메뉴를 달지 않는다 (지휘부 판정)', () => {
   // `AppHeader` 정의가 *진입 선형 플로우용, 일부러 출구 없음* 이라 못 박았다.
   //   껍데기가 메뉴를 달면 **확정을 코드가 뒤집는다.**
   it('`flow` 인 항목은 전부 `menu: false`', () => {
-    const flow = Object.entries(SCREEN_CHROME).filter(([, c]) => c.kind === 'bar' && c.variant === 'flow');
-    expect(flow.length, 'flow 화면이 사라졌다면 이 잠금도 다시 봐야 한다').toBe(2);
+    // 셋이다 — `/my/values` · `/my/cohorts/[cohortId]/values` · `/signup`.
+    //   `/signup` 도 원래 `onBack` 이 없어 `flow` 였다(실측). 표가 그 사실을 이어받는다.
+    const flow = Object.entries(SCREEN_CHROME).filter(
+      (e): e is [string, Extract<ChromeKind, { kind: 'bar' }>] => e[1].kind === 'bar' && e[1].variant === 'flow');
+    expect(flow.length, 'flow 화면 수가 바뀌었다면 이 잠금도 다시 봐야 한다').toBe(3);
     for (const [route, c] of flow) {
-      expect(c.kind === 'bar' && c.menu, `${route} 에 메뉴가 달렸다 — 일부러 없앤 출구가 되살아난다`).toBe(false);
+      expect(c.menu, `${route} 에 메뉴가 달렸다 — 일부러 없앤 출구가 되살아난다`).toBe(false);
     }
   });
 
   it('**그 밖에는 메뉴가 있다** — 대조군. 없으면 위 단언이 «전부 false» 여도 통과한다', () => {
-    const withMenu = Object.values(SCREEN_CHROME).filter((c) => (c.kind === 'gnb' ? c.menu : c.menu));
-    expect(withMenu.length).toBeGreaterThan(2);
+    const withMenu = Object.values(SCREEN_CHROME).filter((c) => c.kind !== 'none' && c.menu);
+    expect(withMenu.length).toBeGreaterThan(3);
   });
 });

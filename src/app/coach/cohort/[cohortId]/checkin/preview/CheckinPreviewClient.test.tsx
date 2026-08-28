@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { CheckinCardClient } from '@/app/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
+import { CheckinCardClient } from '@/app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { orderedSlots } from '@/instruments/futurenow/checkin/slots';
 import { SAMPLE_BACK1, SAMPLE_BACK2 } from './CheckinPreviewClient';

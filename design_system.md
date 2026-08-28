@@ -650,23 +650,8 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 | `/_screens/entry/ProfileForm.tsx` | U-1 |
 | `/_screens/entry/StartGuide.tsx` | U-1 |
 
-#### U-2 에서 걷는다 (회원)
+#### U-2 에서 걷는다 (회원) — **비었다. 끝났다.**
 
-| 파일 | 덩이 |
-|---|---|
-| `/account/page.tsx` | U-2 |
-| `/feed/page.tsx` | U-2 |
-| `/pending/page.tsx` | U-2 |
-| `/my/values/page.tsx` | U-2 |
-| `/my/cohorts/page.tsx` | U-2 |
-| `/my/cohorts/[cohortId]/checkin/[session]/page.tsx` | U-2 |
-| `/my/cohorts/[cohortId]/journey/page.tsx` | U-2 |
-| `/my/cohorts/[cohortId]/report/page.tsx` | U-2 |
-| `/my/cohorts/[cohortId]/values/page.tsx` | U-2 |
-| `/_consent/ConsentGate.tsx` | U-2 |
-| `/home/HomeScreen.tsx` | U-2 |
-| `/home/assessments/AssessmentsScreen.tsx` | U-2 |
-| `/my/cohorts/[cohortId]/CohortHomeScreen.tsx` | U-2 |
 
 #### U-3 에서 걷는다 (콘솔)
 
@@ -685,6 +670,16 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 | `/_screens/console/AllCohorts.tsx` | U-3 |
 | `/_screens/console/CohortDetail.tsx` | U-3 |
 | `/_screens/console/CreateCohort.tsx` | U-3 |
+
+#### U-4 에서 걷는다 (이름과 문)
+
+| 파일 | 덩이 |
+|---|---|
+| `/_screens/entry/AuthGate.tsx` | U-4 |
+| `/_screens/entry/CodeInput.tsx` | U-4 |
+| `/_screens/entry/CohortPreview.tsx` | U-4 |
+| `/_screens/entry/ProfileForm.tsx` | U-4 |
+| `/_screens/entry/StartGuide.tsx` | U-4 |
 
 **면제 둘**(예외가 아니라 면제다 — 걷을 대상이 아니다):
 `_screens/site/PublicGnb.tsx`(부품 자신) · `_screens/site/SiteGallery.tsx`(`/preview` 전용).
