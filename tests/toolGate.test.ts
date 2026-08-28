@@ -137,3 +137,38 @@ describe('도구 접근 게이트 — 목록과 실물이 갈리지 않는다', 
     expect(self).toContain('게이트가 있는가');
   });
 });
+
+// ── 회원 모델 마이그레이션이 **스스로 들고 있어야 할 것** (2026-08-30 지휘부 지적) ──────
+//
+// 보고서에만 적으면 다음 사람이 파일만 보고 적용한다. 그래서 파일이 들고 있고,
+// 그것이 실제로 들려 있는지를 여기서 잰다 — 주석은 지워질 수 있다.
+describe('membership_model 마이그레이션 — 적용 전 점검', () => {
+  const FILE = 'supabase/migrations/20260830090000_membership_model.sql';
+  const sql = readFileSync(FILE, 'utf8');
+
+  it('**`is_admin` 자리가 미확정임을 적어 두었다** — 다음 사람이 의도로 오해하지 않게', () => {
+    expect(sql).toContain('이 자리는 미확정이다');
+    expect(sql).toContain('의도가 아니라 보류다');
+  });
+
+  it('**RLS 정책의 함수 호출 위험과 그 근거를 적어 두었다**', () => {
+    expect(sql).toContain('행 단위 평가');
+    expect(sql).toContain('InitPlan');
+  });
+
+  it('**적용 뒤 검증 항목을 파일이 들고 있다** — 다섯', () => {
+    expect(sql).toContain('적용 뒤 검증 항목');
+    for (const item of ['EXPLAIN', '진실표 재검증', 'RUN_RLS_INTEGRATION', '양방향 실재', '오염 0']) {
+      expect(sql, `검증 항목에 ${item} 가 없다`).toContain(item);
+    }
+  });
+
+  it('**적용 금지가 파일 머리에 적혀 있다** — 승인 전이다', () => {
+    expect(sql.slice(0, 600)).toContain('아직 적용되지 않았다');
+  });
+
+  it('**존재하지 않는 함수를 부르지 않는다** — 미완으로 두었던 자리의 회귀 잠금', () => {
+    // 초판은 `my_cohorts_rows()` 라는 없는 함수를 불렀다. 정본을 읽어 옮겨 고쳤다.
+    expect(sql).not.toContain('my_cohorts_rows');
+  });
+});

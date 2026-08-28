@@ -188,6 +188,15 @@ $$;
 -- **주의 둘(지휘부)**:
 --   ⑴ `is_admin` 이 첫 OR 이라 **운영자는 무조건 통과**한다. 아래에서도 그 순서를 유지한다 —
 --      운영자가 자기 손으로 자기를 막는 일이 없어야 감독이 끊기지 않는다.
+--
+--      ⚠ **이 자리는 미확정이다**(최박사 결정 대기 · 2026-08-30 명시).
+--      **의도가 아니라 보류다.** 즉 *운영자는 `expired` 여도 통과한다* 는 것이
+--      결정된 규칙이 아니라 **기존 순서를 그대로 둔 결과**다.
+--      운영자에게 `expired` 를 걸 수 있는지(`decide_membership` 은 **자기 자신**만 막는다),
+--      걸었다면 그 사람이 콘솔에서 무엇을 잃어야 하는지가 정해지지 않았다.
+--      **다음 사람이 이 통과를 확정된 설계로 오해하지 않게 여기에 적어 둔다.**
+--      결정이 오면 고칠 자리는 아래 네 곳의 첫 `OR` 이다.
+--
 --   ⑵ **목록을 감추는 것은 방어가 아니다.** `my_cohorts` 만 막으면 목록은 비고 직접 URL 이 남는다.
 --      그래서 **판정 함수와 정책**을 막고, 목록은 그 결과로 비게 둔다.
 
@@ -231,6 +240,16 @@ END; $$;
 -- 4.3 기수 읽기 정책 — `expired` 차단
 --   **개별 조회를 여기서 막는다.** `cohorts_select` 가 단건 조회의 문이고,
 --   `my_cohorts` 는 이 정책을 타지 않는 DEFINER 라 따로 막는다(4.4).
+--
+--   ⚠ **RLS 정책에 함수 호출을 넣는 것은 원칙적으로 위험하다**(지휘부 지적 2026-08-30) —
+--   정책은 **행 단위 평가**라 기수가 늘면 행마다 도는 모양이 될 수 있다.
+--
+--   **지금은 안전하다**: `member_state(auth.uid())` 가 **행에 의존하지 않으므로**
+--   PostgreSQL 이 InitPlan 으로 승격해 **쿼리당 한 번**만 평가한다.
+--   (`auth.uid()` 는 `STABLE` 이고 인자에 행 컬럼이 없다.)
+--
+--   **적용 뒤 실측으로 확인한다** — 아래 §6 검증 항목 ①.
+--   행마다 도는 것으로 바뀌면 그때는 정책이 아니라 **DEFINER 함수 쪽으로 옮겨야** 한다.
 DROP POLICY IF EXISTS cohorts_select ON public.cohorts;
 CREATE POLICY cohorts_select ON public.cohorts FOR SELECT
   USING (
@@ -285,3 +304,29 @@ REVOKE ALL ON FUNCTION public.member_tool_access(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.member_tool_access(uuid) TO authenticated;
 -- `member_state`·`member_can_assess`·`feed_can_access`·`feed_assert_writable`·`my_cohorts` 는
 --   `CREATE OR REPLACE` 라 기존 권한이 유지된다(DROP 하지 않았다).
+
+-- ============================================================
+-- 6. 적용 뒤 검증 항목 — **이 파일이 스스로 들고 있는다**
+-- ============================================================
+--
+-- 보고서에만 적으면 다음 사람이 이 파일만 보고 적용한다. 그래서 여기 둔다.
+--
+--   ① **`cohorts_select` 정책이 쿼리당 한 번 평가되는지**(지휘부 지적).
+--      EXPLAIN 에서 `member_state` 가 **InitPlan** 으로 나오는지 본다 —
+--      `Filter` 안에 매 행 호출로 나오면 위험 신호다.
+--        EXPLAIN (ANALYZE, VERBOSE) SELECT id FROM public.cohorts;
+--      기수가 지금 6개라 성능 차이는 안 보인다. **보는 것은 시간이 아니라 계획**이다.
+--
+--   ② **진실표 재검증** — `PRIORITY_CASES` 전수. 이번에 두 행이 바뀌었다:
+--        · `미등록 · individual(기간 지남)` → **`individual`**(자동 만료 폐지)
+--        · `세미나 등록 · expired(저장)` → **`expired`**(순서 변경 · 신설 행)
+--      **적용 전에는 이 둘이 레드가 되는 것이 정상이다**(표가 코드보다 앞서 있다).
+--
+--   ③ **통합테스트** — `RUN_RLS_INTEGRATION=1`. `member_tool_access` 세 값과
+--      `expired` 차단 네 자리를 실DB 로 잰다(지금은 함수가 없어 잴 수 없다).
+--
+--   ④ **양방향 실재** — 적용 뒤 `member_tool_access` 가 생겼고
+--      `membership_on_cohort_archived` 와 트리거가 사라졌는지, 오버로드가 각각 1·0 인지.
+--
+--   ⑤ **오염 0** — `memberships` 행 수와 `valid_until` 이 붙은 3행이 그대로인지.
+--      이 마이그레이션은 **데이터를 한 행도 건드리지 않는다.**

@@ -59,8 +59,24 @@ describe('진실표 픽스처가 스스로 온전하다', () => {
     expect(c?.expect).toBe('held');
   });
 
-  it('만료 산출 케이스가 표에 실재한다 — 크론이 없으므로', () => {
+  it('**자동 만료가 폐지됐다** — 기간이 지나도 저장값 그대로다(2026-08-30)', () => {
+    // 옛 기댓값은 `expired` 였다. 그것이 *최박사가 지정하신 승급을 시간으로 푸는* 유일한
+    //   경로였고, 확정 6(무기한)과 어긋나 폐지됐다(마이그레이션 `20260830090000`).
+    //   **표를 바꾸면 그것을 세던 테스트도 함께 움직여야 한다.**
     const c = PRIORITY_CASES.find((x) => x.stored === 'individual' && x.expiredDate === true);
+    expect(c?.expect).toBe('individual');
+  });
+
+  it('**expired 가 cohort 를 이기는 케이스가 표에 실재한다** — 탈퇴에 준하는 처리', () => {
+    // 순서 변경(`held > expired > cohort > 저장 > pending`)이 산출을 바꾸는 **유일한 조합**이다.
+    //   해당자 0명이라 지금은 실해가 없으나, 없으면 다음 사람이 순서를 되돌려도 아무것도 울지 않는다.
+    const c = PRIORITY_CASES.find((x) => x.seminarEnrolled && x.stored === 'expired');
+    expect(c, 'expired + 세미나 등록 케이스가 표에 없다').toBeDefined();
     expect(c?.expect).toBe('expired');
+  });
+
+  it('우선순위 진실표가 **다섯 상태를 전부** 기댓값으로 낸다 — 빠진 상태가 없다', () => {
+    const covered = new Set(PRIORITY_CASES.map((c) => c.expect));
+    expect([...covered].sort()).toEqual(['cohort', 'expired', 'held', 'individual', 'pending']);
   });
 });
