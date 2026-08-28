@@ -144,7 +144,10 @@ describe.skipIf(!ENABLED)('회원 상태 판정 (실DB · 역할별)', () => {
         if (row.state !== 'cohort') {
           await client.query(`delete from public.enrollments where user_id='${MEMBER}'`);
           if (row.state === 'individual') await client.query(seed(MEMBER, 'individual', '2099-12-31'));
-          else if (row.state === 'expired') await client.query(seed(MEMBER, 'individual', '2000-01-01'));
+          // **expired 는 이제 저장값으로만 만든다**(자동 만료 폐지 2026-08-30).
+          //   옛 방법(`individual` + 지난 날짜)은 판정이 날짜를 보지 않게 되어 더는 통하지 않는다.
+          //   *만드는 방법이 바뀌었을 뿐 재는 것은 같다* — expired 의 응시 가부는 그대로 ✕ 다.
+          else if (row.state === 'expired') await client.query(seed(MEMBER, 'expired', null));
           else if (row.state === 'held') await client.query(seed(MEMBER, 'held', null));
           // pending = 행 없음
         }
@@ -239,8 +242,13 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
       await client.query(`update public.memberships set valid_until = (public.membership_today() + 31) where user_id='${MEMBER}'`);
       expect(await bucketOf(), '창 바깥 경계 +31일').toBe('-');
 
+      // **자동 만료 폐지 뒤 이 칸의 뜻이 바뀌었다**(2026-08-30).
+      //   옛 판정은 지난 날짜를 `expired` 로 산출해 큐에서 뺐다. 이제 판정이 날짜를 보지 않으므로
+      //   저장값이 `individual` 인 채로 남고 **임박 갈래에 계속 뜬다.**
+      //   **그것이 맞는 동작이다** — 최박사가 지정한 자격은 시간으로 풀리지 않고,
+      //   날짜가 지난 것은 운영자가 **볼 일**이지 시스템이 끊을 일이 아니다.
       await client.query(`update public.memberships set valid_until = (public.membership_today() - 1) where user_id='${MEMBER}'`);
-      expect(await bucketOf(), '이미 만료 → 임박이 아니다').toBe('-');
+      expect(await bucketOf(), '지난 날짜도 임박 갈래에 남는다 — 자격은 시간으로 풀리지 않는다').toBe('expiring');
     } finally { await close(client); }
   });
 
@@ -258,48 +266,68 @@ describe.skipIf(!ENABLED)('운영자 결정과 승인 큐 (실DB)', () => {
   });
 });
 
-describe.skipIf(!ENABLED)('자동 전이와 쓰기 봉쇄 (실DB)', () => {
-  it('마감 시 생성 · individual 불연장 · held 불변 · 재실행 멱등 · role 무필터', async () => {
+describe.skipIf(!ENABLED)('자동 전이 폐지와 쓰기 봉쇄 (실DB)', () => {
+  // **자동 전이가 폐지됐다**(마이그레이션 `20260830090000` · 최박사 확정 2026-08-30).
+  //   포럼회원은 **오직 운영자가 지정해야** 되는 것이므로, 마감이 등록자 전원을 승급시키던
+  //   트리거를 지웠다. 아래 두 테스트는 그 폐지를 **확인하는 쪽으로 뒤집었다** —
+  //   지우는 대신 뒤집은 이유: *마감이 무엇을 하지 않는가* 를 아무도 재지 않으면
+  //   다음 사람이 트리거를 되살려도 조용하다.
+  it('**마감이 자격을 만들지 않는다** — 트리거 폐지 확인', async () => {
     const client = await open();
     try {
       await client.query(ENROLL_STAFF);
-      await client.query(seed(COACH_A, 'individual', '2030-01-01')); // 연장되면 안 된다
-      await client.query(seed(ADMIN, 'held', null));                 // 뒤집히면 안 된다
+      await client.query(seed(COACH_A, 'individual', '2030-01-01'));
+      await client.query(seed(ADMIN, 'held', null));
+      const before = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
 
       await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
 
-      // 여기도 ::text 로 받는다 — 한쪽만 캐스팅하면 Date 와 문자열을 비교하게 된다.
-      const exp: string = (await client.query(
-        `select ((public.membership_today() + (public.membership_default_months() || ' months')::interval)::date)::text as d`,
-      )).rows[0].d;
-      // pg 는 date 를 JS Date 로 돌려준다 — String(date) 이 'Tue Jan 01 2030 …' 이라 문자열 비교가 어긋난다.
-      //   SQL 에서 text 로 캐스팅해 받는다(로컬 타임존이 끼어들 여지도 함께 없앤다).
+      const after = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
+      expect(after, '마감이 memberships 행을 만들지 않는다').toBe(before);
+
       const row = async (u: string) =>
         (await client.query(
-          `select status, valid_until::text as valid_until, decided_by from public.memberships where user_id='${u}'`,
+          `select status, valid_until::text as valid_until from public.memberships where user_id='${u}'`,
         )).rows[0];
+      expect((await row(COACH_A)).valid_until, '기존 individual 은 그대로다').toBe('2030-01-01');
+      expect((await row(ADMIN)).status, 'held 도 그대로다').toBe('held');
+      // 행이 없던 사람은 여전히 없다 — 지정 없이 자격이 생기지 않는다.
+      expect(
+        (await client.query(`select count(*)::int as c from public.memberships where user_id='${MEMBER}'`)).rows[0].c,
+        '지정 없이 포럼회원이 되지 않는다',
+      ).toBe(0);
 
-      // role 필터를 걸지 않았으므로 참여자·인도자·운영자가 모두 대상이다.
-      expect((await row(MEMBER)).status).toBe('individual');
-      expect((await row(MEMBER)).valid_until).toBe(exp);
-      expect((await row(MEMBER)).decided_by).toBeNull(); // 결정한 사람이 없다 — 수료는 사실이다
-      expect((await row(COACH_A)).valid_until, '기존 individual 은 연장되지 않는다').toBe('2030-01-01');
-      expect((await row(ADMIN)).status, 'held 는 트리거가 뒤집지 않는다').toBe('held');
-
-      const before = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
-      await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
-      const after = (await client.query(`select count(*)::int as c from public.memberships`)).rows[0].c;
-      expect(after, '재실행 멱등').toBe(before);
-      expect((await row(COACH_A)).valid_until).toBe('2030-01-01');
+      // 트리거 자체가 사라졌는지도 본다 — 이름으로 직접 조회한다.
+      expect(
+        (await client.query(
+          `select count(*)::int as c from pg_trigger where tgrelid='public.cohorts'::regclass
+            and tgname='cohorts_archive_membership' and not tgisinternal`)).rows[0].c,
+        '트리거가 사라졌다',
+      ).toBe(0);
     } finally { await close(client); }
   });
 
-  it('마감된 세미나 차수는 cohort 가 아니고, 트리거가 만든 individual 이 답이 된다', async () => {
+  it('**마감된 세미나 참여자는 pending 으로 내려앉되 기록은 지킨다** — 최박사 모델', async () => {
+    // 옛 기댓값은 `individual`(트리거가 만든 것)이었다. 이제 **지정 없이는 승급되지 않으므로**
+    //   저장 행이 없으면 `pending` 이다. **그것이 잠김을 뜻하지 않는다** —
+    //   본인 회기 기록물(진단 응답·갈무리·피드)은 자격을 보지 않는다.
     const client = await open();
     try {
       expect(await stateOf(client, MEMBER)).toBe('cohort');
       await client.query(`update public.cohorts set status='archived' where id='${COHORT}'`);
-      expect(await stateOf(client, MEMBER), '수료자가 잠기지 않는다').toBe('individual');
+      expect(await stateOf(client, MEMBER), '지정 없이 승급되지 않는다').toBe('pending');
+
+      // **기록은 지킨다** — 피드 열람이 마감 뒤에도 열린다(ADR-124 확정 ③).
+      expect(
+        await scalarAs(client, MEMBER, `select public.feed_can_access('${COHORT}','${MEMBER}')::text as s`),
+        '마감 뒤에도 자기 회기 피드가 열린다',
+      ).toBe('true');
+
+      // 바깥 도구는 열람만 — 신규는 막힌다.
+      expect(
+        await scalarAs(client, MEMBER, `select public.member_tool_access('${MEMBER}') as s`),
+        '종료된 회기 참여자는 read_only',
+      ).toBe('read_only');
     } finally { await close(client); }
   });
 
