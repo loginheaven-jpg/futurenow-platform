@@ -70,7 +70,7 @@ export default async function AssessmentsPage() {
           icon: 'pre',
           title: TOOL.pre,
           note: !canJourney ? '기수에 속하면 열립니다.'
-            : pre ? `${pre.name} — 아직 하지 않으셨어요.`
+            : pre ? `${pre.name} · 아직 하지 않으셨어요.`
             : '이미 마치셨어요.',
           status: !canJourney ? undefined : pre ? '시작' : '완료',
           href: canJourney && pre ? `/join?cohort=${pre.cohortId}` : undefined,
@@ -80,7 +80,7 @@ export default async function AssessmentsPage() {
           icon: 'post',
           title: TOOL.post,
           // 아직 열리지 않은 것과 없는 것은 다르므로 **언제 열리는지**를 말한다.
-          note: post ? `${post.name} — 지금 하실 수 있어요.` : '6회차를 마친 뒤 열립니다.',
+          note: post ? `${post.name} · 지금 하실 수 있어요.` : '6회차를 마친 뒤 열립니다.',
           status: post ? '시작' : '대기',
           href: post ? `/join?cohort=${post.cohortId}&wave=post` : undefined,
         },
