@@ -13,6 +13,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerContext } from '@/core/supabase/server';
 import { FeedClient } from './FeedClient';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,7 @@ export default async function FeedPage({
           <p className="t-body">아직 동행할 기수가 없어요.</p>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
             세미나에 참여하면 그 기수의 동행이 열립니다. 지금은 <Link href="/news">소식</Link>과{' '}
-            <Link href="/library">자료실</Link>을 둘러보실 수 있어요.
+            <Link href="/library">{LIBRARY_NAME}</Link>을 둘러보실 수 있어요.
           </p>
         </div>
       </div>

@@ -6,6 +6,8 @@
 //
 // 부품이 아니라 **설정**이다 — 링크 목록일 뿐 렌더도 판정도 하지 않는다.
 
+import { LIBRARY_NAME } from '@/app/_vocab/library';
+
 export interface PublicNavItem {
   href: string;
   label: string;
@@ -23,7 +25,7 @@ export const PUBLIC_NAV: PublicNavItem[] = [
   { href: '/about', label: '소개' },
   { href: '/recruit', label: '참여 신청' },
   { href: '/home/assessments', label: '진단' },
-  { href: '/library', label: '자료실' },
+  { href: '/library', label: LIBRARY_NAME },
   { href: '/news', label: '소식' },
   { href: '/contact', label: '문의' },
 ];

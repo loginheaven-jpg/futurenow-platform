@@ -10,12 +10,13 @@ import type { QuickTile } from './QuickTiles';
 import type { SessionChip } from './SessionChipStrip';
 import type { MenuGroup } from './MenuSheet';
 import type { GnbItem } from './SiteGnb';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const GNB_ITEMS: GnbItem[] = [
   { href: '/about', label: '소개' },
   { href: '/join', label: '신청' },
   { href: '/home/assessments', label: '진단' },
-  { href: '/library', label: '자료실' },
+  { href: '/library', label: LIBRARY_NAME },
   { href: '/news', label: '소식' },
   { href: '/contact', label: '문의' },
 ];
@@ -47,7 +48,7 @@ export const QUICK_TILES: QuickTile[] = [
   { icon: 'checkin', title: '오늘의 갈무리', hint: '2회차', href: '/my/cohorts/demo/checkin/2' },
   { icon: 'mirror', title: '되비추기', hint: '나의 기록', href: '/my/cohorts/demo/journey' },
   { icon: 'feed', title: '동행', hint: '기수와 함께', href: '/feed' },
-  { icon: 'library', title: '자료실', hint: '배포 자료', href: '/library' },
+  { icon: 'library', title: LIBRARY_NAME, hint: '배포 자료', href: '/library' },
 ];
 
 /** 네 상태를 한 줄에서 다 보이게 — 완료·진행·열림·잠금(감추지 않는다). */
@@ -63,7 +64,7 @@ export const CHIPS: SessionChip[] = [
 export const MENU_GROUPS: MenuGroup[] = [
   { title: '여정', items: [{ href: '/my/cohorts', label: '내 기수' }, { href: '/feed', label: '동행' }] },
   { title: '진단', items: [{ href: '/home/assessments', label: '체크 허브' }, { href: '/my/values', label: '가치 카드' }] },
-  { title: '자료', items: [{ href: '/library', label: '자료실' }, { href: '/news', label: '소식' }] },
+  { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
   { title: '계정', items: [{ href: '/account', label: '내 정보' }] },
 ];
 

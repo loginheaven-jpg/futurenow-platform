@@ -29,6 +29,8 @@ import type {
   InstrumentId,
   InterpretationView,
   LibraryItem,
+  LibrarySource,
+  LibraryAddInput,
   UserProfile,
   MemberActivity,
   MemberRef,
@@ -225,15 +227,33 @@ export interface CoreContext {
   //   정보를 고친다고 자격이 되돌아가면 안 된다(운영자 결정은 decideMembership 만 바꾼다).
   recordSignupIntake(input: { forumName?: string | null; forumPhone?: string | null; signupNote?: string | null }): Promise<void>;
 
-  // 공개 영역(S-4) — 소식·자료실·문의. 진단 어휘 0(코어 중립).
+  // 공개 영역(S-4) — 소식·서가·문의. 진단 어휘 0(코어 중립).
   listNews(limit?: number): Promise<NewsPost[]>; // 발행분(운영자는 초안 포함 — RLS 가 가른다)
   getNews(id: string): Promise<NewsPost | null>;
   upsertNews(input: { id?: string | null; title: string; body: string; publish?: boolean }): Promise<string>; // 운영자 전용
   deleteNews(id: string): Promise<void>; // 운영자 전용
-  // 자료실 — 목록은 RLS 가 tier 로 가른다. **파일은 목록에 실리지 않는다**(경로만).
+  // 서가 — 판정은 RPC 안에 있고 목록은 **주소를 싣지 않는다**(서가 A §4).
+  /**
+   * 서가 목록 — **전원에게 보인다**(§5). 감추지 않는다.
+   *   **주소를 내지 않는다**(§4) — `LibraryItem` 타입에 주소 칸이 아예 없다.
+   *   판정(`canView`)은 서버가 한 값을 그대로 싣는다. 화면이 다시 계산하지 않는다.
+   */
   listLibrary(): Promise<LibraryItem[]>;
-  // 만료형 서명 URL. 발급 전 `library_can_read` 로 자격을 먼저 묻는다 — 목록 RLS 와 같은 표를 본다.
-  signLibraryFile(storagePath: string, expiresInSec?: number): Promise<string | null>;
+  /**
+   * **주소를 내주는 유일한 자리.** 관문(`library_can_view`)을 지나야 하고, 못 지나면 `null` 이다.
+   *   프록시 라우트가 **서버에서만** 부른다 — 클라이언트로 주소가 가지 않는다(판정 ④ · 잔여 창 0).
+   */
+  openLibraryItem(id: string): Promise<LibrarySource | null>;
+  /** 올릴 자격이 있는가(§7). 화면은 이 값으로 구획을 켜고 끈다 — 등급 이름을 직접 보지 않는다. */
+  canUploadLibrary(): Promise<boolean>;
+  /** 올리기. 자격·등급·기수 판정은 전부 DB 가 한다(`library_add`). */
+  addLibraryItem(input: LibraryAddInput): Promise<string>;
+  /** 가리기·되돌리기 — **본인만**(확정 ⑥). 삭제가 아니라 표시다. */
+  hideLibraryItem(id: string, hidden: boolean): Promise<void>;
+  /** 파일을 저장소에 올린다. 경로는 `{uid}/…` 여야 한다 — 저장소 정책이 그것을 강제한다. */
+  uploadLibraryFile(path: string, file: File): Promise<boolean>;
+  /** 파일을 내려받는다. **프록시 라우트 전용** — 관문을 지난 뒤에만 부른다. */
+  downloadLibraryFile(storagePath: string): Promise<{ body: ArrayBuffer; contentType: string } | null>;
   // 문의 — **비로그인도 보낼 수 있다**(공개 화면). 스팸 가드는 RPC 안(길이·빈도).
   submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void>;
   listContactMessages(onlyOpen?: boolean): Promise<ContactMessage[]>; // 운영자 전용

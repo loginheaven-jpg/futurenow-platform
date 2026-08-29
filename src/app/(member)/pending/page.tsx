@@ -13,6 +13,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerContext } from '@/core/supabase/server';
 import { safeReturnTo } from '@/app/_lib/safeReturn';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,7 +91,7 @@ export default async function PendingPage({
           <span className="t-body">소식 보기</span>
         </Link>
         <Link href="/library" className="ui-listrow ui-listrow--tappable" style={{ textDecoration: 'none' }}>
-          <span className="t-body">공개 자료실</span>
+          <span className="t-body">공개 {LIBRARY_NAME}</span>
         </Link>
         <Link href="/recruit" className="ui-listrow ui-listrow--tappable" style={{ textDecoration: 'none' }}>
           <span className="t-body">세미나 참여 신청</span>

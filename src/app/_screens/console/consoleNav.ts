@@ -8,6 +8,7 @@
 //   테스트가 닿게 한다.
 
 import { CONSOLE_DOOR } from '@/app/_vocab/doors';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export interface ConsoleNavItem {
   href: string;
@@ -73,7 +74,7 @@ export function consoleNav(input: { role: 'user' | 'coach' | 'admin'; pathname: 
     });
   }
 
-  groups.push({ title: null, items: [{ href: '/library', label: '자료실' }] });
+  groups.push({ title: null, items: [{ href: '/library', label: LIBRARY_NAME }] });
   return groups;
 }
 

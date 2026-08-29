@@ -16,6 +16,7 @@ import { PastSessionsClient } from './PastSessionsClient';
 import { buildProgress, openedSessionNos } from './progress';
 import { TOOL } from '@/app/_vocab/tool';
 import { HOME_CARD, VALUE_TOOL } from '@/instruments/futurenow/values/copy';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const dynamic = 'force-dynamic';
 
@@ -169,14 +170,14 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
 
   // 시안 C `.my-list` — 나의 기록 넷.
   //   **`회차 자료` 는 시안 문구를 그대로 쓰지 않았다** — 회차별 자료 라우트가 없어
-  //   전체 자료실로 잇는다. 없는 것을 있는 것처럼 부르지 않는다(완주 보고 대조표 △).
+  //   전체 서가로 잇는다. 없는 것을 있는 것처럼 부르지 않는다(완주 보고 대조표 △).
   const rows: CohortListRow[] = [
     { key: 'journey', title: '되비추기', note: '지난 회차 다시 보기', href: `/my/cohorts/${cohortId}/journey` },
     { key: 'feed', title: '동행 피드', note: '오늘의 걸음', href: `/feed?cohort=${cohortId}` },
     c.preDone
       ? { key: 'report', title: `${TOOL.pre} 완료`, note: '리포트 보기', href: `/my/cohorts/${cohortId}/report` }
       : { key: 'pre', title: TOOL.pre, note: '아직 하지 않으셨어요', href: `/join?cohort=${cohortId}` },
-    { key: 'library', title: '자료실', note: '배포 자료', href: '/library' },
+    { key: 'library', title: LIBRARY_NAME, note: '배포 자료', href: '/library' },
   ];
 
   return (

@@ -16,6 +16,8 @@ const ALSO_IN_TABLE: { root: string; base: string }[] = [
   // **`/join` 이 U-4 에서 들어왔다** — 표는 `none`(표가 들지 않는다)이고 단계 크롬은 통로가 든다.
   //   여기 없으면 «실재하지 않는 라우트» 로 잡힌다 — 실재하는데도.
   { root: 'join', base: 'src/app/(public)/join' },
+  // **서가(A)** — 목록은 `gnb`(로고가 서야 한다), 자료 화면은 `none`(제목을 통로가 든다).
+  { root: 'library', base: 'src/app/(public)/library' },
   // **콘솔도 같은 표를 쓴다**(U-3) — 두 벌 만들지 않는다.
   { root: 'coach', base: 'src/app/coach' },
   { root: 'admin', base: 'src/app/admin' },
@@ -57,7 +59,8 @@ describe('화면 크롬 표 — 회원 껍데기 아래 모든 라우트가 표�
   it('**껍데기 없음에는 사유가 붙어 있다** — 목록만 있는 예외는 다음 사람이 못 판단한다', () => {
     const none = Object.entries(SCREEN_CHROME).filter(([, c]) => c.kind === 'none');
     // 셋이다 — `/c/[code]/*` 둘과 `/join`(U-4). **수를 박되 사유와 함께 잠근다.**
-    expect(none.length, '없어졌으면 이 잠금도 다시 봐야 한다').toBe(3);
+    // 넷이다 — `/c/[code]/*` 둘 · `/join`(U-4) · `/library/[id]`(서가 A).
+    expect(none.length, '없어졌으면 이 잠금도 다시 봐야 한다').toBe(4);
     for (const [route, c] of none) {
       expect(c.kind === 'none' && c.why.length, `${route} 에 사유가 없다`).toBeGreaterThan(20);
     }
