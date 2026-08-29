@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync, readFileSync } from 'node:fs';
 import { SCREEN_CHROME, nearestAncestor, resolveBack, patternOf, type ChromeKind } from '@/app/_lib/screenChrome';
 
 // 크롬 표 잠금 — **표에 없는 라우트가 생기면 운다** (U-2 · 지휘부 조건 ①).
@@ -125,5 +125,32 @@ describe('flow 둘은 메뉴를 달지 않는다 (지휘부 판정)', () => {
   it('**그 밖에는 메뉴가 있다** — 대조군. 없으면 위 단언이 «전부 false» 여도 통과한다', () => {
     const withMenu = Object.values(SCREEN_CHROME).filter((c) => c.kind !== 'none' && c.menu);
     expect(withMenu.length).toBeGreaterThan(3);
+  });
+});
+
+describe('★ 「예상 시간」은 진입 화면에서 걷혔다 (최박사 결재 ⑪ · 2026-08-30)', () => {
+  // **10분 하나로 통일한다.** `/recruit` 의 「약 10분」은 **신청 절차 전체**이고
+  //   진입 화면의 「약 5분」은 **진단 자체**였다 — 값이 틀린 것이 아니라
+  //   **무엇의 시간인지가 안 적혀** 참여자에게 같게 들렸다.
+  it('진입 화면이 「예상 시간」 줄을 그리지 않는다', () => {
+    const src = readFileSync('src/app/_screens/entry/CohortPreview.tsx', 'utf8');
+    // 주석은 이 결정을 설명하므로 뺀다 — 세면 자가 넓어진다(⑨-b).
+    const code = src.split(String.fromCharCode(10))
+      .filter((l) => !l.trim().startsWith('{/*') && !l.trim().startsWith('*') && !l.trim().startsWith('//'))
+      .join(String.fromCharCode(10));
+    expect(code, '「예상 시간」 줄이 되살아났다').not.toContain('예상 시간');
+    expect(code, '진단 소요 분을 화면에 다시 그린다').not.toContain('inst.minutes');
+  });
+
+  it('★ 그러나 `minutes` **값은 지우지 않았다** — 타입을 쓰는 화면이 깨진다', () => {
+    // 「안 보이게 하라」를 「지워라」로 읽으면 `instrumentDisplay` 를 쓰는 세 화면이 깨진다.
+    const types = readFileSync('src/app/_screens/types.ts', 'utf8');
+    expect(types, 'minutes 를 지웠다 — 결재는 「안 보이게」였다').toContain('minutes: number');
+  });
+
+  it('갈무리의 「약 5분」은 **다른 것**이라 그대로다', () => {
+    // 갈무리 소요 시간이지 진단 시간이 아니다. 결재 ⑪ 의 대상이 아니었다.
+    const s2 = readFileSync('src/instruments/futurenow/checkin/session2.ts', 'utf8');
+    expect(s2, '갈무리 소요 안내까지 걷었다 — 결재 범위 밖이다').toContain('약 5분');
   });
 });

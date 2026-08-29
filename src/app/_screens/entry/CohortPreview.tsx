@@ -34,7 +34,7 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
         {meta.description ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-line', margin: '0 0 var(--space-4)' }}>{meta.description}</p>
         ) : null}
-        {/* general 체험: 인도자·인원은 무의미(공개·운영자 소유) → 체험 문구로 대체. 진단·예상 시간은 유지. */}
+        {/* general 체험: 인도자·인원은 무의미(공개·운영자 소유) → 체험 문구로 대체. 진단은 유지(예상 시간 줄은 결재 ⑪ 로 걷었다). */}
         {isGeneral ? (
           <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
             세미나 코드 없이 누구나 해볼 수 있는 {TOOL.trial}예요.
@@ -46,7 +46,11 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
           </>
         )}
         <Row label={TOOL.short} value={inst.label} />
-        <Row label="예상 시간" value={`약 ${inst.minutes}분`} />
+        {/* ★ 「예상 시간 · 약 5분」을 걷었다(최박사 결재 ⑪ · 2026-08-30 — 10분 하나로 통일).
+            `/recruit` 의 「약 10분」은 **신청 절차 전체**이고 이 줄은 **진단 자체**였다.
+            값이 틀린 것이 아니라 **무엇의 시간인지가 안 적혀** 참여자에게 같게 들렸다.
+            ★ `minutes` 값은 **지우지 않았다** — 「안 보이게 하라」를 「지워라」로 읽으면
+            `instrumentDisplay` 타입을 쓰는 세 화면이 깨진다. 읽는 곳은 이 줄 하나뿐이었다(실측). */}
       </div>
 
       {/* 공통 소개(SeminarIntro 단일 출처 — 랜딩과 공유). 차수별 소개(description)는 위 카드 이름 아래. */}
