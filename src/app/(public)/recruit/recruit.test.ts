@@ -7,6 +7,7 @@ import { CURRENT_INTAKE, STATUS_COPY, joinHref, seatsRemaining, type Intake } fr
 import {
   APPLY, AUDIENCE, FEE, HERO, JOURNEY, META, ONLINE, PROBLEM, RESULT, SCHEDULE, SEATS_LEFT, SITE_ORIGIN, TEAM, VOICES, WHAT,
 } from './copy';
+import { RECRUIT_CARDS } from './cards';
 
 // 시안 HTML 이 최종 기준이다(지휘부 확정 2026-08-19). 랜딩 문구가 그것과 갈리면 같은 사람이 카드 이미지와
 //   웹을 번갈아 보며 다른 말을 읽는다. 그래서 스냅샷을 따로 두지 않고 **시안 파일을 직접 읽어** 대조한다 —
@@ -407,5 +408,23 @@ describe('열람 범위 고지가 앱 문안과 어긋나지 않는다 (ADR-77)'
     for (const src of [SIAN, WONGO, ONLINE.foot]) {
       expect(src).not.toContain('세미나 인도자만 봅니다');
     }
+  });
+});
+
+describe('★ 카드 `alt` 는 카드 그림과 같은 말을 한다 (C1 · 2026-08-29)', () => {
+  // **왜 잠그나**: `alt` 는 스크린리더 사용자의 **유일한 경로**다. 그림이 R-01 로 바뀌었는데
+  //   `alt` 만 옛 문장으로 남아 있었다 — **눈으로 보는 사람과 귀로 듣는 사람이 다른 말을 들었다.**
+  //   표(R-01)는 `copy.ts` 만 지목했고 `alt` 는 표 밖이라 일괄 적용이 지나갔다.
+  //   그래서 **표가 아니라 그림과 맞추는 잠금**을 둔다.
+  it('R-01 확정 문안이 `alt` 에도 있다 — 옛 문장은 없다', () => {
+    const alts = RECRUIT_CARDS.map((c) => c.alt).join('\n');
+    expect(alts, '그림은 「의지의 문제가 아닙니다」라고 적혀 있다(카드 02 실물 대조)').toContain('의지의 문제가 아닙니다');
+    expect(alts, 'R-01 이전 문장이 살아 있다').not.toContain('의지가 약해서');
+  });
+
+  it('★ `alt` 가 본문 확정 문안과 갈리지 않는다 — 사본이 둘이면 잠금으로 묶는다(불변식 23)', () => {
+    // 본문(`copy.ts`)이 다시 바뀌면 여기서 운다. **한쪽만 고쳐지는 것이 이 결함의 형태였다.**
+    const alts = RECRUIT_CARDS.map((c) => c.alt).join('\n');
+    expect(alts).toContain(PROBLEM.emph.replace(/\.$/, ''));
   });
 });

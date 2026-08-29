@@ -20,13 +20,32 @@
 ## 2. 향후 기능 (Future — 시점 미정)
 
 - **서가 B — 반응·댓글·태그·신고** (「피드처럼」 셋 중 남은 하나 · ADR-165 가 사진만 지었다).
-  **★ 발주서 첫 줄은 `REVOKE … FROM public, anon, authenticated` 다.**
-  B 용 표 다섯(`library_reactions`·`library_comments`·`library_tags`·`library_item_tags`·`library_reports`)은
-  **RLS 는 켜져 있고 정책이 0 이라 지금은 막히지만, `anon`·`authenticated` 테이블 권한이 남아 있다.**
-  실측(2026-08-29 · 트랜잭션 안에서 물려 봤다): 정책 0 이면 **0행**, 정책을 **하나** 만들면 **1행**.
-  즉 **정책이 유일한 관문**이고 `library_items` 가 가진 두 겹(권한+정책)이 **아니다.**
-  권한을 먼저 걷어야 정책을 잘못 써도 한 겹이 남는다. 산출 명령:
-  `select tablename, (select count(*) from pg_policies p where p.tablename=t.tablename) from information_schema.role_table_grants t where grantee in ('anon','authenticated') and table_name like 'library_%';`
+  **★ 발주서 첫 줄** — 「**표를 만들 때마다 기본 권한을 걷고, 함수마다 EXECUTE 를 명시하고,
+  걷혔는지를 잠금이 잰다. REVOKE 를 쓴 것과 걷힌 것은 다르다** —
+  `has_table_privilege` · `has_function_privilege` 로 실측하는 테스트를 함께 둔다.」
+  **★ 둘째 줄** — 「**목록이 주소를 내지 않는다는 설계를 바꿔야 할 이유가 생기면 멈추고 보고한다.**」
+
+  **왜 `REVOKE` 한 줄로는 부족한가**(지휘부 감리 2026-08-29 · 빠진 셋):
+  ① **`REVOKE` 는 이미 있는 권한만 걷는다.** 이 프로젝트는 default privileges 로
+     **신규 public 표에 `authenticated` 전권이 자동으로 붙는다**(서가 A 주석이 그것을 적었다).
+     B 가 **표를 만들 때마다 다시** 걷어야 한다.
+  ② **함수 권한은 별개다.** `REVOKE ON TABLE` 이 함수를 덮지 않는다.
+     B 가 만드는 **RPC 마다 `EXECUTE` 를 누구에게 줄지** 정해야 한다.
+  ③ **걷었는지 재는 잠금이 없다.** 오늘 서가 A 에서 **`service_role` 이 롤백 문에서 빠져 있던 것**이
+     정확히 그 형태다 — 문장은 썼는데 결과가 달랐다.
+
+  **지금 상태 실측**(2026-08-29 · 트랜잭션 안에서 물려 봤다): B 용 표 다섯
+  (`library_reactions`·`library_comments`·`library_tags`·`library_item_tags`·`library_reports`)은
+  **RLS 켜짐 · 정책 0** 이라 막히지만 **`anon`·`authenticated` 테이블 권한이 남아 있다** —
+  정책 0 이면 **0행**, 정책을 **하나** 만들면 **1행**. 즉 **정책이 유일한 관문**이고
+  `library_items` 가 가진 두 겹(권한+정책)이 **아니다.** 산출 명령:
+  `select tablename, (select count(*) from pg_policies p where p.tablename=t.table_name) from information_schema.role_table_grants t where grantee in ('anon','authenticated') and table_name like 'library_%';`
+
+  **설계는 서가 B 까지 버틴다**(지휘부 감리 ②) — B 가 더하는 것(태그·반응·댓글·신고)은
+  **전부 목록 층의 값이지 주소가 아니다.** 주소를 내야 할 새 이유가 B 에 없다.
+  **깨지는 조건은 하나뿐이다** — 갤러리 형태가 되어 목록에서 미리보기를 **여러 장** 그릴 때.
+  그때는 설계가 아니라 **비용** 문제가 된다. 그 시점은 `scripts/observeLibraryPhotos.mjs` 가 본다.
+
 - **STEP 2~5 진단 확장**: 퓨처나우 후속 단계 진단을 같은 계약 위 인스트루먼트로 추가.
 - **돌봄 연락 중개 흐름**: 전화번호는 운영자 전용이므로, 코치가 돌봄 대상에게 연락해야 할 때 운영자가 중개하거나 코치의 '연락 요청'을 운영자가 여는 워크플로.
 - **그룹 리포트 고도화**: 그룹 평균 레이더 외 분포·변화 추이·차수 간 비교.

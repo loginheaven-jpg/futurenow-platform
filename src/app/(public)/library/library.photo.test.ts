@@ -44,6 +44,28 @@ describe('★ 화면이 판정을 다시 하지 않는다 — 판정은 서버 �
 });
 
 describe('★ 상한은 사본이 하나다(불변식 23)', () => {
+  // **양방향으로 잰다**(지휘부 감리 2026-08-29). 아래 것만 두면 «TS 에 없다» 는 재지만
+  //   «DB 에 있다» 는 안 재므로 **DB 쪽 상한이 사라져도 초록**이다 —
+  //   실제로 정의를 지우고 돌려 보니 7/7 초록이었다. **한 방향만 재는 자는 절반만 잰다.**
+  it('★ 상한이 **DB 에 실재한다** — 정의가 있고 숫자를 낸다', () => {
+    const mig = read(MIG);
+    // 호출이 아니라 **정의**가 있어야 한다. 호출만 남기고 정의를 지우는 것이 그 구멍이었다.
+    expect(mig, '상한 함수의 정의가 없다 — 호출만 있으면 DB 에서 터진다')
+      .toMatch(/create (or replace )?function public.library_inline_photo_max_bytes()/);
+    const at = mig.search(/create (or replace )?function public.library_inline_photo_max_bytes/);
+    const def = mig.slice(at);
+    const body = def.slice(0, def.indexOf('$fn$;') + 5);
+    // 정의가 **바이트 수를 낸다**. 숫자를 여기 적지 않는다 — 적으면 사본이 둘이 된다(불변식 23).
+    expect(body, '상한 함수가 숫자를 내지 않는다').toMatch(/[0-9]/);
+    expect(body, '반환형이 바이트 수가 아니다').toContain('returns bigint');
+  });
+
+  it('★ 되돌아가는 문이 상한 함수를 **걷는다** — 짝이 맞는다', () => {
+    const rb = read('supabase/migrations/20260902090000_library_inline_photo_rollback.sql');
+    expect(rb, '롤백이 상한 함수를 남기면 되돌린 뒤에 고아가 선다')
+      .toMatch(/drop function if exists public.library_inline_photo_max_bytes/);
+  });
+
   it('상한 숫자가 **DB 에만** 있다 — TS 어디에도 없다', () => {
     expect(read(MIG)).toContain('library_inline_photo_max_bytes');
     for (const f of [LIST, 'src/app/_vocab/library.ts', 'src/core/context.ts', 'src/contracts/domain.ts']) {
