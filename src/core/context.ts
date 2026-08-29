@@ -210,6 +210,8 @@ interface LibraryRow {
   cohort_id: string | null; cohort_name: string | null;
   created_by: string | null; author_name: string | null;
   hidden: boolean; mine: boolean; can_view: boolean; created_at: string;
+  // **주소가 아니라 참·거짓이다.** 서버가 넷을 곱해 낸다(볼 수 있고·파일이고·이미지이고·상한 안).
+  photo: boolean;
 }
 interface ContactRow { id: string; name: string | null; email: string | null; body: string; user_id: string | null; handled_at: string | null; created_at: string }
 
@@ -1453,6 +1455,9 @@ class SupabaseCoreContext implements CoreContext {
       cohortId: r.cohort_id, cohortName: r.cohort_name,
       createdBy: r.created_by, authorName: r.author_name,
       hidden: r.hidden, mine: r.mine, canView: r.can_view, createdAt: r.created_at,
+      // 여기서 다시 계산하지 않는다 — 판정이 두 곳이 되면 한 곳만 고쳐질 때 갈린다.
+      //   옛 RPC(사진 열 이전)가 응답하면 `undefined` 가 오므로 **거짓으로** 내려앉힌다.
+      photo: r.photo === true,
     }));
   }
 
