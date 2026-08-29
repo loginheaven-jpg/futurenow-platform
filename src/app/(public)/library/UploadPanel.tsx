@@ -8,8 +8,8 @@
 //   등급 이름을 화면이 비교하기 시작하면 판정이 두 곳이 된다.
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { LIBRARY_NAME, LIBRARY_TIER_LABEL, LIBRARY_TIER_NOTE, LIBRARY_MAX_MB } from '@/app/_vocab/library';
-import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE } from './copy';
+import { LIBRARY_NAME, LIBRARY_TIER_LABEL, LIBRARY_MAX_MB } from '@/app/_vocab/library';
+import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE, TIER_NOTE } from './copy';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { addLibraryItemAction } from './actions';
 
@@ -154,7 +154,7 @@ export function UploadPanel({
             </select>
             {/* 고른 등급이 **무슨 뜻인지** 한 줄. 「전체 공개」가 로그인 밖까지라는 것을 미리 알린다. */}
             <span className="t-caption" style={{ color: 'var(--color-text-secondary)', display: 'block', marginTop: 'var(--space-1)' }}>
-              {LIBRARY_TIER_NOTE[tier]}
+              {TIER_NOTE[tier]}
             </span>
           </label>
 

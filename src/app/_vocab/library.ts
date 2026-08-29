@@ -47,8 +47,3 @@ export const LIBRARY_MAX_MB = 50;
  *
  * ※ **이 세 문장은 제가 지었습니다 — 결재를 청합니다.**
  */
-export const LIBRARY_TIER_NOTE = {
-  public: '로그인하지 않은 사람도 봅니다.',
-  forum: '로그인한 포럼회원이 봅니다.',
-  coach: '인도자만 봅니다.',
-} as const;

@@ -4,7 +4,7 @@
 //   그것은 ⑵ 를 ⑴ 처럼 다루는 일이 되므로, 글자 단위로 잠근다(원고 §1~§4 와 같은 방식).
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE } from './copy';
+import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE, TIER_NOTE } from './copy';
 import { LIBRARY_NAME, LIBRARY_HREF, LIBRARY_MAX_MB } from '@/app/_vocab/library';
 
 describe('서가 확정 문안 — 한 글자도 고치지 않는다(§1)', () => {
@@ -99,5 +99,32 @@ describe('§12 개명 — 두 이름이 공존하지 않는다', () => {
                      'src/app/_screens/console/consoleNav.ts', 'src/app/(public)/library/page.tsx']) {
       expect(readFileSync(f, 'utf8'), `${f} 가 이름을 스스로 적고 있다`).toContain("from '@/app/_vocab/library'");
     }
+  });
+});
+
+describe('등급 뜻 세 문장 — 최박사 결재분(2026-08-29 · 위 넷과 같은 급)', () => {
+  it('세 문장이 글자 그대로다', () => {
+    expect(TIER_NOTE.public).toBe('로그인하지 않은 사람도 봅니다.');
+    expect(TIER_NOTE.forum).toBe('로그인한 포럼회원이 봅니다.');
+    expect(TIER_NOTE.coach).toBe('인도자만 봅니다.');
+  });
+
+  it('★ 「전체 공개」가 **로그인 밖까지**라고 말한다 — 그것이 이 문장의 용건이다', () => {
+    // 이 낱말이 빠지면 문장은 남아도 **용건이 사라진다.**
+    expect(TIER_NOTE.public).toContain('로그인하지 않은');
+  });
+
+  it('화면이 그 표를 읽는다 — 문장을 화면에 다시 적지 않는다', () => {
+    const panel = readFileSync('src/app/(public)/library/UploadPanel.tsx', 'utf8');
+    expect(panel).toContain('TIER_NOTE[tier]');
+    for (const line of Object.values(TIER_NOTE)) {
+      expect(panel, '문장을 화면에 박으면 사본이 둘이 된다').not.toContain(line);
+    }
+  });
+
+  it('★ 결재분은 **한 자리에만** 산다 — 낱말 상자에 사본이 없다', () => {
+    const vocab = readFileSync('src/app/_vocab/library.ts', 'utf8');
+    expect(vocab, '사본이 둘이면 한쪽만 고쳐질 때 갈린다(불변식 23)').not.toContain('LIBRARY_TIER_NOTE');
+    for (const line of Object.values(TIER_NOTE)) expect(vocab).not.toContain(line);
   });
 });

@@ -70,18 +70,5 @@ describe('★ 판정이 갈라지지 않는다 — can_view 가 거짓이면 pho
     expect(fn).toMatch(/coalesce\(\s*v\.can_view/);
   });
 });
-
-describe('등급 뜻 문구', () => {
-  it('전체 공개가 **로그인 밖까지**라는 것을 말한다', () => {
-    const vocab = read('src/app/_vocab/library.ts');
-    expect(vocab).toContain('LIBRARY_TIER_NOTE');
-    const note = vocab.slice(vocab.indexOf('export const LIBRARY_TIER_NOTE'));
-    expect(note).toContain('로그인하지 않은 사람도 봅니다.');
-  });
-
-  it('화면이 그 표를 읽는다 — 문장을 화면에 박지 않는다', () => {
-    const panel = read('src/app/(public)/library/UploadPanel.tsx');
-    expect(panel).toContain('LIBRARY_TIER_NOTE[tier]');
-    expect(panel, '문장을 화면에 박으면 사본이 둘이 된다').not.toContain('로그인하지 않은 사람도');
-  });
-});
+// 등급 뜻 세 문장의 잠금은 **확정 문안 잠금**(`library.copy.test.ts`)에 있다 —
+//   최박사 결재분이라 §1 의 넷과 **같은 급**이고, 잠금도 같은 자리에 있어야 다음 사람이 함께 본다.
