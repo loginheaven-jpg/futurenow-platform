@@ -50,6 +50,8 @@ import type {
   ValueAssessment,
   ValueAssessmentRow,
   ValueStageKey,
+  LibraryComment,
+  LibraryReport,
 } from './domain';
 import type { ChatRequest, ChatResponse } from './ai';
 
@@ -254,6 +256,28 @@ export interface CoreContext {
   //   관문은 저장소 정책(`library_objects_insert_v2`)이 든다. 코어를 지나지 않는다.
   /** 파일을 내려받는다. **프록시 라우트 전용** — 관문을 지난 뒤에만 부른다. */
   downloadLibraryFile(storagePath: string): Promise<{ body: ArrayBuffer; contentType: string } | null>;
+
+  // ── 서가 B — 반응 · 댓글 · 신고 (ORDER library_v2_B · 최박사 결재 아홉)
+  //   **판정은 `library_can_view` 하나다.** 아래 어느 것도 새 판정을 만들지 않는다.
+  /** 이모지를 누른다/뗀다. 돌아오는 것은 **내가 지금 누르고 있는 것들**이다(피드와 같은 형태). */
+  toggleLibraryReaction(itemId: string, emoji: string): Promise<string[]>;
+  /** 내가 무엇을 눌렀는가 — 목록과 **따로** 받는다. 목록은 집계만 낸다. */
+  myLibraryReactions(itemIds: string[]): Promise<Record<string, string[]>>;
+  /** 댓글을 읽는다. **이름이 이미 가려진 채로 온다**(결재 ⑶⑷ — 밖에서만). */
+  listLibraryComments(itemId: string): Promise<LibraryComment[]>;
+  createLibraryComment(itemId: string, body: string): Promise<string>;
+  /** 본인 것 또는 운영자만. **인도자에게는 주지 않는다** — 방 안 관계가 바뀐다. */
+  deleteLibraryComment(id: string): Promise<void>;
+  /** 운영자에게 알린다(문안 ㉣). 이미 알린 것은 **조용히 아무 일도 하지 않는다**. */
+  reportLibraryItem(itemId: string, reason: string | null): Promise<void>;
+  /** 내가 이미 알렸는가 — 화면이 ㉦ 를 띄울지 정한다. **남의 신고는 알려 주지 않는다.** */
+  didIReportLibraryItem(itemId: string): Promise<boolean>;
+  /** 운영 첫 화면 한 줄(문안 ㉩). **운영자 전용** — 0 이면 화면이 줄을 그리지 않는다. */
+  countOpenLibraryReports(): Promise<number>;
+  /** **운영자 전용.** 신고한 사람이 오지 않는다 — 타입으로 막았다. */
+  listOpenLibraryReports(): Promise<LibraryReport[]>;
+  /** **운영자 전용.** 확인 표시(`handled_at`). */
+  markLibraryReportHandled(id: string): Promise<void>;
   // 문의 — **비로그인도 보낼 수 있다**(공개 화면). 스팸 가드는 RPC 안(길이·빈도).
   submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void>;
   listContactMessages(onlyOpen?: boolean): Promise<ContactMessage[]>; // 운영자 전용
