@@ -34,10 +34,34 @@ describe('QA 기수 — 남아 있으면 운다(경계 ⑤)', () => {
     expect(src).toContain('★ 다 치워지지 않았다');
   });
 
-  it('실기수·실계정에 닿는 길이 **코드로 막혀** 있다', () => {
-    const src = readFileSync('scripts/qaCohort.mjs', 'utf8');
-    expect(src).toContain("FORBIDDEN_CODES = ['ZR4KB', 'HMT7Z']");
-    expect(src, '실기수를 지우려 할 때 던지지 않는다').toContain('★ 멈춘다 — 실기수를 지우려 한다');
+  // ★★ **관문을 호출로 확인한다**(지휘부 ㉡ 2026-08-29).
+  //   전에는 «그 문장이 소스에 있는가» 로 쟀다 — 그것은 ⑨-c 다(정적 창으로 행동을 재려 했다).
+  //   그렇다고 실기수로 `down` 을 돌려 볼 수는 없다 — 관문이 틀렸을 때 실기수가 지워진다(경계 ①).
+  //   그래서 **관문만 떼어 실기수 코드를 먹인다.** 막아야 할 것을 실제로 먹이는 것이 ⑪ 이다.
+  it('★ 실기수 코드를 넣으면 **던진다** — 호출로 확인한다', async () => {
+    // @ts-expect-error — 도구는 .mjs 다(타입 선언이 없다).
+    const { assertSafeCodes } = await import('../scripts/qaCohort.mjs');
+    expect(() => assertSafeCodes(['ZR4KB'])).toThrow(/실기수/);
+    expect(() => assertSafeCodes(['HMT7Z'])).toThrow(/실기수/);
+    expect(() => assertSafeCodes(['QAAAA', 'HMT7Z'])).toThrow(/실기수/); // 섞여 있어도 잡는다
+  });
+
+  it('대조군 — QA 코드만 넣으면 **통과한다**(막을 것이 없을 때 막지 않는다)', async () => {
+    // @ts-expect-error — 도구는 .mjs 다.
+    const { assertSafeCodes, QA } = await import('../scripts/qaCohort.mjs');
+    expect(assertSafeCodes(QA.codes)).toBe(true);
+    expect(assertSafeCodes([])).toBe(true);
+  });
+
+  it('★ 이 도구는 **스키마를 만들지 않는다** — DB 에 남는 것이 없어야 한다', () => {
+    // 지휘부 ㉠㉢: «병합해도 안 실리는 것» 과 «이미 라이브에 있는 것» 은 다르다.
+    //   번들에 없어도 함수·정책·권한을 만들었으면 그것은 스키마에 남는다.
+    const src = readFileSync('scripts/qaCohort.mjs', 'utf8')
+      .split(String.fromCharCode(10)).filter((l) => !l.trim().startsWith('//')).join(String.fromCharCode(10));
+    for (const ddl of [/create\s+(function|policy|table|index|role|type|trigger)/i,
+                       /alter\s+(table|function|role|policy)/i, /grant\s/i, /revoke\s/i, /drop\s/i]) {
+      expect(src, `DDL 을 친다: ${ddl}`).not.toMatch(ddl);
+    }
   });
 
   it('★ **기한이 지나면 레드다** — 그날이 오면 사람이 답해야 넘어간다', () => {

@@ -43,11 +43,21 @@ const FORBIDDEN_CODES = ['ZR4KB', 'HMT7Z'];
 const db = new pg.Client({ connectionString: g('SUPABASE_DB_URL'), ssl: { rejectUnauthorized: false } });
 const admin = createClient(g('NEXT_PUBLIC_SUPABASE_URL'), g('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
 
-function guard() {
-  for (const c of QA.codes) {
-    if (FORBIDDEN_CODES.includes(c)) throw new Error(`★ 멈춘다 — QA 코드가 실기수 코드다: ${c}`);
+/**
+ * ★ **관문 — 순수 함수로 뗐다**(지휘부 ㉡ 2026-08-29).
+ *   *「코드가 아니라 호출로 확인한다」* 는 조건을 지키려면 **부를 수 있어야** 한다.
+ *   그런데 실기수로 `down` 을 실제로 돌려 보는 것은 **경계 ① 위반**이다 —
+ *   관문이 틀렸을 때 실기수가 지워진다. 그래서 **관문만 떼어 실기수 코드를 먹인다.**
+ *   `tests/qaCohortSunset.test.ts` 가 `ZR4KB` 를 넣어 던지는지 **호출로** 잰다.
+ */
+export function assertSafeCodes(codes) {
+  for (const c of codes) {
+    if (FORBIDDEN_CODES.includes(c)) throw new Error(`★ 멈춘다 — 실기수 코드다: ${c}`);
   }
+  return true;
 }
+
+function guard() { assertSafeCodes(QA.codes); }
 
 async function up() {
   guard();
@@ -111,9 +121,8 @@ async function status() {
 async function down() {
   const { rows: cs } = await db.query(
     `select id, code from public.cohorts where code = any($1) or name like $2`, [QA.codes, QA.namePrefix + '%']);
-  for (const c of cs) {
-    if (FORBIDDEN_CODES.includes(c.code)) throw new Error(`★ 멈춘다 — 실기수를 지우려 한다: ${c.code}`);
-  }
+  // **지우기 직전 같은 관문을 지난다** — 관문이 둘이면 한쪽만 고쳐진다.
+  assertSafeCodes(cs.map((c) => c.code));
   const ids = cs.map((c) => c.id);
   if (ids.length) {
     await db.query('delete from public.enrollments where cohort_id = any($1)', [ids]);
@@ -219,8 +228,10 @@ async function switchProbe() {
   return { tabs: tabs.length, leaked, backVisible };
 }
 
+// **직접 실행할 때만 돈다** — 테스트가 `assertSafeCodes` 를 수입해도 DB 에 붙지 않는다.
+const RUN = /qaCohort\.mjs$/.test(process.argv[1] ?? '');
 const cmd = process.argv[2] ?? 'status';
-try {
+if (RUN) try {
   await db.connect();
   if (cmd === 'up') { await up(); await status(); }
   else if (cmd === 'down') await down();
@@ -228,3 +239,4 @@ try {
   else if (cmd === 'switch') await switchProbe();
   else await status();
 } finally { await db.end().catch(() => {}); }
+
