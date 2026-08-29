@@ -268,7 +268,9 @@ describe('참여자 표면 금지어', () => {
 describe('메타 — 카톡 링크 미리보기 (발주서 §3.7)', () => {
   it('제목·설명이 발주서 원문이다', () => {
     expect(META.title).toBe('퓨처나우 예봄 2기 참가 신청');
-    expect(META.description).toBe('꿈꾸는 미래를 지금 살자 — 6주 셀프코칭 세미나. 선착순 10명.');
+        // **R-10 으로 바뀌었다** — 대시를 쓰지 않는다(카카오톡 링크 미리보기에 그대로 노출된다).
+    expect(META.description).toBe('꿈꾸는 미래를 지금 살자 · 6주 셀프코칭 세미나 · 선착순 10명');
+    expect(META.description).not.toMatch(/[—–]/);
   });
 
   it('metadataBase 가 절대 URL 이다 — 없으면 미리보기 이미지가 localhost 를 가리킨다', () => {

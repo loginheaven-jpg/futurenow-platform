@@ -26,7 +26,7 @@ const EDGE = 800;
  * 이 스크립트는 그 한 곳을 읽어 파생물을 만들 뿐이다. 파싱이 실패하면 **조용히 넘어가지 않고 멈춘다.**
  */
 function readCards() {
-  const src = readFileSync('src/app/recruit/cards.ts', 'utf8');
+  const src = readFileSync('src/app/(public)/recruit/cards.ts', 'utf8');
   const rows = [...src.matchAll(/\{\s*n:\s*(\d+),\s*src:\s*'([^']+)'/g)].map((m) => ({
     n: Number(m[1]),
     out: m[2].replace(/^\/recruit\//, ''),
