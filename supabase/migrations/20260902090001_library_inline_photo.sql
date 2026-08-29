@@ -29,7 +29,7 @@ returns bigint language sql immutable set search_path to 'public' as $fn$
 $fn$;
 
 revoke all on function public.library_inline_photo_max_bytes() from public;
-grant execute on function public.library_inline_photo_max_bytes() to anon, authenticated;
+grant execute on function public.library_inline_photo_max_bytes() to anon, authenticated, service_role;
 
 drop function if exists public.library_list();
 
@@ -66,4 +66,4 @@ language sql stable security definer set search_path to 'public' as $fn$
 $fn$;
 
 revoke all on function public.library_list() from public;
-grant execute on function public.library_list() to anon, authenticated;
+grant execute on function public.library_list() to anon, authenticated, service_role;

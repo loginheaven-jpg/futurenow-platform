@@ -29,7 +29,7 @@ language sql stable security definer set search_path to 'public' as $fn$
 $fn$;
 
 revoke all on function public.library_list() from public;
-grant execute on function public.library_list() to anon, authenticated;
+grant execute on function public.library_list() to anon, authenticated, service_role;
 
 -- 상한 함수도 걷는다. **`library_list` 를 되돌린 뒤에** 지운다(참조가 먼저 사라져야 한다).
 drop function if exists public.library_inline_photo_max_bytes();
