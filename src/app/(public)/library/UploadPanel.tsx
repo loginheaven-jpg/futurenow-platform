@@ -7,6 +7,7 @@
 // **자격 판정을 화면이 하지 않는다**(§3 하지 말 것 3). 서버가 낸 `canUpload` 를 그대로 쓴다 —
 //   등급 이름을 화면이 비교하기 시작하면 판정이 두 곳이 된다.
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { LIBRARY_NAME, LIBRARY_TIER_LABEL } from '@/app/_vocab/library';
 import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE } from './copy';
 import { createBrowserSupabase } from '@/core/supabase/client';
@@ -32,6 +33,7 @@ export function UploadPanel({
   const [file, setFile] = useState<File | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, startTx] = useTransition();
+  const router = useRouter();
 
   if (!canUpload) {
     return (
@@ -74,6 +76,10 @@ export function UploadPanel({
       });
       if (!res.ok) { setErr(res.error); return; }
       setTitle(''); setDescription(''); setUrl(''); setFile(null); setOpen(false);
+      // ★ **올린 것이 화면에 나타나야 올린 것이다**(실측 2026-08-29 · 탐침이 잡았다).
+      //   목록은 서버 컴포넌트가 그리므로 이 한 줄이 없으면 **올라갔는데 안 보인다** —
+      //   올린 사람은 실패했다고 읽고 또 올린다. 자료 6개가 실제로 그렇게 쌓였다(검증 중).
+      router.refresh();
     });
   }
 
