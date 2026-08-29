@@ -698,6 +698,9 @@ F-2 게이트가 *"시안 대조표 전항 ○"* 라 그때 비로소 만들었�
 
 - `/c/[code]/[session]`
 - `/c/[code]/values`
+- `/library/[id]` — **표가 들지 않는 자리**(서가 A). 제목이 **자료 제목**이라 서버 데이터이고,
+  U-4 가 세운 통로(`useSetChrome`)가 든다. 무헤더가 아니라 **통로가 헤더를 세운다** —
+  다만 ADR-162 의 성질이 따라온다(SSR 원문에는 없고 하이드레이션 뒤에 선다).
 - `/preview/console`
 - `/preview`
 - `/preview/report`
