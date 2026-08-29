@@ -9,7 +9,8 @@
 import { useState, useTransition } from 'react';
 import { LIBRARY_NAME, LIBRARY_TIER_LABEL } from '@/app/_vocab/library';
 import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE } from './copy';
-import { addLibraryItemAction, uploadLibraryFileAction } from './actions';
+import { createBrowserSupabase } from '@/core/supabase/client';
+import { addLibraryItemAction } from './actions';
 
 const muted = { color: 'var(--color-text-secondary)' } as const;
 const box = {
@@ -49,11 +50,21 @@ export function UploadPanel({
     startTx(async () => {
       let storagePath: string | null = null;
       if (kind === 'file' && file) {
-        const fd = new FormData();
-        fd.set('file', file);
-        const up = await uploadLibraryFileAction(fd);
-        if (!up.ok) { setErr(up.error); return; }
-        storagePath = up.path;
+        // ★★ **파일은 브라우저에서 저장소로 곧장 간다** — 서버 액션을 지나지 않는다(실측 2026-08-29).
+        //   지나게 했더니 **`Body exceeded 1 MB limit`** 로 터졌다(서버 액션 기본 본문 상한 1MB).
+        //   1MB 짜리도 실패했고 화면에는 우리 문안이 아니라 **「잠시 문제가 생겼어요」** 크래시 화면이 떴다.
+        //   **이것은 새 방식이 아니라 이 저장소의 관용구다** — 피드 사진(`FeedClient`)과
+        //   갈무리 사진(`LetterPhotos`)이 이미 같은 길로 올린다. 부품을 두 벌 만들지 않는다.
+        //   **관문은 그대로다** — 저장소 정책 `library_objects_insert_v2` 가
+        //   «자기 폴더인가 + 올릴 자격이 있는가» 를 여기서도 똑같이 본다(판정은 한 곳이다).
+        const sb = createBrowserSupabase();
+        const { data: u } = await sb.auth.getUser();
+        if (!u.user) { setErr('로그인이 필요합니다.'); return; }
+        const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).slice(0, 10) : '';
+        const path = `${u.user.id}/${crypto.randomUUID()}${ext}`;
+        const { error } = await sb.storage.from('library').upload(path, file, { upsert: false });
+        if (error) { setErr('지금은 올릴 수 없습니다. 잠시 뒤 다시 시도해 주세요.'); return; }
+        storagePath = path;
       }
       const res = await addLibraryItemAction({
         title: title.trim(),

@@ -1487,13 +1487,6 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`hideLibraryItem 실패: ${error.message}`);
   }
 
-  async uploadLibraryFile(path: string, file: File): Promise<boolean> {
-    // 저장소 정책(`library_objects_insert_v2`)이 **자기 폴더 + 올릴 자격** 둘을 함께 본다.
-    //   여기서 자격을 다시 보지 않는다 — 판정은 한 곳이다.
-    const { error } = await this.sb.storage.from('library').upload(path, file, { upsert: false });
-    return !error;
-  }
-
   async downloadLibraryFile(storagePath: string): Promise<{ body: ArrayBuffer; contentType: string } | null> {
     // **매 요청이 관문을 지난다.** 이 클라이언트는 사용자 세션을 들고 있으므로
     //   저장소 RLS(`library_can_view_path`)가 여기서 한 번 더 판정한다 — **잔여 창 0**(판정 ④).

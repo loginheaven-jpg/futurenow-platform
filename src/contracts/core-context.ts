@@ -250,8 +250,8 @@ export interface CoreContext {
   addLibraryItem(input: LibraryAddInput): Promise<string>;
   /** 가리기·되돌리기 — **본인만**(확정 ⑥). 삭제가 아니라 표시다. */
   hideLibraryItem(id: string, hidden: boolean): Promise<void>;
-  /** 파일을 저장소에 올린다. 경로는 `{uid}/…` 여야 한다 — 저장소 정책이 그것을 강제한다. */
-  uploadLibraryFile(path: string, file: File): Promise<boolean>;
+  // **올리기는 계약에 없다** — 파일은 브라우저에서 저장소로 곧장 간다(서버 액션 본문 상한 1MB · 실측).
+  //   관문은 저장소 정책(`library_objects_insert_v2`)이 든다. 코어를 지나지 않는다.
   /** 파일을 내려받는다. **프록시 라우트 전용** — 관문을 지난 뒤에만 부른다. */
   downloadLibraryFile(storagePath: string): Promise<{ body: ArrayBuffer; contentType: string } | null>;
   // 문의 — **비로그인도 보낼 수 있다**(공개 화면). 스팸 가드는 RPC 안(길이·빈도).

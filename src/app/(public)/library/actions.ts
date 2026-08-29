@@ -7,27 +7,10 @@
 import { createServerContext } from '@/core/supabase/server';
 import type { LibraryAddInput } from '@/contracts/domain';
 
-/** 파일을 저장소에 올린다. **자기 폴더에만** 쓰인다 — 저장소 정책이 그것을 강제한다. */
-export async function uploadLibraryFileAction(
-  form: FormData,
-): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
-  const file = form.get('file');
-  if (!(file instanceof File) || file.size === 0) return { ok: false, error: '파일을 고르지 못했습니다.' };
-  try {
-    const ctx = await createServerContext();
-    const me = await ctx.currentUser();
-    if (!me) return { ok: false, error: '로그인이 필요합니다.' };
-    // 경로 관용구는 피드·갈무리 사진과 같다(`{uid}/…`) — 새 관용구를 만들지 않는다.
-    //   이름은 서버가 짓는다. 사용자가 준 이름을 그대로 쓰면 경로가 예측 가능해진다.
-    const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).slice(0, 10) : '';
-    const path = `${me.id}/${crypto.randomUUID()}${ext}`;
-    const ok = await ctx.uploadLibraryFile(path, file);
-    if (!ok) return { ok: false, error: '지금은 올릴 수 없습니다. 잠시 뒤 다시 시도해 주세요.' };
-    return { ok: true, path };
-  } catch {
-    return { ok: false, error: '지금은 올릴 수 없습니다. 잠시 뒤 다시 시도해 주세요.' };
-  }
-}
+// **파일을 올리는 서버 액션은 없다**(실측 2026-08-29). 서버 액션 본문 상한이 **1MB** 라
+//   그 길로는 자료가 못 지나간다(`Body exceeded 1 MB limit` · 화면은 크래시 화면을 냈다).
+//   파일은 **브라우저에서 저장소로 곧장** 가고(피드·갈무리와 같은 관용구),
+//   여기 남은 것은 **경로만 받는** 등록이다. 그래서 이 파일에는 큰 본문이 오지 않는다.
 
 export async function addLibraryItemAction(
   input: LibraryAddInput,
