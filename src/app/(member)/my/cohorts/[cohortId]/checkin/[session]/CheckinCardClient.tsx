@@ -589,10 +589,10 @@ export function CheckinCardClient({
       {gate ? (
         <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' }}>
           <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>
-            {gate.labels.length > 0 ? '아직 비어 있는 칸이 있어요' : '한 가지만 더 여쭐게요'}
+            {gate.labels.length > 0 ? '아직 비어 있는 칸이 있습니다' : '선택 항목이 하나 남았습니다'}
           </div>
           <p className="t-caption" style={{ ...help, margin: 'var(--space-1) 0 var(--space-3)' }}>
-            {gate.labels.length > 0 ? '아래 칸을 채우면 갈무리가 끝납니다.' : '비워 두셔도 제출됩니다.'}
+            {gate.labels.length > 0 ? '아래 칸을 채우면 갈무리가 끝납니다.' : '지금 저장하거나, 더 적을 수 있습니다.'}
           </p>
           <ul style={{ margin: 0, paddingLeft: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
             {gate.labels.map((l) => <li key={l} className="t-caption" style={{ color: 'var(--color-text)' }}>{l}</li>)}

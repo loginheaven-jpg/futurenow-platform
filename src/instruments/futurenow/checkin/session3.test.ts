@@ -268,7 +268,7 @@ describe('완충 문구 — 3회차 지난 걸음', () => {
     expect(c.step.lastStep.note.help).toBe('여기 정직하게 적는 것이 다음 한 주를 바꿉니다.');
   });
   it('실행 자신감은 용도 문법이다', () => {
-    expect(c.wrap.confidence.help).toContain('가장 쓸모 있습니다');
+    expect(c.wrap.confidence.help).toContain('숫자가 낮으면 인도자가 한 걸음을 더 잘게 나눠 드립니다');
   });
   it('나에게 한마디 예시가 이 회차 것이다', () => {
     expect(c.wrap.selfNote.placeholder).toBe('오늘 본 게 아프긴 했는데, 안 봤으면 몰랐겠지');

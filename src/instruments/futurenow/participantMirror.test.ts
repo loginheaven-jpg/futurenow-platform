@@ -18,34 +18,34 @@ const baseScores = (over: Partial<FuturenowScores> = {}): FuturenowScores => ({
 describe('participantMirror (갈망 거울 — 측정 미노출)', () => {
   it('저활력(≤10) → 낮음행 갈망, 버킷 라벨·숫자 0', () => {
     const m = participantMirror(baseScores({ vitality: { score: 8, low: true } }));
-    expect(m.longing).toBe('지금 당신은 더 깊이 살아있기를 갈망하고 있어요.');
+    expect(m.longing).toBe('응답에서는 지금보다 더 살아있는 감각을 찾는 방향이 두드러집니다.');
     expect(JSON.stringify(m)).not.toMatch(/시들음|번성|위기|\d/); // 버킷 라벨·점수·등급 0
   });
 
   it('중간활력(11~17) → 중간행', () => {
     const m = participantMirror(baseScores({ vitality: { score: 14, low: false } }));
-    expect(m.longing).toBe('당신은 지금 자리에서 한 걸음을 가만히 그리고 있어요.');
+    expect(m.longing).toBe('응답에서는 지금의 자리에 머물러 다음 한 걸음을 찾는 모습이 두드러집니다.');
   });
 
   it('고활력(≥18) → 높음행', () => {
     const m = participantMirror(baseScores({ vitality: { score: 22, low: false } }));
-    expect(m.longing).toBe('당신 안에 살아있음이 차오르고 있어요. 그 감각을 기억해 두세요.');
+    expect(m.longing).toBe('응답에서는 지금의 활력을 늘리고 이어 가려는 방향이 두드러집니다.');
   });
 
   it('dominant lean = |점수−3| 최대 축의 지향(우극·좌극)', () => {
     // NAV3=5 가 가장 치우침 → 우극
     expect(participantMirror(baseScores({ compass: { NAV1: 3, NAV2: 4, NAV3: 5, NAV4: 2 } })).direction).toBe(
-      '지금 당신의 마음은 앞날을 향한 마음 쪽으로 향하고 있어요.',
+      '나침반 응답은 앞날을 향한 마음에 가깝습니다.',
     );
     // NAV4=1 가 가장 치우침 → 좌극
     expect(participantMirror(baseScores({ compass: { NAV1: 3, NAV2: 3, NAV3: 3, NAV4: 1 } })).direction).toBe(
-      '지금 당신의 마음은 단단히 뿌리내리는 마음 쪽으로 향하고 있어요.',
+      '나침반 응답은 단단히 뿌리내리는 마음에 가깝습니다.',
     );
   });
 
   it('믿음 한 줄은 F1·F2 모두 응답 시에만', () => {
     expect(participantMirror(baseScores({ faith: { F1: 4, F2: 5 } })).faith).toBe(
-      '당신이 붙잡고 있는 그 믿음이, 앞으로의 길에 빛이 되기를 바라요.',
+      '적어 주신 믿음의 자리도 앞으로 선택을 세울 때 함께 봅니다.',
     );
     expect(participantMirror(baseScores({ faith: { F1: 4, F2: null } })).faith).toBeUndefined();
     expect(participantMirror(baseScores({ faith: { F1: null, F2: null } })).faith).toBeUndefined();

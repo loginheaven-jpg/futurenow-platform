@@ -116,7 +116,7 @@ describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => 
   });
 
   // 허락('충분해요')은 지우되 **요구와 근거는 남긴다**(ADR-102 한계 규칙).
-  //   '두 개를 적으면 대개 둘 다 하지 않거든요' 는 허락의 이유가 아니라 실행에 관한 사실이라,
+  //   '이번 주의 힘을 한 곳에 모으기 위해서입니다' 는 허락의 이유가 아니라 실행에 관한 사실이라,
   //   허락을 요구('하나만 정하십시오')로 바꾸면 그 문장이 요구의 근거로 제자리를 찾는다.
   //   한 번 함께 지웠다가 '왜 하나인지'가 사라져 되살렸다 — 그 전철을 여기서 못 박는다.
   //   Phase 2 의 '충분합니다' 둘(2회차 areaPick · 3회차 pairText)은 아직 남아 있다.
@@ -129,14 +129,14 @@ describe('진취 전환 Phase 1 이 되돌아가지 않는다 (ADR-102)', () => 
       const stepHelp = lits.find((s) => s.startsWith("이 세미나에서는 이것을 '한 걸음'이라고 부릅니다."));
       expect(stepHelp, `${file}: 한 걸음 help 가 없다`).toBeTruthy();
       expect(stepHelp, `${file}: 요구가 없다`).toContain('하나만 정하십시오');
-      expect(stepHelp, `${file}: 근거가 사라졌다`).toContain('두 개를 적으면 대개 둘 다 하지 않거든요');
+      expect(stepHelp, `${file}: 근거가 사라졌다`).toContain('이번 주의 힘을 한 곳에 모으기 위해서입니다');
     }
     // 목적 세 질문은 뒤 문장(값)이 남는다 — 지운 것은 앞의 허락뿐이다.
     expect([...koreanLiterals('session2')].some((s) => s.startsWith('세 질문이 겹치는 자리에, 나의 목적이 있습니다.') && s.includes('재료가 됩니다'))).toBe(true);
   });
 
   it('심화 제목이 격상됐다 — 세 회차 공통', () => {
-    for (const file of S) expect(koreanLiterals(file).has('여기서부터가 진짜입니다'), file).toBe(true);
+    for (const file of S) expect(koreanLiterals(file).has('여기서 한 겹 더 들어갑니다'), file).toBe(true);
   });
 
   it('지난 걸음 없음 안내가 누적을 말한다 — 2·3회차', () => {
@@ -177,7 +177,7 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
 
   it('1회차 — 표지 띠와 편지 첨부', () => {
     const l = koreanLiterals('session1');
-    expect(l.has('오늘 꺼낸 것을, 흐려지기 전에 붙잡아 둡니다. 7주 기록의 첫 장입니다.')).toBe(true);
+    expect(l.has('오늘 꺼낸 갈망을 여기에 적어 둡니다. 7주 기록의 첫 장입니다.')).toBe(true);
     expect([...l].some((s) => s.includes('촬영해 첨부하십시오. (책 59쪽)'))).toBe(true);
   });
 
@@ -214,7 +214,7 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
     expect([...koreanLiterals('session2')].some((s) => s.includes('어떤 소리여도 좋습니다'))).toBe(true);
     expect([...koreanLiterals('session3')].some((s) => s.includes('그 첫 걸음이어도 좋습니다'))).toBe(true);
     // 실행에 관한 사실 — 한 걸음 뒷문장과 같은 성격이다(위로가 아니라 정보).
-    expect(koreanLiterals('session3').has('사흘쯤 뒤에 한 번 무너지는 것이 보통입니다. 그때 다시 시작하시면 됩니다.')).toBe(true);
+    expect(koreanLiterals('session3').has('흐트러지는 날이 오면, 그날부터 다시 이어 가면 됩니다.')).toBe(true);
   });
 
   // 압박 어휘·판정어는 진취적 어조와 다른 것이다(원칙 §4).
@@ -254,7 +254,7 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
 
   it('결측 안내 패널 — 컴포넌트', () => {
     const s = src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx');
-    expect(s).toContain('비워 두셔도 제출됩니다.'); // 몰아세우면 이탈한다 — 여기만은 허락을 남긴다
+    expect(s).toContain('지금 저장하거나, 더 적을 수 있습니다.'); // 몰아세우면 이탈한다 — 여기만은 허락을 남긴다
     expect(s).toContain('채우러 가기');
     expect(s).toContain('나중에 이어 쓰기');
   });
@@ -338,7 +338,7 @@ describe('4회차 문안이 되돌아가지 않는다 (ADR-104)', () => {
 
   // STEP 5 의 유일한 판별 기준이 '끝나는 날'이다. 이 문장을 지우면 마감일 칸이 단순 서식이 된다.
   it('마감일 — STEP 5 원리', () => {
-    expect(l.has('이름만 있으면 결심이고, 끝나는 날이 붙으면 프로젝트가 됩니다.')).toBe(true);
+    expect(l.has('프로젝트 이름과 마감일을 함께 적어, 결심을 일정으로 바꿉니다.')).toBe(true);
   });
 
   // 세션 안에서만 통하는 내부 용어다. 강의 어휘를 못 들은 사람도 문장만으로 무엇을 쓸지 알아야 한다.
@@ -388,7 +388,7 @@ describe('3회차 심화 개정이 되돌아가지 않는다 (ADR-100)', () => {
 
 describe('완충 문구 교체가 되돌아가지 않는다', () => {
   const REPLACED = '솔직하게요. 낮게 답하셔도 아무 일 없습니다.';
-  const NOW = '낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 한 걸음을 더 잘게 쪼개 드릴 수 있거든요.';
+  const NOW = '지금 느끼는 그대로 표시해 주세요. 숫자가 낮으면 인도자가 한 걸음을 더 잘게 나눠 드립니다.';
 
   for (const file of ['session1', 'session2', 'session3', 'session4', 'session5'] as const) {
     it(`${file}: 실행 자신감 보조문구가 용도 문법으로 바뀌었다`, () => {
@@ -449,7 +449,7 @@ describe('5회차 문안이 되돌아가지 않는다 (ADR-108)', () => {
   });
 
   it('방해 요인 보조 문구가 3회차 위로로 돌아왔다 — 4회차가 넘긴 재료를 여기서 받는다', () => {
-    expect(l.has('미리 적어 두면 그 순간에 덜 무너집니다.')).toBe(true);
+    expect(l.has('미리 적어 두면, 그때 무엇을 할지 이미 정해져 있습니다.')).toBe(true);
     expect([...l].some((s) => s.includes('다음 시간의 재료가 됩니다'))).toBe(false);
   });
 

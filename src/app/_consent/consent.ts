@@ -27,7 +27,7 @@ export const PRIVACY_CONSENT: ConsentText = {
 // ② 멤버 선택 — 민감정보(종교·신앙)
 export const SENSITIVE_CONSENT: ConsentText = {
   title: '[선택] 민감정보 수집·이용 동의',
-  lines: ['항목: 종교, 신앙 연수', '목적: 체크 해석·맞춤 돌봄', '미동의해도 체크 참여에 제한이 없습니다.'],
+  lines: ['항목: 종교, 신앙 연수', '목적: 체크 해석 · 개별 안내 및 세미나 운영', '미동의해도 체크 참여에 제한이 없습니다.'],
   agree: '민감정보 수집에 동의합니다.',
 };
 

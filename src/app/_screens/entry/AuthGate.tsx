@@ -271,7 +271,7 @@ export function AuthGate({
               <>
                 <div className="t-body" style={{ fontWeight: 600, marginTop: 'var(--space-2)' }}>가입 경위</div>
                 <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'calc(var(--space-1) * -1)' }}>
-                  어떻게 알고 오셨는지 한 줄로 적어 주세요. 운영자가 이 줄을 보고 자격을 확인합니다.
+                  어떻게 알고 오셨는지 한 줄로 적어 주세요. 운영자가 이 내용을 보고 자격을 확인합니다.
                 </p>
                 <label className="t-caption" style={labelStyle}>
                   가입 경위
@@ -286,8 +286,7 @@ export function AuthGate({
 
                 <div className="t-body" style={{ fontWeight: 600, marginTop: 'var(--space-2)' }}>촉진자포럼 가입 정보 (선택)</div>
                 <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'calc(var(--space-1) * -1)' }}>
-                  포럼을 거쳐 오셨다면 그때 쓰신 이름과 연락처를 적어 주세요. 명단 대조가 빨라집니다.
-                  포럼을 거치지 않으셨다면 비워 두셔도 됩니다.
+                  촉진자포럼을 거쳐 오셨다면 그때 쓰신 이름과 연락처를 적어 주세요. 명단 확인에 사용합니다.
                 </p>
                 <label className="t-caption" style={labelStyle}>
                   포럼 가입 이름 (선택)

@@ -179,7 +179,7 @@ describe('심화 — 인생의 원씽 (선택 · 한 칸)', () => {
   });
 
   it('제목은 ADR-102 격상 문안이다', () => {
-    expect(c.deepen.title).toBe('여기서부터가 진짜입니다');
+    expect(c.deepen.title).toBe('여기서 한 겹 더 들어갑니다');
   });
 });
 
