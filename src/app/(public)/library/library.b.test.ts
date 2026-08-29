@@ -71,8 +71,14 @@ describe('★ 이름 가리기는 한 자리에만 산다 (결재 ⑶⑷⑸⑻)'
 
   it('밖에서는 작성자 **id 도** 내주지 않는다 — 이름을 가려도 id 로 사람이 붙는다', () => {
     const mig = read(MIG);
-    const fn = mig.slice(mig.indexOf('create or replace function public.library_comment_list'));
-    expect(fn.slice(0, fn.indexOf('$fn$;'))).toContain('case when v_uid is null then null else c.author_id end');
+    const at = mig.indexOf('create or replace function public.library_comment_list');
+    const fn = mig.slice(at, mig.indexOf('$fn$;', at));
+    expect(fn).toContain('case when v_uid is null then null else c.author_id end');
+    // ★ **「있는가」에서 한 단계 건넜다**(지휘부 기준 · 감리 2026-08-30) —
+    //   조건식이 **있어도** 그 옆에 원본을 함께 낼 수 있다. 그러면 가려도 id 로 사람이 붙는다.
+    //   그래서 **원본 `c.author_id` 를 벌거벗은 채 내는 자리가 없는지**까지 본다.
+    const select = fn.slice(fn.indexOf('select c.id'), fn.indexOf('from public.library_comments'));
+    expect(select, '조건식과 나란히 원본 author_id 를 낸다').not.toMatch(/^\s*c\.author_id\s*,?\s*$/m);
   });
 
   it('목록의 **작성자 이름도** 가린다 — 댓글만 가리고 목록을 열어 두면 뚫린다', () => {
@@ -87,7 +93,12 @@ describe('★ 이름 가리기는 한 자리에만 산다 (결재 ⑶⑷⑸⑻)'
   });
 });
 
-describe('★ 권한 — 걷었는지 잠금이 잰다 (§0 ①②③)', () => {
+// ★ **이 절은 「썼는가」를 잰다. 「걷혔는가」는 `tests/defaultPrivileges.integration.test.ts` 가 잰다.**
+//   문장이 포함돼도 **사실이 아닐 수 있다**(하네스 계열 ⑬ · 이 회차에 실제로 겪었다) —
+//   그래서 **사실 검사를 실DB 쪽으로 옮겼고**, 여기 남은 것은 «마이그레이션이 그 문장을 갖는가» 다.
+//   둘은 겹치지 않는다: 여기가 없으면 새 마이그레이션이 걷기를 잊고,
+//   저기가 없으면 **썼는데 안 걷힌 것**을 못 본다.
+describe('★ 권한 — 썼는지 잰다 (§0 ①②) · 걷혔는지는 실DB 잠금이 잰다 (§0 ③)', () => {
   it('표 다섯을 **전부** 걷는다 — 쓰지 않는 태그 표까지', () => {
     const mig = read(MIG);
     for (const t of ['library_tags', 'library_item_tags', 'library_reactions', 'library_comments', 'library_reports']) {

@@ -14,10 +14,24 @@
 // **종류 목록은 따라가야 하는 값이다**(값의 두 분류 ⑴) — 여기에 박지 않고
 //   `pg_default_acl` 을 **매번 읽어서** 그 자리에서 목록을 만든다. 박으면 낡는다.
 //
+// ★ **스키마는 넓히지 않는다. 좁히되 좁힘 자체를 잠금이 지킨다**(지휘부 판정 2026-08-30).
+//   `postgres` 소유 표가 여섯 스키마에 있으나(`public` 31 · `auth` 23 · `shadow` 10 ·
+//   `storage` 8 · `realtime` 1 · `supabase_migrations` 1) **우리가 표를 만드는 스키마는 `public` 하나다.**
+//   `auth`·`storage`·`realtime` 은 Supabase 가 만든 것이라 **건드리면 플랫폼이 깨지고**,
+//   `shadow` 는 SAIL 소관이며 이미 `service_role` 만이다.
+//   **넓히면 우리 소관이 아닌 것을 걷으려 들게 된다** — 그래서 좁힌다.
+//   대신 **좁힘이 깨지는 순간을 잡는다**: 마이그레이션이 다른 스키마에 표·함수·시퀀스를 만들면 레드.
+//
+//   기록 — `storage` 에도 같은 모양의 default privileges 가 서 있다(지휘부 실측).
+//   **우리가 안 만들 뿐이고, 만들게 되는 날 아래 「public 에만 만드는가」 잠금이 먼저 운다.**
+//
 // 기본 SKIP — 실DB 옵트인:
 //   RUN_RLS_INTEGRATION=1 SUPABASE_DB_URL="postgres://…" npm test
 import { describe, it, expect } from 'vitest';
 import { Client } from 'pg';
+import { readFileSync } from 'node:fs';
+// 줄 나누기 — **이스케이프를 쓰지 않는다**(하네스 계열 ⑫).
+const NL = String.fromCharCode(10);
 
 const ENABLED = process.env.RUN_RLS_INTEGRATION === '1' && !!process.env.SUPABASE_DB_URL;
 
@@ -144,5 +158,40 @@ describe.skipIf(!ENABLED)('★ 기본 권한 — pg_default_acl 을 읽어서 �
     } finally {
       await db.end();
     }
+  });
+});
+
+// ★ **이 잠금은 실DB 가 필요 없다** — 저장소 파일만 본다. 그래서 옵트인 밖에 둔다.
+//   위 잠금들이 `public` 만 보는 것이 옳으려면 **우리가 `public` 에만 만들어야** 하고,
+//   그 전제가 깨지는 날 이것이 먼저 운다(지휘부 판정 2026-08-30).
+describe('★ 우리는 public 에만 만든다 — 좁힘의 전제', () => {
+  /** 주석을 빼고 `if not exists` 를 미리 지운다 — 그래야 다음 토큰이 곧 대상 이름이다. */
+  function statements(file: string): string[] {
+    const sql = readFileSync(`supabase/migrations/${file}`, 'utf8')
+      .split(NL).filter((l) => !l.trim().startsWith('--')).join(NL);
+    // ★ `if not exists` 를 **먼저 지운다.** optional 그룹으로 두면 정규식이 백트랙해
+    //   `IF` 를 대상 이름으로 읽는다(2026-08-30 실측 — 자가 세 파일을 헛짚었다).
+    const flat = sql.replace(/if\s+not\s+exists\s+/gi, ' ');
+    return [...flat.matchAll(/create\s+(?:or\s+replace\s+)?(table|function|sequence|view)\s+([^\s(]+)/gi)]
+      .map((m) => m[2]);
+  }
+
+  it('마이그레이션이 **다른 스키마에** 표·함수·시퀀스를 만들지 않는다', async () => {
+    const { readdirSync } = await import('node:fs');
+    const files = readdirSync('supabase/migrations').filter((f) => f.endsWith('.sql'));
+    expect(files.length, '마이그레이션이 없다 — 잴 것이 없다').toBeGreaterThan(0);
+
+    const offenders: string[] = [];
+    let counted = 0;
+    for (const f of files) {
+      for (const name of statements(f)) {
+        counted += 1;
+        const schema = name.includes('.') ? name.split('.')[0].toLowerCase() : '(스키마 없음)';
+        if (schema !== 'public') offenders.push(`${f} → ${name}`);
+      }
+    }
+    // **물 것이 실재하는가** — 하나도 못 세었다면 잣대가 헛돈 것이다(계열 ⑦).
+    expect(counted, '만드는 문장을 하나도 못 세었다 — 잣대가 헛돈다').toBeGreaterThan(50);
+    expect(offenders, `public 밖에 만든다: ${offenders.join(', ')}`).toHaveLength(0);
   });
 });
