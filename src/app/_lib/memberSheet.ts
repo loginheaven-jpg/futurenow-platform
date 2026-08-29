@@ -12,6 +12,7 @@ import type { SessionChip } from '@/app/_screens/site/SessionChipStrip';
 import { buildSessionChips } from '@/app/(member)/home/sessionChips';
 import { openedSessionNos } from '@/app/(member)/my/cohorts/[cohortId]/progress';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export interface MemberSheet {
   groups: MenuGroup[];
@@ -83,7 +84,7 @@ export async function buildMemberSheet(
           : { href: '/my/values', label: VALUE_TOOL },
       ],
     },
-    { title: '자료', items: [{ href: '/library', label: '자료실' }, { href: '/news', label: '소식' }] },
+    { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
     { title: '계정', items: [{ href: '/account', label: '내 정보' }] },
   ];
 

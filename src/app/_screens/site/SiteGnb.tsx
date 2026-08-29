@@ -54,7 +54,7 @@ export function SiteGnb({
   sheet?: { name: string; role?: string; cohort?: string; groups: MenuGroup[]; chips?: SessionChip[] };
 }) {
   const [open, setOpen] = useState(false);
-  // 하위 경로도 현재로 친다 — `/library/3` 에서 자료실이 꺼져 보이면 내비가 거짓말을 한다.
+  // 하위 경로도 현재로 친다 — `/library/3` 에서 서가가 꺼져 보이면 내비가 거짓말을 한다.
   const isCurrent = (href: string) =>
     currentPath !== undefined && (currentPath === href || currentPath.startsWith(`${href}/`));
 

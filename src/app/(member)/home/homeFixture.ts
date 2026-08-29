@@ -6,6 +6,7 @@ import type { SessionChip } from '@/app/_screens/site/SessionChipStrip';
 //   캡처와 육안 확인이 서로 다른 것을 보게 된다(F-1 `galleryFixture` 와 같은 이유).
 import type { MyCohortSummary } from '@/contracts';
 import type { HomeScreenProps } from './HomeScreen';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const HOME_COHORTS: MyCohortSummary[] = [
   {
@@ -25,7 +26,7 @@ export const HOME_FIXTURE: HomeScreenProps = {
     { icon: 'checkin', title: '오늘의 갈무리', hint: '2회차', href: '/my/cohorts/c1/checkin/2' },
     { icon: 'mirror', title: '되비추기', hint: '나의 기록', href: '/my/cohorts/c1/journey' },
     { icon: 'feed', title: '동행', hint: '기수와 함께', href: '/feed' },
-    { icon: 'library', title: '자료실', hint: '배포 자료', href: '/library' },
+    { icon: 'library', title: LIBRARY_NAME, hint: '배포 자료', href: '/library' },
   ],
   news: [
     { id: 'n1', title: '2회차 준비물 안내', date: '8.20', href: '/news/n1' },
@@ -45,7 +46,7 @@ export const SHEET_FIXTURE: { name: string; role: string; cohort: string; groups
   groups: [
     { title: '여정', items: [{ href: '/my/cohorts/c1', label: '내 기수' }, { href: '/feed', label: '동행' }] },
     { title: '진단', items: [{ href: '/home/assessments', label: '체크 허브' }, { href: '/my/values', label: '가치 카드' }] },
-    { title: '자료', items: [{ href: '/library', label: '자료실' }, { href: '/news', label: '소식' }] },
+    { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
     { title: '계정', items: [{ href: '/account', label: '내 정보' }] },
   ],
   chips: [

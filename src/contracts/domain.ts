@@ -394,17 +394,63 @@ export interface NewsPost {
   authorId: string | null;
 }
 
-// 자료실 3단. 'public' 은 **비로그인 열람 허용**이라는 뜻이지 공개 버킷이라는 뜻이 아니다 —
-//   버킷은 비공개 하나뿐이고 파일은 만료형 서명 URL 로만 나간다.
-export type LibraryTier = 'public' | 'member' | 'coach';
+// 서가 — **축이 둘이다**(서가 A · 지휘부 판정 ① 2026-08-29).
+//
+//   `tier`     누구까지 보는가 — `public`(익명 포함 전원) · `forum`(포럼회원 이상) · `coach`(인도자·운영자)
+//   `cohortId` 어느 기수의 것인가 — `null` 이면 기수 무관
+//
+// **3단만으로는 «본인 회기 자료» 를 담을 수 없다.** 회기는 등급이 아니라 소속이고,
+//   `forum` 으로 두면 **회기가 끝난 참여자가 못 본다**(최박사 확정 ③ 위반).
+//   등록 이력은 `enrollments` 에 남으므로 **「기간 제한 없음」을 구조가 지킨다.**
+//
+// 'public' 은 **비로그인 열람 허용**이라는 뜻이지 공개 버킷이라는 뜻이 아니다 —
+//   버킷은 비공개 하나뿐이고 파일은 **프록시 라우트**로만 나간다(판정 ④ · 잔여 창 0).
+export type LibraryTier = 'public' | 'forum' | 'coach';
 
+/** 파일이거나 링크다. 둘 중 하나만 든다 — DB 의 `library_items_source_check` 가 그것을 잠근다. */
+export type LibraryKind = 'file' | 'link';
+
+/**
+ * 목록 한 줄. **주소가 없다**(§4) — `storagePath`·`url` 은 이 타입에 **없다.**
+ *   규칙이 아니라 **타입으로** 막았다(불변식 8 과 같은 방식).
+ *   주소는 `openLibraryItem` 만 내주고 그것은 서버에서만 불린다.
+ */
 export interface LibraryItem {
   id: string;
   title: string;
   description: string | null;
   tier: LibraryTier;
-  storagePath: string;
+  kind: LibraryKind;
+  cohortId: string | null;
+  cohortName: string | null;
+  createdBy: string | null;
+  authorName: string | null;
+  /** 본인이 가렸다(확정 ⑥ — 삭제가 아니라 표시). 목록에는 본인·운영자에게만 온다. */
+  hidden: boolean;
+  /** 내가 올린 것인가. 가리기 단추의 조건이다. */
+  mine: boolean;
+  /** **관문을 지날 수 있는가** — 서버가 판정한 값이다. 화면이 계산하지 않는다. */
+  canView: boolean;
   createdAt: string;
+}
+
+/** 관문을 지난 사람에게만 나오는 것. **서버 안에서만 산다.** */
+export interface LibrarySource {
+  kind: LibraryKind;
+  storagePath: string | null;
+  url: string | null;
+  title: string;
+}
+
+/** 올릴 때 받는 것. `kind` 에 따라 둘 중 하나만 채운다. */
+export interface LibraryAddInput {
+  title: string;
+  description: string | null;
+  tier: LibraryTier;
+  cohortId: string | null;
+  kind: LibraryKind;
+  storagePath: string | null;
+  url: string | null;
 }
 
 // 문의. **메일이 아니라 저장으로 간다**(발송 수단 실측 0 · S-4). 운영자가 콘솔에서 읽는다.

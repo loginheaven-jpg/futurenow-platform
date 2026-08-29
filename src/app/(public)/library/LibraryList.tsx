@@ -1,58 +1,68 @@
-'use client';
-// 자료 목록 — 클릭 시 **그때** 서명 URL 을 받는다.
+// 서가 목록 한 줄 — **제목과 권한만 말한다.**
 //
-// 목록에 URL 을 미리 실지 않는 이유: 서명 URL 은 발급 즉시 만료 시계가 돌고, 페이지에 박아 두면
-//   화면을 열어 둔 채 시간이 지났을 때 죽은 링크가 된다. 그리고 **받지도 않을 파일의 URL 이
-//   HTML 에 남는다** — 만료형으로 좁혀 둔 뜻이 옅어진다.
-import { useState, useTransition } from 'react';
-import { signLibraryFileAction } from './actions';
+// **주소를 들지 않는다**(§4). 옛 목록은 `path` 를 받아 클릭 때 서명 URL 을 받았다.
+//   지금은 **자료 화면(`/library/[id]`)이 통째로 관문**이고 파일은 프록시 라우트로만 나간다 —
+//   관문을 지난 사람이 주소를 넘길 수 있는 **잔여 창이 없다**(판정 ④).
+//
+// **못 여는 것을 감추지 않는다**(§5). 목록은 전원에게 보이고, 못 여는 줄은 **왜 못 여는지**를 적는다.
+import Link from 'next/link';
+import type { LibraryItem } from '@/contracts/domain';
+import { LIBRARY_TIER_LABEL } from '@/app/_vocab/library';
 
-export function LibraryList({
-  items,
-}: {
-  items: { id: string; title: string; description: string | null; path: string }[];
-}) {
-  const [pending, startTx] = useTransition();
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  const muted = { color: 'var(--color-text-secondary)' } as const;
+const muted = { color: 'var(--color-text-secondary)' } as const;
 
-  function open(item: { id: string; path: string }) {
-    if (pending) return;
-    setBusyId(item.id);
-    setMsg(null);
-    startTx(async () => {
-      const res = await signLibraryFileAction(item.path);
-      setBusyId(null);
-      if (!res.url) {
-        setMsg('지금은 받을 수 없습니다. 잠시 뒤 다시 시도해 주세요.');
-        return;
-      }
-      window.open(res.url, '_blank', 'noopener,noreferrer');
-    });
-  }
+/** 못 여는 줄에 붙는 말. **의미색을 쓰지 않는다**(불변식 9) — 사실만 적는다. */
+function lockNote(item: LibraryItem): string {
+  if (item.cohortName) return `${item.cohortName} 참여자에게 열립니다.`;
+  if (item.tier === 'coach') return '인도자에게 열립니다.';
+  return '포럼회원께 열립니다.';
+}
 
+export function LibraryList({ items }: { items: LibraryItem[] }) {
   return (
-    <div className="pc-cards" style={{ marginTop: 'var(--space-3)' }}>
-      {items.map((i) => (
-        <button
-          key={i.id}
-          type="button"
-          className="ui-card ui-tappable"
-          onClick={() => open(i)}
-          disabled={pending}
-          style={{ textAlign: 'left', padding: 'var(--space-4)', border: 'var(--border-hair) solid var(--color-border)', background: 'var(--color-surface-1)', cursor: 'pointer' }}
-        >
-          <span className="t-body" style={{ fontWeight: 600 }}>{i.title}</span>
-          {i.description ? (
-            <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-1)' }}>{i.description}</span>
-          ) : null}
-          <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-2)' }}>
-            {busyId === i.id && pending ? '여는 중…' : '내려받기'}
-          </span>
-        </button>
-      ))}
-      {msg ? <p className="t-caption" style={muted}>{msg}</p> : null}
-    </div>
+    <ul className="pc-cards" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 'var(--space-3)' }}>
+      {items.map((i) => {
+        const badges = [
+          i.cohortName ?? LIBRARY_TIER_LABEL[i.tier],
+          i.kind === 'link' ? '링크' : null,
+          i.hidden ? '가림' : null,
+        ].filter(Boolean);
+        const body = (
+          <>
+            <span className="t-body" style={{ fontWeight: 600 }}>{i.title}</span>
+            {i.description ? (
+              <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-1)' }}>{i.description}</span>
+            ) : null}
+            <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-2)' }}>
+              {badges.join(' · ')}
+              {i.authorName ? ` · ${i.authorName}` : ''}
+            </span>
+            {i.canView ? null : (
+              <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-1)' }}>
+                {lockNote(i)}
+              </span>
+            )}
+          </>
+        );
+        const box = {
+          display: 'block', padding: 'var(--space-4)',
+          border: 'var(--border-hair) solid var(--color-border)',
+          borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-1)',
+        } as const;
+
+        return (
+          <li key={i.id}>
+            {i.canView ? (
+              // **자료 화면이 관문이다.** 목록은 문을 열지 않고 문 앞까지만 데려간다.
+              <Link href={`/library/${i.id}`} className="ui-tappable" style={{ ...box, textDecoration: 'none', color: 'inherit' }}>
+                {body}
+              </Link>
+            ) : (
+              <div style={box}>{body}</div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

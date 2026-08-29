@@ -2,6 +2,7 @@
 //   둘이 다른 데이터를 쓰면 캡처와 육안 확인이 서로 다른 것을 본다(`homeFixture` 와 같은 이유).
 import type { CohortHomeScreenProps } from '@/app/(member)/my/cohorts/[cohortId]/CohortHomeScreen';
 import type { AssessmentsScreenProps } from '@/app/(member)/home/assessments/AssessmentsScreen';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 // **`WHO`·`SHEET` 를 걷었다**(U-2 §3) — 시트 자료는 껍데기가 들고 화면이 나르지 않는다.
 
@@ -19,7 +20,7 @@ export const COHORT_FIXTURE: CohortHomeScreenProps = {
     { key: 'journey', title: '되비추기', note: '지난 회차 다시 보기', href: '/my/cohorts/c1/journey' },
     { key: 'feed', title: '동행 피드', note: '오늘의 걸음', href: '/feed?cohort=c1' },
     { key: 'report', title: '사전 체크 완료', note: '리포트 보기', href: '/my/cohorts/c1/report' },
-    { key: 'library', title: '자료실', note: '배포 자료', href: '/library' },
+    { key: 'library', title: LIBRARY_NAME, note: '배포 자료', href: '/library' },
   ],
 };
 

@@ -31,6 +31,8 @@ import type {
   InterpretationView,
   ContactMessage,
   LibraryItem,
+  LibrarySource,
+  LibraryAddInput,
   MemberActivity,
   NewsComment,
   NewsPost,
@@ -202,7 +204,13 @@ const VALUE_COLS =
 
 // 승인 큐 RPC 원시 행. `status` 열에 담기는 것은 저장값이 아니라 member_state() 판정이다.
 interface NewsRow { id: string; title: string; body: string; published_at: string | null; created_at: string; author_id: string | null }
-interface LibraryRow { id: string; title: string; description: string | null; tier: string; storage_path: string; created_at: string }
+// 서가 목록 한 줄 — `library_list()` 가 내는 모양 그대로다. **주소 칸이 없다**(§4).
+interface LibraryRow {
+  id: string; title: string; description: string | null; tier: string; kind: string;
+  cohort_id: string | null; cohort_name: string | null;
+  created_by: string | null; author_name: string | null;
+  hidden: boolean; mine: boolean; can_view: boolean; created_at: string;
+}
 interface ContactRow { id: string; name: string | null; email: string | null; body: string; user_id: string | null; handled_at: string | null; created_at: string }
 
 // ── 동행 피드 행(2차 · ADR-124) ─────────────────────────────
@@ -1401,7 +1409,7 @@ class SupabaseCoreContext implements CoreContext {
 
   // ── 공개 영역(S-4) ────────────────────────────────────────
   //
-  // **RLS 가 가르고 코어는 나른다.** 소식의 초안·자료실의 3단은 정책이 판정하므로
+  // **RLS 가 가르고 코어는 나른다.** 소식의 초안·서가의 등급은 정책이 판정하므로
   //   여기에 role 분기를 쓰지 않는다 — 쓰면 판정이 두 곳이 된다.
 
   async listNews(limit = 20): Promise<NewsPost[]> {
@@ -1435,29 +1443,63 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   async listLibrary(): Promise<LibraryItem[]> {
-    const { data, error } = await this.sb
-      .from('library_items')
-      .select('id,title,description,tier,storage_path,created_at')
-      .order('created_at', { ascending: false });
+    // **표를 직접 읽지 않는다**(§4) — `anon`·`authenticated` 에게서 SELECT 를 회수했다.
+    //   목록은 RPC 하나가 낸다. 그 RPC 가 주소를 싣지 않으므로 **주소가 샐 자리가 없다.**
+    const { data, error } = await this.sb.rpc('library_list');
     if (error) throw new CoreError(`listLibrary 실패: ${error.message}`);
-    return (data ?? []).map((r) => {
-      const row = r as unknown as LibraryRow;
-      return {
-        id: row.id, title: row.title, description: row.description,
-        tier: row.tier as LibraryItem['tier'], storagePath: row.storage_path, createdAt: row.created_at,
-      };
-    });
+    return ((data ?? []) as LibraryRow[]).map((r) => ({
+      id: r.id, title: r.title, description: r.description,
+      tier: r.tier as LibraryItem['tier'], kind: r.kind as LibraryItem['kind'],
+      cohortId: r.cohort_id, cohortName: r.cohort_name,
+      createdBy: r.created_by, authorName: r.author_name,
+      hidden: r.hidden, mine: r.mine, canView: r.can_view, createdAt: r.created_at,
+    }));
   }
 
-  async signLibraryFile(storagePath: string, expiresInSec = 300): Promise<string | null> {
-    // **자격을 먼저 묻는다.** 목록 RLS 와 같은 표(library_can_read)를 보므로 둘이 갈리지 않는다.
-    //   서명 URL 은 한 번 나가면 만료까지 유효하므로, 발급 자체가 관문이다.
-    const { data: ok, error: gateErr } = await this.sb.rpc('library_can_read', { p_path: storagePath });
-    if (gateErr) throw new CoreError(`signLibraryFile 실패: ${gateErr.message}`);
-    if (ok !== true) return null;
-    const { data, error } = await this.sb.storage.from('library').createSignedUrl(storagePath, expiresInSec);
-    if (error) return null; // 파일이 아직 없을 수 있다 — 화면이 '준비 중'으로 받는다
-    return data?.signedUrl ?? null;
+  async openLibraryItem(id: string): Promise<LibrarySource | null> {
+    // 관문은 **DB 안에** 있다(`library_open` 이 42501 을 던진다). 여기서 다시 판정하지 않는다 —
+    //   판정이 두 곳이 되면 한 곳만 고쳐질 때 뚫린다.
+    const { data, error } = await this.sb.rpc('library_open', { p_id: id });
+    if (error) return null; // 자격 없음(42501)도 여기로 온다 — 화면은 «없거나 못 본다» 하나로 받는다
+    const row = (data as { kind: string; storage_path: string | null; url: string | null; title: string }[] | null)?.[0];
+    if (!row) return null;
+    return { kind: row.kind as LibrarySource['kind'], storagePath: row.storage_path, url: row.url, title: row.title };
+  }
+
+  async canUploadLibrary(): Promise<boolean> {
+    const { data, error } = await this.sb.rpc('library_can_upload');
+    if (error) return false;
+    return data === true;
+  }
+
+  async addLibraryItem(input: LibraryAddInput): Promise<string> {
+    const { data, error } = await this.sb.rpc('library_add', {
+      p_title: input.title, p_description: input.description, p_tier: input.tier,
+      p_cohort_id: input.cohortId, p_kind: input.kind,
+      p_storage_path: input.storagePath, p_url: input.url,
+    });
+    if (error) throw new CoreError(`addLibraryItem 실패: ${error.message}`);
+    return data as string;
+  }
+
+  async hideLibraryItem(id: string, hidden: boolean): Promise<void> {
+    const { error } = await this.sb.rpc('library_hide', { p_id: id, p_hidden: hidden });
+    if (error) throw new CoreError(`hideLibraryItem 실패: ${error.message}`);
+  }
+
+  async uploadLibraryFile(path: string, file: File): Promise<boolean> {
+    // 저장소 정책(`library_objects_insert_v2`)이 **자기 폴더 + 올릴 자격** 둘을 함께 본다.
+    //   여기서 자격을 다시 보지 않는다 — 판정은 한 곳이다.
+    const { error } = await this.sb.storage.from('library').upload(path, file, { upsert: false });
+    return !error;
+  }
+
+  async downloadLibraryFile(storagePath: string): Promise<{ body: ArrayBuffer; contentType: string } | null> {
+    // **매 요청이 관문을 지난다.** 이 클라이언트는 사용자 세션을 들고 있으므로
+    //   저장소 RLS(`library_can_view_path`)가 여기서 한 번 더 판정한다 — **잔여 창 0**(판정 ④).
+    const { data, error } = await this.sb.storage.from('library').download(storagePath);
+    if (error || !data) return null;
+    return { body: await data.arrayBuffer(), contentType: data.type || 'application/octet-stream' };
   }
 
   async submitContact(input: { name?: string | null; email?: string | null; body: string }): Promise<void> {

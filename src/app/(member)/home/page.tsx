@@ -21,6 +21,7 @@ import { HomeScreen } from './HomeScreen';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
 import { roleTargets } from './roleTarget';
+import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,7 +82,7 @@ export default async function MemberHomePage() {
       : []),
     ...(primary ? [{ icon: 'mirror' as const, title: '되비추기', hint: '나의 기록', href: `/my/cohorts/${primary.cohortId}/journey` }] : []),
     ...(feedCohorts.length > 0 ? [{ icon: 'feed' as const, title: '동행', hint: '기수와 함께', href: '/feed' }] : []),
-    { icon: 'library' as const, title: '자료실', hint: '배포 자료', href: '/library' },
+    { icon: 'library' as const, title: LIBRARY_NAME, hint: '배포 자료', href: '/library' },
   ];
 
   // 시안 B `.notice` — 소식 한 줄. 없으면 구획째 그리지 않는다(현관과 같은 규율).
