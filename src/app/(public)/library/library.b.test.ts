@@ -60,8 +60,12 @@ describe('★ 이름 가리기는 한 자리에만 산다 (결재 ⑶⑷⑸⑻)'
     const mig = read(MIG);
     const fn = mig.slice(mig.indexOf('create or replace function public.library_mask_name'));
     const body = fn.slice(0, fn.indexOf('$fn$;') + 5);
-    // 세 갈래(널 · 한 글자 · 두 글자)와 그 밖 하나. 영문을 위한 별도 갈래가 있으면 예외를 둔 것이다.
-    expect(body, '영문에 예외를 두었다 — 예외는 나중에 낡는다').not.toMatch(/[A-Za-z]-z|ascii|~ '\^\[A-Za-z/);
+    // ★ **「그것뿐인가」로 묻는다** — 「어떤 갈래가 있는가」가 아니라 **갈래가 넷을 넘지 않는가**.
+    //   널 · 안 가림 · 한 글자 · 두 글자 + 그 밖(else) 하나. **영문·공백을 위한 갈래가 더 붙으면**
+    //   예외를 둔 것이고 그 예외가 나중에 낡는다(결재 ⑻).
+    const whens = (body.match(/when/g) ?? []).length;
+    expect(whens, `갈래가 ${whens} 개다 — 예외가 붙었다`).toBeLessThanOrEqual(4);
+    expect(body, '영문에 예외를 두었다').not.toMatch(/[Aa]scii|A-Za-z/);
     expect(body).toContain('char_length(p_name) = 2');
   });
 
@@ -73,8 +77,13 @@ describe('★ 이름 가리기는 한 자리에만 산다 (결재 ⑶⑷⑸⑻)'
 
   it('목록의 **작성자 이름도** 가린다 — 댓글만 가리고 목록을 열어 두면 뚫린다', () => {
     const mig = read(MIG);
-    const fn = mig.slice(mig.indexOf('create function public.library_list'));
+    // **그 함수 안에서만 본다** — 뒤 함수의 것을 잡으면 자가 넓어진다(⑨-b).
+    const at = mig.indexOf('create function public.library_list');
+    const fn = mig.slice(at, mig.indexOf('$fn$;', at));
     expect(fn).toContain('public.library_mask_name(u.name, auth.uid() is null)');
+    // ★ **「부르는가」로 그치지 않는다** — 그 결과가 `author_name` 자리에 **실제로 놓이는지**를 본다.
+    //   부르고 버리면 가려지지 않은 `u.name` 이 나간다.
+    expect(fn, '가리기 결과를 쓰지 않고 원본을 낸다').not.toMatch(/^\s+u\.name,\s*$/m);
   });
 });
 
@@ -136,8 +145,13 @@ describe('★ 신고는 운영자만 본다 (결재 ⑺)', () => {
   it('신고 함수 셋이 `is_admin` 을 본다', () => {
     const mig = read(MIG);
     for (const f of ['library_report_open_count', 'library_report_list', 'library_report_handle']) {
-      const fn = mig.slice(mig.indexOf(`function public.${f}`));
-      expect(fn.slice(0, fn.indexOf('$fn$;')), `${f} 가 운영자를 확인하지 않는다`).toContain('is_admin(auth.uid())');
+      const at = mig.indexOf(`function public.${f}`);
+      const body = mig.slice(at, mig.indexOf('$fn$;', at));
+      // ★ **「부르는가」가 아니라 「막는가」를 묻는다**(지휘부 감리 2026-08-30 · 예 ②).
+      //   게이트 호출이 포함돼도 **결과를 무시할 수 있다** — 도구 게이트에서 이미 겪은 형태다.
+      //   `if not is_admin(...) then raise` 로 **이어져야** 실제로 막는다.
+      expect(body.replace(/\s+/g, ' '), `${f} 가 운영자 판정 결과를 쓰지 않는다`)
+        .toMatch(/if not public\.is_admin\(auth\.uid\(\)\) then raise exception/);
     }
   });
 

@@ -37,6 +37,7 @@ const SKIP_REASONS = [
   ['tests/membership.integration.test.ts', '실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다'],
   ['tests/feed.integration.test.ts', '실DB 옵트인 — 같은 스위치'],
   ['tests/rls.integration.test.ts', '실DB 옵트인 — 같은 스위치'],
+  ['tests/defaultPrivileges.integration.test.ts', '실DB 옵트인 — 같은 스위치(pg_default_acl 실측)'],
   ['tests/feedReactionsMulti.migration.test.ts', '적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)'],
   ['tests/site.snapshot.test.tsx', '캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다'],
 ];
