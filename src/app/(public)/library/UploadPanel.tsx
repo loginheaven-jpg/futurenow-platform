@@ -8,8 +8,8 @@
 //   등급 이름을 화면이 비교하기 시작하면 판정이 두 곳이 된다.
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { LIBRARY_NAME, LIBRARY_TIER_LABEL } from '@/app/_vocab/library';
-import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE } from './copy';
+import { LIBRARY_NAME, LIBRARY_TIER_LABEL, LIBRARY_MAX_MB } from '@/app/_vocab/library';
+import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE } from './copy';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { addLibraryItemAction } from './actions';
 
@@ -65,7 +65,10 @@ export function UploadPanel({
         const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).slice(0, 10) : '';
         const path = `${u.user.id}/${crypto.randomUUID()}${ext}`;
         const { error } = await sb.storage.from('library').upload(path, file, { upsert: false });
-        if (error) { setErr('지금은 올릴 수 없습니다. 잠시 뒤 다시 시도해 주세요.'); return; }
+        // **「잠시 뒤 다시 시도해 주세요」를 걷었다**(최박사 지시) — 기다려도 안 되는 것을
+        //   기다리라고 하는 말이었다. 크기는 위에서 이미 걸러지므로 여기 남는 것은 자격·연결이고,
+        //   그 자리에는 **등록 실패와 같은 말**을 쓴다(새 문장을 짓지 않는다).
+        if (error) { setErr('지금은 올릴 수 없습니다. 자격을 확인해 주세요.'); return; }
         storagePath = path;
       }
       const res = await addLibraryItemAction({
@@ -115,6 +118,8 @@ export function UploadPanel({
             ))}
           </div>
 
+          {/* ★ **고르는 즉시 잰다**(최박사 결재 2026-08-29) — 올리기 전에 말한다.
+              숫자는 `_vocab/library` 하나에서 온다. 여기에 다시 적지 않는다. */}
           {kind === 'link' ? (
             <>
               {/* **확정 문안이다.** */}
@@ -123,7 +128,20 @@ export function UploadPanel({
                 placeholder="https://" style={{ width: '100%' }} />
             </>
           ) : (
-            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <input
+              type="file"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                if (f && f.size > LIBRARY_MAX_MB * 1024 * 1024) {
+                  setErr(UPLOAD_TOO_LARGE);
+                  setFile(null);
+                  e.target.value = '';
+                  return;
+                }
+                setErr(null);
+                setFile(f);
+              }}
+            />
           )}
 
           <label className="t-caption" style={muted}>
