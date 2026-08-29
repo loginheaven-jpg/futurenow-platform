@@ -243,7 +243,7 @@ interface FeedCommentRow { id: string; author_id: string; author_name: string | 
  */
 const MULTI_REACTION_MIGRATION_MSG =
   '피드 반응 스키마가 코드보다 옛 버전입니다(마이그레이션 20260829090000 미적용). ' +
-  '조용히 틀린 값을 보이지 않기 위해 멈췄습니다 — 운영자에게 알려 주세요.';
+  '조용히 틀린 값을 보이지 않기 위해 멈췄습니다 · 운영자에게 알려 주세요.';
 
 function assertMultiReactionSchema(row: unknown): void {
   if (typeof row !== 'object' || row === null) return;

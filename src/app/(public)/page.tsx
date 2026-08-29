@@ -39,7 +39,7 @@ export default async function Home() {
       ? [{
           id: 'intake',
           badge: '모집',
-          title: `${CURRENT_INTAKE.label} — ${CURRENT_INTAKE.schedule[0]?.date ?? ''} 시작`,
+          title: `${CURRENT_INTAKE.label} · ${CURRENT_INTAKE.schedule[0]?.date ?? ''} 시작`,
           href: '/recruit',
         }]
       : [];
