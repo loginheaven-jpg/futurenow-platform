@@ -19,6 +19,14 @@
 
 ## 2. 향후 기능 (Future — 시점 미정)
 
+- **서가 B — 반응·댓글·태그·신고** (「피드처럼」 셋 중 남은 하나 · ADR-165 가 사진만 지었다).
+  **★ 발주서 첫 줄은 `REVOKE … FROM public, anon, authenticated` 다.**
+  B 용 표 다섯(`library_reactions`·`library_comments`·`library_tags`·`library_item_tags`·`library_reports`)은
+  **RLS 는 켜져 있고 정책이 0 이라 지금은 막히지만, `anon`·`authenticated` 테이블 권한이 남아 있다.**
+  실측(2026-08-29 · 트랜잭션 안에서 물려 봤다): 정책 0 이면 **0행**, 정책을 **하나** 만들면 **1행**.
+  즉 **정책이 유일한 관문**이고 `library_items` 가 가진 두 겹(권한+정책)이 **아니다.**
+  권한을 먼저 걷어야 정책을 잘못 써도 한 겹이 남는다. 산출 명령:
+  `select tablename, (select count(*) from pg_policies p where p.tablename=t.tablename) from information_schema.role_table_grants t where grantee in ('anon','authenticated') and table_name like 'library_%';`
 - **STEP 2~5 진단 확장**: 퓨처나우 후속 단계 진단을 같은 계약 위 인스트루먼트로 추가.
 - **돌봄 연락 중개 흐름**: 전화번호는 운영자 전용이므로, 코치가 돌봄 대상에게 연락해야 할 때 운영자가 중개하거나 코치의 '연락 요청'을 운영자가 여는 워크플로.
 - **그룹 리포트 고도화**: 그룹 평균 레이더 외 분포·변화 추이·차수 간 비교.

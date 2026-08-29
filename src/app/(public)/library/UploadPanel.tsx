@@ -9,7 +9,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { LIBRARY_NAME, LIBRARY_TIER_LABEL, LIBRARY_MAX_MB } from '@/app/_vocab/library';
-import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE } from './copy';
+import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE, TIER_NOTE } from './copy';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { addLibraryItemAction } from './actions';
 
@@ -152,6 +152,10 @@ export function UploadPanel({
               <option value="forum">{LIBRARY_TIER_LABEL.forum}</option>
               <option value="coach">{LIBRARY_TIER_LABEL.coach}</option>
             </select>
+            {/* 고른 등급이 **무슨 뜻인지** 한 줄. 「전체 공개」가 로그인 밖까지라는 것을 미리 알린다. */}
+            <span className="t-caption" style={{ color: 'var(--color-text-secondary)', display: 'block', marginTop: 'var(--space-1)' }}>
+              {TIER_NOTE[tier]}
+            </span>
           </label>
 
           {cohorts.length > 0 ? (

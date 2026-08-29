@@ -5,6 +5,11 @@
 //   관문을 지난 사람이 주소를 넘길 수 있는 **잔여 창이 없다**(판정 ④).
 //
 // **못 여는 것을 감추지 않는다**(§5). 목록은 전원에게 보이고, 못 여는 줄은 **왜 못 여는지**를 적는다.
+//
+// **사진은 바로 보인다**(최박사 판정 2026-08-29 — 「전체공개시 사진」).
+//   그래도 **주소를 들지 않는다.** 서버가 `photo` 라는 **참·거짓 한 칸**만 주고,
+//   화면은 이미 있는 프록시 주소를 조립한다 — 매 요청이 관문을 다시 지난다.
+//   **화면은 판정하지 않는다** — `photo` 를 다시 계산하지 않고 그대로 따른다.
 import Link from 'next/link';
 import type { LibraryItem } from '@/contracts/domain';
 import { LIBRARY_TIER_LABEL } from '@/app/_vocab/library';
@@ -32,6 +37,23 @@ export function LibraryList({ items }: { items: LibraryItem[] }) {
             <span className="t-body" style={{ fontWeight: 600 }}>{i.title}</span>
             {i.description ? (
               <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-1)' }}>{i.description}</span>
+            ) : null}
+            {i.photo ? (
+              // `alt=""` 다 — 제목이 바로 위에 있으므로 읽어 주면 **같은 말을 두 번** 한다.
+              //   `lazy` 로 받는다 — 저장소 변환(썸네일)이 이 테넌트에 없어 **원본**이 오기 때문에,
+              //   화면에 보이는 것만 받게 하는 것이 목록을 지키는 유일한 수단이다.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`/library/${i.id}/file`}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                style={{
+                  display: 'block', width: '100%', maxHeight: '18rem', objectFit: 'cover',
+                  borderRadius: 'var(--radius)', marginTop: 'var(--space-3)',
+                  background: 'var(--color-surface-2)',
+                }}
+              />
             ) : null}
             <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-2)' }}>
               {badges.join(' · ')}
