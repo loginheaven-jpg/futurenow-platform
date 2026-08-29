@@ -128,6 +128,34 @@ async function checks() {
     else bad('/join?code= 딥링크', `${r.status}`);
   }
 
+  // 4-2 · ★ **딥링크 재호출 상한**(지휘부 채택 2026-08-29 — 이번 사고를 이 자리가 못 잡았다).
+  //   위 4번은 200 과 크기만 본다. 그런데 2026-08-29 의 사고는 **200 을 내면서 무한히 다시 부르는** 것이었다 —
+  //   껍데기가 트리 모양을 바꿔 본문을 재마운트했고, 서버 액션 POST 가 초당 6.9회 나갔다.
+  //   **판정의 근거가 판정하려는 것보다 좁았다.** 그래서 여기서는 **횟수를 센다.**
+  //   실브라우저가 필요하므로 `playwright`(devDependency)를 쓴다. 실패해도 자격은 쓰지 않는다.
+  {
+    const LIMIT = 3, WINDOW_MS = 6000;
+    try {
+      const { chromium } = await import('playwright');
+      const browser = await chromium.launch();
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 900 } });
+      const page = await ctx.newPage();
+      let posts = 0;
+      page.on('request', (q) => { if (q.method() === 'POST' && q.url().includes('/join')) posts++; });
+      await page.goto(`${BASE}/join?code=ZR4KB`, { waitUntil: 'load', timeout: 30000 });
+      await page.waitForTimeout(WINDOW_MS);
+      const body = await page.evaluate(() => document.body.innerText || '');
+      const stuck = body.includes('불러오는 중');
+      await browser.close();
+      const detail = `POST ${posts}회 / ${WINDOW_MS / 1000}초${stuck ? ' · ★ 아직 로딩' : ''}`;
+      if (posts <= LIMIT && !stuck) ok('/join?code= 재호출 상한', `${detail} (상한 ${LIMIT})`);
+      else bad('/join?code= 재호출 상한', `${detail} — 상한 ${LIMIT} 초과이거나 화면이 안 넘어간다`);
+    } catch (e) {
+      // 도구가 없으면 **조용히 넘어가지 않는다** — 못 잰 것과 통과는 다르다.
+      bad('/join?code= 재호출 상한', `재지 못했다: ${String(e).slice(0, 60)}`);
+    }
+  }
+
   // 5 · 게이트 화면 — **200 을 통과로 보지 않는다**(불변식 19)
   {
     const r = await get('/feed');

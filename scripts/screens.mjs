@@ -22,11 +22,15 @@ export const PUBLIC_SCREENS = [
   { name: 'about',    path: '/about',     note: '소개 — 원고 §1~§4 (F-2b)' },
   { name: 'recruit',  path: '/recruit',   note: '모집 랜딩 — lg 2단 + 카드 4 (F-4 후속)' },
   { name: 'news',     path: '/news',      note: '소식 목록' },
-  { name: 'library',  path: '/library',   note: '자료실' },
+  { name: 'library',  path: '/library',   note: '서가' },
   { name: 'contact',  path: '/contact',   note: '문의' },
   { name: 'login',    path: '/login',     note: '로그인' },
   { name: 'signup',   path: '/signup',    note: '회원가입 — 진입 퍼널' },
   { name: 'join',     path: '/join',      note: '코드 입장 — 진입 퍼널' },
+  // ★ **딥링크를 반드시 찍는다**(지휘부 채택 2026-08-29). U-4 는 `/join` 첫 단계만 찍어
+  //   `?code=` 경로를 **한 번도 열지 않았고**, 그것이 무한 재호출을 못 본 구멍의 절반이었다.
+  //   실기수 화면을 **열기만** 한다 — 「들어가기」는 누르지 않는다(캡처는 클릭하지 않는다).
+  { name: 'join-code', path: '/join?code=ZR4KB', note: '딥링크 — 차수 미리보기 단계' },
   { name: 'pending',  path: '/pending',   note: '승인 대기 안내' },
   { name: 'reset',    path: '/reset',     note: '비밀번호 재설정' },
 ];
