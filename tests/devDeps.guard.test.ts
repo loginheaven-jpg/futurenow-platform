@@ -17,8 +17,18 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {
   devDependencies?: Record<string, string>;
 };
 
-/** 개발 전용이어야 하는 것들. 런타임 번들에 들어가면 안 된다. */
-const DEV_ONLY = ['playwright'];
+/**
+ * 개발 전용이어야 하는 것들. 런타임 번들에 들어가면 안 된다.
+ *
+ * **`pg` 가 늘었다**(QA 기수 도구 · 2026-08-29). 이것은 **DB 에 직접 붙는 드라이버**라
+ *   런타임으로 새면 앱이 **RLS 를 지나지 않고** DB 를 만질 수 있는 상태가 된다 —
+ *   `playwright` 가 «서버가 브라우저를 띄울 수 있는 상태» 였던 것과 같은 종류의 위험이고,
+ *   **이쪽이 더 무겁다.** 앱은 언제나 `@supabase/*` 를 지나 RLS 아래에서만 DB 를 본다.
+ *
+ * **물 것이 있어서 넣었다**(⑪ 의 짝) — 넣는 순간 `pg` 의 캐럿(`^8.22.0`)이 걸려 레드가 났고,
+ *   고정으로 바꿔 초록을 만들었다. **막을 것이 없는데 건 잠금이 아니다.**
+ */
+const DEV_ONLY = ['playwright', 'pg'];
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -60,5 +70,14 @@ describe('개발 전용 의존성 — 런타임에 새지 않는다', () => {
     // 하네스가 정말 그것을 쓰고 있는지도 본다. 안 쓰면 의존성을 들일 이유가 없다.
     const harness = readFileSync('scripts/shots.mjs', 'utf8');
     expect(harness, '하네스가 playwright 를 쓰지 않는다 — 그러면 devDep 을 들일 이유가 없다').toContain("from 'playwright'");
+    const qa = readFileSync('scripts/qaCohort.mjs', 'utf8');
+    expect(qa, 'QA 도구가 pg 를 쓰지 않는다 — 그러면 devDep 을 들일 이유가 없다').toContain("from 'pg'");
+  });
+
+  it('★ **운영 코드가 service_role 열쇠에 닿지 않는다** — 그것이 곧 RLS 우회다', () => {
+    const offenders = walk('src')
+      .filter((f) => !/\.test\.tsx?$/.test(f))
+      .filter((f) => readFileSync(f, 'utf8').includes('SUPABASE_SERVICE_ROLE_KEY'));
+    expect(offenders, `운영 코드가 service_role 을 읽는다: ${offenders.join(' · ')}`).toEqual([]);
   });
 });
