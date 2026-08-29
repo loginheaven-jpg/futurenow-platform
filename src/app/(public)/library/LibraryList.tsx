@@ -16,6 +16,15 @@ import { LIBRARY_TIER_LABEL } from '@/app/_vocab/library';
 
 const muted = { color: 'var(--color-text-secondary)' } as const;
 
+/** 반응 수 합계. **정렬키가 아니다** — 「그릴 것이 있는가」만 묻는다. */
+function reactionTotal(r: LibraryItem['reactions']): number {
+  return Object.values(r).reduce<number>((a, b) => a + (b ?? 0), 0);
+}
+/** 눌린 이모지만 순서대로. **크기를 그리지 않는다**(막대·게이지·색 없음 · 불변식 11). */
+function reactionSummary(r: LibraryItem['reactions']): string {
+  return Object.entries(r).filter(([, n]) => (n ?? 0) > 0).map(([e, n]) => `${e} ${n}`).join(' ');
+}
+
 /** 못 여는 줄에 붙는 말. **의미색을 쓰지 않는다**(불변식 9) — 사실만 적는다. */
 function lockNote(item: LibraryItem): string {
   if (item.cohortName) return `${item.cohortName} 참여자에게 열립니다.`;
@@ -58,6 +67,10 @@ export function LibraryList({ items }: { items: LibraryItem[] }) {
             <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-2)' }}>
               {badges.join(' · ')}
               {i.authorName ? ` · ${i.authorName}` : ''}
+              {/* 반응·댓글 수 — **보이되 정렬에 쓰지 않는다**(불변식 11 · 발주 §0-2).
+                  목록 순서는 시간순 그대로다. 0 이면 그리지 않는다 — 늘 떠 있는 0 은 자리만 차지한다. */}
+              {reactionTotal(i.reactions) > 0 ? ` · ${reactionSummary(i.reactions)}` : ''}
+              {i.commentCount > 0 ? ` · 한마디 ${i.commentCount}` : ''}
             </span>
             {i.canView ? null : (
               <span className="t-caption" style={{ ...muted, display: 'block', marginTop: 'var(--space-1)' }}>

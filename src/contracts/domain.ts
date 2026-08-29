@@ -444,6 +444,55 @@ export interface LibraryItem {
    *   화면이 이 값을 다시 계산하지 않는다(성질을 파생하지 않는다 · 승격 2026-08-29).
    */
   photo: boolean;
+  /**
+   * 반응 집계 — `{'👏': 3}`. **피드와 같은 이모지 넷**을 쓴다(결재 ⑵ · DB `feed_emojis()` 가 정본).
+   *
+   * **정렬에 쓰지 않는다**(불변식 11 · 발주 §0-2). 서가는 피드보다 이 위험이 크다 —
+   *   **피드 글은 흘러가지만 서가 자료는 목록에 남고**, 참여자도 올린다.
+   *   반응 수로 정렬하면 **적게 받은 사람이 자기 자료가 내려가는 것을 본다.**
+   *   목록 순서는 `created_at desc` 그대로다.
+   *
+   * 못 보는 자료는 `{}` 다 — **숫자도 그 자료에 대한 정보**이기 때문이다.
+   */
+  reactions: FeedReactionSummary;
+  /** 댓글 수. 위와 같은 이유로 **정렬에 쓰지 않는다.** 못 보는 자료는 0 이다. */
+  commentCount: number;
+}
+
+/**
+ * 서가 댓글 한 줄.
+ *
+ * **이름이 이미 가려진 채로 온다**(결재 ⑶⑷) — 화면이 가리지 않는다.
+ *   가리기는 **DB 함수 한 자리**(`library_mask_name`)에만 살고, 그 자리가
+ *   「보는 사람이 로그인했는가」를 받아 정한다. **가려지지 않은 이름이 브라우저로 가지 않는다** —
+ *   서가 A 의 «목록이 주소를 내지 않는다» 와 같은 형태다.
+ *
+ * **밖에서는 `authorId` 도 오지 않는다** — 이름을 가려도 id 로 사람이 붙기 때문이다.
+ */
+export interface LibraryComment {
+  id: string;
+  /** 로그아웃한 사람에게는 `null` 이다. */
+  authorId: string | null;
+  /** 이미 가려진 이름. 화면은 이 값을 그대로 그린다. */
+  authorName: string | null;
+  body: string;
+  createdAt: string;
+  /** 내가 쓴 것인가. 지우기 단추의 조건이다. */
+  mine: boolean;
+}
+
+/**
+ * 운영자가 보는 신고 한 줄(결재 ⑹⑺ — 갈래 ㄴ · **최박사만 본다**).
+ *
+ * **신고한 사람이 없다.** 운영자가 볼 것은 «무엇이 걸렸는가» 이지 «누가 알렸는가» 가 아니다 —
+ *   규칙이 아니라 **타입으로** 막았다(불변식 8 과 같은 방식).
+ */
+export interface LibraryReport {
+  id: string;
+  itemId: string;
+  itemTitle: string | null;
+  reason: string | null;
+  createdAt: string;
 }
 
 /** 관문을 지난 사람에게만 나오는 것. **서버 안에서만 산다.** */

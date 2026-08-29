@@ -36,3 +36,52 @@ export async function hideLibraryItemAction(
     return { ok: false, error: '지금은 바꿀 수 없습니다.' };
   }
 }
+
+// ── 서가 B — 반응 · 댓글 · 신고 ────────────────────────────────────────────────
+// **여기서도 판정하지 않는다.** DB 가 `library_can_view` 로 보고 42501 을 던진다.
+//   화면은 그 결과만 받는다 — 판정이 세 곳(DB·코어·화면)이 되면 갈린다.
+
+export async function toggleLibraryReactionAction(
+  itemId: string, emoji: string,
+): Promise<{ ok: true; mine: string[] } | { ok: false }> {
+  try {
+    const ctx = await createServerContext();
+    return { ok: true, mine: await ctx.toggleLibraryReaction(itemId, emoji) };
+  } catch {
+    return { ok: false }; // 왜 막혔는지 말하지 않는다 — 존재를 알리지 않는다(서가 A 형식)
+  }
+}
+
+export async function createLibraryCommentAction(
+  itemId: string, body: string,
+): Promise<{ ok: true } | { ok: false }> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.createLibraryComment(itemId, body);
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function deleteLibraryCommentAction(id: string): Promise<{ ok: boolean }> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.deleteLibraryComment(id);
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function reportLibraryItemAction(
+  itemId: string, reason: string | null,
+): Promise<{ ok: boolean }> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.reportLibraryItem(itemId, reason);
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}

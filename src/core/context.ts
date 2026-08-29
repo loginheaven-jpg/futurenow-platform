@@ -31,6 +31,8 @@ import type {
   InterpretationView,
   ContactMessage,
   LibraryItem,
+  LibraryComment,
+  LibraryReport,
   LibrarySource,
   LibraryAddInput,
   MemberActivity,
@@ -212,6 +214,9 @@ interface LibraryRow {
   hidden: boolean; mine: boolean; can_view: boolean; created_at: string;
   // **주소가 아니라 참·거짓이다.** 서버가 넷을 곱해 낸다(볼 수 있고·파일이고·이미지이고·상한 안).
   photo: boolean;
+  // 반응 집계와 댓글 수. **정렬에 쓰지 않는다**(불변식 11). 못 보는 자료는 {} 와 0 이다.
+  reactions: Record<string, number> | null;
+  comment_count: number | null;
 }
 interface ContactRow { id: string; name: string | null; email: string | null; body: string; user_id: string | null; handled_at: string | null; created_at: string }
 
@@ -1458,7 +1463,85 @@ class SupabaseCoreContext implements CoreContext {
       // 여기서 다시 계산하지 않는다 — 판정이 두 곳이 되면 한 곳만 고쳐질 때 갈린다.
       //   옛 RPC(사진 열 이전)가 응답하면 `undefined` 가 오므로 **거짓으로** 내려앉힌다.
       photo: r.photo === true,
+      // 옛 RPC 가 응답하면 undefined 가 오므로 **빈 값으로 내려앉힌다**(사진 때와 같은 형태).
+      reactions: (r.reactions ?? {}) as LibraryItem['reactions'],
+      commentCount: r.comment_count ?? 0,
     }));
+  }
+
+  // ── 서가 B — 반응 · 댓글 · 신고 ────────────────────────────────────────────
+  // **판정을 여기서 하지 않는다.** DB 가 `library_can_view` 로 판정하고 42501 을 던진다 —
+  //   판정이 두 곳이 되면 한 곳만 고쳐질 때 뚫린다(서가 A 와 같은 규율).
+
+  async toggleLibraryReaction(itemId: string, emoji: string): Promise<string[]> {
+    const { data, error } = await this.sb.rpc('library_react', { p_item_id: itemId, p_emoji: emoji });
+    if (error) throw new CoreError(`toggleLibraryReaction 실패: ${error.message}`);
+    return (data ?? []) as string[];
+  }
+
+  async myLibraryReactions(itemIds: string[]): Promise<Record<string, string[]>> {
+    if (itemIds.length === 0) return {};
+    const { data, error } = await this.sb.rpc('library_my_reactions', { p_item_ids: itemIds });
+    if (error) throw new CoreError(`myLibraryReactions 실패: ${error.message}`);
+    const out: Record<string, string[]> = {};
+    for (const r of (data ?? []) as { item_id: string; emojis: string[] }[]) out[r.item_id] = r.emojis;
+    return out;
+  }
+
+  async listLibraryComments(itemId: string): Promise<LibraryComment[]> {
+    const { data, error } = await this.sb.rpc('library_comment_list', { p_item_id: itemId });
+    if (error) throw new CoreError(`listLibraryComments 실패: ${error.message}`);
+    // **이름은 이미 가려져서 온다.** 여기서 가리지 않는다 — 가리는 자리는 DB 한 곳이다.
+    return ((data ?? []) as {
+      id: string; author_id: string | null; author_name: string | null;
+      body: string; created_at: string; mine: boolean;
+    }[]).map((r) => ({
+      id: r.id, authorId: r.author_id, authorName: r.author_name,
+      body: r.body, createdAt: r.created_at, mine: r.mine === true,
+    }));
+  }
+
+  async createLibraryComment(itemId: string, body: string): Promise<string> {
+    const { data, error } = await this.sb.rpc('library_comment_create', { p_item_id: itemId, p_body: body });
+    if (error) throw new CoreError(`createLibraryComment 실패: ${error.message}`);
+    return data as string;
+  }
+
+  async deleteLibraryComment(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('library_comment_delete', { p_id: id });
+    if (error) throw new CoreError(`deleteLibraryComment 실패: ${error.message}`);
+  }
+
+  async reportLibraryItem(itemId: string, reason: string | null): Promise<void> {
+    const { error } = await this.sb.rpc('library_report_create', { p_item_id: itemId, p_reason: reason });
+    if (error) throw new CoreError(`reportLibraryItem 실패: ${error.message}`);
+  }
+
+  async didIReportLibraryItem(itemId: string): Promise<boolean> {
+    const { data, error } = await this.sb.rpc('library_report_mine', { p_item_id: itemId });
+    if (error) throw new CoreError(`didIReportLibraryItem 실패: ${error.message}`);
+    return data === true;
+  }
+
+  async countOpenLibraryReports(): Promise<number> {
+    const { data, error } = await this.sb.rpc('library_report_open_count');
+    if (error) throw new CoreError(`countOpenLibraryReports 실패: ${error.message}`);
+    return (data as number) ?? 0;
+  }
+
+  async listOpenLibraryReports(): Promise<LibraryReport[]> {
+    const { data, error } = await this.sb.rpc('library_report_list');
+    if (error) throw new CoreError(`listOpenLibraryReports 실패: ${error.message}`);
+    return ((data ?? []) as {
+      id: string; item_id: string; item_title: string | null; reason: string | null; created_at: string;
+    }[]).map((r) => ({
+      id: r.id, itemId: r.item_id, itemTitle: r.item_title, reason: r.reason, createdAt: r.created_at,
+    }));
+  }
+
+  async markLibraryReportHandled(id: string): Promise<void> {
+    const { error } = await this.sb.rpc('library_report_handle', { p_id: id });
+    if (error) throw new CoreError(`markLibraryReportHandled 실패: ${error.message}`);
   }
 
   async openLibraryItem(id: string): Promise<LibrarySource | null> {

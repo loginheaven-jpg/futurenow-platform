@@ -12,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
 import { LIBRARY_NAME, LIBRARY_HREF } from '@/app/_vocab/library';
 import { LibraryItemView } from './LibraryItemView';
+import { ItemSocial } from './ItemSocial';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,14 +24,38 @@ export default async function LibraryItemPage({ params }: { params: Promise<{ id
   const source = await ctx.openLibraryItem(id).catch(() => null);
   if (!source) notFound(); // «없다» 와 «못 본다» 를 한 얼굴로 답한다 — 존재를 알리지 않는다
 
+  // 게이트를 지난 **뒤에** 곁들이를 받는다. 실패해도 자료 화면은 선다 —
+  //   댓글이 안 불러와졌다고 자료를 못 보게 하지 않는다.
+  const me = await ctx.currentUser().catch(() => null);
+  const [comments, mine, reported] = await Promise.all([
+    ctx.listLibraryComments(id).catch(() => []),
+    me ? ctx.myLibraryReactions([id]).catch(() => ({} as Record<string, string[]>))
+       : Promise.resolve({} as Record<string, string[]>),
+    me ? ctx.didIReportLibraryItem(id).catch(() => false) : Promise.resolve(false),
+  ]);
+  // 집계는 목록 RPC 가 내지만 이 화면은 자료 하나만 보므로 거기서 골라 온다.
+  const row = (await ctx.listLibrary().catch(() => [])).find((x) => x.id === id);
+
   return (
-    <LibraryItemView
-      id={id}
-      title={source.title}
-      kind={source.kind}
-      url={source.url}
-      backHref={LIBRARY_HREF}
-      backLabel={LIBRARY_NAME}
-    />
+    <>
+      <LibraryItemView
+        id={id}
+        title={source.title}
+        kind={source.kind}
+        url={source.url}
+        backHref={LIBRARY_HREF}
+        backLabel={LIBRARY_NAME}
+      />
+      <div className="pc-shell">
+        <ItemSocial
+          itemId={id}
+          signedIn={me !== null}
+          initialComments={comments}
+          initialReactions={(row?.reactions ?? {}) as Record<string, number>}
+          initialMine={mine[id] ?? []}
+          alreadyReported={reported}
+        />
+      </div>
+    </>
   );
 }
