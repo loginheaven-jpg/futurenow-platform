@@ -39,7 +39,7 @@ describe('QA 기수 — 남아 있으면 운다(경계 ⑤)', () => {
   //   그렇다고 실기수로 `down` 을 돌려 볼 수는 없다 — 관문이 틀렸을 때 실기수가 지워진다(경계 ①).
   //   그래서 **관문만 떼어 실기수 코드를 먹인다.** 막아야 할 것을 실제로 먹이는 것이 ⑪ 이다.
   it('★ 실기수 코드를 넣으면 **던진다** — 호출로 확인한다', async () => {
-    // @ts-expect-error — 도구는 .mjs 다(타입 선언이 없다).
+    // 도구는 `.mjs` 다 — 타입 선언이 없어도 `allowJs` 로 읽힌다(그래서 `@ts-expect-error` 를 두지 않는다).
     const { assertSafeCodes } = await import('../scripts/qaCohort.mjs');
     expect(() => assertSafeCodes(['ZR4KB'])).toThrow(/실기수/);
     expect(() => assertSafeCodes(['HMT7Z'])).toThrow(/실기수/);
@@ -47,7 +47,6 @@ describe('QA 기수 — 남아 있으면 운다(경계 ⑤)', () => {
   });
 
   it('대조군 — QA 코드만 넣으면 **통과한다**(막을 것이 없을 때 막지 않는다)', async () => {
-    // @ts-expect-error — 도구는 .mjs 다.
     const { assertSafeCodes, QA } = await import('../scripts/qaCohort.mjs');
     expect(assertSafeCodes(QA.codes)).toBe(true);
     expect(assertSafeCodes([])).toBe(true);
