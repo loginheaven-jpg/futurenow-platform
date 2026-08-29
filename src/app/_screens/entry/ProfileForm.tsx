@@ -122,7 +122,7 @@ export function ProfileForm({ accountProfile, onSubmit, busy }: { accountProfile
           이 {TOOL.short}에 참여하게 된 계기가 있나요? (선택)
           <textarea
             style={{ ...inputStyle, minHeight: 72, padding: 'var(--space-3)', resize: 'vertical' }}
-            placeholder="떠오르는 대로 편하게 적어 주세요"
+            placeholder="떠오르는 대로 적어 주세요"
             value={motivation}
             onChange={(e) => setMotivation(e.target.value)}
             maxLength={500}

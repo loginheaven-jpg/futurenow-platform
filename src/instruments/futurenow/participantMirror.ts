@@ -20,12 +20,12 @@ const NAV_DIRECTIONS: Array<{ key: keyof FuturenowScores['compass']; right: stri
 
 // ③ 활력 기반 갈망 문장(내부 키: 낮음 ≤10 / 중간 11~17 / 높음 18~25 — 라벨은 화면 노출 금지).
 function longingFromVitality(score: number): string {
-  if (score <= 10) return '지금 당신은 더 깊이 살아있기를 갈망하고 있어요.';
-  if (score <= 17) return '당신은 지금 자리에서 한 걸음을 가만히 그리고 있어요.';
-  return '당신 안에 살아있음이 차오르고 있어요. 그 감각을 기억해 두세요.';
+  if (score <= 10) return '응답에서는 지금보다 더 살아있는 감각을 찾는 방향이 두드러집니다.';
+  if (score <= 17) return '응답에서는 지금의 자리에 머물러 다음 한 걸음을 찾는 모습이 두드러집니다.';
+  return '응답에서는 지금의 활력을 늘리고 이어 가려는 방향이 두드러집니다.';
 }
 
-const FAITH_LINE = '당신이 붙잡고 있는 그 믿음이, 앞으로의 길에 빛이 되기를 바라요.';
+const FAITH_LINE = '적어 주신 믿음의 자리도 앞으로 선택을 세울 때 함께 봅니다.';
 
 export function participantMirror(scores: FuturenowScores): ParticipantMirror {
   // ② 가장 두드러진 lean = |점수 − 3| 최대(동점 시 앞선 축). 모두 중앙(3)이면 첫 축·우극 기본.
@@ -33,7 +33,7 @@ export function participantMirror(scores: FuturenowScores): ParticipantMirror {
     Math.abs(scores.compass[cur.key] - 3) > Math.abs(scores.compass[best.key] - 3) ? cur : best,
   );
   const phrase = scores.compass[dominant.key] >= 3 ? dominant.right : dominant.left;
-  const direction = `지금 당신의 마음은 ${phrase} 쪽으로 향하고 있어요.`;
+  const direction = `나침반 응답은 ${phrase}에 가깝습니다.`;
 
   // ③ 활력 갈망
   const longing = longingFromVitality(scores.vitality.score);

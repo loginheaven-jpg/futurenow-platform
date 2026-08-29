@@ -12,7 +12,7 @@ function IntroBlock({ title, body }: { title: string; body: string }) {
 export function SeminarIntro() {
   return (
     <>
-      <IntroBlock title="어떤 시간인가요" body="삶의 방향을 발견하고 꿈을 이루도록 돕는 다주차 세미나입니다. 답을 주입하는 강의가 아니라, 스스로 묻고 발견하도록 설계된 구조입니다." />
+      <IntroBlock title="어떤 시간인가요" body="삶의 방향을 질문하고, 미래의 모습을 오늘의 행동으로 연결하는 다주차 세미나입니다. 답을 받아 적는 강의가 아니라, 스스로 기준을 세우고 실행을 설계하는 시간입니다." />
       <IntroBlock title="무엇이 달라지나요" body="지금의 나를 직면하고, 되고 싶은 미래 자아를 구체적인 상으로 그리며, 그 사이를 잇는 행동을 자기 손으로 설계합니다." />
       <IntroBlock title="어떻게 진행되나요" body="짧은 사전 체크로 시작합니다. 몇 주에 걸쳐 함께 모여 나누고, 세미나가 끝나면 마무리 체크로 변화를 확인합니다." />
     </>

@@ -14,7 +14,7 @@ export function StartGuide({ onStart }: { onStart?: () => void }) {
         className="t-body-lg"
         style={{ color: 'var(--color-text)', lineHeight: 1.8, whiteSpace: 'pre-line', margin: '0 0 var(--space-6)' }}
       >
-        {'정답은 없습니다. 떠오르는 대로, 편하게 적어 주세요.\n중간에 멈췄다가 다시 와도 괜찮습니다.'}
+        {'정답을 찾는 시간이 아닙니다. 지금의 생각을 그대로 적어 주세요.\n중간에 멈춰도 적은 것은 저장됩니다.'}
       </p>
       <div
         style={{

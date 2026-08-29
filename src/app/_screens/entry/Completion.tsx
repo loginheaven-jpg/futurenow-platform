@@ -9,8 +9,8 @@ import { MirrorView, type ParticipantMirrorView } from '../MirrorView';
 export type { ParticipantMirrorView };
 
 // ①·④ 는 점수에 의존하지 않는 고정 카피 → 항상 렌더(저하 시에도). ②③⑤ 는 mirror 가 있을 때만.
-const HEADER = '수고하셨어요. 스스로를 가만히 들여다보는 건 쉽지 않은 일이에요. 끝까지 함께해 주셔서 고마워요.';
-const HANDOFF = '당신이 적어 준 마음을, 당신의 인도자가 함께 살펴볼 거예요. 곧 따뜻한 이야기로 만나요.';
+const HEADER = '여기까지의 기록을 마쳤습니다. 지금 적은 내용을 바탕으로, 다음 선택을 준비해 보세요.';
+const HANDOFF = '적어 주신 내용은 인도자가 확인합니다. 다음 만남에서 필요한 질문과 실행을 함께 정리합니다.';
 
 export function Completion({ mirror, onFinish }: { mirror?: ParticipantMirrorView | null; onFinish?: () => void }) {
   return (

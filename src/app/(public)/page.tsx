@@ -58,8 +58,8 @@ export default async function Home() {
       <>
         <SiteHero
           eyebrow={`6주의 여정 · ${CURRENT_INTAKE.label}`}
-          headline={<>미래의 나를<br />오늘로 <b>데려오다</b></>}
-          lead="도서 『퓨처나우』를 바탕으로 한 6주 세미나. 읽는 책이 아니라 쓰는 책이다. 매주 손으로 쓰고, 함께 나누고, 한 걸음을 걷는다."
+          headline={<>꿈꾸는 미래를<br />지금 <b>살자</b></>}
+          lead="도서 『퓨처나우』를 바탕으로 한 6주 세미나입니다. 매주 손으로 쓰고, 함께 나누고, 한 걸음을 정합니다."
           ctas={[
             { href: '/recruit', label: '참여 신청', tone: 'primary' },
             { href: '/about', label: '프로그램 소개', tone: 'ghost' },
@@ -77,12 +77,12 @@ export default async function Home() {
         />
 
         <section className="site-section">
-          <SectionTitle title="이 세미나가 하는 일" desc="설명하지 않고 쓰게 한다" />
+          <SectionTitle title="이 세미나가 하는 일" desc="함께 걸으며, 나만의 인생책을 써 갑니다" />
           <CardBand3 cards={BAND_CARDS} />
         </section>
 
         <section className="site-section">
-          <SectionTitle title="6주 여정" desc="회차마다 도착점이 손에 잡히는 물건으로 남는다" />
+          <SectionTitle title="6주 여정" desc="회차마다 다음 결정을 이끌 기록이 하나씩 남습니다" />
           {/* **현재 회차를 표시하지 않는다.** 공개 현관에는 '지금 몇 회차'라는 것이 없다 —
               방문자마다 다르고, 기수마다 다르다. 시안의 `.wk.on` 두 칸은 시안 제작 시의
               시각 강조이지 상태가 아니다(완주 보고 §대조표에 그대로 적었다). */}
@@ -101,7 +101,7 @@ export default async function Home() {
             <RecruitCard
               kicker="NEXT COHORT"
               title={<>다음 기수를<br />기다리시나요?</>}
-              body="모집이 열리면 가장 먼저 알려 드립니다. 교회·기관 단위 도입도 문의로 받습니다."
+              body="다음 모집 소식을 먼저 보내 드립니다. 교회 · 기관 단위 도입도 문의로 받습니다."
               cta={{ href: '/contact', label: '알림 신청' }}
             />
           </div>

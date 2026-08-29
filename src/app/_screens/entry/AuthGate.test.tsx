@@ -64,7 +64,11 @@ describe('AuthGate — 대조 키가 가입 경위다 (소건 4)', () => {
     const html = signup();
     expect(html).toContain('포럼 가입 이름 (선택)');
     expect(html).toContain('포럼 가입 연락처 (선택)');
-    expect(html).toContain('비워 두셔도 됩니다');
+    // **J-04 로 바뀌었다** — 허락 문장(`비워 두셔도 됩니다`)이 사라지고 «무엇에 쓰는가» 가 남았다.
+    //   단언을 지우지 않고 뜻을 옮긴다: *포럼을 안 거친 사람이 지어내지 않도록* 이 목적이었고,
+    //   그 목적은 이제 «촉진자포럼을 거쳐 오셨다면» 이라는 **조건절**이 진다.
+    expect(html).toContain('촉진자포럼을 거쳐 오셨다면');
+    expect(html).toContain('명단 확인에 사용합니다');
   });
 
   it('가입 경위에는 (선택) 표시가 없다 — 승격됐다', () => {

@@ -45,7 +45,7 @@ export const ASSESS_FIXTURE: AssessmentsScreenProps = {
       ],
     },
   ],
-  privacy: <><b>이 결과는 우리 기수 인도자와 함께 봅니다.</b> 코칭에 쓰이는 재료입니다. 정답이 없으니 편하게 쓰셔도 됩니다.</>,
+  privacy: <><b>이 결과는 우리 기수 인도자와 함께 봅니다.</b> 다음 만남의 질문과 실행을 정하는 데 사용합니다.</>,
 };
 
 /**

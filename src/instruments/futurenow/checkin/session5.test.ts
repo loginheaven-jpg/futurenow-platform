@@ -240,7 +240,7 @@ describe('심화 — 방 밖의 한 사람 · 첫 도미노에 거는 신호', (
   });
 
   it('제목은 ADR-102 격상 문안이다', () => {
-    expect(c.deepen.title).toBe('여기서부터가 진짜입니다');
+    expect(c.deepen.title).toBe('여기서 한 겹 더 들어갑니다');
     expect(c.deepen.summary).toBe('방 밖의 한 사람 · 첫 도미노에 거는 신호');
   });
 
@@ -407,7 +407,7 @@ describe('5회차 문안이 되돌아가지 않는다 (ADR-108)', () => {
   // 4회차가 '다음 시간의 재료가 됩니다'로 넘겼고 그 재료를 받는 회차가 여기다.
   //   5회차가 또 넘기면 약속이 이월만 된다.
   it('방해 요인 보조 문구가 3회차 위로로 돌아왔다', () => {
-    expect(c.step.blocker.help).toBe('미리 적어 두면 그 순간에 덜 무너집니다.');
+    expect(c.step.blocker.help).toBe('미리 적어 두면, 그때 무엇을 할지 이미 정해져 있습니다.');
     expect(CHECKIN_SESSION_4.step.blocker.help).toBe('여기 적어 두신 것이 다음 시간의 재료가 됩니다.');
   });
 
