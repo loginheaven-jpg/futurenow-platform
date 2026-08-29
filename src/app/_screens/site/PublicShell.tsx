@@ -46,65 +46,74 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
   // **화면이 알려 온 크롬이 표를 이긴다**(U-4 §1) — `/join` 처럼 라우트 하나에 단계가 여럿인 자리다.
   //   통로 밖이면 `null` 이고 표가 그대로 이긴다.
   const override = useChrome();
-  if (override) {
-    return (
-      <>
-        <AppHeader
-          variant={override.variant ?? (override.onBack || override.backHref ? 'sub' : 'flow')}
-          title={override.title}
-          subtitle={override.subtitle}
-          backHref={override.backHref}
-          onBack={override.onBack}
-        />
-        <main>{children}</main>
-      </>
-    );
-  }
-  // **표가 `none` 이면 민무늬다** — GNB 도 푸터도 그리지 않는다.
-  //   표에서 `none` 은 *껍데기 없음*이라고 이미 적혀 있었고(‘제목이 설 자리가 없다’),
-  //   그 뜻을 껍데기가 실제로 지키게 했다. **오늘 영향받는 라우트는 `/join` 하나다** —
-  //   `/c/[code]/*` 는 이 그룹 밖에 산다(실측). `/join` 의 세 단계가 여기로 온다.
-  if (chrome?.kind === 'none') return <main>{children}</main>;
-  if (chrome?.kind === 'bar') {
-    return (
-      <>
-        <AppHeader variant={chrome.variant} title={chrome.title} />
-        <main>{children}</main>
-      </>
-    );
-  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ★★ **트리 모양을 바꾸지 않는다 — 이것이 규약이다**(비상 수정 2026-08-29).
+  //
+  //   전에는 갈래마다 **다른 모양**을 돌려줬다(`<AppHeader/><main>` · `<main>` · `<PublicGnb/><main><Footer/>`).
+  //   React 는 형제 위치로 화해하므로 **모양이 바뀌면 `{children}` 이 언마운트되고 다시 마운트된다.**
+  //   그리고 `useSetChrome` 은 **언마운트 때 크롬을 지운다** — 그래서 되먹임이 돌았다:
+  //
+  //     크롬 설정 → 껍데기가 갈래를 바꿈 → 본문 재마운트 → 언마운트 정리가 크롬을 지움
+  //       → 갈래가 되돌아감 → 또 재마운트 → 처음부터 다시 …
+  //
+  //   **실측(2026-08-29)**: `/join?code=…` 에서 5초에 `<main>` 이 **175회** 교체되고
+  //   서버 액션 POST 가 **초당 37회**(운영 6.9회) 나갔다. 화면은 「불러오는 중」에서 못 벗어나고
+  //   서버가 503 을 냈다. **모집 중인 화면이 막혀 있었다.**
+  //
+  //   그래서 갈래를 **슬롯**으로 바꾼다 — 머리와 발만 갈리고 `{children}` 의 자리는 **언제나 같다.**
+  //   `null` 도 형제 자리를 차지하므로 위치가 흔들리지 않는다.
+  //   **새 라우트를 더할 때 이 모양을 깨지 마라** — `library.shell.test.tsx` 가 그것을 잰다.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const header = override ? (
+    <AppHeader
+      variant={override.variant ?? (override.onBack || override.backHref ? 'sub' : 'flow')}
+      title={override.title}
+      subtitle={override.subtitle}
+      backHref={override.backHref}
+      onBack={override.onBack}
+    />
+  ) : chrome?.kind === 'bar' ? (
+    <AppHeader variant={chrome.variant} title={chrome.title} />
+  ) : chrome?.kind === 'none' ? (
+    // 표가 `none` 이면 민무늬다 — GNB 도 푸터도 그리지 않는다(`/join` 의 세 단계가 여기로 온다).
+    null
+  ) : (
+    /* `currentPath` 를 넘기지 않는다 — `PublicGnb` 가 `usePathname()` 으로 스스로 안다.
+       껍데기가 화면마다 다른 값을 들고 있으면 그것이 곧 사본 둘이다(불변식 23).
+       **모바일 메뉴가 여기서 닫힌다**(최박사 문안 확정 2026-09-01) — 회원 껍데기와 **같은 `MenuSheet`** 이다. */
+    <PublicGnb
+      logo={<>퓨처<b>나우</b></>}
+      en="FUTURE NOW"
+      items={PUBLIC_NAV}
+      sheet={{ name: SITE_NAME, groups: [{ title: PUBLIC_MENU_TITLE, items: PUBLIC_NAV }], chips: [] }}
+    />
+  );
+
+  // 푸터는 **평상시에만** 선다. 제목 바(`flow`)와 민무늬에는 두지 않는다 — 푸터의 링크가 곧 출구다.
+  const footer = override || chrome?.kind === 'bar' || chrome?.kind === 'none' ? null : (
+    <SiteFooter
+      org={SITE_ORG}
+      links={PUBLIC_FOOTER_LINKS}
+      note={
+        <>
+          {FOOTER_NOTE_LEAD}
+          <Link
+            href={FOOTER_NOTE_HREF}
+            style={{ color: 'var(--color-accent-strong)', textDecoration: 'underline' }}
+          >
+            {FOOTER_NOTE_LINK}
+          </Link>
+        </>
+      }
+    />
+  );
 
   return (
     <>
-      {/* `currentPath` 를 넘기지 않는다 — `PublicGnb` 가 `usePathname()` 으로 스스로 안다.
-          껍데기가 화면마다 다른 값을 들고 있으면 그것이 곧 사본 둘이다(불변식 23). */}
-      {/* **모바일 메뉴가 여기서 닫힌다**(최박사 문안 확정 2026-09-01).
-          768 미만에서 내비가 푸터만 들던 자리다 — 최박사가 모바일로 쓰시고 첫 관찰이 그것이었다.
-          **부품을 두 벌 만들지 않는다** — 회원 껍데기가 쓰는 것과 **같은 `MenuSheet`** 이고
-          담기는 항목만 다르다. 머리 이름과 묶음 제목은 **이미 있는 말**을 쓴다:
-          `SITE_NAME` 은 `SITE_ORG` 의 앞부분이고, `PUBLIC_MENU_TITLE` 은 푸터 내비의 이름이다. */}
-      <PublicGnb
-        logo={<>퓨처<b>나우</b></>}
-        en="FUTURE NOW"
-        items={PUBLIC_NAV}
-        sheet={{ name: SITE_NAME, groups: [{ title: PUBLIC_MENU_TITLE, items: PUBLIC_NAV }], chips: [] }}
-      />
+      {header}
       <main>{children}</main>
-      <SiteFooter
-        org={SITE_ORG}
-        links={PUBLIC_FOOTER_LINKS}
-        note={
-          <>
-            {FOOTER_NOTE_LEAD}
-            <Link
-              href={FOOTER_NOTE_HREF}
-              style={{ color: 'var(--color-accent-strong)', textDecoration: 'underline' }}
-            >
-              {FOOTER_NOTE_LINK}
-            </Link>
-          </>
-        }
-      />
+      {footer}
     </>
   );
 }

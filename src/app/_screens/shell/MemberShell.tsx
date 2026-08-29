@@ -40,20 +40,17 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
   //   통로 밖이면 `null` 이고 표가 그대로 이긴다.
   const override = useChrome();
 
-  // 표에 없거나 «껍데기 없음» 이면 **그리지 않는다.** 빈 제목을 그리면 조용히 이상해지고,
+  // ★★ **본문의 자리는 하나다**(비상 수정 2026-08-29 · `PublicShell` 과 같은 규약).
+  //   갈래마다 다른 트리를 돌려주면 React 가 `{children}` 을 **언마운트하고 다시 마운트한다.**
+  //   `useSetChrome` 은 언마운트 때 크롬을 지우므로 그 순간 **되먹임이 돈다** —
+  //   공개 껍데기에서 실제로 돌았다(`/join` 5초에 `<main>` 175회 교체 · 운영 503).
+  //   **회원 껍데기는 아직 통로를 쓰는 화면이 없어 돌지 않았을 뿐이다.**
+  //   *돌지 않았다* 와 *돌 수 없다* 는 다르므로 구조를 같이 고친다.
+  //
+  // 표에 없거나 «껍데기 없음» 이면 **머리를 그리지 않는다.** 빈 제목을 그리면 조용히 이상해지고,
   //   표에 없는 라우트는 `tests/screenChrome.test.ts` 가 이미 레드로 잡는다.
-  if (!chrome || chrome.kind === 'none') return <>{children}</>;
-
-  const sheetProp = chrome.menu && sheet ? sheet : undefined;
-
-  if (chrome.kind === 'gnb') {
-    return (
-      <>
-        <SiteGnb logo={<>퓨처<b>나우</b></>} variant="member" currentPath={pathname} sheet={sheetProp} />
-        {children}
-      </>
-    );
-  }
+  const bare = !chrome || chrome.kind === 'none';
+  const sheetProp = !bare && chrome.menu && sheet ? sheet : undefined;
 
   // **제목 바에도 메뉴가 선다.** `AppHeader` 를 고치지 않고 **기존 `action` 슬롯**에 단추를 넣는다 —
   //   부품을 두 벌 만들지 않는다(§3). 시트 자체는 `SiteGnb` 가 쓰는 것과 **같은 `MenuSheet`** 다.
@@ -73,7 +70,9 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
     </button>
   ) : null;
 
-  return (
+  const head = bare ? null : chrome.kind === 'gnb' ? (
+    <SiteGnb logo={<>퓨처<b>나우</b></>} variant="member" currentPath={pathname} sheet={sheetProp} />
+  ) : (
     <>
       <AppHeader
         variant={override ? (override.variant ?? (override.onBack || override.backHref ? 'sub' : 'flow')) : chrome.variant}
@@ -95,9 +94,13 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
           ) : undefined
         }
       />
-      {sheetProp ? (
-        <MenuSheet open={open} onClose={() => setOpen(false)} {...sheetProp} />
-      ) : null}
+      {sheetProp ? <MenuSheet open={open} onClose={() => setOpen(false)} {...sheetProp} /> : null}
+    </>
+  );
+
+  return (
+    <>
+      {head}
       {children}
     </>
   );
