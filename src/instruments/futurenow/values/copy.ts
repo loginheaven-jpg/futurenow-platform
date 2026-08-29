@@ -97,7 +97,7 @@ export const COMPARE = {
   placeholder: '한 단어',
   notice: '적으신 내용은 인도자와 운영자가 읽습니다.',
   next: '다음',
-  skip: '아직 못 찾았어요 — 건너뛰기',
+  skip: '아직 못 찾았어요 · 건너뛰기',
   // 정합 판정
   judgeLead: '이 둘이 같은 곳을 가리키나요?',
   colWorkbook: '1회차에서 찾은 것',

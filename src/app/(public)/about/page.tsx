@@ -81,7 +81,7 @@ export default function AboutPage() {
         <section className="site-section">
           <SectionTitle title="도서 『퓨처나우』" desc="도약 여정의 지도이다" />
           <BookPanel
-            cover={{ alt: '도서 퓨처나우 표지 — 꿈꾸는 미래를 지금 살라' }}
+            cover={{ alt: '도서 퓨처나우 표지 · 꿈꾸는 미래를 지금 살라' }}
             facts={BOOK_FACTS}
             intro={BOOK_INTRO}
             buy={BOOK_BUY}

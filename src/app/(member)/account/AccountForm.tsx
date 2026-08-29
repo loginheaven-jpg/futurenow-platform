@@ -327,7 +327,7 @@ export function AccountForm({
             <span className="t-caption" style={{ display: 'block', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
               {keepSignedIn
                 ? '켜져 있습니다. 이 기기에서는 다시 로그인하지 않으셔도 됩니다.'
-                : '꺼져 있습니다. 브라우저를 닫으면 로그아웃됩니다 — 공용 기기에 알맞습니다.'}
+                : '꺼져 있습니다. 브라우저를 닫으면 로그아웃됩니다 · 공용 기기에 알맞습니다.'}
             </span>
             <span className="t-caption" style={{ display: 'block', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
               비밀번호를 저장하지는 않습니다. 이 설정은 이 기기에만 적용됩니다.

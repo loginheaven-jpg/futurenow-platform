@@ -78,7 +78,7 @@ describe('체크 문안에 옛 명칭·옛 기간이 없다', () => {
 
   it('사후 문안의 되돌아보는 기간이 6주다', () => {
     expect(fnCopy.introBlock.post.intro).toContain('6주 전의 당신을 떠올려 봅니다');
-    expect(fnCopy.introBlock.post.placeholder).toBe('[ 6주 전의 나에게 — 한마디 ]');
+    expect(fnCopy.introBlock.post.placeholder).toBe('[ 6주 전의 나에게 · 한마디 ]');
   });
 
   // 문항(Item.prompt)은 발주서 §1 불변식이라 손대지 않았다. C8 의 '점검'은 일상어이고
