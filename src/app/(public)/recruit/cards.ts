@@ -19,8 +19,8 @@ export interface RecruitCard {
 }
 
 export const RECRUIT_CARDS: RecruitCard[] = [
-  { n: 2, src: '/recruit/card-02.webp', alt: '계획은 매년 세웠다 — 3월이면 사라진다. 의지의 문제가 아닙니다.' },
-  { n: 3, src: '/recruit/card-03.webp', alt: '방향이 없으면 속도는 의미가 없다 — 게으름이 아니라 설계의 문제입니다.' },
-  { n: 6, src: '/recruit/card-06.webp', alt: '손에 남는 것 — 존재가치 선언문, 인생 조감도, 단 하나의 도미노, 환경 설계도.' },
-  { n: 7, src: '/recruit/card-07.webp', alt: '1기 참여자의 말 — 준비만 잘해서 문제였다, 채울 걸 먼저 정하니 될 것 같더라.' },
+  { n: 2, src: '/recruit/card-02.webp', alt: '계획은 매년 세웠다 · 3월이면 사라진다. 의지의 문제가 아닙니다.' },
+  { n: 3, src: '/recruit/card-03.webp', alt: '방향이 없으면 속도는 의미가 없다 · 게으름이 아니라 설계의 문제입니다.' },
+  { n: 6, src: '/recruit/card-06.webp', alt: '손에 남는 것 · 존재가치 선언문, 인생 조감도, 단 하나의 도미노, 환경 설계도.' },
+  { n: 7, src: '/recruit/card-07.webp', alt: '1기 참여자의 말 · 준비만 잘해서 문제였다, 채울 걸 먼저 정하니 될 것 같더라.' },
 ];
