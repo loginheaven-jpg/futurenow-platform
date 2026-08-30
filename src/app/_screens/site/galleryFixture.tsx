@@ -22,7 +22,7 @@ export const GNB_ITEMS: GnbItem[] = [
 ];
 
 export const GROW_ROWS: GrowAxisRow[] = [
-  { letter: 'G', en: 'GOAL', ko: '과거와 미래의 나', note: '1–2회차' },
+  { letter: 'G', en: 'GOAL', ko: '과거와 미래의 나', note: '1-2회차' },
   { letter: 'R', en: 'REALITY', ko: '직면과 재구성', note: '3회차' },
   { letter: 'O', en: 'OPTIONS', ko: '펼치고 하나를 고른다', note: '4회차' },
   { letter: 'W', en: 'WILL', ko: '의지가 아니라 환경', note: '5회차' },

@@ -125,7 +125,7 @@ export const CHECKIN_SESSION_4 = {
     //   되비추기가 **두 회차 전**(2회차 인생의 한 문장)을 읽는다. ADR-103 의 back 이 이 자리를 위해 났고,
     //   그 기능의 값은 5·6·7회차에서 회수된다(ADR-103 §4-0).
     title: '여기서 한 겹 더 들어갑니다',
-    summary: '인생의 원씽 — 세 원이 겹치는 자리',
+    summary: '인생의 원씽 · 세 원이 겹치는 자리',
     fields: [
       {
         key: 'onething',

@@ -17,7 +17,7 @@
  * 준 것이고, 그 둘을 **부품이 아니라 여기가** 들고 있다.
  */
 export const GROW_ROWS = [
-  { letter: 'G', short: '목표', en: 'GOAL', ko: '과거와 미래의 나', note: '1–2회차' },
+  { letter: 'G', short: '목표', en: 'GOAL', ko: '과거와 미래의 나', note: '1-2회차' },
   { letter: 'R', short: '직면', en: 'REALITY', ko: '직면과 재구성', note: '3회차' },
   { letter: 'O', short: '옵션', en: 'OPTIONS', ko: '펼치고 하나를 고른다', note: '4회차' },
   { letter: 'W', short: '실행', en: 'WILL', ko: '의지가 아니라 환경', note: '5회차' },

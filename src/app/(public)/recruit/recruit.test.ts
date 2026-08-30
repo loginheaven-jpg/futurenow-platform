@@ -428,3 +428,32 @@ describe('★ 카드 `alt` 는 카드 그림과 같은 말을 한다 (C1 · 2026
     expect(alts).toContain(PROBLEM.emph.replace(/\.$/, ''));
   });
 });
+
+describe('★ 문안 회차 결재분 — 카드 alt 기호 (최박사 결재 2026-08-30 · 항목 ②)', () => {
+  // **`alt` 는 낭독된다.** 화면낭독기는 가운뎃점을 **쉼으로** 읽고 대시는 「대시」라 소리 내거나
+  //   건너뛴다 — 그래서 여기서 기호를 바꾸는 것은 규칙을 지키는 일이면서 **듣는 분에게 더 낫다.**
+  const DASH = ` ${String.fromCharCode(8212)} `;
+
+  it('결재받은 두 카드의 alt 에 대시가 없다', () => {
+    const byN = new Map(
+      [...readFileSync('src/app/(public)/recruit/cards.ts', 'utf8').matchAll(/\{ n: (\d+),[^}]*alt: '([^']*)'/g)]
+        .map((m) => [Number(m[1]), m[2]] as const),
+    );
+    for (const n of [2, 3]) {
+      expect(byN.get(n), `card-0${n} 이 없다`).toBeTruthy();
+      expect(byN.get(n)!, `card-0${n} 의 alt 에 대시가 남았다`).not.toContain(DASH);
+    }
+  });
+
+  it('★ 결재 밖 둘(card-06·07)은 **그대로 두었다** — 미결이라는 사실을 잠금이 기억한다', () => {
+    // 결재장에 제가 「alt 둘」이라 적었으나 실제 alt 는 **넷**이었고 대시는 **넷 중 넷**에 있었다.
+    //   card-06·07 은 **결재 범위 밖**이므로 손대지 않았다.
+    //   **이 잠금이 초록인 동안은 미결이 남아 있다는 뜻이다** — 결재가 나면 이 것을 뒤집는다.
+    const byN = new Map(
+      [...readFileSync('src/app/(public)/recruit/cards.ts', 'utf8').matchAll(/\{ n: (\d+),[^}]*alt: '([^']*)'/g)]
+        .map((m) => [Number(m[1]), m[2]] as const),
+    );
+    const pending = [6, 7].filter((n) => byN.get(n)?.includes(DASH));
+    expect(pending, '결재 없이 고쳤거나 카드 구성이 바뀌었다').toEqual([6, 7]);
+  });
+});

@@ -326,7 +326,7 @@ export function AccountForm({
             <span className="t-body">이 기기에서 로그인 유지</span>
             <span className="t-caption" style={{ display: 'block', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
               {keepSignedIn
-                ? '켜져 있습니다. 이 기기에서는 다시 로그인하지 않으셔도 됩니다.'
+                ? '켜져 있습니다. 이 기기에서는 로그인이 유지됩니다.'
                 : '꺼져 있습니다. 브라우저를 닫으면 로그아웃됩니다 · 공용 기기에 알맞습니다.'}
             </span>
             <span className="t-caption" style={{ display: 'block', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
