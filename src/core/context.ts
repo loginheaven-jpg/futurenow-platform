@@ -709,8 +709,12 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // 차수 멤버 id+name(코치/운영자). 권한·노출은 cohort_member_directory(DEFINER) 내부에서 강제 — 미달 시 빈 결과.
-  async listCohortMembers(cohortId: string, onlyParticipants = false): Promise<MemberRef[]> {
-    const { data, error } = await this.sb.rpc('cohort_member_directory', { p_cohort_id: cohortId, p_only_participants: onlyParticipants });
+  async listCohortMembers(cohortId: string, onlyParticipants = false, maskUnnamed = false): Promise<MemberRef[]> {
+    // **마스킹은 DB 가 한다.** 여기서 이메일을 받아 가리지 않는다 —
+    //   가리려는 것을 먼저 내보내는 순서가 되기 때문이다(불변식 13 과 같은 논리).
+    const { data, error } = await this.sb.rpc('cohort_member_directory', {
+      p_cohort_id: cohortId, p_only_participants: onlyParticipants, p_mask_unnamed: maskUnnamed,
+    });
     if (error) throw new CoreError(`listCohortMembers 실패: ${error.message}`);
     return ((data ?? []) as { user_id: string; name: string | null }[]).map((r) => ({ userId: r.user_id, name: r.name }));
   }

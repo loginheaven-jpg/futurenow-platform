@@ -117,7 +117,13 @@ export interface CoreContext {
   //   ⓐ 코칭 대상 명단(회차 현황·격자 — 운영자가 섞이면 신호가 인도자 자신에게 켜진다)
   //   ⓑ userId → name 이름 조회(리포트 PDF 헤더·rosterModel — 운영자가 응답한 리포트도 이름이 나와야 한다).
   //   ⓐ만 true 로 부른다. 기본값을 바꾸면 ⓑ가 '참여자' 로 폴백된다.
-  listCohortMembers(cohortId: string, onlyParticipants?: boolean): Promise<MemberRef[]>;
+  /**
+   * 차수 명단. **`maskUnnamed` 는 옵트인이다**(ORDER ② · 2026-08-30) —
+   *   기본값이 기존 동작이라 **호출처 일곱 중 여섯은 코드 변경 없이** 종전대로 산다.
+   *   켜면 이름이 없는 사람의 `name` 자리에 **DB 가 마스킹한 문자열**이 담겨 온다.
+   *   **이메일 원문은 앱에 오지 않는다** — 가리는 일이 DB 안에서 끝난다.
+   */
+  listCohortMembers(cohortId: string, onlyParticipants?: boolean, maskUnnamed?: boolean): Promise<MemberRef[]>;
   getCohortMemberDetail(cohortId: string, userId: string): Promise<CohortMemberDetail>; // 차수 멤버 신상(코치=자기 조원만·운영자=전체, cohort_member_detail DEFINER). 전화·이메일 포함. ADR-75
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
