@@ -250,6 +250,28 @@ body {
   .report-interp-block {
     order: 2;
   }
+  /* 그룹 리포트(ORDER group_report (b)) — 인도자가 오프닝 전에 종이로 뽑아
+     조 편성을 하고 돌봄 명단에 체크하며 연락한다. 그래서 **화면의 축소판이 아니라 화면 그대로**다:
+     전 블록 포함이고 함정·돌봄·실명을 인쇄에서 숨기지 않는다(코치용 인쇄본 정책 · 인도자 전용). */
+  .group-report-root {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* ★ 블록이 페이지 경계에서 잘리지 않게 한다 — 돌봄 명단이 반으로 갈리면
+     인도자가 아랫장을 넘겨 가며 이름을 맞춰야 한다. */
+  .group-report-root > div > section,
+  .group-report-root section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* 함정 3열은 인쇄 폭에서도 가로를 유지한다 — 세로로 무너지면 「조 편성」이라는 형태가 사라진다. */
+  .group-report-root .group-traps {
+    display: flex !important;
+    flex-direction: row !important;
+  }
+
   /* 갈무리 세로 보기(ADR-118) — 리포트와 같은 규칙. 화면 max-width 해제 + 접힘 강제 펼침.
      `<details>` 대신 display 토글을 쓰는 이유는 JourneyCollapsible 머리말 참조(기기별 인쇄 편차). */
   .journey-print-root {

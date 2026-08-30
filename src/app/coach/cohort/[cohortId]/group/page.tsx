@@ -11,6 +11,7 @@ import type { GroupMember } from '@/instruments/futurenow/report/groupModel';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import { latestPerUser } from '@/app/_lib/latestPerUser';
 import { TOOL } from '@/app/_vocab/tool';
+import { ReportPrintButton } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,11 +63,29 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
     // **PDF 대비**(ORDER v2 §1) — 인쇄에서 숨길 앱 크롬을 식별 가능한 컨테이너로 감싸 둔다.
     //   다음 회차에 `.no-print` 를 붙이면 되고, 지금은 구조만 마련한다.
     <div className="group-report-root" style={{ maxWidth: 900, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
-      <div className="group-report-chrome">
-        <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
-          {hasComparison ? `${TOOL.pre}·${TOOL.post} 비교 · 차수 평균` : `${TOOL.pre} · 차수 평균`}
-        </p>
+      {/* ★ **PDF 전용 문서 헤더**(`.print-only`) — 화면에는 안 보이고 인쇄에만 나온다.
+          종이로 뽑으면 **어느 기수의 언제 자료인지**가 종이 위에 없다. 개인 리포트가
+          같은 자리에 같은 패턴을 쓴다(ADR-69 계열). */}
+      <div className="print-only" style={{ display: 'none', marginBottom: 'var(--space-4)' }}>
+        <div className="t-h2" style={{ fontSize: 16, margin: 0 }}>{cohort.name} · 그룹 리포트</div>
+        <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 4 }}>
+          {hasComparison ? `${TOOL.pre}·${TOOL.post}` : TOOL.pre}
+          {' · '}등록 {members.length}명 · 완료 {preMembers.length}명
+          {' · '}{new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+      </div>
+
+      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다.
+          ★ `.no-print` — 앱 크롬(부제·주의 문구·툴바)은 **인쇄에서 빠진다**(인수 2).
+            주의 문구는 화면을 투사하지 말라는 말이라 **종이에서는 뜻이 없다.** */}
+      <div className="group-report-chrome no-print">
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)', margin: '0 0 var(--space-2)' }}>
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
+            {hasComparison ? `${TOOL.pre}·${TOOL.post} 비교 · 차수 평균` : `${TOOL.pre} · 차수 평균`}
+          </p>
+          {/* 개인 리포트와 **같은 부품·같은 자리**다 — 이미 두 화면이 재사용 중이라 새로 만들지 않는다. */}
+          <ReportPrintButton />
+        </div>
         {/* ★ **인도자 전용 주의**(발주 §3 공통). 이 화면 자체를 투사하지 않게 한다. */}
         <div
           style={{
