@@ -10,6 +10,7 @@
 // 제목은 **자료 제목**이라 라우트 키 표가 들 수 없다. U-4 가 세운 통로를 쓴다(§11).
 import { notFound } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
+import { youtubeId, youtubeEmbedUrl, youtubeWatchUrl } from '@/core/library/youtube';
 import { LIBRARY_NAME, LIBRARY_HREF } from '@/app/_vocab/library';
 import { LibraryItemView } from './LibraryItemView';
 import { ItemSocial } from './ItemSocial';
@@ -33,6 +34,13 @@ export default async function LibraryItemPage({ params }: { params: Promise<{ id
        : Promise.resolve({} as Record<string, string[]>),
     me ? ctx.didIReportLibraryItem(id).catch(() => false) : Promise.resolve(false),
   ]);
+  // ★ **영상인가는 서버가 정한다**(설계서 §4.2). 화면이 주소를 다시 훑지 않는다 —
+  //   판정이 두 곳이면 한 곳만 고쳐지는 날이 온다. 그리고 **영상 id 는 화면으로 내려가지 않는다**:
+  //   재생 주소만 조립해 건네므로 목록·HTML 어디에도 raw id 가 남지 않는다.
+  //   관문(`openLibraryItem`)을 이미 지난 뒤라 여기서 만드는 것이 안전하다.
+  const vid = source.kind === 'link' ? youtubeId(source.url) : null;
+  const video = vid ? { embedUrl: youtubeEmbedUrl(vid), watchUrl: youtubeWatchUrl(vid) } : null;
+
   // 집계는 목록 RPC 가 내지만 이 화면은 자료 하나만 보므로 거기서 골라 온다.
   const row = (await ctx.listLibrary().catch(() => [])).find((x) => x.id === id);
 
@@ -43,6 +51,7 @@ export default async function LibraryItemPage({ params }: { params: Promise<{ id
         title={source.title}
         kind={source.kind}
         url={source.url}
+        video={video}
         backHref={LIBRARY_HREF}
         backLabel={LIBRARY_NAME}
       />

@@ -6,6 +6,8 @@
 //   그 라우트조차 클라이언트에게 저장소 주소를 주지 않는다.
 import { createServerContext } from '@/core/supabase/server';
 import type { LibraryAddInput } from '@/contracts/domain';
+import { youtubeId, youtubeOembedUrl } from '@/core/library/youtube';
+import { LIBRARY_TITLE_MAX, LINK_TITLE_TIMEOUT_MS } from '@/app/_vocab/library';
 
 // **파일을 올리는 서버 액션은 없다**(실측 2026-08-29). 서버 액션 본문 상한이 **1MB** 라
 //   그 길로는 자료가 못 지나간다(`Body exceeded 1 MB limit` · 화면은 크래시 화면을 냈다).
@@ -82,6 +84,64 @@ export async function reportLibraryItemAction(
     await ctx.reportLibraryItem(itemId, reason);
     return { ok: true };
   } catch {
+    return { ok: false };
+  }
+}
+
+/**
+ * 유튜브 제목 자동 입력 — **편의이지 등록의 전제가 아니다.**
+ *
+ * ★ **저장소에서 밖으로 나가는 두 번째 자리다**(첫째는 `core/ai/gateway.ts`).
+ *   그래서 지키는 것을 여기 다 적는다.
+ *
+ *   ⑴ **자격을 먼저 본다.** 로그인만 하면 누구나 부를 수 있으면 이 액션이
+ *      **URL 대리 호출기**가 된다. 올릴 수 있는 사람만 부른다 — 판정은 DB 가 한다.
+ *   ⑵ **사용자 문자열로 나가지 않는다.** `youtubeId` 가 `URL` 로 파싱해 호스트를
+ *      **완전 일치**로 보고 id 만 뽑는다. 나가는 주소는 **우리가 다시 조립한다.**
+ *      그래서 `https://youtube.com.evil.test/...` 같은 것이 통과할 자리가 없다(SSRF).
+ *   ⑶ **리다이렉트를 따라가지 않는다**(`redirect: 'error'`) — 호스트 검사를 우회하는 길이다.
+ *   ⑷ **대기에 상한이 있고 넘기면 실패한다**(CLAUDE.md §11). 고정 `sleep` 을 두지 않는다.
+ *   ⑸ **제목 길이를 표와 맞춘다.** `library_items.title` 이 1~120 자를 CHECK 한다 —
+ *      넘겨서 23514 가 나면 화면은 **자격을 확인하라**고 말한다(위 catch-all). 원인이 아니다.
+ *      그래서 **넣기 전에 자른다.** 숫자는 `_vocab/library.ts` 한 곳에서 온다(불변식 23).
+ *   ⑹ **실패해도 등록을 막지 않는다.** 제목은 손 입력이 정본이고 이것은 거들 뿐이다.
+ */
+export async function fetchLinkTitleAction(
+  rawUrl: string,
+): Promise<{ ok: true; title: string } | { ok: false }> {
+  const id = youtubeId(rawUrl);
+  if (!id) return { ok: false }; // 유튜브가 아니면 할 일이 없다 — 밖으로 나가지 않는다
+  try {
+    const ctx = await createServerContext();
+    // ⑴ 자격 — 올릴 수 없는 사람이 이것으로 밖에 나가게 두지 않는다.
+    if (!(await ctx.canUploadLibrary())) return { ok: false };
+
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), LINK_TITLE_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(youtubeOembedUrl(id), {
+        signal: ac.signal,
+        redirect: 'error',
+        referrerPolicy: 'no-referrer',
+        headers: { accept: 'application/json' },
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res.ok) return { ok: false };
+
+    const body = (await res.json()) as unknown;
+    const title = (body as { title?: unknown })?.title;
+    if (typeof title !== 'string') return { ok: false };
+    const trimmed = title.trim();
+    if (!trimmed) return { ok: false };
+
+    // ⑸ 표의 CHECK 와 같은 상한. 자르되 **버리지 않는다** — 사용자가 고칠 수 있다.
+    return { ok: true, title: trimmed.slice(0, LIBRARY_TITLE_MAX) };
+  } catch {
+    // 시간 초과(AbortError)·파싱 실패·자격 조회 실패가 전부 여기로 온다.
+    //   ⑹ 조용히 거짓을 내고 화면은 손 입력을 그대로 살린다.
     return { ok: false };
   }
 }
