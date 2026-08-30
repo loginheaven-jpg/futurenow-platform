@@ -9,8 +9,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CheckinPhoto } from '@/contracts';
 import { Button, CheckRow, Disclosure, MultiChoiceChips, TextArea } from '@/core/ui';
-import { getCheckinSession, type Mirror as MirrorSpec, type SlotName } from '@/instruments/futurenow/checkin';
-import { orderedSlots, resolveMirror, slotBoundaries, type Boundary, type Priors } from '@/instruments/futurenow/checkin/slots';
+import { getCheckinSession, type Mirror as MirrorSpec, type MirrorSet as MirrorSetSpec, type SlotName } from '@/instruments/futurenow/checkin';
+import { orderedSlots, resolveMirror, resolveMirrorSet, slotBoundaries, type Boundary, type Priors } from '@/instruments/futurenow/checkin/slots';
 import { buildCheckinRead, readSelfHighlights } from '@/instruments/futurenow/checkin/readModel';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
@@ -87,10 +87,60 @@ function MirrorOf({ mirror, priors }: { mirror?: MirrorSpec; priors: Priors }) {
   return <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-3)' }}>{view.text}</p>;
 }
 
+/**
+ * 다중 되비추기(ADR-115) — **하나의 상자 안에 줄을 쌓는다.** 회색 상자 다섯 개를 세로로 붙이지 않는다.
+ *
+ * ★ **스타일은 `surface-1` + hairline 상자다**(CC_MEMO_session6_corrections §3 · ⓑ 채택).
+ *   지시서가 「골드 세로선」이라 적었으나 **제품에 들어간 적이 없는 리뷰 HTML 시안의 것**이었다.
+ *   실물 `MirrorLine` 은 테두리·배경·세로선이 **하나도 없다**(위 주석이 그 이유를 적어 두었다).
+ *
+ * **`MirrorLine` 의 경고가 상자를 두르면 되살아난다** — 입력칸으로 오해될 수 있다. 그래서:
+ *   · 상자 안 모든 줄은 caption + secondary 텍스트로 둔다(`MirrorLine` 의 타이포 그대로)
+ *   · **입력 요소를 상자 안에 두지 않는다**
+ *   · 상자 위에 caption 을 하나 둔다
+ *
+ * **단일 줄 되비추기는 `MirrorLine` 그대로다.** 상자는 **묶음이 둘 이상일 때만** 쓴다 —
+ *   1~5회차 출력이 변하면 안 된다.
+ */
+function MirrorsOf({ mirrors, priors }: { mirrors?: MirrorSetSpec; priors: Priors }) {
+  const view = resolveMirrorSet(mirrors, priors);
+  if (!view) return null;
+  // 줄이 하나뿐이면 상자를 두르지 않는다 — 위 규칙 그대로다.
+  if (view.rows.length === 1) {
+    return <MirrorLine caption={view.rows[0].label} value={view.rows[0].value} />;
+  }
+  return (
+    <div
+      style={{
+        marginBottom: 'var(--space-3)', padding: 'var(--space-4)',
+        background: 'var(--color-surface-1)',
+        border: 'var(--border-hair) solid var(--color-border)',
+        borderRadius: 'var(--radius)',
+      }}
+    >
+      {view.caption ? (
+        <div className="t-caption" style={{ ...gray, marginBottom: 'var(--space-2)' }}>{view.caption}</div>
+      ) : null}
+      {view.rows.map((r, i) => (
+        <div
+          key={`${r.label}-${i}`}
+          style={i === 0 ? undefined : {
+            marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)',
+            borderTop: 'var(--border-hair) solid var(--color-border)',
+          }}
+        >
+          <div className="t-caption" style={gray}>{r.label}</div>
+          <div className="t-body" style={{ color: 'var(--color-text-secondary)' }}>{r.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // 묶음 경계(ADR-90) — 현재 블록의 group 이 직전과 다르면 그린다.
 //   값이 있으면 hairline + 캡션, 없으면 hairline 만. 면의 첫 블록이면 hairline 을 생략하고 캡션만
 //   (바로 위가 표지라 선이 겹친다). 이 한 규칙이 네 전이를 모두 덮는다.
-//   단일 STEP 회차(1·2·6·7)는 group 이 전부 없어 전이가 없고 → 신규 hairline 0건.
+//   단일 STEP 회차(1·2)는 group 이 전부 없어 전이가 없고 → 신규 hairline 0건.
 function GroupBoundary({ boundary }: { boundary: Boundary }) {
   if (!boundary) return null;
   return (
@@ -334,7 +384,9 @@ export function CheckinCardClient({
         {/* '읽기 화면이 생겼으니 이제 못 고친다'는 오해 차단 — 마감 정책은 바뀌지 않았다(원문 인용). */}
         <div>
           {closed ? null : <div className="t-caption" style={gray}>{copy.save.notice1}</div>}
-          <div className="t-caption" style={gray}>{copy.save.notice2}</div>
+          {/* 열람 범위 고지. 타입은 선택이나 **6회차도 값을 유지한다**(메모 §1) —
+              여기서 빠지면 6회차만 열람 주체를 안 밝히는 유일한 카드가 된다. */}
+          {copy.save.notice2 ? <div className="t-caption" style={gray}>{copy.save.notice2}</div> : null}
         </div>
       </div>
     );
@@ -464,6 +516,9 @@ export function CheckinCardClient({
         <div key={s.name}>
           <GroupBoundary boundary={boundaries[i]} />
           <MirrorOf mirror={s.block.mirror} priors={priors} />
+          {/* `mirror` → `mirrors` 순. 둘이 함께 선언된 블록은 6회차에 없으나 순서를 정해 둔다 —
+              나중에 생기면 판단이 또 필요해진다. */}
+          <MirrorsOf mirrors={s.block.mirrors} priors={priors} />
           {renderSlot(s.name)}
         </div>
       ))}
@@ -536,12 +591,23 @@ export function CheckinCardClient({
       <Field label={copy.step.what.label} fieldKey={copy.step.what.key} empty={isEmpty(copy.step.what.key)}>{textInput(copy.step.what.key)}</Field>
       <Field label={copy.step.when.label} helpText={copy.step.when.help} fieldKey={copy.step.when.key} empty={isEmpty(copy.step.when.key)}>{textInput(copy.step.when.key, copy.step.when.placeholder)}</Field>
       <Field label={copy.step.blocker.label} helpText={copy.step.blocker.help}>{textInput(copy.step.blocker.key, copy.step.blocker.placeholder)}</Field>
+      {/* 마지막 회차 전용(ADR-116) — **다음 모임이 없는 자리를 사람 한 명이 대신한다.** `share` 앞에 그린다. */}
+      {copy.step.companion ? (
+        <Field label={copy.step.companion.label} helpText={copy.step.companion.help}>
+          {textInput(copy.step.companion.key, copy.step.companion.placeholder)}
+        </Field>
+      ) : null}
 
       {/* 한 걸음 공개 토글(2회차부터) — step_private 컬럼. 기본 해제(공개). 이유를 묻지 않는다. */}
       {share ? (
         <div style={{ marginBottom: 'var(--space-5)' }}>
           <p className="t-caption" style={{ ...help, marginBottom: 'var(--space-2)' }}>{share.notice}</p>
-          <CheckRow label={share.toggleLabel} checked={flags.stepPrivate} onChange={(v) => setFlag('stepPrivate', v)} />
+          {/* ★ 토글은 **있을 때만** 그린다(ADR-116) — 마지막 회차에는 다음 시간이 없어 띄울 자리가 없다.
+              **고지는 남는다** — 토글이 사라진다고 누가 읽는지까지 사라지면 안 된다.
+              1~5회차는 값이 있으므로 출력 변화 0. */}
+          {share.toggleLabel ? (
+            <CheckRow label={share.toggleLabel} checked={flags.stepPrivate} onChange={(v) => setFlag('stepPrivate', v)} />
+          ) : null}
         </div>
       ) : null}
 
@@ -567,7 +633,9 @@ export function CheckinCardClient({
           defaultOpen={copy.wrap.facilitatorBox.defaultOpen ?? false}
         >
           <Field label={copy.wrap.facilitatorBox.need.label}>{textInput('need')}</Field>
-          <Field label={copy.wrap.facilitatorBox.suggestion.label}>{textInput('suggestion')}</Field>
+          {/* `help` 를 넘긴다(§2-5) — 5회차 심화 placeholder(ADR-109)와 같은 종류의 결손이었다.
+              `need` 는 6회차가 요구하지 않으므로 건드리지 않는다(ADR-94 — 반복 미확인 일반화 금지). */}
+          <Field label={copy.wrap.facilitatorBox.suggestion.label} helpText={copy.wrap.facilitatorBox.suggestion.help}>{textInput('suggestion')}</Field>
           <CheckRow label={copy.wrap.facilitatorBox.suggestionAnon.label} checked={flags.suggestionAnon} onChange={(v) => setFlag('suggestionAnon', v)} />
           <div style={{ marginTop: 'var(--space-2)' }}>
             <CheckRow label={copy.wrap.facilitatorBox.contactRequest.label} checked={flags.contactRequest} onChange={(v) => setFlag('contactRequest', v)} />
@@ -578,6 +646,8 @@ export function CheckinCardClient({
         {/* 마지막 칸(강조·accent) */}
         <div style={{ padding: 'var(--space-5)', background: 'var(--color-accent-soft, var(--color-surface-2))', borderRadius: 'var(--radius)', marginBottom: 'var(--space-5)' }}>
           <Field label={copy.wrap.selfNote.label} helpText={copy.wrap.selfNote.help} fieldKey={copy.wrap.selfNote.key} empty={isEmpty(copy.wrap.selfNote.key)}>
+            {/* 마지막 한마디 위에 지금까지의 한마디를 쌓는다(ADR-115). 라벨 아래 · 입력 상자 위. */}
+            <MirrorsOf mirrors={copy.wrap.selfNote.mirrors} priors={priors} />
             <TextArea value={str('self_note')} onChange={(v) => setAnswer('self_note', v)} rows={2} placeholder={copy.wrap.selfNote.placeholder} ariaLabel={copy.wrap.selfNote.label} />
           </Field>
         </div>
@@ -634,7 +704,9 @@ export function CheckinCardClient({
         {filled < requiredTotal ? `${requiredTotal - filled}칸 더 채우면 완료` : `${sessionNo}회차 기록 완료`}
       </p>
       <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 'var(--space-2) 0 0' }}>{copy.save.notice1}</p>
-      <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 0 }}>{copy.save.notice2}</p>
+      {copy.save.notice2 ? (
+        <p className="t-caption" style={{ ...help, textAlign: 'center', margin: 0 }}>{copy.save.notice2}</p>
+      ) : null}
       {saveFailed ? (
         <p className="t-caption" style={{ ...gray, textAlign: 'center' }}>저장하지 못했습니다 · 다시 시도</p>
       ) : savedAt ? (

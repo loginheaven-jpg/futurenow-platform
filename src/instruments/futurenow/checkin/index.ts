@@ -6,6 +6,7 @@ import { CHECKIN_SESSION_2 } from './session2';
 import { CHECKIN_SESSION_3 } from './session3';
 import { CHECKIN_SESSION_4 } from './session4';
 import { CHECKIN_SESSION_5 } from './session5';
+import { CHECKIN_SESSION_6 } from './session6';
 
 // 단일행/여러행 공통 필드. help·placeholder 는 회차·필드마다 선택.
 export type CheckinField = { key: string; label: string; help?: string; placeholder?: string };
@@ -51,7 +52,19 @@ export type Mirror = {
 //   렌더 규칙: 현재 블록의 group 이 직전 블록과 다르면 경계를 그린다 —
 //     값이 있으면 hairline + 캡션, 없으면 hairline 만. 면의 첫 블록이면 hairline 을 생략하고 캡션만.
 //   이 한 규칙이 네 전이(없음→A · A→A · A→B · A→없음)를 모두 덮는다. 단일 STEP 회차는 값이 없어 경계가 없다.
-export type BlockBase = { group?: string; mirror?: Mirror };
+/**
+ * 다중 되비추기(ADR-115) — 서로 다른 회차를 각각 한 줄로 쌓아 보여 준다.
+ *
+ * 단수 `mirror` 와 가르는 기준은 **회차 수**다. 한 회차 안의 여러 키는 `Mirror.keys` 가 ' · ' 로 잇고,
+ * 여러 회차는 여기서 줄로 쌓는다. `Mirror.keys` 에 다른 회차 값을 섞을 수 없는 이유는
+ * `Mirror.back` 이 블록당 하나이기 때문이고, 그것은 봉투 분리(ADR-103)의 귀결이다.
+ *
+ * caption 은 줄들을 묶는 한 줄이다. 없으면 각 항목의 label 만 그린다 —
+ * 정체성 3단은 항목마다 캡션이 다르고(존재가치 · 인생의 한 문장), 한마디 다섯은 캡션이 하나다.
+ */
+export type MirrorSet = { caption?: string; items: Mirror[] };
+
+export type BlockBase = { group?: string; mirror?: Mirror; mirrors?: MirrorSet };
 
 // 1면 슬롯 이름 — **회차가 아니라 모양**이다(ADR-90). 이래야 4~7회차가 문안 파일만으로 조립된다.
 export type SlotName = 'pairText' | 'areaPick' | 'purpose' | 'question' | 'identity' | 'mood';
@@ -105,8 +118,19 @@ export type CheckinSession = {
     what: CheckinField;
     when: CheckinField;
     blocker: CheckinField;
+    /**
+     * 마지막 회차 전용(ADR-116). **다음 모임이 없는 자리를 사람 한 명이 대신한다.**
+     *   세미나가 「의지가 아니라 설계」를 가르쳐 놓고 마지막 날 구조 없이 각자 돌려보내면 앞뒤가 맞지 않는다.
+     *   `blocker` 다음, `share` 앞에 그린다.
+     */
+    companion?: CheckinField;
     // 공개 토글(step_private 컬럼) — 2회차부터. 없으면 비공개(1회차).
-    share?: { notice: string; toggleLabel: string };
+    /**
+     * 나눔 고지. **`toggleLabel` 은 선택이다**(ADR-116) — 마지막 회차에는 공개 토글이 없다.
+     *   다음 시간이 없어 화면에 띄울 자리가 없기 때문이다.
+     *   **그래도 `notice` 는 남는다** — 토글이 사라진다고 누가 읽는지까지 사라지면 안 된다.
+     */
+    share?: { notice: string; toggleLabel?: string };
   };
   wrap: {
     confidence: { key: string; label: string; help: string; min: number; max: number; leftLabel: string; rightLabel: string };
@@ -122,9 +146,18 @@ export type CheckinSession = {
       suggestionAnon: { key: string; label: string };
       contactRequest: { key: string; label: string; help: string };
     };
-    selfNote: CheckinField;
+    /** 마지막 한마디. 6회차는 여기에 다섯 줄을 되비춘다(ADR-115) — 지금까지 되비추기가 없던 자리다. */
+    selfNote: CheckinField & { mirrors?: MirrorSet };
   };
-  save: { button: string; notice1: string; notice2: string };
+  /**
+   * `notice2` 는 **열람 범위 고지**다(누가 읽는가). `notice1` 이 기한을 말한다.
+   *
+   * ★ **타입은 선택이나 6회차도 값을 유지한다**(CC_MEMO_session6_corrections §1).
+   *   1~5회차 전수가 같은 문장을 갖고 있고(실측 · 바이트 동일), 여기서 빠지면
+   *   **6회차만 열람 주체를 안 밝히는 유일한 카드**가 되어 개인정보 동의서와 어긋난다.
+   *   마지막 회차는 가장 사적인 문장이 모이는 자리라 하필 거기서 고지가 빠진다.
+   */
+  save: { button: string; notice1: string; notice2?: string };
   done: { title: string; stepHeading: string; toHome: string; edit: string };
   // 필수 칸 판정(회차별). confidence·선택 항목은 세지 않는다.
   //   ADR-91: 셋 다 하나의 `required` 선언에서 파생된다 — 손으로 따로 쓰면 서로 어긋날 수 있고,
@@ -145,5 +178,6 @@ export function getCheckinSession(n: number): CheckinSession | null {
   if (n === 3) return CHECKIN_SESSION_3;
   if (n === 4) return CHECKIN_SESSION_4;
   if (n === 5) return CHECKIN_SESSION_5;
+  if (n === 6) return CHECKIN_SESSION_6;
   return null;
 }

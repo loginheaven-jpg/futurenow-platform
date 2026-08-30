@@ -6,6 +6,7 @@ import { CHECKIN_SESSION_2 } from './session2';
 import { CHECKIN_SESSION_3 } from './session3';
 import { CHECKIN_SESSION_4 } from './session4';
 import { CHECKIN_SESSION_5 } from './session5';
+import { CHECKIN_SESSION_6 } from './session6';
 
 // 회차 레지스트리 가드 — **한 곳에 모은다.**
 //
@@ -31,6 +32,7 @@ const FILES: Record<number, ReturnType<typeof getCheckinSession>> = {
   3: CHECKIN_SESSION_3,
   4: CHECKIN_SESSION_4,
   5: CHECKIN_SESSION_5,
+  6: CHECKIN_SESSION_6,
 };
 
 // 레지스트리에서 파생한다. 12 는 7회차 편성의 넉넉한 상한 — 그보다 뒤가 등록되면 연속성 단언이 먼저 운다.
