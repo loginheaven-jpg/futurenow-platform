@@ -247,7 +247,12 @@ describe('심화 — 방 밖의 한 사람 · 첫 도미노에 거는 신호', (
   // deepen.fields 는 pairText 형태를 지원하지 않아 라벨 둘을 가진 인접 필드 둘로 뒀다. 새 위젯 0.
   it('심화 ②는 인접 두 칸으로 짝을 이룬다', () => {
     const [, ifField, thenField] = c.deepen.fields;
-    expect(ifField.label.endsWith('— 만약')).toBe(true);
+    // ★ **기호가 대시에서 가운뎃점으로 바뀌었다**(문안 회차 · 2026-08-30).
+    //   잠금이 지키는 것은 기호가 아니라 **「만약」이 끝에 남는다**는 짝 구조다 —
+    //   그 낱말이 **바로 아래 칸의 문두**로 이어져 「만약 (조건), 나는 (행동)」이 한 문장이 된다.
+    //   앞으로 옮기면 그 문장에서 「만약」이 사라진다(그 안이 한 번 채택됐다가 이 잠금이 잡았다).
+    expect(ifField.label.endsWith('만약'), '「만약」이 끝에 남아야 아래 칸으로 이어진다').toBe(true);
+    expect(ifField.label, '금지 기호가 되살아났다').not.toContain(String.fromCharCode(8212));
     expect(thenField.label).toBe('나는');
   });
 
