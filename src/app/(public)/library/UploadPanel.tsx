@@ -6,12 +6,12 @@
 //
 // **자격 판정을 화면이 하지 않는다**(§3 하지 말 것 3). 서버가 낸 `canUpload` 를 그대로 쓴다 —
 //   등급 이름을 화면이 비교하기 시작하면 판정이 두 곳이 된다.
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { LIBRARY_NAME, LIBRARY_TIER_LABEL, LIBRARY_MAX_MB } from '@/app/_vocab/library';
 import { UPLOAD_CONSENT, UPLOAD_CLOSED, LINK_NOTE, UPLOAD_TOO_LARGE, TIER_NOTE } from './copy';
 import { createBrowserSupabase } from '@/core/supabase/client';
-import { addLibraryItemAction } from './actions';
+import { addLibraryItemAction, fetchLinkTitleAction } from './actions';
 
 const muted = { color: 'var(--color-text-secondary)' } as const;
 const box = {
@@ -32,6 +32,29 @@ export function UploadPanel({
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  /**
+   * 제목 자동 입력 — **입력 중이 아니라 blur 에서 한 번**(설계서에 없는 새 기능 · ② 요청).
+   *
+   * ★ **U-4 를 되풀이하지 않는다.** 그때 `/join` 이 **초당 37회** 재호출됐고 정적 잠금은
+   *   전부 초록이었다 — 재호출은 **런타임 행동**이라 아무도 재지 않았기 때문이다(⑨-c).
+   *   그래서 여기서는 셋을 건다: ⑴ `onChange` 가 아니라 **`onBlur`** ⑵ **같은 주소는 다시 묻지 않는다**
+   *   ⑶ 이미 친 제목은 **덮어쓰지 않는다.**
+   *
+   * ★ **막지 않는다.** 실패·시간초과여도 제목 칸은 손으로 칠 수 있는 채로 남고
+   *   올리기 단추도 잠기지 않는다. 자동 입력은 **거드는 것이지 전제가 아니다.**
+   */
+  const askedFor = useRef<string | null>(null);
+  async function fillTitle(raw: string) {
+    const v = raw.trim();
+    if (!v) return;
+    if (askedFor.current === v) return;   // ⑵ 같은 주소를 다시 묻지 않는다
+    askedFor.current = v;
+    if (title.trim()) return;             // ⑶ 사람이 쓴 것을 덮지 않는다
+    const r = await fetchLinkTitleAction(v);
+    // 기다리는 동안 사람이 쳤을 수 있다 — 그 사이에 생긴 값도 덮지 않는다.
+    if (r.ok) setTitle((cur) => (cur.trim() ? cur : r.title));
+  }
   const [pending, startTx] = useTransition();
   const router = useRouter();
 
@@ -125,6 +148,7 @@ export function UploadPanel({
               {/* **확정 문안이다.** */}
               <p className="t-caption" style={{ ...muted, margin: 0 }}>{LINK_NOTE}</p>
               <input className="ui-input" value={url} onChange={(e) => setUrl(e.target.value)}
+                onBlur={(e) => void fillTitle(e.target.value)}
                 placeholder="https://" style={{ width: '100%' }} />
             </>
           ) : (

@@ -47,3 +47,25 @@ export const LIBRARY_MAX_MB = 50;
  *
  * ※ **이 세 문장은 제가 지었습니다 — 결재를 청합니다.**
  */
+
+/**
+ * 자료 제목 상한 — **표의 CHECK 와 같은 수다.**
+ *
+ * `library_items` 가 `CHECK (char_length(title) between 1 and 120)` 를 걸고 있고
+ *   올리기 입력칸이 `maxLength={120}` 를 걸고 있다. 이제 **제목 자동 입력**이
+ *   세 번째 자리가 됐다 — `setState` 로 넣는 값에는 `maxLength` 가 걸리지 않기 때문이다.
+ *
+ * **셋이 같은 수를 봐야 한다**(불변식 23). 넘치면 23514 가 나고 화면은
+ *   「자격을 확인해 주세요」를 낸다 — **원인이 아닌 말을 하게 된다.**
+ *   `library.share.test.ts` 가 이 상수와 마이그레이션의 CHECK 를 묶는다.
+ */
+export const LIBRARY_TITLE_MAX = 120;
+
+/**
+ * 제목을 받아 오는 대기의 상한.
+ *
+ * **기다림에는 끝이 있어야 하고, 끝났는지 확인할 수 있어야 한다**(CLAUDE.md §11).
+ *   *"N초면 되겠지"* 가 아니라 **상한을 넘기면 조용히 포기하고 손 입력을 살린다** —
+ *   등록을 막지 않는 것이 이 기능의 전제다.
+ */
+export const LINK_TITLE_TIMEOUT_MS = 5000;
