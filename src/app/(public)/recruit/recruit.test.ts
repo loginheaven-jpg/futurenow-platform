@@ -429,31 +429,44 @@ describe('★ 카드 `alt` 는 카드 그림과 같은 말을 한다 (C1 · 2026
   });
 });
 
-describe('★ 문안 회차 결재분 — 카드 alt 기호 (최박사 결재 2026-08-30 · 항목 ②)', () => {
+describe('★ 문안 회차 결재분 — 카드 alt 기호 (최박사 결재 2026-08-30 항목 ② · card-06·07 은 릴레이 판단)', () => {
   // **`alt` 는 낭독된다.** 화면낭독기는 가운뎃점을 **쉼으로** 읽고 대시는 「대시」라 소리 내거나
   //   건너뛴다 — 그래서 여기서 기호를 바꾸는 것은 규칙을 지키는 일이면서 **듣는 분에게 더 낫다.**
+  //
+  // ★ **넷 전수를 잠근다**(2026-08-30). 처음에는 「둘」만 잠갔는데 **`alt` 는 넷이었다** —
+  //   결재장이 「둘이 있는가」로 물었지 **「둘뿐인가」로 묻지 않았다**(하네스 계열 ⑬).
+  //   **오늘 세운 조항이 오늘 그 결재장을 잡았다.**
+  //   card-06·07 은 **릴레이 판단으로 적용**했고 **최박사 사후 추인 대상**이다 —
+  //   결재된 ②와 **같은 계열**(대시가 두 문장을 잇는 자리)이라는 것이 근거다.
   const DASH = ` ${String.fromCharCode(8212)} `;
 
-  it('결재받은 두 카드의 alt 에 대시가 없다', () => {
-    const byN = new Map(
-      [...readFileSync('src/app/(public)/recruit/cards.ts', 'utf8').matchAll(/\{ n: (\d+),[^}]*alt: '([^']*)'/g)]
+  function alts(): Map<number, string> {
+    return new Map(
+      [...readFileSync('src/app/(public)/recruit/cards.ts', 'utf8')
+        .matchAll(/\{ n: (\d+),[^}]*alt: '([^']*)'/g)]
         .map((m) => [Number(m[1]), m[2]] as const),
     );
-    for (const n of [2, 3]) {
-      expect(byN.get(n), `card-0${n} 이 없다`).toBeTruthy();
-      expect(byN.get(n)!, `card-0${n} 의 alt 에 대시가 남았다`).not.toContain(DASH);
-    }
+  }
+
+  it('★ `alt` **전수**에 대시가 없다 — 「둘뿐인가」로 묻는다', () => {
+    const byN = alts();
+    // **물 것이 실재하는가** — 카드가 0장이면 이 잠금은 아무것도 증명하지 못한다(계열 ⑦).
+    expect(byN.size, 'alt 를 하나도 못 세었다 — 잣대가 헛돈다').toBeGreaterThan(0);
+    const withDash = [...byN.entries()].filter(([, v]) => v.includes(DASH)).map(([n]) => n);
+    expect(withDash, `대시가 남은 카드: ${withDash.join(', ')}`).toHaveLength(0);
   });
 
-  it('★ 결재 밖 둘(card-06·07)은 **그대로 두었다** — 미결이라는 사실을 잠금이 기억한다', () => {
-    // 결재장에 제가 「alt 둘」이라 적었으나 실제 alt 는 **넷**이었고 대시는 **넷 중 넷**에 있었다.
-    //   card-06·07 은 **결재 범위 밖**이므로 손대지 않았다.
-    //   **이 잠금이 초록인 동안은 미결이 남아 있다는 뜻이다** — 결재가 나면 이 것을 뒤집는다.
-    const byN = new Map(
-      [...readFileSync('src/app/(public)/recruit/cards.ts', 'utf8').matchAll(/\{ n: (\d+),[^}]*alt: '([^']*)'/g)]
-        .map((m) => [Number(m[1]), m[2]] as const),
-    );
-    const pending = [6, 7].filter((n) => byN.get(n)?.includes(DASH));
-    expect(pending, '결재 없이 고쳤거나 카드 구성이 바뀌었다').toEqual([6, 7]);
+  it('결재분 문장이 글자 그대로다', () => {
+    const byN = alts();
+    expect(byN.get(2)).toBe('계획은 매년 세웠다 · 3월이면 사라진다. 의지의 문제가 아닙니다.');
+    expect(byN.get(3)).toBe('방향이 없으면 속도는 의미가 없다 · 게으름이 아니라 설계의 문제입니다.');
+    expect(byN.get(6)).toBe('손에 남는 것 · 존재가치 선언문, 인생 조감도, 단 하나의 도미노, 환경 설계도.');
+    expect(byN.get(7)).toBe('1기 참여자의 말 · 준비만 잘해서 문제였다, 채울 걸 먼저 정하니 될 것 같더라.');
+  });
+
+  it('R-01 확정 문안이 alt 에 그대로 있다 — 그림과 같은 말을 한다', () => {
+    const joined = [...alts().values()].join(String.fromCharCode(10));
+    expect(joined).toContain('의지의 문제가 아닙니다');
+    expect(joined, 'R-01 이전 문장이 살아 있다').not.toContain('의지가 약해서');
   });
 });
