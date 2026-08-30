@@ -64,8 +64,9 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
   const empty = preScores.length === 0 && postScores.length === 0;
 
   return (
-    // **PDF 대비**(ORDER v2 §1) — 인쇄에서 숨길 앱 크롬을 식별 가능한 컨테이너로 감싸 둔다.
-    //   다음 회차에 `.no-print` 를 붙이면 되고, 지금은 구조만 마련한다.
+    // **PDF**(ORDER v2 §1) — 인쇄에서 숨길 앱 크롬을 식별 가능한 컨테이너로 감싼다.
+    //   (a) 회차가 구조를 마련하고 (b) 회차가 `.no-print` 를 붙였다 — **아래 85행에 이미 있다.**
+    //   이 주석은 (a) 당시 「다음 회차에 붙인다」였는데, 붙인 뒤 고쳐지지 않아 낡아 있었다.
     <div className="group-report-root" style={{ maxWidth: 900, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* ★ **PDF 전용 문서 헤더**(`.print-only`) — 화면에는 안 보이고 인쇄에만 나온다.
           종이로 뽑으면 **어느 기수의 언제 자료인지**가 종이 위에 없다. 개인 리포트가

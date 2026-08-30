@@ -157,7 +157,8 @@ describe('★ PDF 저장 — 브라우저 인쇄 경로 (ORDER (b) v2)', () => {
   it('★★ 민감 채널을 부르지 않는다 (인수 5 · 경계 3)', () => {
     // 이름 마스킹을 위해 `getCohortMemberDetail` 을 부르면 **전화·주소까지 딸려 온다** —
     //   그 RPC 는 「전화 개방은 이 RPC 한정」이라 못 박은 자리이고 불변식 13 이 그것을 지킨다.
-    //   ② 마스킹은 다음 회차에 **DB 안에서** 푼다(원문이 앱에 오지 않게).
+    //   ② 마스킹은 **DB 안에서 풀었다**(ADR-168) — 원문이 앱에 오지 않는다.
+    //   이 잠금은 그 뒤에도 유효하다: 마스킹이 붙었다고 민감 채널을 열 이유가 생기지 않는다.
     for (const f of [PAGE, DESIGN, MODEL]) {
       const code = read(f).split(NL)
         .filter((l) => { const t = l.trim(); return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*'); })
@@ -166,8 +167,9 @@ describe('★ PDF 저장 — 브라우저 인쇄 경로 (ORDER (b) v2)', () => {
     }
   });
 
-  it('표시명을 만드는 지점이 **한 곳**이다 — 다음 회차에 마스킹을 붙일 자리', () => {
+  it('표시명을 만드는 지점이 **한 곳**이다 — 마스킹이 붙은 자리', () => {
     // `displayName` 하나만 부르고 블록마다 따로 짓지 않는다.
+    //   ADR-168 이 실제로 여기에 붙었다 — 지점이 둘이었으면 한쪽만 가려졌을 것이다.
     expect(read(DESIGN)).toContain('displayName');
     expect(read(MODEL)).toContain('export const displayName');
   });
