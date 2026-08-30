@@ -68,8 +68,12 @@ describe('공개 모바일 메뉴 — 회원과 **같은 부품 한 벌** (최�
 
   it('**문안을 지어내지 않았다** — 둘 다 이미 있는 말이고, 관계를 잠근다', () => {
     // 값이 아니라 **관계**를 잠근다 — 한쪽만 고치면 레드가 난다(`CLAUDE.md` §11).
+    // ★ **전제가 바뀌었다**(릴레이 지시 2026-08-30) — 푸터에서 「청계로벤하임」을 걷어
+    //   소속 표기가 서비스 이름과 **같아졌다**. 「전체는 쓰지 않으신다」가 가리키던 대상이 없어졌다.
+    //   **결정으로 없어진 것을 잠금이 붙들면 그 잠금이 낡은 것이다** — 그래서 뒤집되,
+    //   지키려던 것(둘이 갈리지 않는다)은 **더 강하게** 잠근다: 사본이 아니라 **같은 값**이어야 한다.
     expect(SITE_ORG.startsWith(SITE_NAME), '시트 머리 이름은 소속 표기의 앞부분이다').toBe(true);
-    expect(SITE_ORG).not.toBe(SITE_NAME); // 소속 표기 전체는 쓰지 않으신다
+    expect(SITE_ORG, '소속 표기가 서비스 이름과 갈렸다 — 사본을 만들지 않는다').toBe(SITE_NAME);
     const footer = readFileSync('src/app/_screens/site/SiteFooter.tsx', 'utf8');
     expect(footer, '묶음 제목은 푸터 내비가 이미 쓰던 이름이다').toContain(`aria-label="${PUBLIC_MENU_TITLE}"`);
   });
