@@ -158,14 +158,14 @@ export function buildCheckinRead(
   if (stepHiddenFromFacilitator) {
     // 내용 0. '안 썼다'와 '비공개로 썼다'를 인도자가 구분하도록 사실만 남긴다.
     // 문구는 참여자가 실제로 읽고 켠 토글 원문 그대로(신규 문안 0). 토글이 없는 회차면 자리 표시도 두지 않는다.
-    if (share) out.push({ kind: 'hidden', label: share.toggleLabel });
+    if (share?.toggleLabel) out.push({ kind: 'hidden', label: share.toggleLabel });
   } else {
     pushText(out, copy.step.what.label, text(answers, copy.step.what.key));
     pushText(out, copy.step.when.label, text(answers, copy.step.when.key));
     pushText(out, copy.step.blocker.label, text(answers, copy.step.blocker.key));
     // 공개 여부는 본인에게만 되돌려 준다 — 켰으면 토글 원문, 껐으면 공개 고지 원문.
     if (isSelf && share) {
-      if (flags.stepPrivate) out.push({ kind: 'flag', label: share.toggleLabel });
+      if (flags.stepPrivate && share.toggleLabel) out.push({ kind: 'flag', label: share.toggleLabel });
       else out.push({ kind: 'note', text: share.notice });
     }
   }

@@ -1,6 +1,6 @@
 // 1면 슬롯 순회·묶음 경계·되비추기 판정(ADR-90). 순수 함수 — 카드가 이 결과를 그리기만 한다.
 //   렌더 규칙을 컴포넌트 안에 두면 "1·2회차 출력이 정말 그대로인가"를 테스트로 증명할 수 없다.
-import { type BlockBase, type CheckinSession, type Mirror, type SlotName } from './index';
+import { type BlockBase, type CheckinSession, type Mirror, type MirrorSet, type SlotName } from './index';
 
 export type OrderedSlot = { name: SlotName; block: BlockBase };
 
@@ -51,9 +51,12 @@ export type Priors = Record<number, Record<string, unknown> | null>;
 export function neededBacks(copy: CheckinSession): number[] {
   const out = new Set<number>();
   const take = (m: Mirror | undefined) => { if (m) out.add(m.back ?? 1); };
-  for (const s of orderedSlots(copy)) take(s.block.mirror);
+  // ★ 다중 되비추기(ADR-115)도 훑는다. **빠뜨리면 깊이를 안 불러 되비추기가 조용히 사라진다.**
+  const takeSet = (set: MirrorSet | undefined) => { if (set) for (const m of set.items) take(m); };
+  for (const s of orderedSlots(copy)) { take(s.block.mirror); takeSet(s.block.mirrors); }
   for (const f of copy.deepen.fields) take(f.mirror);
   take(copy.step.lastStep?.mirror);
+  takeSet(copy.wrap.selfNote.mirrors);
   return [...out].sort((a, b) => a - b);
 }
 
@@ -79,6 +82,25 @@ export function priorSessionNos(sessionNo: number, mode: 'edit' | 'read', backs:
  *
  * 존재 판정만 trim 하고, 출력에는 원문을 쓴다(현행 렌더와 바이트 동일).
  */
+export type MirrorSetView = { caption?: string; rows: { label: string; value: string }[] } | null;
+
+/**
+ * 다중 되비추기 판정(ADR-115). **`resolveMirror` 를 재사용한다** —
+ *   앵커 규칙 · trim 규칙 · `empty` 규칙이 그대로 상속돼야 하기 때문이다.
+ *
+ * **값이 있는 항목만 줄로 남긴다.** 하나도 없으면 `null` — 상자 자체를 그리지 않는다.
+ * `MirrorSet` 항목에는 `empty` 를 쓰지 않는다 — 다섯 줄 중 셋이 비었을 때
+ *   빈 문구 셋이 쌓이면 **화면이 결손 목록**이 된다.
+ */
+export function resolveMirrorSet(set: MirrorSet | undefined, priors: Priors): MirrorSetView {
+  if (!set) return null;
+  const rows = set.items
+    .map((m) => resolveMirror(m, priors))
+    .filter((v): v is { kind: 'value'; label: string; value: string } => v?.kind === 'value')
+    .map(({ label, value }) => ({ label, value }));
+  return rows.length ? { caption: set.caption, rows } : null;
+}
+
 export function resolveMirror(mirror: Mirror | undefined, priors: Priors): MirrorView {
   if (!mirror) return null;
   const prior = priors[mirror.back ?? 1] ?? null;

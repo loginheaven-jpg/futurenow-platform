@@ -111,10 +111,22 @@ describe('종단 축 (summaryFields 를 읽되 [0] 이 아니다)', () => {
     expect(longitudinalAxis(rows, SESSIONS, NOW)[0].value).toBeNull();
   });
 
-  it('미등록 회차(6·7)는 라벨이 없고 상태만 남는다', () => {
-    const axis = longitudinalAxis([], [session(6, 29, 31), session(7, 32 - 32 + 1, 7)], NOW);
-    expect(axis[0]).toMatchObject({ sessionNo: 6, label: null, value: null, state: 'notopen' });
-    expect(getCheckinSession(6)).toBeNull(); // 가드가 헛돌지 않았음
+  it('미등록 회차(7)는 라벨이 없고 상태만 남는다', () => {
+    // ★ **6회차가 등록되어 대상을 7로 옮겼다**(ADR-117 · 2026-08-30).
+    //   규칙 자체는 그대로다 — 「등록되지 않은 회차는 라벨을 만들지 않는다」.
+    //   아래 가드가 그것을 지킨다: **7이 등록되는 날 이 잠금이 먼저 운다.**
+    //   (6이 등록됐을 때 실제로 울었고, 그래서 잠금을 지우지 않고 대상을 옮겼다.)
+    const axis = longitudinalAxis([], [session(7, 29, 31)], NOW);  // 아직 열리지 않은 날짜
+    expect(axis[0]).toMatchObject({ sessionNo: 7, label: null, value: null, state: 'notopen' });
+    expect(getCheckinSession(7)).toBeNull(); // 가드가 헛돌지 않았음
+  });
+
+  it('★ 등록된 6회차는 라벨이 선다 — 위 규칙의 반대편', () => {
+    // 「라벨이 없다」만 잠그면 **등록해도 라벨이 안 서는 결함**을 못 본다.
+    expect(getCheckinSession(6)).not.toBeNull();
+    const axis = longitudinalAxis([], [session(6, 29, 31)], NOW);
+    expect(axis[0].sessionNo).toBe(6);
+    expect(axis[0].label, '6회차가 등록됐는데 라벨이 없다').not.toBeNull();
   });
 });
 

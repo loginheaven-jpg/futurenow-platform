@@ -1,0 +1,224 @@
+# 6회차 갈무리 구현 — ADR-115~117 · 정정 메모 반영
+
+**근거**: `CC_ORDER_checkin_session6.md`(발주서) + `CC_MEMO_session6_corrections.md`(**부분 정정 · 충돌 시 메모가 이긴다**).
+첨부된 5회차 리뷰 HTML 은 **구버전이라 정본으로 쓰지 않았다** — ADR-94 §12 가 못 박은 그대로다.
+
+---
+
+## 1. 착수 전 — 메모의 주장 셋을 값으로 확인했다
+
+메모가 「소스로 전량 검증했다」고 했으나 **그 말을 근거로 쓰지 않고 다시 쟀다.**
+
+| 주장 | 잰 값 |
+|---|---|
+| ① `notice2` 가 1~5회차 전수에 있다 | **있다 · 다섯이 바이트 동일**(「적으신 내용은 인도자와 운영자가 읽습니다.」) |
+| ② 열람 범위는 「인도자와 운영자」다 | **맞다** — `StartGuide`·`ResponseRunner`·`LetterPhotos`·모집 문안이 모두 그 형태 |
+| ③ `MirrorLine` 에 골드 세로선이 없다 | **없다** — 테두리·배경·세로선이 하나도 없고 **주석이 그 이유(입력칸 오해 방지)까지 적어 두었다** |
+
+**셋 다 메모가 옳았다.**
+
+---
+
+## 2. 갈래 B — 구조 (ADR-115·116)
+
+| 무엇 | 어떻게 |
+|---|---|
+| `MirrorSet` 타입 | `Mirror` 는 **건드리지 않고** 새 타입을 얹었다. `BlockBase.mirrors` · `selfNote.mirrors` |
+| `neededBacks` | 새 자리 둘을 더 훑는다 — **빠뜨리면 깊이를 안 불러 되비추기가 조용히 사라진다** |
+| `resolveMirrorSet` | `resolveMirror` 를 **재사용**한다 — 앵커·trim·`empty` 규칙이 그대로 상속돼야 한다 |
+| `MirrorsOf` 렌더 | **`surface-1` + hairline 상자**(메모 §3 ⓑ). 골드 세로선이 아니다 |
+| `share.toggleLabel` | 선택으로. 렌더가 **있을 때만** `CheckRow` 를 그린다 |
+| `save.notice2` | **타입만 선택으로. 6회차는 값을 유지한다**(메모 §1) |
+| `step.companion` | 신설. `blocker` 다음 · `share` 앞 |
+| `suggestion.help` | 렌더에 넘긴다(§2-5 결손) — `need` 는 건드리지 않았다(ADR-94) |
+
+### ★ 타입을 선택으로 바꾸니 **세 곳이 드러났다**
+
+`tsc` 가 `CheckinCardClient:544` · `readModel:161·168` 을 짚었다. **`toggleLabel` 이 없을 수 있다는 사실을
+세 자리가 몰랐다.** 값이 있을 때만 그리도록 고쳤고 **1~5회차는 값이 있으므로 출력 변화 0** 이다.
+
+### 상자 규칙 — 메모의 조건을 지켰다
+
+`MirrorLine` 의 경고(**입력칸으로 오해 방지**)가 상자를 두르면 되살아난다. 그래서:
+**상자 안 모든 줄은 caption + secondary 텍스트** · **입력 요소를 상자 안에 두지 않는다** ·
+**줄이 하나뿐이면 상자를 두르지 않고 `MirrorLine` 그대로다**(1~5회차 출력 불변).
+
+---
+
+## 3. 갈래 A — 문안 (ADR-117)
+
+발주서 §3 을 그대로 옮기되 **메모의 문항 교체 둘을 반영**했다.
+
+| # | 발주서 | 적용된 것 |
+|---|---|---|
+| 문항 1 | 오늘 **마지막까지 남는다고** 적으신 한 줄 | **오늘 남은 시간을 헤아려 보고** 적으신 한 줄 |
+| 문항 2 | **두 세계관을 나란히 놓고** 보았을 때, 무엇이 새로 보였습니까? | **만약 3일 후에 죽음 앞에 선다면, 가장 후회되는 한 가지는 무엇일까요?** |
+
+문항 2에 **보조 문구를 붙이지 않았다** — 무거운 질문에 안심 문구를 달면
+「이건 무거운 질문입니다」라고 알리는 꼴이 되어 오히려 방어를 부른다. **선택 표기는 그대로 둔다.**
+
+---
+
+## 4. ★ 발주서가 실물과 어긋난 자리 셋 — 실물을 따랐다
+
+| # | 발주서 | 실물 | 처리 |
+|---|---|---|---|
+| ⑴ | `brand`·`title`·`counter` 가 최상위 · `page1` | 실제 타입은 **`cover` · `today`** 로 감싼다 | **정본을 따랐다** |
+| ⑵ | `copyRegression` 의 `S` 배열 **두 곳**(:100·:163)에 추가 | 전수를 훑는 배열이 **여덟 곳** | 여덟 중 **여섯만** 넣었다(↓) |
+| ⑶ | `registry.guard` 의 `FILES` 한 줄 | 맞다 | 그대로 |
+
+### ⑵ 를 자세히 — **두 곳은 넣으면 안 됐다**
+
+| 자리 | 무엇을 요구하나 | 6회차 |
+|---|---|---|
+| `:100` `S` | 「selfNote 가 값을 말한다」 · 「심화 제목이 격상됐다」 — **세 회차 공통 문장** | **selfNote 에 help 를 두지 않았고**(다섯 줄 되비추기가 그 일을 대신한다) **심화 제목도 다르다** |
+| `:393` | 실행 자신감 보조문구가 특정 문장이다 | **90일 한 걸음이라 문구가 다르다** |
+
+넣었다가 셋이 붉어졌고 **되돌리면서 사유를 주석에 적었다.**
+**발주서가 「두 곳」이라 한 것이 자리 수로는 틀렸고 취지로는 맞았다** — 전수 배열과 공통 단언 배열을 갈라야 했다.
+
+---
+
+## 5. ★ 낡은 잠금 하나를 **지우지 않고 옮겼다**
+
+`journey.test.ts` 의 **「미등록 회차(6·7)는 라벨이 없다」** 가 6회차 등록으로 붉어졌다.
+그 안에 `expect(getCheckinSession(6)).toBeNull(); // 가드가 헛돌지 않았음` 이 있었다 —
+**잠금이 스스로 「물 것이 있는가」를 확인하고 있었고, 그것이 옳게 울린 것이다.**
+
+**규칙 자체는 유효하므로 대상을 7로 옮기고**, 반대편 단언을 하나 **더했다**:
+「등록된 6회차는 라벨이 선다」. **「없다」만 잠그면 등록해도 라벨이 안 서는 결함을 못 본다.**
+
+---
+
+## 6. 잠금과 물림
+
+`session6.test.ts` **19건** 신설. **메모의 정정 여섯을 되돌리는 변이**를 심어 봤다:
+
+| 변이 | 심어졌나 | 결과 |
+|---|---|---|
+| `notice2` 를 지운다(발주서 원안) | 0곳 | **레드** |
+| `share.notice` 를 「인도자와 나만」으로 | 2 | **레드** |
+| 문항 1 을 원안으로 | 3 | **레드** |
+| 문항 2 를 원안으로 | 2 | **레드** |
+| 문항 2 에 보조 문구를 단다 | 1 | **레드** |
+| 공개 토글을 되살린다 | 2 | **레드** |
+| 원복 | — | **초록 19/19** |
+
+**되비추기도 실물로 물렸다** — 값이 하나도 없으면 `null`(상자 자체를 안 그린다),
+일부만 있으면 있는 것만 남는다(`['1회차','3회차']`).
+
+**키가 지어낸 것이 아닌지도 본다**(계열 ⑦) — `identity_sentence`·`identity_statement`·`self_note` 가
+실제로 앞 회차 문안에 있는지 단언한다.
+
+### 타입이 이미 잠그는 자리 넷
+
+`group`·`caption`·`toggleLabel`·`help` 를 **선언하지 않아 `satisfies` 가 좁혀 냈고**,
+`c.today.mood.group` 같은 접근은 **`tsc` 가 먼저 운다.** 런타임 단언보다 강해서 `in` 검사로 바꿨다.
+
+---
+
+## 7. 수용 기준 — 채널 1·2
+
+```
+□ tsc 0 · eslint 4(기준선) · vitest 전건 통과 · build 성공     → 통과
+□ session1~5.ts 변경 0                                        → 통과(git diff 0)
+□ page.tsx 변경 0 · 마이그레이션 신설 0                        → 통과
+□ getCheckinSession(6) 이 객체를 그대로(toBe) · (7) 은 null    → 통과
+□ registry.guard 연속성 1~6                                    → 통과
+□ copyBaseline 에 session6 · 1~5 항목 바이트 동일              → 통과(생성기 재생성 · 1~5 델타 0/0)
+□ BANNED 어휘 0건                                              → 통과(copyRegression 이 잠근다)
+```
+
+**`copyBaseline` 은 손으로 만들지 않았다** — 생성기(`regenCopyBaseline.mjs`)에 `session6` 을 더해 재생성했고,
+**1~5회차는 0/0 이고 session6 만 85 늘었음**을 먼저 확인한 뒤 썼다.
+
+## 8. 남은 것 — 채널 3(실기기)
+
+발주서 §6 채널 3은 **배포 후 실기기 확인**이라 아직 못 했다. 항목은 그대로 남는다 —
+되비추기 상자 렌더 · 1·2회차 미작성 계정에서 줄이 빠지는지 · 토글 없음 · TTFB 비교.
+**QA 기수를 세우고 6회차를 열어야 하므로 별도 회차로 청한다.**
+
+## 9. 미결 셋(발주서 §8) — `session6.ts` 머리에 적어 두었다
+
+`save.notice1` 의 기한 · `step_companion` 90일 리마인드 · 책 페이지 쇄 확인.
+
+---
+
+## 검증
+
+```
+
+── tsc ──
+오류 0
+
+── eslint ──
+23:8  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-html-link-for-pages')
+✖ 3 problems (0 errors, 3 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
+── vitest ──
+Test Files  129 passed | 5 skipped (134)
+      Tests  1442 passed | 73 skipped (1515)
+   Duration  6.44s (transform 13.25s, setup 0ms, import 34.31s, tests 6.54s, environment 24ms)
+
+  스킵 사유 — 전부 **의도된 옵트인**이다:
+    tests/membership.integration.test.ts         실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다
+    tests/feed.integration.test.ts               실DB 옵트인 — 같은 스위치
+    tests/rls.integration.test.ts                실DB 옵트인 — 같은 스위치
+    tests/defaultPrivileges.integration.test.ts  실DB 옵트인 — 같은 스위치(pg_default_acl 실측)
+    tests/feedReactionsMulti.migration.test.ts   적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)
+    tests/site.snapshot.test.tsx                 캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다
+
+── next build ──
+성공
+Route (app)                                       Revalidate  Expire
+┌ ○ /                                                     5m      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/approvals
+├ ○ /api/version
+├ ƒ /c/[code]/[session]
+├ ƒ /c/[code]/values
+├ ƒ /coach
+├ ƒ /coach/cohort/[cohortId]
+├ ƒ /coach/cohort/[cohortId]/checkin
+├ ƒ /coach/cohort/[cohortId]/checkin/preview
+├ ƒ /coach/cohort/[cohortId]/group
+├ ƒ /coach/cohort/[cohortId]/matrix
+├ ƒ /coach/cohort/[cohortId]/member/[userId]
+├ ƒ /coach/cohort/[cohortId]/report/[responseId]
+├ ƒ /coach/cohort/[cohortId]/values
+├ ƒ /coach/cohorts
+├ ƒ /coach/new
+├ ƒ /contact
+├ ƒ /feed
+├ ƒ /home
+├ ƒ /home/assessments
+├ ƒ /join
+├ ƒ /library
+├ ƒ /library/[id]
+├ ƒ /library/[id]/file
+├ ƒ /login
+├ ƒ /my/cohorts
+├ ƒ /my/cohorts/[cohortId]
+├ ƒ /my/cohorts/[cohortId]/checkin/[session]
+├ ƒ /my/cohorts/[cohortId]/journey
+├ ƒ /my/cohorts/[cohortId]/report
+├ ƒ /my/cohorts/[cohortId]/values
+├ ƒ /my/values
+├ ƒ /news
+├ ƒ /news/[id]
+├ ƒ /pending
+├ ƒ /preview
+├ ƒ /preview/console
+├ ƒ /preview/entry
+├ ƒ /preview/report
+├ ƒ /preview/site
+├ ○ /recruit                                              5m      1y
+├ ƒ /reset
+├ ƒ /reset/confirm
+└ ƒ /signup
+O 네 지표 전항 통과 — 위 출력 전문을 그대로 보고에 붙인다
+```
