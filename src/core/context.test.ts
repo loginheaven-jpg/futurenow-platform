@@ -361,9 +361,14 @@ describe('본부 데이터: 멤버명부 / 코치 신청 (RPC·임베드 매핑)
     });
     const members = await ctx.listCohortMembers('co1');
     expect(members).toEqual([{ userId: 'u2', name: '이참여' }, { userId: 'u3', name: null }]);
-    // ADR-118 이 선택 인자를 더했다. **기본값이 기존 동작**임을 여기서 못 박는다 —
-    //   기본이 참여자 전용으로 바뀌면 리포트 PDF 헤더의 이름 조회가 '참여자' 로 폴백된다(호출부 다섯 중 넷).
-    expect(rpcCalls).toContainEqual({ name: 'cohort_member_directory', args: { p_cohort_id: 'co1', p_only_participants: false } });
+    // ADR-118 이 선택 인자를 더했고 ORDER ② 가 하나를 더 더했다. **둘 다 기본값이 기존 동작**임을
+    //   여기서 못 박는다 — 기본이 참여자 전용으로 바뀌면 리포트 PDF 헤더의 이름 조회가 '참여자' 로
+    //   폴백되고, 마스킹이 기본으로 켜지면 **옵트인하지 않은 호출부까지** 가려진 이름을 받는다.
+    //   호출처는 `rg 'listCohortMembers\('` 로 센다 — 수를 적으면 낡는다.
+    expect(rpcCalls).toContainEqual({
+      name: 'cohort_member_directory',
+      args: { p_cohort_id: 'co1', p_only_participants: false, p_mask_unnamed: false },
+    });
   });
 
   // ADR-118 — 세로 보기·격자가 회차 수만큼 왕복하지 않게 회차 인자를 선택으로 바꿨다.
@@ -385,7 +390,24 @@ describe('본부 데이터: 멤버명부 / 코치 신청 (RPC·임베드 매핑)
       rpcResolver: () => ({ data: [], error: null }),
     });
     await ctx.listCohortMembers('co1', true);
-    expect(rpcCalls).toContainEqual({ name: 'cohort_member_directory', args: { p_cohort_id: 'co1', p_only_participants: true } });
+    expect(rpcCalls).toContainEqual({
+      name: 'cohort_member_directory',
+      args: { p_cohort_id: 'co1', p_only_participants: true, p_mask_unnamed: false },
+    });
+  });
+
+  // ORDER ② — 마스킹은 **부르는 쪽이 켠다**. 계약이 옵트인을 실제로 실어 나르는지 여기서 잰다.
+  //   그룹 리포트 한 곳만 켜므로, 이 한 줄이 없으면 켜는 길이 끊겨도 아무도 모른다.
+  it('listCohortMembers(maskUnnamed) 가 RPC 인자로 전달된다 — 그룹 리포트만 켠다', async () => {
+    const { ctx, rpcCalls } = ctxWith({
+      authUser: { id: 'c1' },
+      rpcResolver: () => ({ data: [], error: null }),
+    });
+    await ctx.listCohortMembers('co1', true, true);
+    expect(rpcCalls).toContainEqual({
+      name: 'cohort_member_directory',
+      args: { p_cohort_id: 'co1', p_only_participants: true, p_mask_unnamed: true },
+    });
   });
 
   it('listCoachApplications 는 status 필터 + applicant 이름 매핑(읽기형)', async () => {

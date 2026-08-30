@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const DIR = 'src/instruments/futurenow/checkin';
-const FILES = ['session1', 'session2', 'session3', 'session4', 'session5'];
+const FILES = ['session1', 'session2', 'session3', 'session4', 'session5', 'session6'];
 const OUT = `${DIR}/copyBaseline.json`;
 
 /** `copyRegression.test.ts` 의 규칙 그대로 — 문자열 리터럴 중 한글이 든 것만. */

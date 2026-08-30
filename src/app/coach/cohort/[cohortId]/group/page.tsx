@@ -39,7 +39,11 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
     rowsFor('pre'),
     rowsFor('post'),
     // 참여자만(운영자·인도자 제외) — 등록 인원과 미완료를 그 기준으로 센다.
-    ctx.listCohortMembers(cohortId, true).catch(() => []),
+    // ★ **세 번째 인자가 마스킹 옵트인이다**(ORDER ② · 2026-08-30).
+    //   이름이 없으면 종이 위에서 누구인지 알 수 없어 **연락을 못 한다** — 이 화면의 목적이 무너진다.
+    //   **가리는 일은 DB 안에서 끝나고** 이메일 원문은 여기까지 오지 않는다.
+    //   호출처 일곱 중 **이 한 곳만** 켠다.
+    ctx.listCohortMembers(cohortId, true, true).catch(() => []),
   ]);
   const nameOf = new Map(members.map((m) => [m.userId, m.name]));
   const toMembers = (rows: typeof preRows): GroupMember[] =>

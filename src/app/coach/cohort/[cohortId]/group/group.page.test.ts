@@ -3,7 +3,7 @@
 // **코드에 사는 사실만 잰다.** 렌더 정확성은 `groupModel.test.ts` 가 순수 함수로 잰다 —
 //   흉내 낸 페이지 렌더는 내가 만든 것을 내가 부르는 것이라 아무것도 증명하지 못한다(계열 ⑦).
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 
 const read = (f: string) => readFileSync(f, 'utf8');
 // 줄 나누기 — **이스케이프를 쓰지 않는다**(하네스 계열 ⑫).
@@ -97,7 +97,8 @@ describe('★ 경계 — 채점·초안·조회를 건드리지 않았다', () =
     const src = read(DESIGN);
     expect(src, '컴포넌트가 코어를 부른다').not.toMatch(/createServerContext|listCohortMembers|listResponses/);
     // 조인은 페이지 층에서.
-    expect(read(PAGE)).toContain('listCohortMembers(cohortId, true)');
+    // ★ 세 번째 인자(마스킹 옵트인)가 붙었다 — 인수 5 가 그것을 따로 잰다.
+    expect(read(PAGE)).toContain('listCohortMembers(cohortId, true, true)');
   });
 
   it('AI 해석(`interpretation`)과 무관하다(경계 3)', () => {
@@ -175,5 +176,108 @@ describe('★ PDF 저장 — 브라우저 인쇄 경로 (ORDER (b) v2)', () => {
     // 나중 감사에서 논쟁이 재발하지 않게 한다.
     expect(read(DESIGN)).toContain("tone: 'care'");
     expect(read(DESIGN)).toContain('경계 4의 예외가 아니다');
+  });
+});
+
+describe('★ 이름 없는 참여자 — DB 마스킹 (ORDER ②)', () => {
+  const MIG = 'supabase/migrations/20260904090001_member_directory_mask.sql';
+  const ROLLBACK = 'supabase/migrations/20260904090000_member_directory_mask_rollback.sql';
+  const CORE = 'src/core/context.ts';
+
+  it('★ 앱에 마스킹 로직이 **없다** — 가리는 일은 DB 에서 끝난다 (인수 4)', () => {
+    // 앱이 이메일 원문을 받아 가리면 **가리려는 것을 먼저 내보내는 순서**가 된다.
+    for (const f of [PAGE, DESIGN, MODEL]) {
+      const code = read(f).split(NL)
+        .filter((l) => { const t = l.trim(); return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*'); })
+        .join(NL);
+      // `@` 하나로 재면 import 경로가 걸린다 — 자가 재려는 것보다 넓다(⑨-b).
+      //   이메일을 **다루는 표시**를 본다: 로컬파트 자르기 · email 식별자 · 마스킹 문자열.
+      const AT = String.fromCharCode(64);
+      for (const bad of ['split_part', 'email', 'Email', `split('${AT}')`, `indexOf('${AT}')`]) {
+        expect(code, `${f} 가 이메일을 만진다: ${bad}`).not.toContain(bad);
+      }
+      expect(code, `${f} 에 마스킹 로직이 있다`).not.toContain("'***'");
+    }
+  });
+
+  it('★ 옵트인은 **그룹 리포트 한 곳뿐**이다 (인수 5)', () => {
+    const files: string[] = [];
+    const walk = (d: string) => {
+      for (const e of readdirSync(d)) {
+        const full = `${d}/${e}`;
+        if (statSync(full).isDirectory()) walk(full);
+        else if (/\.tsx?$/.test(e) && !e.includes('.test.')) files.push(full);
+      }
+    };
+    walk('src');
+    const callers = files.filter((f) => /listCohortMembers\(/.test(read(f)) && !/contracts|core\/context/.test(f));
+    // **물 것이 실재하는가** — 호출처를 하나도 못 찾으면 이 잠금은 헛돈다(계열 ⑦).
+    expect(callers.length, '호출처를 못 찾았다').toBeGreaterThan(3);
+    const optedIn = callers.filter((f) => /listCohortMembers\([^)]*true,\s*true\)/.test(read(f)));
+    expect(optedIn, `옵트인이 여럿이다: ${optedIn.join(', ')}`).toEqual([PAGE]);
+  });
+
+  it('★ 기본값이 기존 동작이다 (인수 1)', () => {
+    const mig = read(MIG);
+    expect(mig).toContain('p_mask_unnamed boolean DEFAULT false');
+    // 끄면 u.name 을 그대로 낸다 — NULL 이면 NULL.
+    expect(mig).toContain('WHEN NOT p_mask_unnamed THEN u.name');
+    expect(read(CORE)).toContain('maskUnnamed = false');
+  });
+
+  it('★ 마스킹 규칙과 **4자 경계** (인수 2)', () => {
+    const mig = read(MIG);
+    // 5자 이상 → 앞 4자 + ***
+    expect(mig).toContain("char_length(split_part(u.email, '@', 1)) >= 5");
+    expect(mig).toContain("left(split_part(u.email, '@', 1), 4) || '***'");
+    // 4자 이하 → 전체 + *** (4자는 **아래쪽**이다)
+    expect(mig).toContain("ELSE split_part(u.email, '@', 1) || '***'");
+    // 도메인을 쓰지 않는다 — split_part 의 두 번째 조각을 부르는 자리가 없다.
+    expect(mig, '도메인을 표시한다').not.toMatch(/split_part\(u\.email, '@', 2\)/);
+  });
+
+  it('★ 폴백 순서 — 이름 · 마스킹 · 「이름 없음」 (인수 3)', () => {
+    const mig = read(MIG);
+    const name = mig.indexOf('THEN u.name');                       // ① 이름이 있으면 이름
+    const noMail = mig.indexOf('u.email IS NULL');                 // ② 이메일도 없으면 NULL
+    const mask = mig.indexOf("|| '***'");                          // ③ 마스킹
+    expect(name).toBeGreaterThan(0);
+    expect(noMail).toBeGreaterThan(name);
+    expect(mask).toBeGreaterThan(noMail);
+    // 앱은 NULL 을 「이름 없음」으로 받는다 — 그 폴백이 살아 있다.
+    expect(read(MODEL)).toContain("export const NO_NAME = '이름 없음'");
+  });
+
+  it('★ 권한 게이트가 그대로다 — 새 인자가 우회하지 않는다 (인수 8)', () => {
+    const mig = read(MIG);
+    expect(mig).toContain('public.is_cohort_coach(p_cohort_id, auth.uid()) OR public.is_admin(auth.uid())');
+    // 게이트가 **인자 검사보다 먼저** 있어야 한다.
+    expect(mig.indexOf('is_cohort_coach')).toBeLessThan(mig.indexOf('p_mask_unnamed THEN'));
+  });
+
+  it('★ 오버로드를 남기지 않는다 · 권한을 두 겹으로 걷는다', () => {
+    const mig = read(MIG);
+    // 인자 수가 바뀌면 둘이 공존해 2인자 호출이 어디로 갈지 갈린다.
+    expect(mig).toContain('drop function if exists public.cohort_member_directory(uuid, boolean);');
+    // `revoke … from public` 은 PUBLIC 만 걷는다 — anon 은 default privileges 로 따로 붙는다.
+    expect(mig).toContain('from public;');
+    expect(mig, 'anon 을 안 걷는다').toContain('from anon;');
+    expect(mig).toContain('to authenticated, service_role;');
+  });
+
+  it('★ 되돌아가는 문이 옛 정의를 그대로 담는다', () => {
+    const rb = read(ROLLBACK);
+    expect(rb).toContain('drop function if exists public.cohort_member_directory(uuid, boolean, boolean);');
+    expect(rb).toContain('SELECT u.id, u.name');
+    expect(rb, '롤백도 anon 을 걷어야 옛 ACL 과 같아진다').toContain('from anon;');
+    expect(rb, '옛 해시를 적어 두지 않았다').toContain('ef5382c291fe922b3a69c85d7e19fb0a');
+  });
+
+  it('계약 타입을 바꾸지 않았다 (인수 6)', () => {
+    const domain = read('src/contracts/domain.ts');
+    const block = domain.slice(domain.indexOf('export interface MemberRef'), domain.indexOf('export interface MemberRef') + 120);
+    expect(block).toContain('userId: string');
+    expect(block).toContain('name: string | null');
+    expect(block, 'MemberRef 에 이메일이 들어왔다').not.toContain('email');
   });
 });
