@@ -399,3 +399,88 @@ src/app/coach/cohort/[cohortId]/group/page.tsx      ← 자가 무는 것을 확
 
 독립 재확인(2026-08-30) : QA 참여자 이름 `"QA 참여자"` · **이름 빈 회원 전체 0명** ·
 함수 개수 1 · 권한 `authenticated,postgres,service_role`. **남긴 것 없다.**
+
+
+---
+
+## 13. 별건 기록 — QA 차수 `YYGYP` 정리는 **중단됐다** (최박사 지시 2026-08-30)
+
+**문서화까지만 한다. 처방은 손대지 않는다.** 한도 재설정(9/2 22:00) 뒤 정리와 아래 결함을
+한 회차로 묶어 발주된다.
+
+### 13.1 지금 상태 — **아무것도 지우지도 옮기지도 않았다**
+
+| 항목 | 값 |
+|---|---|
+| 차수 `YYGYP` | 1 (그대로) |
+| 등록 / 응답 / 갈무리 / 피드글 / 회차 | 1 / 1 / 1 / 6 / 7 (전부 그대로) |
+| QA 참여자 이름 | `"QA 참여자"` (§12.3 에서 비웠다 되돌린 그대로) |
+| 휴지통에 옮긴 것 | **없다** |
+| 휴지통에 만든 회차 | **없다** |
+| 백업 JSON | 스크래치패드 5,783바이트 · **유지**(폐기하지 않았다 — 다음 회차에 쓴다) |
+
+**자 하나가 또 틀렸던 것을 적어 둔다** — 원상 확인에서 「휴지통 등록 0」을 기대했는데 **1** 이 나왔다.
+샌 줄 알고 갈라 봤더니 **기존에 소프트 삭제된 실참여자 1명**이었다(내 작업과 무관).
+**휴지통에 원래 사람이 있을 수 있다는 것을 기댓값에 안 넣은 것**이 오류다.
+QA 참여자는 휴지통에 없고 `YYGYP` 등록은 그대로 1 이다.
+
+### 13.2 ★ 결함 — 갈무리를 쓴 참여자는 **휴지통으로 옮길 수 없다**
+
+`ADR-84` 의 참여자 이동·삭제가 **갈무리를 쓴 사람에게 동작하지 않는다.**
+
+**무엇이 어긋났나.** ADR-84 본문은 이렇게 적혀 있다 —
+*「등록(enrollment)만 이동, 응답·갈무리는 생성 차수에 남긴다(불변 보존)」*.
+**실물 함수는 갈무리도 옮긴다** :
+
+```sql
+-- pg_get_functiondef(move_cohort_member) 에서
+UPDATE checkins SET cohort_id=p_to WHERE cohort_id=p_from AND user_id=p_user;
+```
+
+**그리고 그 UPDATE 가 FK 로 터진다.** `checkins` 는 `(cohort_id, session_no)` 로
+`cohort_sessions` 를 참조하는데 **휴지통 차수에는 `cohort_sessions` 가 0개**다.
+
+```
+error: insert or update on table "checkins" violates foreign key constraint
+       "checkins_cohort_id_session_no_fkey"
+detail: Key (cohort_id, session_no)=(a940091f-…, 3) is not present in table "cohort_sessions".
+```
+
+**해당 규모**(산출 : `select c.code, count(distinct ch.user_id) from checkins ch join cohorts c on c.id=ch.cohort_id group by 1`) :
+
+| 차수 | 갈무리 쓴 사람 |
+|---|---|
+| `HMT7Z`(1기) | **11명** |
+| `QKN2H` | 2명 |
+| `JOINF` | 1명 |
+| `YYGYP` | 1명 |
+
+**운영자가 1기 참여자를 휴지통으로 옮기려 하면 열한 명 전부 같은 오류로 막힌다.**
+이번 정리와 무관하게 **이미 그 상태**다.
+
+**문서와 실물 중 어느 쪽이 옳은지 정하지 않았다** — 갈무리를 남기는 것이 맞다면 함수가 결함이고,
+옮기는 것이 맞다면 휴지통에 회차가 없는 것이 결함이다. **설계 판단이라 손대지 않는다.**
+
+### 13.3 차수를 지우면 무엇이 함께 가는가 — 예행으로 확정
+
+트랜잭션 안에서 실제로 지워 보고 롤백해 잰 값이다(라이브 무영향).
+
+| 대상 | FK 삭제규칙 | 예행 결과 |
+|---|---|---|
+| `responses` | `SET NULL` | **살아남는다** (`cohort_id → NULL`) · 불변식 12 유지 |
+| `checkins` | `cohort_sessions` 경유 **2단계 CASCADE** | **사라진다** |
+| `feed_posts` | `CASCADE` | **차수에 딸려 사라진다** |
+| `enrollments` · `cohort_sessions` · `response_drafts` · `value_assessments` | `CASCADE` | 사라진다 |
+| `alerts` · `library_items` · `report_interpretations` | `SET NULL` | 남는다 |
+
+**`feed_posts` 에 대한 최박사 물음의 답 — 차수에 딸린다.** 독립으로 남지 않는다.
+예행에서 차수를 지우자 6행이 함께 0 이 됐다. 지시대로 **지워도 되는 쪽**이다.
+6행은 전부 코치 계정이 쓴 검증용 글이다.
+
+### 13.4 정리를 그대로 실행할 수 없었던 이유
+
+C안의 조건은 *「응답 1·갈무리 1은 지우지 않는다」* 인데,
+**갈무리는 옮기지 않으면 차수 삭제 시 반드시 죽고**(13.3), **옮기는 길은 13.2 로 막혀 있다.**
+그 갈무리는 빈 껍데기가 아니다 — `has_content=true` · `answers` 313자 · 3회차 · 제출 완료다.
+그래서 두 안(휴지통에 회차 행을 만들고 옮긴다 / 갈무리 삭제를 승인받는다)을 올렸고,
+**최박사가 이번 회차 중단을 결재했다.**
