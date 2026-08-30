@@ -114,3 +114,66 @@ describe('★ PDF 대비 구조 (ORDER v2 §1)', () => {
     expect(src, '인쇄에서 숨길 크롬을 가릴 수 없다').toContain('group-report-chrome');
   });
 });
+
+describe('★ PDF 저장 — 브라우저 인쇄 경로 (ORDER (b) v2)', () => {
+  const CSS = 'src/app/globals.css';
+
+  it('인쇄 버튼을 **재사용**한다 — 새로 만들지 않았다', () => {
+    const src = read(PAGE);
+    expect(src).toContain('<ReportPrintButton />');
+    // 개인 리포트의 것을 그대로 부른다(이미 두 화면이 재사용 중이다).
+    expect(src).toContain("report/[responseId]/ReportPrintButton");
+  });
+
+  it('★ 앱 크롬이 인쇄에서 빠진다 (인수 2)', () => {
+    expect(read(PAGE)).toContain('group-report-chrome no-print');
+  });
+
+  it('★ PDF 전용 문서 헤더가 **화면에는 안 보인다** (인수 3)', () => {
+    const src = read(PAGE);
+    const at = src.indexOf('className="print-only"');
+    expect(at, 'PDF 전용 헤더가 없다').toBeGreaterThan(0);
+    // `.print-only` 는 @media print 에서만 display:block 이 된다 — 화면에서는 none 이어야 한다.
+    expect(src.slice(at, at + 200), '화면에서도 보인다').toContain("display: 'none'");
+    // 담을 넷: 그룹명 · wave · 참여자 수 · 생성일.
+    expect(src).toContain('{cohort.name} · 그룹 리포트');
+    expect(src).toContain('등록 {members.length}명 · 완료 {preMembers.length}명');
+    expect(src).toContain('toLocaleDateString');
+  });
+
+  it('★ 블록이 페이지 경계에서 잘리지 않는다 (인수 4)', () => {
+    const css = read(CSS);
+    const at = css.indexOf('.group-report-root');
+    expect(at, '인쇄 규칙이 없다').toBeGreaterThan(0);
+    const block = css.slice(at, at + 900);
+    expect(block, '인쇄 폭을 안 넓힌다').toContain('max-width: none !important');
+    expect(block, '블록이 갈린다').toContain('break-inside: avoid');
+    // 함정 3열은 인쇄에서도 가로다 — 세로로 무너지면 「조 편성」 형태가 사라진다.
+    expect(block).toContain('.group-report-root .group-traps');
+    expect(read(DESIGN), '3열에 인쇄용 표식이 없다').toContain('className="group-traps"');
+  });
+
+  it('★★ 민감 채널을 부르지 않는다 (인수 5 · 경계 3)', () => {
+    // 이름 마스킹을 위해 `getCohortMemberDetail` 을 부르면 **전화·주소까지 딸려 온다** —
+    //   그 RPC 는 「전화 개방은 이 RPC 한정」이라 못 박은 자리이고 불변식 13 이 그것을 지킨다.
+    //   ② 마스킹은 다음 회차에 **DB 안에서** 푼다(원문이 앱에 오지 않게).
+    for (const f of [PAGE, DESIGN, MODEL]) {
+      const code = read(f).split(NL)
+        .filter((l) => { const t = l.trim(); return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*'); })
+        .join(NL);
+      expect(code, `${f} 가 민감 채널을 만진다`).not.toMatch(/getCohortMemberDetail|user_contacts|listUsers|getPhone/);
+    }
+  });
+
+  it('표시명을 만드는 지점이 **한 곳**이다 — 다음 회차에 마스킹을 붙일 자리', () => {
+    // `displayName` 하나만 부르고 블록마다 따로 짓지 않는다.
+    expect(read(DESIGN)).toContain('displayName');
+    expect(read(MODEL)).toContain('export const displayName');
+  });
+
+  it('★ 시들음 색 판단 근거가 코드에 남아 있다 (③)', () => {
+    // 나중 감사에서 논쟁이 재발하지 않게 한다.
+    expect(read(DESIGN)).toContain("tone: 'care'");
+    expect(read(DESIGN)).toContain('경계 4의 예외가 아니다');
+  });
+});

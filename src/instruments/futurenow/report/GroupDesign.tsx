@@ -179,7 +179,12 @@ export function GroupDesign({
         )}
       </Block>
 
-      {/* ── 블록 2 · 활력 분포 — **평균 한 숫자가 아니라 흩어진 모양**을 본다. */}
+      {/* ── 블록 2 · 활력 분포 — **평균 한 숫자가 아니라 흩어진 모양**을 본다.
+          ★ **「시들음」 막대의 살구색은 경계 4의 예외가 아니다**(지휘부 판정 2026-08-30).
+            정본 `VITALITY_ZONES` 가 그 구간을 `tone: 'care'` 로 규정했고, 시들음 구간 자체가
+            돌봄 신호다(「낙인이 아니라 돌봄 신호」). 경계 4가 금지한 것은 **임의 의미색**이지
+            정본이 이미 care 로 규정한 색이 아니다. **개인 리포트 활력 띠와 동일 정본을 공유한다** —
+            같은 개념을 인도자가 같은 것으로 읽어야 한다. */}
       <Block
         no={2}
         title="활력 분포"
@@ -215,7 +220,9 @@ export function GroupDesign({
         desc="주 함정이 같은 사람끼리 묶습니다. 한 사람이 자기 이야기를 하면 나머지가 자기 모습을 알아봅니다. 조 편성의 1순위 기준입니다. 괄호는 그 함정의 원점수입니다."
         foot="참여자에게 「함정」이라는 낱말을 그대로 쓰지 않습니다. 조를 부를 때는 중립적 이름(1조·2조)을 씁니다."
       >
-        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+        {/* `group-traps` — **인쇄에서도 가로를 유지한다**(globals.css @media print).
+            세로로 무너지면 「조 편성」이라는 형태 자체가 사라진다. */}
+        <div className="group-traps" style={{ display: 'flex', gap: 'var(--space-3)' }}>
           {traps.map((g) => (
             <div key={g.code} style={{ flex: 1, border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', padding: 'var(--space-3)' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 9 }}>
