@@ -22,6 +22,7 @@ import {
   GROWF_SUMMARY, AUDIENCE_PARA, AUDIENCE_LIST,
 } from '@/app/_screens/site/siteContent';
 import { SeminarIntro } from '@/app/_screens/SeminarIntro';
+import { assetIfPresent, LEADER_DIR, BOOK_DIR } from '@/app/_screens/site/assets';
 
 export const metadata: Metadata = { title: '퓨처나우 소개' };
 
@@ -71,8 +72,14 @@ export default function AboutPage() {
                 tagline={l.tagline}
                 bio={l.bio}
                 intro={l.intro}
-                // 사진 3종은 아직 없다(원고 §6.2 — 공란). `src` 를 주지 않으면 자리표시자가 선다.
-                photo={{ alt: l.photo.alt, maxSize: l.photo.maxSize }}
+                // ★ **파일이 실재할 때만 `src` 를 준다**(`assets.ts`). 없으면 `undefined` 가 가고
+                //   부품이 자리표시자를 세운다(원고 §6.2 — 3종 공란). 손으로 목록을 들지 않으므로
+                //   남은 사진이 `public/leaders/` 에 놓이는 날 **저절로** 켜진다.
+                photo={{
+                  src: assetIfPresent(`${LEADER_DIR}/${l.photo.file}`),
+                  alt: l.photo.alt,
+                  maxSize: l.photo.maxSize,
+                }}
               />
             ))}
           </div>
@@ -81,7 +88,11 @@ export default function AboutPage() {
         <section className="site-section">
           <SectionTitle title="도서 『퓨처나우』" desc="도약 여정의 지도이다" />
           <BookPanel
-            cover={{ alt: '도서 퓨처나우 표지 · 꿈꾸는 미래를 지금 살라' }}
+            // 파일명·alt 는 원고 §5.3 이 정한 것이다. `src` 는 위와 같은 규칙으로 실측한다.
+            cover={{
+              src: assetIfPresent(`${BOOK_DIR}/book-cover-futurenow.png`),
+              alt: '도서 퓨처나우 표지 · 꿈꾸는 미래를 지금 살라',
+            }}
             facts={BOOK_FACTS}
             intro={BOOK_INTRO}
             buy={BOOK_BUY}
