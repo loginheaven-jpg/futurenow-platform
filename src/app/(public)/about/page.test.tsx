@@ -7,6 +7,8 @@
 import { describe, expect, it, beforeAll } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import About from './page';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 describe('/about — 소개 상세', () => {
   let html = '';
@@ -54,5 +56,70 @@ describe('/about — 소개 상세', () => {
     }
     // 규칙 1 회귀 잠금 — 화면이 다시 그리기 시작하면 여기서 레드가 난다.
     for (const cls of ['site-gnb', 'site-foot']) expect(html, cls).not.toContain(cls);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 이미지 자산 (원고 §5) — **도착한 것만 그리고, 안 온 것은 자리표시자로 선다.**
+//
+// ★ **「배선했다」는 증거가 아니다.** `src` 를 넘기는 코드가 있어도 파일이 없으면
+//   깨진 그림이 뜨고, 파일이 있어도 `<picture>` 짝이 어긋나면 폴백이 죽는다.
+//   그래서 **렌더 산출물과 실제 파일 둘 다** 잰다.
+describe('/about — 이미지 자산 (원고 §5)', () => {
+  let html = '';
+  beforeAll(() => { html = renderToStaticMarkup(<About />); });
+
+  /** `public/` 에 실물이 있는가 — 화면이 가리키는 것과 같은 경로로 묻는다. */
+  const present = (webPath: string) =>
+    existsSync(join(process.cwd(), 'public', webPath.replace(/^\//, '')));
+
+  it('★ 화면이 가리키는 이미지는 **전부 실재한다** — 깨진 그림이 없다', () => {
+    const srcs = [...html.matchAll(/(?:src|srcSet)="(\/[^"]+\.(?:png|jpg|jpeg|webp))"/g)].map((m) => m[1]);
+    // **물 것이 실재하는가**(계열 ⑦) — 하나도 못 찾으면 이 잠금은 헛돈다.
+    expect(srcs.length, '화면에 이미지가 하나도 없다').toBeGreaterThan(0);
+    for (const s of srcs) expect(present(s), `${s} 를 가리키는데 파일이 없다`).toBe(true);
+  });
+
+  it('★ WebP 와 폴백이 **짝으로** 있다 (원고 §5.4)', () => {
+    // 부품이 `src.replace(/\.(jpg|png)$/, '.webp')` 로 짝을 찾는다.
+    //   한쪽만 있으면 WebP 를 못 읽는 브라우저에서 그림이 사라지거나 그 반대가 된다.
+    const fallbacks = [...html.matchAll(/src="(\/[^"]+\.(?:png|jpg))"/g)].map((m) => m[1]);
+    expect(fallbacks.length, '폴백 이미지가 하나도 없다').toBeGreaterThan(0);
+    for (const f of fallbacks) {
+      const webp = f.replace(/\.(jpg|png)$/, '.webp');
+      expect(present(webp), `${f} 의 WebP 짝(${webp})이 없다`).toBe(true);
+      expect(html, `${webp} 가 <source> 로 걸리지 않았다`).toContain(webp);
+    }
+  });
+
+  it('★ 도착한 자산은 그려지고, 안 온 자산은 **자리표시자**로 선다 (원고 §6.2)', () => {
+    // 도착 여부를 손으로 적지 않는다 — `public/` 을 보고 그 사실로 기대를 만든다.
+    //   그래야 남은 사진이 놓이는 날 이 잠금이 **저절로** 따라간다.
+    const cases: [string, string][] = [
+      ['/leaders/leader-lseungeun.jpg', '퓨처나우 저자이자 인도자 이승은'],
+      ['/leaders/leader-cchulyoung.jpg', '퓨처나우 인도자 최철영 코치'],
+      ['/book/book-cover-futurenow.png', '도서 퓨처나우 표지'],
+    ];
+    for (const [path, alt] of cases) {
+      if (present(path)) {
+        expect(html, `${path} 가 있는데 안 그려졌다`).toContain(path);
+        expect(html, `${alt} 의 alt 가 없다`).toContain(alt);
+      } else {
+        // 자리표시자는 **이름을 남긴다** — 낭독기가 빈 상자를 읽지 않게.
+        expect(html, `${path} 가 없는데 그려졌다`).not.toContain(path);
+        expect(html, `${alt} 자리표시자가 없다`).toContain('준비 중');
+      }
+    }
+  });
+
+  it('★ 첫 화면 밖 이미지는 지연 로딩한다 (원고 §5.4)', () => {
+    const imgs = [...html.matchAll(/<img[^>]*>/g)].map((m) => m[0]);
+    expect(imgs.length, '이미지 태그가 없다').toBeGreaterThan(0);
+    for (const t of imgs) expect(t, `지연 로딩이 없다: ${t.slice(0, 60)}`).toContain('loading="lazy"');
+  });
+
+  it('최철영 확대 상한이 코드로 막혀 있다 (원고 §5.2 — 전달본 329×427)', () => {
+    // 원본이 작은 컷이라 키우면 뭉갠다. **주석이 아니라 코드로** 막는다.
+    expect(html).toMatch(/max-width:\s*320px/);
   });
 });
