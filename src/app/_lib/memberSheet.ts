@@ -39,7 +39,7 @@ export interface MemberSheet {
 export async function buildMemberSheet(
   ctx: CoreContext,
   cohorts: MyCohortSummary[],
-  opts: { hasFeed: boolean; now: number; role?: 'user' | 'coach' | 'admin'; cohortCount?: number; reportCohortId?: string | null },
+  opts: { hasFeed: boolean; now: number; role?: 'user' | 'coach' | 'admin'; cohortCount?: number; reportCohortId?: string | null; homeIsDashboard?: boolean },
 ): Promise<MemberSheet> {
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
@@ -89,9 +89,13 @@ export async function buildMemberSheet(
     {
       title: '여정',
       items: [
-        primary
-          ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 회기' }
-          : { href: '/my/cohorts', label: '내 회기' },
+        // ★ **홈이 곧 그 회기면 문을 두 번 두지 않는다**(ADR-181). 위 「내 자리」 구획의
+        //   「내 홈」이 이미 그 화면이다 — 배포해서 눈으로 보고 잡았다.
+        ...(opts.homeIsDashboard
+          ? []
+          : [primary
+              ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 회기' }
+              : { href: '/my/cohorts', label: '내 회기' }]),
         ...(opts.hasFeed ? [{ href: '/feed', label: '동행' }] : []),
         // 회기가 둘 이상일 때만 목록 문을 낸다 — 하나면 위 항목이 곧 그 회기다(없는 곳으로 보내지 않는다).
         ...(many ? [{ href: '/my/cohorts', label: MY_SEMINARS }] : []),

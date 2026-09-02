@@ -17,6 +17,7 @@
 import { redirect } from 'next/navigation';
 import { requestContext, requestUser, requestConsents, requestCohorts } from '@/app/_lib/requestScope';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
+import { roleTargets, homeIsCohortDashboard } from '@/app/(member)/home/roleTarget';
 import { buildMemberSheet } from '@/app/_lib/memberSheet';
 import { ChromeProvider } from '@/app/_screens/shell/chromeContext';
 import { MemberShell } from '@/app/_screens/shell/MemberShell';
@@ -60,6 +61,8 @@ export default async function MemberLayout({ children }: { children: React.React
     now: Date.now(),
     role: me.role,
     cohortCount: cohorts.length,
+    // 홈이 곧 회기 화면이면 시트에 「내 회기」를 또 두지 않는다 — 판정은 `roleTarget` 한 곳이다.
+    homeIsDashboard: homeIsCohortDashboard(roleTargets(me.role, cohorts)),
     // 리포트는 **갈 곳이 하나로 정해질 때만** 낸다 — 여럿이면 어느 것인지 말할 수 없다.
     reportCohortId: reportCohort.length === 1 ? reportCohort[0].cohortId : null,
   })
