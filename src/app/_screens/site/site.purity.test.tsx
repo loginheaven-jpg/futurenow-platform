@@ -99,3 +99,29 @@ describe('site 부품 — 계산하지 않는다', () => {
     }
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ★ **없는 토큰을 쓰면 조용히 검정이 된다** (ADR-171 회차에서 실제로 겪음).
+//
+//   `var(--navy-200)` 을 썼는데 그 토큰이 **존재하지 않았다**(navy 는 900·700·500·300 넷뿐).
+//   CSS 는 없는 변수에 **오류를 내지 않는다** — 상속색으로 떨어지고, 어두운 배경 위에서
+//   `rgb(33,30,26)` 거의 검정이 되어 글이 사라졌다. **잠금은 전부 초록이었고 눈으로만 잡혔다.**
+//
+//   `design_system` §1.6 이 이미 같은 뿌리의 사고를 적어 두었다 —
+//   *「이름이 다르면 색도 다를 것이라는 가정이 틀렸다」*. 여기서는 **이름이 있으면 토큰도
+//   있을 것이라는 가정**이 틀렸다. 그래서 **선언된 것만 쓰는지**를 잰다.
+describe('토큰 — 없는 것을 쓰지 않는다', () => {
+  it('★ site.css 가 부르는 CSS 변수는 전부 어딘가에 선언돼 있다', () => {
+    const css = readFileSync('src/app/_screens/site/site.css', 'utf8');
+    const globals = readFileSync('src/app/globals.css', 'utf8');
+    const ui = readFileSync('src/core/ui/ui.css', 'utf8');
+    const declared = new Set(
+      [...`${globals}\n${ui}\n${css}`.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]),
+    );
+    const used = [...css.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]);
+    // **물 것이 실재하는가**(계열 ⑦) — 하나도 못 찾으면 이 잠금은 헛돈다.
+    expect(used.length, 'var() 를 하나도 못 찾았다').toBeGreaterThan(20);
+    const missing = [...new Set(used)].filter((t) => !declared.has(t));
+    expect(missing, `선언되지 않은 토큰: ${missing.join(', ')}`).toEqual([]);
+  });
+});
