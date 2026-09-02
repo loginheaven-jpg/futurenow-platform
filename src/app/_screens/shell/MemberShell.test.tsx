@@ -17,15 +17,17 @@ const mockNav = (pathname: string, params: Record<string, string> = {}) =>
   }));
 
 describe('회원 껍데기 — 표를 읽어 헤더를 그린다', () => {
-  it('**GNB 라우트는 로고 + 햄버거뿐이다** (화면에서 옮겨온 단언)', async () => {
+  it('**GNB 라우트는 메뉴 여섯을 든다** (ADR-174 로 뒤집힌 잠금)', async () => {
+    // **옛 사실은 「로고 + 햄버거뿐」이었다.** 그래서 로그인하면 메뉴가 사라졌고,
+    //   지휘부가 *「벨트는 유지되고 버튼만 햄버거로 바뀐다」* 로 그것을 고치라 했다.
+    //   **지키던 것은 「시트가 내비다」가 아니라 「머리는 껍데기가 그린다」**이므로 그쪽을 잰다.
     vi.resetModules(); mockNav('/home');
     const { MemberShell: Shell } = await import('./MemberShell');
     const html = renderToStaticMarkup(<Shell sheet={SHEET_FIXTURE}><div /></Shell>);
+    expect(html, '메뉴가 사라졌다').toContain('site-gnb__nav');
+    // 시트를 여는 문도 함께 있다 — 둘 다 든다.
     expect(html).toContain('site-gnb__burger');
-    expect(html, '로그인한 사람에게 로그인 버튼을 다시 보이지 않는다').not.toContain('site-gnb__login');
-    expect(html, '메뉴 줄은 시트가 든다').not.toContain('site-gnb__nav');
   });
-
   it('**제목 바 라우트는 표의 제목을 그린다** — 화면이 넘기지 않는다', async () => {
     vi.resetModules(); mockNav('/feed');
     const { MemberShell: Shell } = await import('./MemberShell');

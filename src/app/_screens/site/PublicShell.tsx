@@ -86,7 +86,15 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
       logo={<>퓨처<b>나우</b></>}
       en="FUTURE NOW"
       items={PUBLIC_NAV}
-      sheet={{ name: SITE_NAME, groups: [{ title: PUBLIC_MENU_TITLE, items: PUBLIC_NAV }], chips: [] }}
+      /* ★ **「내 홈」이 시트 맨 위에 선다**(ADR-174). 로그인하면 벨트 우측 버튼이 햄버거가 되어
+         그 글자가 사라지므로, **자기 집으로 가는 길**을 시트가 잇는다(지휘부 확정 2026-09-02).
+         비로그인에게는 주지 않는다 — 갈 수 없는 곳으로 보내지 않는다(현관과 같은 규율).
+         **문안을 새로 짓지 않았다** — `HOME_DOOR` 가 단일 출처다. */
+      sheet={{
+        name: SITE_NAME,
+        groups: [{ title: PUBLIC_MENU_TITLE, items: PUBLIC_NAV }],
+        chips: [],
+      }}
     />
   );
 

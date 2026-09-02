@@ -43,7 +43,7 @@ export function SiteGnb({
   /**
    * 띠를 **투명하게** 둘 것인가(ADR-171). 히어로 배경 장면이 헤드벨트까지 이어지게 한다.
    *
-   * ★ **부품이 정하지 않는다** — 「어느 화면인가」는 화면 층(`PublicGnb`)이 안다.
+   * **부품이 정하지 않는다** — 「어느 화면인가」는 화면 층(`PublicGnb`)이 안다.
    *   이 띠는 `position: static` 이라 **스크롤하면 화면 밖으로 나간다**(라이브 실측 2026-09-02).
    *   그래서 밝은 구획에 닿을 때 흰 글자가 흰 바탕에 남는 일이 없고, 굳히는 장치도 필요 없다.
    */
@@ -77,7 +77,12 @@ export function SiteGnb({
 
         {/* **로그인은 nav 밖에 둔다.** 안에 두면 md↓ 에서 메뉴와 함께 숨어
             폰 방문자가 로그인할 자리를 잃는다(F-2 390px 캡처가 잡았다). */}
-        <div className={`site-gnb__right${variant === 'member' ? ' is-member' : ''}`}>
+        {/* **시트가 있으면 햄버거를 md↑ 에서도 보인다**(ADR-174).
+            전에는 `is-member` 하나가 그 일을 했는데, 그 이름은 「멤버 화면」이라는 뜻이라
+            **로그인한 공개 현관**에는 안 맞았다 — 거기도 메뉴 여섯과 시트를 함께 든다.
+            그래서 조건을 **가진 것**으로 바꿨다: 시트를 받았으면 여는 문이 있어야 한다.
+            `is-member` 는 그대로 둔다 — 그 화면은 메뉴가 없어 시트가 유일한 내비다. */}
+        <div className={`site-gnb__right${variant === 'member' ? ' is-member' : ''}${sheet ? ' has-sheet' : ''}`}>
           {items.length > 0 ? (
             <nav className="site-gnb__nav" aria-label="주 메뉴">
               {items.map((it) => (

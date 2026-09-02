@@ -31,7 +31,8 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { isAuthCookieName, parseCookieHeader } from '@/core/supabase/cookiePolicy';
 import { SiteGnb, type GnbItem } from './SiteGnb';
-import { publicHeaderAction } from './publicNav';
+import { HOME_DOOR } from '@/app/_vocab/doors';
+import { PUBLIC_SHEET_MINE, publicHeaderAction } from './publicNav';
 
 function hasAuthCookie(): boolean {
   if (typeof document === 'undefined') return false;
@@ -72,13 +73,24 @@ export function PublicGnb({
   // 서버 스냅샷은 **비로그인**이다 — 정적 HTML 이 그렇게 캐시되므로 그것과 같아야 한다.
   const signedIn = useSyncExternalStore(subscribe, hasAuthCookie, useCallback(() => false, []));
 
+  // ★ **「내 홈」을 시트 맨 위에 얹는다**(ADR-174). 로그인하면 벨트 우측 글자가 햄버거가 되어
+  //   그 문이 사라지므로 시트가 잇는다. **비로그인에게는 주지 않는다** — 갈 수 없는 곳으로
+  //   보내지 않는다(현관과 같은 규율). **문안은 `HOME_DOOR` 단일 출처**이고 여기서 짓지 않는다.
+  const sheetWithHome = sheet && signedIn
+    ? { ...sheet, groups: [{ title: PUBLIC_SHEET_MINE, items: [HOME_DOOR] }, ...sheet.groups] }
+    : sheet;
+
   return (
     // **홈에서만 띠를 투명하게 둔다**(ADR-171) — 히어로 장면이 위까지 이어진다.
     //   다른 공개 화면은 배경 이미지가 없어 투명하면 흰 바탕에 흰 글자가 된다.
     //   판정은 여기(화면 층)가 하고 부품은 받아 그린다.
     <SiteGnb
       logo={logo} en={en} items={items} currentPath={currentPath}
-      login={publicHeaderAction(signedIn)} sheet={sheet}
+      // ★ **로그인하면 버튼이 햄버거로 바뀐다**(ADR-174 · 지휘부 확정 2026-09-02).
+      //   로그인한 사람에게는 `login` 을 주지 않는다 — 그러면 그 자리를 시트 여는 문이 잇고,
+      //   메뉴 여섯은 그대로 남는다(지시 「벨트는 유지되고 버튼만 바뀐다」).
+      //   **「내 홈」은 사라지지 않고 시트 맨 위로 옮겨 간다** — 아래 `sheet` 가 그것을 든다.
+      login={signedIn ? undefined : publicHeaderAction(false)} sheet={sheetWithHome}
       transparent={currentPath === '/'}
     />
   );
