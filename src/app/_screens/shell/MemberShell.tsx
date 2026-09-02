@@ -80,6 +80,10 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
   //   ★ **트리를 폭에 따라 바꾸지 않는다.** 늘 그리고 **CSS 가 감춘다** —
   //     그래야 껍데기의 「트리 모양을 바꾸지 않는다」 규약이 산다(U-4 재마운트 사고).
   //   ★ **`head` 슬롯 **안**에서만 더한다.** `{children}` 의 자리는 한 칸도 안 움직인다.
+  //   ★ **벨트에 시트를 넘기지 않는다.** 제목바가 이미 여는 문을 들고 있어
+  //     넘기면 **한 화면에 햄버거가 둘**이 된다(U-4 §4 「문은 하나씩이다」).
+  //     배포해서 잡았다 — `/my/cohorts` 에서 실제로 둘이었다. 콘솔에는 같은 이유로
+  //     처음부터 안 넘겼는데 여기만 빠뜨렸고, **잠금을 콘솔에만 걸어 둔 것이 그 원인**이다.
   const belt = (
     <div className="belt-slot">
       <SiteGnb
@@ -87,7 +91,6 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
         en="FUTURE NOW"
         items={PUBLIC_NAV}
         currentPath={pathname}
-        sheet={sheetProp}
       />
     </div>
   );

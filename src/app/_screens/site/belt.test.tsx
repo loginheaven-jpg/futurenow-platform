@@ -49,10 +49,23 @@ describe('★ 벨트가 제목바 화면에도 선다 (A안)', () => {
     expect(src, '벨트가 head 밖으로 나갔다').not.toMatch(/\{belt\}\s*\n\s*\{head\}/);
   });
 
-  it('콘솔 벨트는 시트를 **안 든다** — 한 화면에 여는 문을 둘 두지 않는다', () => {
-    const src = read(CONSOLE);
-    const belt = src.slice(src.indexOf('belt-slot'), src.indexOf('belt-slot') + 400);
-    expect(belt, '콘솔 벨트가 시트를 든다').not.toContain('sheet=');
+  it('★★ **두 껍데기 다** 벨트에 시트를 안 든다 — 한 화면에 여는 문을 둘 두지 않는다', () => {
+    // 배포해서 잡았다 — `/my/cohorts` 에서 햄버거가 **둘**이었다(벨트 + 제목바).
+    //   콘솔에는 처음부터 안 넘겼는데 회원 껍데기만 빠뜨렸고,
+    //   **이 잠금을 콘솔에만 걸어 둔 것이 놓친 원인**이다. 그래서 둘 다 잰다(U-4 §4).
+    for (const f of [CONSOLE, MEMBER]) {
+      const src = read(f);
+      // ★ **주석이 아니라 마크업을 기준으로 잡는다.** 처음엔 `indexOf('belt-slot')` 로 잡았는데
+      //   그 낱말이 **주석에도 있어** 창이 실제 JSX 를 안 덮었다 — 변이를 심어도 초록이었다.
+      //   초록이 「막을 것이 없었다」가 아니라 **「그 자리를 안 봤다」**였다.
+      const at = src.indexOf('className="belt-slot"');
+      expect(at, `${f} 에 벨트 마크업이 없다`).toBeGreaterThan(-1);
+      // 블록 끝(`</div>`)까지만 본다 — 길이를 손으로 박으면 그것도 낡는다.
+      const belt = src.slice(at, src.indexOf('</div>', at));
+      expect(belt, `${f} 의 벨트가 시트를 든다 — 여는 문이 둘이 된다`).not.toContain('sheet=');
+      // **물 것이 실재하는가** — 창이 비면 이 잠금은 헛돈다(계열 ⑦).
+      expect(belt, `${f} 의 벨트 창이 비었다`).toContain('SiteGnb');
+    }
   });
 });
 
