@@ -89,12 +89,12 @@ export default async function Home() {
         />
 
         <section className="site-section">
-          <SectionTitle title="이 세미나가 하는 일" desc="함께 걸으며, 나만의 인생책을 써 갑니다" />
+          <SectionTitle title="이 세미나가 하는 일" desc="꿈을 목표로, 목표를 실행으로" />
           <CardBand3 cards={BAND_CARDS} />
         </section>
 
         <section className="site-section">
-          <SectionTitle title="6주 여정" desc="회차마다 다음 결정을 이끌 기록이 하나씩 남습니다" />
+          <SectionTitle title="6주 여정" desc="매주 한 걸음씩, 꿈에서 목표로, 목표에서 현실로" />
           {/* **현재 회차를 표시하지 않는다.** 공개 현관에는 '지금 몇 회차'라는 것이 없다 —
               방문자마다 다르고, 기수마다 다르다. 시안의 `.wk.on` 두 칸은 시안 제작 시의
               시각 강조이지 상태가 아니다(완주 보고 §대조표에 그대로 적었다). */}

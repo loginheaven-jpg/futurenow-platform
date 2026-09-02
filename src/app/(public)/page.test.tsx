@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import Home from './page';
+import { readFileSync } from 'node:fs';
 
 
 describe('루트 현관 (/) — 공개 소개 현관(진입-1)', () => {
@@ -155,5 +156,34 @@ describe('히어로 v2 (ADR-171)', () => {
     for (const bad of ['잃어버린 꿈을 찾다', '꿈의 모습을 그리다', '나의 존재가치 선언']) {
       expect(html, `갈무리와 갈리는 이름이 들어왔다: ${bad}`).not.toContain(bad);
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 결재 문안 (2026-09-02) — **얼어야 하는 값이라 잠금을 함께 둔다**(§11 값의 두 분류 ⑵).
+//
+// 앞서 이 문안들은 잠금이 **0곳**이었다 — 결재를 받고도 얼리지 않으면
+//   다음 사람이 「그냥 문구」로 알고 고친다. 그래서 **글자 단위**로 박는다.
+describe('홈 문안 — 결재분 (2026-09-02)', () => {
+  let html = '';
+  beforeAll(async () => { html = renderToStaticMarkup(await Home()); });
+
+  it('★ 카드 1 마지막 문장 — 과장을 걷어낸 결재분', () => {
+    expect(html).toContain('6주 뒤, 그 기록이 다음 걸음의 재료가 됩니다.');
+    // 지시서 원문은 과장이라 결재로 물렸다. 되돌아오면 이 잠금이 운다.
+    expect(html, '과장 문안이 되돌아왔다').not.toContain('당신은 다른 사람이 되어 있을 것입니다');
+  });
+
+  it('★ 그 말은 **제품이 이미 쓰는 말**이다 — 공개와 참여자 화면이 갈리지 않는다', () => {
+    // 신청할 때 들은 말과 참여한 뒤 듣는 말이 같아야 한다(회차 이름을 갈무리에 맞춘 것과 같은 이치).
+    //   한쪽만 고쳐지면 그때부터 두 말이 된다 — 그래서 **양쪽을 함께** 잰다(불변식 23).
+    const mine = readFileSync('src/app/(member)/my/cohorts/[cohortId]/journey/MyJourney.tsx', 'utf8');
+    expect(mine, '참여자 화면에서 그 말이 사라졌다').toContain('재료가 됩니다');
+    expect(html).toContain('재료가 됩니다');
+  });
+
+  it('구획 제목 둘 — 지시서 §3.1 결재분', () => {
+    expect(html).toContain('꿈을 목표로, 목표를 실행으로');
+    expect(html).toContain('매주 한 걸음씩, 꿈에서 목표로, 목표에서 현실로');
   });
 });
