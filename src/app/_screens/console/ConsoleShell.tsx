@@ -72,6 +72,8 @@ export function ConsoleShell({
           en="FUTURE NOW"
           items={PUBLIC_NAV}
           currentPath={pathname}
+          // 이 껍데기 안이면 로그인한 사람이다(껍데기의 정의). 그래서 프리페치를 막지 않는다(ADR-176).
+          signedIn
         />
       </div>
       {/* **제목·뒤로는 표가 든다**(§3) — U-2 가 만든 `screenChrome` 을 콘솔도 쓴다. 두 벌 만들지 않는다.

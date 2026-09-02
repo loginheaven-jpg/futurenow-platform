@@ -29,11 +29,19 @@ export default async function MemberLayout({ children }: { children: React.React
 
   // **판정만 하고 화면을 바꾸지 않는다.** 어떤 화면을 그릴지는 여전히 `/home` 이 정한다 —
   //   여기서 `ConsentGate` 를 그리면 그 결정이 두 곳에 살게 된다(불변식 23).
-  const consents = await ctx.listMyConsents().catch(() => []);
+  // ★ **동의 조회와 차수 조회를 함께 기다린다**(ADR-176). 서로를 인자로 쓰지 않는데
+  //   직렬이라 **모든 회원 화면의 착지 앞에 왕복 하나가 더 줄을 서 있었다.**
+  //   ★ **인증 게이트는 위에서 이미 지났다**(불변식 19 — 게이트가 먼저).
+  //   아래 동의 판정은 *권한*이 아니라 **껍데기를 씌울지**를 정하는 화면 판정이고,
+  //   여기서 당겨오는 것은 **본인의 차수**다(RLS 가 본인 것만 낸다). 미동의자에게는
+  //   그 조회가 헛돌지만 새어 나가는 것은 없다 — 값이 아니라 왕복 하나를 버리는 것뿐이다.
+  const [consents, cohorts] = await Promise.all([
+    ctx.listMyConsents().catch(() => []),
+    ctx.listMyCohorts().catch(() => []),
+  ]);
   const consented = consents.some((c) => c.type === 'privacy_use' && c.version === CONSENT_VERSION);
   if (!consented) return <>{children}</>;
 
-  const cohorts = await ctx.listMyCohorts().catch(() => []);
   const active = cohorts.filter((c) => c.status === 'active');
   // eslint-disable-next-line react-hooks/purity
   const sheetData = await buildMemberSheet(ctx, cohorts, { hasFeed: active.length > 0, now: Date.now() })

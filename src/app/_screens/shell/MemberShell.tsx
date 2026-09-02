@@ -91,6 +91,8 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
         en="FUTURE NOW"
         items={PUBLIC_NAV}
         currentPath={pathname}
+        // 이 껍데기 안이면 로그인한 사람이다(껍데기의 정의). 그래서 프리페치를 막지 않는다(ADR-176).
+        signedIn
       />
     </div>
   );
@@ -104,6 +106,8 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
       en="FUTURE NOW"
       items={PUBLIC_NAV}
       currentPath={pathname}
+      // 이 껍데기 안이면 로그인한 사람이다(껍데기의 정의). 프리페치를 막지 않는다(ADR-176).
+      signedIn
       sheet={sheetProp}
     />
   ) : (

@@ -91,6 +91,7 @@ export function PublicGnb({
       //   메뉴 여섯은 그대로 남는다(지시 「벨트는 유지되고 버튼만 바뀐다」).
       //   **「내 홈」은 사라지지 않고 시트 맨 위로 옮겨 간다** — 아래 `sheet` 가 그것을 든다.
       login={signedIn ? undefined : publicHeaderAction(false)} sheet={sheetWithHome}
+      signedIn={signedIn}
       transparent={currentPath === '/'}
     />
   );

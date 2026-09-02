@@ -129,7 +129,15 @@ describe('★★ 링크가 우선이다 (지휘부 확정 2026-09-02)', () => {
     expect(client, '히스토리에 로그인 화면이 남는다').not.toContain('window.location.assign(');
     // 실행으로 재는 창이 실재하는가(계열 ⑦) — 없으면 이 정적 잠금뿐이라 층이 어긋난다.
     const post = readFileSync('scripts/postdeploy.mjs', 'utf8');
-    expect(post, 'postdeploy 에 착지 검사가 없다').toContain('returnTo 로그인 착지');
+    expect(post, 'postdeploy 에 착지 검사가 없다').toContain('로그인 착지 3경로');
+    // ★ **한 경로만 재면 창이 좁다**(⑨-a) — ADR-175 는 벨트에 링크가 있는 화면 하나에만 났고
+    //   `/feed` 는 멀쩡했다. 성질이 다른 셋을 재는지, 그리고 **상한이 있는지** 함께 잰다.
+    for (const need of ['/home/assessments', '/feed']) {
+      expect(post, `착지 검사가 ${need} 를 안 본다`).toContain(need);
+    }
+    // ★ 처음엔 `'LIMIT_MS'` 가 있는가로 물었는데 **`LIMIT_MSX` 도 그 글자를 담아** 통과했다(⑬).
+    //   이름이 아니라 **쓰임**으로 잰다 — 상한이 실제로 기다림에 물려 있는가.
+    expect(post, '속도 상한이 기다림에 안 물려 있다').toContain('{ timeout: LIMIT_MS }');
     // ★ 처음엔 「어딘가에 `bad(` 가 있는가」로 물었는데 **같은 이름의 `bad(` 가 하나 더 있어**
     //   `ok` 로 바꿔 심어도 초록이었다(⑬ · 물려서 잡았다). **catch 블록만** 본다.
     const at = post.indexOf("const { readFileSync } = await import('node:fs')");
