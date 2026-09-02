@@ -127,9 +127,12 @@ describe('roleTargets — 겸직자에게 카드가 둘 선다 (T-5)', () => {
     expect(t[1].who, '두 번째 카드에서 나는 참여자다').toBe('참여자');
   });
 
-  it('운영자 + 자기 회기 → 본부 카드와 기수 카드 **둘**', () => {
+  it('운영자 + 자기 회기 → 본부·**인도자 콘솔**·기수 **셋**', () => {
+    // ★ **가운데가 늘었다**(ADR-173). 전에는 둘이었고 그것이 이 잠금의 옛 사실이다 —
+    //   `role` 이 단일값이라 운영자에게 인도자 카드가 안 섰다. **권한은 전부터 있었다**
+    //   (운영자가 콘솔에 들어가면 전 차수를 본다 · ADR-74) — 홈에 문패만 없었다.
     const t = roleTargets('admin', [cohort()]);
-    expect(t.map((x) => x.href)).toEqual(['/admin', '/my/cohorts/c1']);
+    expect(t.map((x) => x.href)).toEqual(['/admin', '/coach', '/my/cohorts/c1']);
   });
 
   it('회기가 여럿이면 두 번째 카드는 **목록**이다 — 하나를 임의로 고르지 않는다', () => {
@@ -139,7 +142,8 @@ describe('roleTargets — 겸직자에게 카드가 둘 선다 (T-5)', () => {
 
   it('**빈손 카드를 덧붙이지 않는다** — 회기 없는 인도자에게 `체크 보기` 는 겸직이 아니라 노이즈다', () => {
     expect(roleTargets('coach', []).map((x) => x.href)).toEqual(['/coach']);
-    expect(roleTargets('admin', []).map((x) => x.href)).toEqual(['/admin']);
+    // 운영자는 역할 카드가 **둘**이다(ADR-173) — 그래도 빈손 카드는 안 붙는다.
+    expect(roleTargets('admin', []).map((x) => x.href)).toEqual(['/admin', '/coach']);
     expect(roleTargets('coach', [cohort({ status: 'archived' })]).map((x) => x.href)).toEqual(['/coach']);
   });
 
@@ -149,11 +153,15 @@ describe('roleTargets — 겸직자에게 카드가 둘 선다 (T-5)', () => {
     expect(roleTargets('user', [cohort(), cohort({ cohortId: 'c2' })])).toHaveLength(1);
   });
 
-  it('순서가 규칙으로 고정된다 — 역할 카드가 먼저, 참여자 카드가 뒤', () => {
+  it('순서가 규칙으로 고정된다 — 역할 카드가 먼저, 참여자 카드가 **맨 뒤**', () => {
+    // 운영자는 역할 카드가 둘이 됐으므로(ADR-173) 「[1] 이 참여자」가 아니라
+    //   **「맨 뒤가 참여자」**로 잰다. 지키던 것은 자리 번호가 아니라 **순서 규칙**이다.
     for (const role of ['coach', 'admin'] as const) {
       const t = roleTargets(role, [cohort()]);
       expect(t[0].who).not.toBe('참여자');
-      expect(t[1].who).toBe('참여자');
+      expect(t[t.length - 1].who).toBe('참여자');
+      // 참여자 카드는 언제나 하나다 — 앞쪽에 섞이지 않는다.
+      expect(t.filter((x) => x.who === '참여자')).toHaveLength(1);
     }
   });
 

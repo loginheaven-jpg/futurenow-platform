@@ -19,6 +19,16 @@ export interface RoleTarget {
   title: string;
   sub?: string;
   ctaLabel: string;
+  /**
+   * **거점이 아니라 폴백이다**(ADR-173). 기수가 없는 사람에게 세우는 「체크 보기」 한 장이 그것이다.
+   *
+   * ★ **성질을 파생하지 않으려고 칸으로 둔다.** 착지 규칙이 「카드가 한 장이면 막바로」인데,
+   *   폴백까지 막바로 보내면 **자기 자리가 아닌 곳에 떨어진다** — 기수 없는 사람은
+   *   `/home` 의 소식·서가가 유일한 내용이고 그것을 영영 못 본다.
+   *   `href` 를 보고 「`/home/assessments` 면 폴백」이라 유추하면 U-4 형태다(성질 파생).
+   *   **누가 폴백인지는 만든 자리가 안다.** 그래서 여기서 표시한다.
+   */
+  fallback?: true;
 }
 
 // **역할 이름은 단일 출처에서 읽는다**(5차 T-3 · 지휘부 지시).
@@ -57,8 +67,24 @@ export function roleTargets(role: Role, cohorts: MyCohortSummary[]): RoleTarget[
   if (role === 'admin') {
     out.push({ href: '/admin', who, title: '본부', sub: '승인·회원·차수를 관리합니다.', ctaLabel: '본부로 가기' });
   }
-  if (role === 'coach') {
-    out.push({ href: '/coach', who, title: '인도자 콘솔', sub: '내 차수와 조원을 봅니다.', ctaLabel: '콘솔로 가기' });
+  // ★ **운영자에게도 인도자 카드를 준다**(ADR-173 · 지휘부 지시 2026-09-02).
+  //
+  //   **없던 문을 만드는 것이 아니라 있는 문을 가리키는 것이다.** 운영자는 이미 `/coach` 에
+  //   들어가고 거기서 **전 차수를 본다**(`coach/page.tsx` 의 `isAdmin` 갈래 · ADR-74).
+  //   그런데 `role` 이 단일값이라 `role === 'coach'` 가 안 걸려 **홈에 그 길이 없었다** —
+  //   권한은 있는데 문패가 없는 상태였다.
+  //
+  //   `who` 는 이 카드에서 **언제나 「인도자」**다. 이 칸은 *이 카드에서 내가 무엇인가* 를 말하고,
+  //   참여자 카드가 역할과 무관하게 「참여자」인 것과 같은 규칙이다.
+  //   `sub` 만 갈린다 — 운영자는 자기 차수가 아니라 전부를 보기 때문이다.
+  if (role === 'coach' || role === 'admin') {
+    out.push({
+      href: '/coach',
+      who: ROLE_WORD.coach,
+      title: '인도자 콘솔',
+      sub: role === 'admin' ? '모든 차수를 봅니다.' : '내 차수와 조원을 봅니다.',
+      ctaLabel: '콘솔로 가기',
+    });
   }
 
   // 참여자 거점. 역할이 있어도 **자기 회기가 있으면** 카드가 하나 더 선다(겸직).
@@ -99,5 +125,25 @@ function participantTarget(cohorts: MyCohortSummary[], who: string): RoleTarget 
   if (active.length > 1) {
     return { href: '/my/cohorts', who, title: '내 기수', sub: '참여 중인 기수를 봅니다.', ctaLabel: '기수 목록' };
   }
-  return { href: '/home/assessments', who, title: '체크', sub: '지금 하실 수 있는 체크를 봅니다.', ctaLabel: '체크 보기' };
+  return { href: '/home/assessments', who, title: '체크', sub: '지금 하실 수 있는 체크를 봅니다.', ctaLabel: '체크 보기', fallback: true };
+}
+
+
+/**
+ * **로그인 직후 어디로 보낼 것인가** — 판정을 여기 한 곳에 둔다(ADR-173).
+ *
+ * 규칙은 한 줄이다 — **거점이 하나뿐이면 홈을 거치지 않는다.**
+ *   여럿이면 홈에서 고르게 한다(지시 case 3·4). 폴백 한 장은 거점이 아니므로 홈에 남는다.
+ *
+ * ★ **`roleTargets` 의 산출을 그대로 센다.** 「막바로 갈 것인가」를 다른 곳에서 다시 정하면
+ *   **판정이 두 곳**이 되고, 카드 규칙이 바뀌는 날 한쪽만 고쳐진다(불변식 23).
+ *
+ * ★ **`returnTo` 는 여기까지 오지 않는다.** 링크를 받고 온 사람은 `loginOutcome` 이
+ *   먼저 그쪽으로 보낸다(지휘부 확정 2026-09-02 — 「링크가 우선이다」).
+ *   이 함수는 **갈 곳이 따로 정해지지 않았을 때만** 부른다.
+ */
+export function landingFor(targets: RoleTarget[]): string | null {
+  if (targets.length !== 1) return null;   // 여럿이면 홈에서 고른다
+  const only = targets[0];
+  return only.fallback ? null : only.href; // 폴백은 거점이 아니다
 }
