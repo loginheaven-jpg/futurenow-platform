@@ -1657,6 +1657,18 @@ class SupabaseCoreContext implements CoreContext {
     });
   }
 
+  /**
+   * 내가 그 회기 동행 피드에 마지막으로 쓴 날(ADR-180). 쓴 적이 없으면 `null`.
+   *
+   * **자기 것만 낸다** — 사용자를 인자로 받지 않는다. 판정은 전부 DB 안이다
+   * (`auth.uid()` 고정 · `feed_can_access` · 삭제 글 제외). 앱은 셈을 하지 않는다.
+   */
+  async feedMyLastPostAt(cohortId: string): Promise<string | null> {
+    const { data, error } = await this.sb.rpc('feed_my_last_post_at', { p_cohort_id: cohortId });
+    if (error) throw new CoreError(`feedMyLastPostAt 실패: ${error.message}`);
+    return (data as string | null) ?? null;
+  }
+
   async listFeed(input: {
     cohortId: string;
     before?: { createdAt: string; id: string } | null;

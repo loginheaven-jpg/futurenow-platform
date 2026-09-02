@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import type { MyCohortSummary } from '@/contracts';
-import { roleTargets, landingFor } from './roleTarget';
+import { roleTargets, landingFor, homeIsCohortDashboard } from './roleTarget';
 import { loginOutcome, LOGIN_HOME } from '@/app/(public)/login/loginOutcome';
 
 /** 차수 하나 — 착지 판정에 쓰이는 칸만 채운다. 나머지는 이 잠금이 보지 않는다. */
@@ -55,9 +55,33 @@ describe('★ 역할 카드 — 지시 case 1~4', () => {
 });
 
 describe('★★ 착지 — 거점이 하나뿐일 때만 홈을 건너뛴다', () => {
-  it('case 1·2 — 카드 한 장이면 그리로 간다', () => {
-    expect(landingFor(roleTargets('user', [cohort()]))).toBe('/my/cohorts/c1');
+  it('★ case 2 — 인도자는 카드 한 장이면 그리로 간다', () => {
     expect(landingFor(roleTargets('coach', NONE))).toBe('/coach');
+  });
+
+  it('★★ case 1 — 참여자는 **홈에 남는다**(ADR-181). 홈이 곧 그 화면이기 때문이다', () => {
+    // 옛 사실: 회기 홈으로 **직행**했다(ADR-173). **지우지 않고 옮겨 적는다** —
+    //   지시(「참여자 → 막바로 참여기수 메뉴로 진입」)는 그대로 지켜진다.
+    //   가는 방법이 «리다이렉트» 에서 «홈이 그것을 그린다» 로 바뀌었고 **왕복이 하나 준다.**
+    const t = roleTargets('user', [cohort()]);
+    expect(t).toHaveLength(1);
+    expect(t[0].participant, '참여자 카드가 자기를 표시하지 않는다 — 그러면 홈이 유추하게 된다').toBe(true);
+    expect(landingFor(t), '참여자를 아직 리다이렉트한다').toBeNull();
+    expect(homeIsCohortDashboard(t), '홈이 대시보드를 안 그린다').toBe(true);
+  });
+
+  it('★★ 겸직자는 **대시보드가 아니라 카드 여럿**을 본다 — case 3·4 는 그대로다', () => {
+    expect(homeIsCohortDashboard(roleTargets('coach', [cohort()])), '인도자 겸 참여자가 대시보드로 접혔다').toBe(false);
+    expect(homeIsCohortDashboard(roleTargets('admin', [cohort()])), '운영자가 대시보드로 접혔다').toBe(false);
+    // 회기 없는 참여자도 아니다 — 폴백은 거점이 아니다.
+    expect(homeIsCohortDashboard(roleTargets('user', NONE))).toBe(false);
+  });
+
+  it('★ 승인 대기 건수를 **역할 카드가 든다**(ADR-181 — 운영 구획을 걷었다)', () => {
+    const withPending = roleTargets('admin', NONE, { pendingCoachApps: 3 });
+    expect(withPending[0].sub, '건수를 잃었다').toContain('3건');
+    const none = roleTargets('admin', NONE, { pendingCoachApps: 0 });
+    expect(none[0].sub, '0건인데 건수를 말한다').not.toContain('건');
   });
 
   it('case 3·4 — 카드가 여럿이면 홈에 남는다', () => {

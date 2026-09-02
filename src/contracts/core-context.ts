@@ -293,6 +293,16 @@ export interface CoreContext {
   //   여기 메서드는 그 결과를 나르기만 한다. 화면이 자격을 다시 계산하지 않는다(IA §5.8).
   //   읽기 자격과 쓰기 자격은 같은 집합이며, 가르는 것은 `held` 하나다(발주 §9.1).
   listFeedCohorts(): Promise<FeedCohortRef[]>; // 피드를 가진 내 기수(활성 우선·최신순). 첫 행이 기본 선택
+
+  /**
+   * 내가 그 회기 동행 피드에 **마지막으로 쓴 날**. 쓴 적이 없으면 `null`.
+   *
+   * **지휘부 승인 2026-09-02**(불변식 3) — 「동행피드를 쓴 날짜가 저장되지 않나?
+   *   저장하고 보여줄 필요가 있다.」 날짜는 이미 있었고 **집계 경로만 없었다.**
+   *
+   * 자기 것만 낸다 — 사용자를 인자로 받지 않는다. 삭제한 글은 세지 않는다.
+   */
+  feedMyLastPostAt(cohortId: string): Promise<string | null>;
   listFeed(input: {
     cohortId: string;
     before?: { createdAt: string; id: string } | null; // 키셋 — '더 보기'가 이 짝을 되돌려준다(무한 스크롤 아님)

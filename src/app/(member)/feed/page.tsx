@@ -35,7 +35,7 @@ export default async function FeedPage({
       {/* **헤더는 껍데기가 그린다**(U-2 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다 —
           제목은 라우트의 성질이지 화면의 사정이 아니다. */}
         <div className="ui-card" style={{ padding: 'var(--space-5)', marginTop: 'var(--space-5)' }}>
-          <p className="t-body">아직 동행할 기수가 없어요.</p>
+          <p className="t-body">아직 동행할 회기가 없어요.</p>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
             세미나에 참여하면 그 기수의 동행이 열립니다. 지금은 <Link href="/news">소식</Link>과{' '}
             <Link href="/library">{LIBRARY_NAME}</Link>을 둘러보실 수 있어요.

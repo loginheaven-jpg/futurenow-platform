@@ -11,6 +11,7 @@
 //   (그 파일은 F-4 에서 삭제했다 — 고아로 남기면 다음 사람이 살아 있는 줄 알고 고친다).
 import { redirect } from 'next/navigation';
 import { MemberHome } from '@/app/_screens/MemberHome';
+import { renderCohortDashboard } from '@/app/(member)/my/cohorts/[cohortId]/dashboard';
 import { CheckinPrompt } from '@/app/_screens/CheckinPrompt';
 import { ConsentGate } from '@/app/_consent/ConsentGate';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
@@ -20,7 +21,7 @@ import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
-import { roleTargets } from './roleTarget';
+import { roleTargets, homeIsCohortDashboard } from './roleTarget';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const dynamic = 'force-dynamic';
@@ -38,8 +39,22 @@ export default async function MemberHomePage() {
 
   const greetingName = me.name?.trim() || me.email.split('@')[0] || '회원';
   const cohorts = await requestCohorts(); // my_cohorts DEFINER RPC(본인 차수+진행). 앱은 cohorts·responses 직접 select 안 함.
-  // 운영자 로그인 알림(정합 마감): admin 은 /home 착지(loginOutcome 전원 /home)이므로 승인 대기 건수를 '본부' 카드에 노출(A3 배너를 홈에서도).
+  // 운영자 로그인 알림: 승인 대기 건수. **역할 카드의 곁말로 간다**(ADR-181 — 운영 구획을 걷었다).
   const pendingCoachApps = me.role === 'admin' ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
+
+  const targets = roleTargets(me.role, cohorts, { pendingCoachApps });
+
+  // ★★ **홈이 곧 회기 대시보드다**(ADR-181 · 지휘부 지시 2026-09-02 「둘을 합쳐 대시보드로」).
+  //
+  //   **거점이 참여자 하나뿐일 때만** 그렇다. 겸직자(인도자·운영자)는 **카드 여럿을 그대로 본다** —
+  //   지시 case 3·4 가 그것이고 ADR-173 에서 확정됐다. 여기서 뒤집지 않는다.
+  //
+  //   **조립은 회기 홈과 같은 함수**를 쓴다(`renderCohortDashboard`) — 사본이 아니다(불변식 23).
+  //   판정은 카드가 **표시한 칸**으로 한다(`participant`) — `href` 로 유추하면 U-4 형태다.
+  if (homeIsCohortDashboard(targets)) {
+    const only = cohorts.filter((c) => c.status === 'active')[0];
+    if (only) return renderCohortDashboard(ctx, me, only);
+  }
 
   // 동행 피드 바로가기(2차 · 발주 §6.3) — **탭바를 짓지 않기로 확정**했으므로 진입은 기존 표면으로 낸다.
   //   피드를 가진 기수가 없으면 타일 자체를 그리지 않는다 — **없는 곳으로 보내지 않는다.**
@@ -68,7 +83,6 @@ export default async function MemberHomePage() {
 
   // ── 여기서부터가 F-3 이 더한 **표시용 자료**다. 위 판정에는 손대지 않았다. ──────────
 
-  const targets = roleTargets(me.role, cohorts); // 5차 T-5 — 겸직자는 여럿이다
 
   // 좁은 자리(시트 머리) 값. 실패해도 화면이 멈추지 않게 기본값으로 받는다.
   const active = cohorts.filter((c) => c.status === 'active');
@@ -83,7 +97,7 @@ export default async function MemberHomePage() {
       ? [{ icon: 'checkin' as const, title: '오늘의 갈무리', hint: `${primary.openSessionNo}회차`, href: `/my/cohorts/${primary.cohortId}/checkin/${primary.openSessionNo}` }]
       : []),
     ...(primary ? [{ icon: 'mirror' as const, title: '되비추기', hint: '나의 기록', href: `/my/cohorts/${primary.cohortId}/journey` }] : []),
-    ...(feedCohorts.length > 0 ? [{ icon: 'feed' as const, title: '동행', hint: '기수와 함께', href: '/feed' }] : []),
+    ...(feedCohorts.length > 0 ? [{ icon: 'feed' as const, title: '동행', hint: '회기와 함께', href: '/feed' }] : []),
     { icon: 'library' as const, title: LIBRARY_NAME, hint: '배포 자료', href: '/library' },
   ];
 
@@ -103,8 +117,8 @@ export default async function MemberHomePage() {
       news={newsRows}
       prompt={prompt ? <CheckinPrompt {...prompt} /> : null}
     >
-      {/* **무접촉** — 운영 카드·진행 중 진단·내 활동·코드 참여는 이번 회차에서 한 줄도 손대지 않았다. */}
-      <MemberHome greetingName={greetingName} cohorts={cohorts} role={me.role} pendingCoachApps={pendingCoachApps} />
+      {/* ADR-181 로 얇아졌다 — 인사말 + 진행 중 진단 둘뿐이다. 나머지는 역할 카드와 시트로 갔다. */}
+      <MemberHome greetingName={greetingName} cohorts={cohorts} />
     </HomeScreen>
   );
 }

@@ -206,7 +206,7 @@ export function FeedClient({
           ghost(테두리)가 선택 상태를 색이 아니라 **면과 테두리의 차이**로 가른다.
           부품을 새로 만들지 않는 편이 불변식 20 에도 맞다 — 내가 만든 칩이 애초에 임의 디자인이었다. */}
       {cohorts.length > 1 ? (
-        <nav aria-label="기수 선택" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+        <nav aria-label="회기 선택" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
           {cohorts.map((c) => {
             const on = c.cohortId === selectedCohortId;
             return (

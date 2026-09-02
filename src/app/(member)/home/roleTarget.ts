@@ -29,6 +29,13 @@ export interface RoleTarget {
    *   **누가 폴백인지는 만든 자리가 안다.** 그래서 여기서 표시한다.
    */
   fallback?: true;
+  /**
+   * 이 카드가 **참여자 거점**인가(ADR-181).
+   *
+   * ★ **성질을 파생하지 않는다.** `href` 가 `/my/cohorts/…` 인 것으로 유추하면 U-4 형태다 —
+   *   만든 자리가 표시한다. `/home` 이 «대시보드를 그릴 것인가» 를 이 칸으로 정한다.
+   */
+  participant?: true;
 }
 
 // **역할 이름은 단일 출처에서 읽는다**(5차 T-3 · 지휘부 지시).
@@ -60,12 +67,27 @@ const ROLE_WORD: Record<Role, string> = {
  * 순서: **운영/인도자 카드가 먼저, 참여자 카드가 뒤.** 역할이 곧 그 사람의 주 거점이고,
  * 참여자 카드는 *덧붙는* 것이기 때문이다. 순서를 데이터가 아니라 **규칙**이 정한다.
  */
-export function roleTargets(role: Role, cohorts: MyCohortSummary[]): RoleTarget[] {
+export function roleTargets(
+  role: Role,
+  cohorts: MyCohortSummary[],
+  /**
+   * 곁들이는 사실. **판정에 쓰지 않는다** — 카드가 서는지 마는지는 역할과 회기가 정한다.
+   * `pendingCoachApps` 는 옛 「운영」 구획이 들던 승인 대기 건수다(ADR-181 로 그 구획을 걷으면서
+   * **사실을 잃지 않으려고** 여기로 옮겼다).
+   */
+  facts: { pendingCoachApps?: number } = {},
+): RoleTarget[] {
   const out: RoleTarget[] = [];
   const who = ROLE_WORD[role];
 
   if (role === 'admin') {
-    out.push({ href: '/admin', who, title: '본부', sub: '승인·회원·차수를 관리합니다.', ctaLabel: '본부로 가기' });
+    const pending = facts.pendingCoachApps ?? 0;
+    out.push({
+      href: '/admin', who, title: '본부',
+      // 대기 건수가 있으면 **사실을 앞에 둔다**. 없으면 옛 문장 그대로다(없는 말을 만들지 않는다).
+      sub: pending > 0 ? `승인 대기 ${pending}건 · 승인·회원·차수를 관리합니다.` : '승인·회원·차수를 관리합니다.',
+      ctaLabel: '본부로 가기',
+    });
   }
   // ★ **운영자에게도 인도자 카드를 준다**(ADR-173 · 지휘부 지시 2026-09-02).
   //
@@ -114,16 +136,17 @@ function participantTarget(cohorts: MyCohortSummary[], who: string): RoleTarget 
       href: `/my/cohorts/${c.cohortId}`,
       cohort: c.name,
       who,
-      title: '내 기수로 가기',
+      participant: true,
+      title: '내 회기로 가기',
       // 열린 회차가 있으면 그것을 말한다. **판정이 아니라 사실이다** — 재촉하지 않는다.
       sub: c.openSessionNo != null && !c.openSessionSubmitted
         ? `${c.openSessionNo}회차 갈무리가 열려 있습니다`
-        : '내 기수로 바로 갑니다.',
-      ctaLabel: '기수 홈',
+        : '내 회기로 바로 갑니다.',
+      ctaLabel: '회기 홈',
     };
   }
   if (active.length > 1) {
-    return { href: '/my/cohorts', who, title: '내 기수', sub: '참여 중인 기수를 봅니다.', ctaLabel: '기수 목록' };
+    return { href: '/my/cohorts', who, title: '내 회기', sub: '참여 중인 회기를 봅니다.', ctaLabel: '회기 목록' };
   }
   return { href: '/home/assessments', who, title: '체크', sub: '지금 하실 수 있는 체크를 봅니다.', ctaLabel: '체크 보기', fallback: true };
 }
@@ -145,5 +168,21 @@ function participantTarget(cohorts: MyCohortSummary[], who: string): RoleTarget 
 export function landingFor(targets: RoleTarget[]): string | null {
   if (targets.length !== 1) return null;   // 여럿이면 홈에서 고른다
   const only = targets[0];
-  return only.fallback ? null : only.href; // 폴백은 거점이 아니다
+  if (only.fallback) return null;          // 폴백은 거점이 아니다
+  // ★ **참여자 하나뿐이면 홈에 남는다**(ADR-181). 전에는 회기 홈으로 **직행**시켰는데,
+  //   이제 **홈이 곧 그 화면**이므로 보낼 곳이 자기 자신이 된다.
+  //   지시 case 1(「참여자 → 막바로 참여기수 메뉴로 진입」)은 **그대로 지켜진다** —
+  //   가는 방법이 리다이렉트에서 «홈이 그것을 그린다» 로 바뀌었을 뿐이고 **왕복이 하나 준다.**
+  if (only.participant) return null;
+  return only.href;
+}
+
+/**
+ * **홈이 곧 회기 대시보드인가**(ADR-181).
+ *
+ * 거점이 참여자 하나뿐일 때만 그렇다. 겸직자(인도자·운영자)는 **카드 여럿을 그대로 본다** —
+ * 지시 case 3·4 가 그것이고 ADR-173 에서 확정됐다. 여기서 뒤집지 않는다.
+ */
+export function homeIsCohortDashboard(targets: RoleTarget[]): boolean {
+  return targets.length === 1 && targets[0].participant === true;
 }

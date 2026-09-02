@@ -33,14 +33,19 @@ export interface CohortHomeScreenProps {
   today?: { tag: string; title: string; line?: string; cta: { href: string; label: string } } | null;
   /** 사전진단 미완 등 **오늘보다 먼저 와야 하는 카드**(ADR-80 순서 규칙). */
   before?: React.ReactNode;
-  /** 시안 C `.my-list` — 나의 기록. */
-  rows: CohortListRow[];
+  /**
+   * 「나의 기록」 — **버튼들**(지시 2026-09-02 「나의 기록 부분부터 버튼으로」).
+   *
+   * 전에는 `rows: CohortListRow[]` 였고 화면이 줄 목록으로 그렸다. 이제 **호출부가 버튼을 준다** —
+   * 무엇을 그릴지는 조립하는 쪽이 알고, 이 부품은 자리와 제목만 든다(부품은 계산하지 않는다).
+   */
+  actions?: React.ReactNode;
   /** 목록 아래에 붙는 나머지(한 걸음·가치 카드·지난 회차). */
   children?: React.ReactNode;
 }
 
 export function CohortHomeScreen({
-  head, progress, today, before, rows, children,
+  head, progress, today, before, actions, children,
 }: CohortHomeScreenProps) {
   return (
     <>
@@ -91,29 +96,12 @@ export function CohortHomeScreen({
           </section>
         ) : null}
 
-        {rows.length > 0 ? (
+        {/* ★ **줄 목록에서 버튼으로**(지시 2026-09-02). 부품을 새로 만들지 않았다 —
+            `.ui-btn--ghost` 는 이 화면이 이미 쓰던 관용구이고, 무엇을 그릴지는 호출부가 준다. */}
+        {actions ? (
           <section className="home-sect">
             <SectionTitle title="나의 기록" as="h2" />
-            <ul className="cohort-rows">
-              {rows.map((r) => {
-                const body = (
-                  <>
-                    <span className="cohort-rows__t">{r.title}</span>
-                    {r.note ? <span className="cohort-rows__s">{r.note}</span> : null}
-                  </>
-                );
-                return (
-                  <li key={r.key}>
-                    {r.href ? (
-                      <Link href={r.href} className="cohort-rows__row">{body}</Link>
-                    ) : (
-                      // 갈 곳이 없으면 링크로 만들지 않는다 — 눌리는데 아무 일도 없는 것이 가장 나쁘다.
-                      <span className="cohort-rows__row">{body}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+            {actions}
           </section>
         ) : null}
 

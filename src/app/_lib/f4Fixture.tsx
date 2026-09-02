@@ -1,10 +1,12 @@
+import Link from 'next/link';
 // 시안 C·F 표시 데이터 (4차 F-4) — **캡처와 테스트가 같은 한 곳을 쓴다.**
 //   둘이 다른 데이터를 쓰면 캡처와 육안 확인이 서로 다른 것을 본다(`homeFixture` 와 같은 이유).
 import type { CohortHomeScreenProps } from '@/app/(member)/my/cohorts/[cohortId]/CohortHomeScreen';
 import type { AssessmentsScreenProps } from '@/app/(member)/home/assessments/AssessmentsScreen';
-import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 // **`WHO`·`SHEET` 를 걷었다**(U-2 §3) — 시트 자료는 껍데기가 들고 화면이 나르지 않는다.
+
+const GHOST = { width: '100%', textDecoration: 'none', justifyContent: 'space-between', marginBottom: 'var(--space-2)' } as const;
 
 export const COHORT_FIXTURE: CohortHomeScreenProps = {
   head: { hello: '김서온 님의 여정', part: 'PART 1 · GOAL', title: '미래의 나를 만나다' },
@@ -16,12 +18,14 @@ export const COHORT_FIXTURE: CohortHomeScreenProps = {
     line: '9월 28일 밤까지 열려 있어요',
     cta: { href: '/my/cohorts/c1/checkin/2?edit=1', label: '쓰러 가기' },
   },
-  rows: [
-    { key: 'journey', title: '되비추기', note: '지난 회차 다시 보기', href: '/my/cohorts/c1/journey' },
-    { key: 'feed', title: '동행 피드', note: '오늘의 걸음', href: '/feed?cohort=c1' },
-    { key: 'report', title: '사전 체크 완료', note: '리포트 보기', href: '/my/cohorts/c1/report' },
-    { key: 'library', title: LIBRARY_NAME, note: '배포 자료', href: '/library' },
-  ],
+  // ★ 「나의 기록」은 이제 **버튼**이다(ADR-181). 서가는 회기와 무관해 시트로 갔다.
+  actions: (
+    <>
+      <Link className="ui-btn ui-btn--ghost" href="/my/cohorts/c1/journey" style={GHOST}><span>되비추기</span><span className="t-caption">지난 회차 다시 보기</span></Link>
+      <Link className="ui-btn ui-btn--ghost" href="/feed?cohort=c1" style={GHOST}><span>동행 피드</span><span className="t-caption">8월 30일</span></Link>
+      <Link className="ui-btn ui-btn--ghost" href="/my/cohorts/c1/report" style={GHOST}><span>사전 체크 완료</span><span className="t-caption">리포트 보기</span></Link>
+    </>
+  ),
 };
 
 export const ASSESS_FIXTURE: AssessmentsScreenProps = {
