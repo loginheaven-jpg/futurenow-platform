@@ -344,11 +344,29 @@ class SupabaseCoreContext implements CoreContext {
       userId = data.user.id;
       fallbackEmail = data.user.email;
     }
-    const { data: profile } = await this.sb
+    const { data: profile, error } = await this.sb
       .from('users')
       .select('id,email,name,nickname,role')
       .eq('id', userId)
       .maybeSingle();
+
+    // ★★ **조회 실패와 행 부재를 가른다**(ADR-179 · 지휘부 지시 2026-09-02).
+    //
+    //   전에는 `error` 를 안 보고 `profile` 만 봤다. 그래서 **조회가 실패한 것과 행이 없는 것이
+    //   같은 길로 흘렀고**, 실패해도 아래의 최소 구성이 나갔다 — `role: 'user'`.
+    //   **코치·운영자가 조용히 참여자로 내려앉는다.** 그러면 콘솔·본부에서 튕기는데
+    //   **본인은 왜인지 알 수 없고 화면은 정상으로 보인다.** 가장 잡기 어려운 모양이다.
+    //
+    //   **바로 아래 이웃들이 이미 이렇게 한다** — `getPhone`·`setPhone`·`recordConsent`·
+    //   `listMyConsents` 가 전부 `if (error) throw new CoreError(...)` 다. **여기 한 줄만 빠져 있었다.**
+    //   새 관용구를 들이는 것이 아니라 **빠진 자리를 이웃에 맞추는 것**이다.
+    //
+    //   ★ **`null` 을 내지 않는 이유**(되돌이). 실패에 `null` 을 내면 게이트가 `/login` 으로 보내는데,
+    //   `/login` 은 세션이 살아 있으면 **다시 그 화면으로 돌려보낸다**(`login/page.tsx` 의 소건 1-가).
+    //   **고리가 된다.** 던지면 고리가 없고, 무엇이 잘못됐는지가 드러난다.
+    //
+    //   **행이 없는 것은 그대로 둔다** — 가입 트리거 직후에 실제로 그렇고, 그때는 오류가 아니다.
+    if (error) throw new CoreError(`currentUser 실패: ${error.message}`);
 
     // 프로필 행이 아직 없으면(가입 트리거 직후 등) 최소 구성(email 은 fallback 경로에서만 확보 가능).
     return profile

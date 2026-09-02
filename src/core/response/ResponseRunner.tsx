@@ -51,6 +51,13 @@ export function ResponseRunner({ schema, context, cohortId, wave, onComplete, su
   const [submitting, setSubmitting] = useState(false);
   const [doneId, setDoneId] = useState<string | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
+  // ★★ **제출이 조용히 사라지지 않게 한다**(ADR-179 후속).
+  //   `submit()` 에는 `catch` 가 없었다 — 그래서 어떤 실패든(신원 조회·저장 자체)
+  //   async 이벤트 핸들러 밖으로 나가 **처리되지 않은 거절**이 되고, 단추 잠금만 풀린 채
+  //   **아무 문구도 뜨지 않고 응답도 저장되지 않았다.** 참여자가 다 풀고 나서 겪는 일이다.
+  //   여기에 담아 **렌더에서 다시 던지면** 기존 에러 경계(`app/error.tsx`)가 받는다 —
+  //   새 화면도 새 문안도 만들지 않는다(불변식 20). 답은 로컬 작성본이 지키므로 잃지 않는다.
+  const [failed, setFailed] = useState<Error | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
 
   const draftEnabled = cohortId !== null; // 미리보기(cohortId=null)·비로그인 경로는 중간저장 비활성
@@ -139,10 +146,16 @@ export function ResponseRunner({ schema, context, cohortId, wave, onComplete, su
       }
       setDoneId(responseId);
       onComplete(responseId);
+    } catch (e) {
+      // **삼키지 않는다.** 여기서 조용히 넘어가면 「푼 것이 사라지는」 그 증상이 된다.
+      setFailed(e instanceof Error ? e : new Error('제출 실패'));
     } finally {
       setSubmitting(false);
     }
   }
+
+  // 렌더에서 던져야 에러 경계가 받는다 — 이벤트 핸들러에서 던지면 아무도 안 받는다.
+  if (failed) throw failed;
 
   if (doneId) {
     return (
