@@ -51,3 +51,6 @@ next-env.d.ts
 /docs/*
 !/docs/tasks/
 !/docs/reports/
+
+# 임시 계측 스크립트 — 저장소에 남기지 않는다(실측 도구는 scripts/postdeploy.mjs 가 정본이다)
+*.probe.mjs
