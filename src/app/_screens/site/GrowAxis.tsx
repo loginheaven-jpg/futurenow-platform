@@ -1,6 +1,11 @@
 // 부품 2 · GrowAxis — 시안 P1 `.grid-f` (4차 F-1 · 발주 §3-2).
 //
 // G·R·O·W·+F 다섯 축. **lg↑ 세로 5행 · md↓ 가로 5점 트랙**으로 접힌다(A 시안 journey-track 방식).
+//
+// ★ **v2(ADR-171)** — lg↑ 에서 글자가 **원형 노드**가 되고 노드끼리 세로선으로 이어진다.
+//   `design_system.md` §9.7 #2 개정분이다(지휘부 승인 2026-09-02).
+//   **md↓ 는 사양 그대로 가로 5점 트랙이다** — 「모바일은 이미지 빼고 심플하게」가
+//   새 요구가 아니라 **그 사양이 이미 그것이었다.** 여기서 새로 정한 것이 없다.
 // **부품은 계산하지 않는다** — 다섯 행이 전부 prop 이다. 회차 표기도 문자열 슬롯이다.
 // 좌측 골드 hairline 은 알파만 시안 값(.28)이고 색은 토큰이다 — **색값 이관 0**.
 import './site.css';
@@ -20,6 +25,12 @@ export interface GrowAxisRow {
   short?: string;
   /** 회차 표기 등 부기(선택) */
   note?: string;
+  /**
+   * 노드 옆 한 줄 설명(v2 · lg↑ 에서만 그린다).
+   *
+   * **없으면 그리지 않는다** — `/about` 의 축은 이것을 안 주고, 자리를 비워 두지 않는다.
+   */
+  desc?: string;
 }
 
 export function GrowAxis({ rows }: { rows: GrowAxisRow[] }) {
@@ -27,9 +38,12 @@ export function GrowAxis({ rows }: { rows: GrowAxisRow[] }) {
     <div className="site-grow">
       {rows.map((r) => (
         <div className={`site-grow__row${r.short ? ' has-short' : ''}`} key={r.letter}>
+          {/* 글자는 lg↑ 에서 원형 노드가 된다. **마크업은 그대로**이고 CSS 가 모양을 바꾼다 —
+              구조를 갈래마다 다르게 하면 같은 축이 두 벌이 된다(불변식 23). */}
           <span className="site-grow__l" aria-hidden>{r.letter}</span>
           <span className="site-grow__en">{r.en}</span>
           <span className="site-grow__ko">{r.ko}</span>
+          {r.desc ? <span className="site-grow__desc">{r.desc}</span> : null}
           {r.short ? <span className="site-grow__short">{r.short}</span> : null}
           {r.note ? <span className="site-grow__note">{r.note}</span> : null}
         </div>

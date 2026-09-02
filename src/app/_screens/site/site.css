@@ -484,3 +484,108 @@
   padding: 14px 16px; margin-top: var(--space-6);
 }
 .assess-priv b { color: var(--color-text); font-weight: 700; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   히어로 v2 · 헤드벨트 · 원형 노드 — ADR-171 (지휘부 판정 2026-09-02)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 헤드벨트: 홈에서만 투명 ────────────────────────────────
+ *
+ * 이 띠는 `position: static` 이라 **스크롤하면 화면 밖으로 나간다**(라이브 실측 2026-09-02).
+ *   그래서 밝은 구획에 닿을 때 흰 글자가 흰 바탕에 남는 일이 없고, 굳히는 장치가 필요 없다.
+ *   (시안 CSS 에는 `position: sticky` 가 있었으나 **실물은 아니다** — 시안을 실물로 읽지 않는다.)
+ * 아래 음영은 산 능선 위에서 로고·메뉴가 묻히지 않게 하는 최소한이다. */
+.site-gnb.is-transparent {
+  background: linear-gradient(180deg, rgba(6, 13, 26, .55) 0%, rgba(6, 13, 26, 0) 100%);
+}
+
+/* ── 히어로 배경: 장면 ──────────────────────────────────────
+ *
+ * ★ **모바일은 이미지를 받지 않는다**(지휘부 지시 2026-09-02).
+ *   `background-image` 는 미디어 쿼리가 안 맞으면 **내려받지도 않는다** —
+ *   그래서 폰에서는 지금과 같은 네이비 그라디언트 한 겹이고 바이트가 0 이다.
+ *   원본 5.7MB PNG 는 쓰지 않는다. WebP 두 벌(1600w 45KB · 2560w 101KB)로 냈다. */
+@media (min-width: 768px) {
+  .site-hero {
+    position: relative;
+    background:
+      linear-gradient(180deg, rgba(6, 13, 26, .58) 0%, rgba(10, 22, 40, .34) 46%, rgba(6, 13, 26, .78) 100%),
+      url('/images/hero-dawn-1600.webp') center / cover no-repeat,
+      var(--color-surface-inverse);
+    padding-top: 96px;
+    padding-bottom: 96px;
+  }
+}
+@media (min-width: 1280px) {
+  .site-hero {
+    background:
+      linear-gradient(180deg, rgba(6, 13, 26, .58) 0%, rgba(10, 22, 40, .34) 46%, rgba(6, 13, 26, .78) 100%),
+      url('/images/hero-dawn-2560.webp') center / cover no-repeat,
+      var(--color-surface-inverse);
+  }
+}
+
+/* ── 히어로 아래 사실 셋 ────────────────────────────────────
+ * 아이콘 부품이 없어(불변식 20) **점 하나**로 둔다. 그림을 지으면 두 번 짓게 된다. */
+.site-hero__features {
+  margin-top: var(--space-7);
+  display: grid; grid-template-columns: 1fr; gap: var(--space-3);
+}
+.hero-feature { display: flex; align-items: flex-start; gap: var(--space-3); }
+.hero-feature__dot {
+  flex: 0 0 8px; width: 8px; height: 8px; margin-top: 6px;
+  border-radius: var(--radius-pill); background: var(--color-accent);
+}
+.hero-feature__title {
+  display: block; font-size: 14px; font-weight: 700;
+  color: var(--color-text-on-accent); line-height: 1.35;
+}
+.hero-feature__sub {
+  display: block; font-size: 12px; color: var(--navy-300); margin-top: 2px;
+}
+@media (min-width: 768px) {
+  .site-hero__features { grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+}
+
+/* ── GROW+F 원형 노드 (lg↑ 에서만) ──────────────────────────
+ *
+ * ★ **md↓ 는 손대지 않았다** — `design_system` §9.7 #2 의 「md↓ 가로 5점 트랙(모바일 우선)」이
+ *   그대로 산다. 「모바일은 심플하게」가 새 요구가 아니라 **그 사양이 이미 그것이었다.**
+ * 마크업은 한 벌이고 모양만 갈린다 — 갈래마다 구조를 다르게 하면 같은 축이 두 벌이 된다. */
+.site-grow__desc { display: none; }
+
+@media (min-width: 1024px) {
+  .site-grow { border-left: 0; padding-left: 0; }
+  .site-grow__row {
+    align-items: center; gap: var(--space-4);
+    padding: var(--space-3) 0; border-bottom: 0; position: relative;
+  }
+  /* 노드끼리 잇는 세로선 — 마지막 뒤에는 두지 않는다. */
+  .site-grow__row:not(:last-child)::after {
+    content: ''; position: absolute; left: 39px; top: 68%; width: 2px; height: 40%;
+    background: linear-gradient(180deg, var(--color-accent) 0%, rgba(219, 176, 90, .15) 100%);
+  }
+  .site-grow__l {
+    flex: 0 0 78px; width: 78px; height: 78px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; border-radius: var(--radius-pill);
+    border: 2px solid var(--color-accent);
+    background: rgba(6, 13, 26, .42);
+    box-shadow: 0 0 0 6px rgba(219, 176, 90, .07);
+  }
+  .site-grow__en {
+    position: absolute; left: 96px; top: 8px;
+    width: auto; flex: none; font-size: 10px; letter-spacing: .2em;
+  }
+  .site-grow__ko { font-size: 18px; font-weight: 800; margin-top: 14px; }
+  .site-grow__desc {
+    display: block; font-size: 13px; line-height: 1.55;
+    color: var(--navy-200); margin-top: 3px;
+  }
+  /* 회차 표기는 원형 노드가 이미 순서를 말하므로 접는다 — 같은 말이 두 번 서지 않는다. */
+  .site-grow__note { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-hero { background-attachment: scroll; }
+}

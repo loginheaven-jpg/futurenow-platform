@@ -34,11 +34,20 @@ export function SiteGnb({
   currentPath,
   variant = 'public',
   sheet,
+  transparent = false,
 }: {
   /** 로고 문안. 강조 부분은 `<b>` 슬롯으로 — 부품이 문장을 쪼개지 않는다. */
   logo: React.ReactNode;
   /** 로고 옆 영문 소제(자간 .2em) */
   en?: string;
+  /**
+   * 띠를 **투명하게** 둘 것인가(ADR-171). 히어로 배경 장면이 헤드벨트까지 이어지게 한다.
+   *
+   * ★ **부품이 정하지 않는다** — 「어느 화면인가」는 화면 층(`PublicGnb`)이 안다.
+   *   이 띠는 `position: static` 이라 **스크롤하면 화면 밖으로 나간다**(라이브 실측 2026-09-02).
+   *   그래서 밝은 구획에 닿을 때 흰 글자가 흰 바탕에 남는 일이 없고, 굳히는 장치도 필요 없다.
+   */
+  transparent?: boolean;
   /** 공개 현관의 메뉴 6. `member` 에서는 비운다 — 시트가 내비다. */
   items?: GnbItem[];
   /** 로그인 버튼. **로그인한 사람에게는 주지 않는다**(없으면 그리지 않는다). */
@@ -60,7 +69,7 @@ export function SiteGnb({
 
   return (
     <>
-      <header className="site-gnb">
+      <header className={`site-gnb${transparent ? ' is-transparent' : ''}`}>
         <Link href="/" className="site-gnb__brand">
           <span className="site-gnb__logo">{logo}</span>
           {en ? <span className="site-gnb__en">{en}</span> : null}
