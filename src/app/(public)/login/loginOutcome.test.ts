@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loginOutcome, LOGIN_ENTRY } from './loginOutcome';
+import { loginOutcome, LOGIN_HOME } from './loginOutcome';
 import { HOLD_LOGIN_NOTICE } from '@/core/membershipVocab';
 
 // ★ **표지가 붙었다**(ADR-173) — 세션이 서면 `/home?from=login` 으로 간다.
@@ -8,7 +8,7 @@ import { HOLD_LOGIN_NOTICE } from '@/core/membershipVocab';
 describe('loginOutcome (로그인 결과 → 행로)', () => {
   it('세션 성립 시 전원 → /home (A′-1 통합 홈 — 역할 감금 해제·role 인자 제거)', () => {
     const o = loginOutcome({ error: null, hasSession: true });
-    expect(o.redirect).toBe(`/home?from=${LOGIN_ENTRY}`);
+    expect(o.redirect).toBe(LOGIN_HOME);
     expect(o.error).toBeUndefined();
   });
 
@@ -27,8 +27,8 @@ describe('loginOutcome (로그인 결과 → 행로)', () => {
   });
 
   it('returnTo 오픈 리다이렉트 시도 → /home 으로 폴백(수용 11-a)', () => {
-    expect(loginOutcome({ error: null, hasSession: true, returnTo: 'https://evil.example' }).redirect).toBe(`/home?from=${LOGIN_ENTRY}`);
-    expect(loginOutcome({ error: null, hasSession: true, returnTo: '/admin' }).redirect).toBe(`/home?from=${LOGIN_ENTRY}`);
+    expect(loginOutcome({ error: null, hasSession: true, returnTo: 'https://evil.example' }).redirect).toBe(LOGIN_HOME);
+    expect(loginOutcome({ error: null, hasSession: true, returnTo: '/admin' }).redirect).toBe(LOGIN_HOME);
   });
 });
 
@@ -53,6 +53,6 @@ describe('잠긴 계정 — 회원자격 보류 (ADR-152)', () => {
   });
 
   it('성공 경로는 건드리지 않았다(대조군)', () => {
-    expect(loginOutcome({ error: null, hasSession: true }).redirect).toBe(`/home?from=${LOGIN_ENTRY}`);
+    expect(loginOutcome({ error: null, hasSession: true }).redirect).toBe(LOGIN_HOME);
   });
 });

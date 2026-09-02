@@ -5,7 +5,8 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { LoginForm } from './LoginForm';
-import { loginOutcome } from './loginOutcome';
+import { loginOutcome, LOGIN_HOME } from './loginOutcome';
+import { loginLandingAction } from './landingAction';
 
 export function LoginClient({ returnTo = null }: { returnTo?: string | null }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -36,7 +37,16 @@ export function LoginClient({ returnTo = null }: { returnTo?: string | null }) {
       //   세션은 살아 있는데 폼이 보이니 **로그아웃으로 읽힌다**(4차 F-5 B행 증상).
       //   1-가(서버 리다이렉트)와 짝이다 — 가는 닿았을 때 되돌려 보내고, 나는 애초에 닿지 않게 한다.
       //   둘 다 두는 이유: 뒤로가기 말고도 `/login` 을 북마크·링크로 여는 길이 있다.
-      if (outcome.redirect) router.replace(outcome.redirect);
+      if (outcome.redirect) {
+        // ★ **거점이 하나뿐이면 홈을 거치지 않는다**(ADR-173 · 지시 case 1·2).
+        //   `returnTo` 로 정해진 목적지는 **그대로 이긴다** — 물어보지도 않는다(지휘부 확정).
+        //   홈으로 갈 때만 서버에 착지를 묻고 **한 번만** 이동한다.
+        //   전에는 `/home` 에서 서버 `redirect()` 를 했는데 `loading.tsx` 와 겹쳐 화면이 멈췄다.
+        const to = outcome.redirect === LOGIN_HOME
+          ? await loginLandingAction().catch(() => LOGIN_HOME)
+          : outcome.redirect;
+        router.replace(to);
+      }
       else setBusy(false);
     } catch {
       // 예외(네트워크 끊김 등) — **버튼 잠김만 푼다.**

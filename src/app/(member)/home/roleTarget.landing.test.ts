@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import type { MyCohortSummary } from '@/contracts';
 import { roleTargets, landingFor } from './roleTarget';
-import { loginOutcome, LOGIN_ENTRY } from '@/app/(public)/login/loginOutcome';
+import { loginOutcome, LOGIN_HOME } from '@/app/(public)/login/loginOutcome';
 
 /** 차수 하나 — 착지 판정에 쓰이는 칸만 채운다. 나머지는 이 잠금이 보지 않는다. */
 const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary =>
@@ -95,20 +95,29 @@ describe('★★ 링크가 우선이다 (지휘부 확정 2026-09-02)', () => {
     expect(loginOutcome({ ...ok, returnTo: '/my/values' }).redirect).toBe('/my/values');
   });
 
-  it('갈 곳이 없으면 홈으로 가되 **표지를 단다**', () => {
-    expect(loginOutcome({ ...ok, returnTo: null }).redirect).toBe(`/home?from=${LOGIN_ENTRY}`);
+  it('갈 곳이 없으면 홈을 낸다 — 그 값이 「물어보라」는 신호다', () => {
+    expect(loginOutcome({ ...ok, returnTo: null }).redirect).toBe(LOGIN_HOME);
   });
 
   it('★ 화이트리스트 밖 주소는 여전히 막힌다 — 오픈 리다이렉트 방어가 살아 있다', () => {
     for (const bad of ['https://evil.test', '//evil.test', '/admin', '\\\\evil']) {
-      expect(loginOutcome({ ...ok, returnTo: bad }).redirect, bad).toBe(`/home?from=${LOGIN_ENTRY}`);
+      expect(loginOutcome({ ...ok, returnTo: bad }).redirect, bad).toBe(LOGIN_HOME);
     }
   });
 
-  it('★ 표지는 **양쪽이 같은 값을 읽는다** (불변식 23)', () => {
-    // 한쪽만 고치면 막바로 진입이 조용히 멈추고 아무도 모른다.
+  it('★★ 홈으로 갈 때만 **착지를 묻는다** — `returnTo` 는 묻지 않고 그대로 간다', () => {
+    // 링크로 정해진 목적지를 물어보면 그 답이 링크를 덮을 수 있다(지휘부 확정 — 링크가 우선).
+    const client = readFileSync('src/app/(public)/login/LoginClient.tsx', 'utf8');
+    expect(client, '착지를 묻지 않는다').toContain('loginLandingAction');
+    expect(client, '홈일 때만 묻는 조건이 없다').toContain('=== LOGIN_HOME');
+    // 값을 손으로 박으면 한쪽만 고쳐지는 날 조건이 조용히 거짓이 된다(불변식 23).
+    expect(client, '홈 주소를 손으로 박았다').not.toContain("=== '/home'");
+  });
+
+  it('★ 홈에는 리다이렉트가 **없다** — 서버 redirect 가 loading 과 겹쳐 화면이 멈췄다', () => {
+    // 배포해서 잡았다. 「불러오는 중…」에서 멈췄고 /home·/coach 는 직접 열면 멀쩡했다.
     const home = readFileSync('src/app/(member)/home/page.tsx', 'utf8');
-    expect(home, '홈이 표지를 상수로 읽지 않는다').toContain('LOGIN_ENTRY');
-    expect(home, '홈이 표지 값을 손으로 박았다').not.toContain("=== 'login'");
+    expect(home, '홈이 다시 리다이렉트한다').not.toContain('landingFor');
+    expect(home, '홈이 로그인 표지를 본다').not.toContain('from=login');
   });
 });

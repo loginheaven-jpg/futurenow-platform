@@ -31,10 +31,14 @@ function isBanned(error: unknown): boolean {
 }
 
 /**
- * 로그인 직후 착지임을 `/home` 에 알리는 표지. **양쪽이 같은 값을 읽는다**(불변식 23) —
- *   한쪽만 고치면 막바로 진입이 조용히 멈추고 아무도 모른다.
+ * 갈 곳이 따로 정해지지 않았을 때의 기본 착지.
+ *
+ * **이 함수는 순수하고 브라우저에서 돈다** — 역할·차수를 모른다.
+ *   그래서 여기서는 홈을 내고, 호출부가 이 값을 보면 **착지를 서버에 묻는다**
+ *   (`loginLandingAction`). 거점이 하나뿐이면 그리로, 아니면 홈이다.
+ *   **값을 손으로 박지 않고 상수 하나를 양쪽이 읽는다**(불변식 23).
  */
-export const LOGIN_ENTRY = 'login';
+export const LOGIN_HOME = '/home';
 
 export function loginOutcome(input: { error: unknown; hasSession: boolean; returnTo?: string | null }): LoginOutcome {
   // **잠긴 계정이 먼저다.** 아래 문구로 뭉개면 보류된 사람이 비밀번호를 의심한다.
@@ -47,11 +51,8 @@ export function loginOutcome(input: { error: unknown; hasSession: boolean; retur
   // ★ **링크가 우선이다**(지휘부 확정 2026-09-02). `returnTo` 가 화이트리스트를 지나면
   //   그쪽이 이긴다 — 알림·QR 로 온 사람이 엉뚱한 데 착지하지 않는다. **이 줄은 안 바뀌었다.**
   //
-  //   갈 곳이 따로 없으면 `/home` 인데, **표지를 하나 붙인다**(ADR-173).
-  //   거점이 하나뿐인 사람은 홈을 거치지 않고 그리로 간다(지시 case 1·2) —
-  //   그 판정은 `/home` 이 `roleTargets` 로 한다. **여기서 역할을 알 수 없기 때문이다**
-  //   (이 함수는 순수하고 브라우저에서 돈다).
-  //   표지가 없으면 그냥 홈이다 — 그래서 시트의 **「내 홈」을 누르면 홈에 머문다.**
-  //   `?from=` 은 이 저장소가 이미 쓰는 관용구다(`/coach/cohort/[id]?from=console`).
-  return { redirect: safeReturnTo(input.returnTo) ?? `/home?from=${LOGIN_ENTRY}` };
+  //   갈 곳이 따로 없으면 홈이다. 호출부가 그 값을 보면 **착지를 서버에 묻는다** —
+  //   거점이 하나뿐인 사람은 홈을 거치지 않고 그리로 간다(지시 case 1·2 · ADR-173).
+  //   **이 함수는 역할을 모른다**(순수하고 브라우저에서 돈다). 그래서 묻는 일은 호출부가 한다.
+  return { redirect: safeReturnTo(input.returnTo) ?? LOGIN_HOME };
 }

@@ -20,13 +20,12 @@ import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
-import { roleTargets, landingFor } from './roleTarget';
-import { LOGIN_ENTRY } from '@/app/(public)/login/loginOutcome';
+import { roleTargets } from './roleTarget';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MemberHomePage({ searchParams }: { searchParams: Promise<{ from?: string | string[] }> }) {
+export default async function MemberHomePage() {
   const ctx = await createServerContext();
   const me = await ctx.currentUser();
   if (!me) redirect('/login');
@@ -70,18 +69,6 @@ export default async function MemberHomePage({ searchParams }: { searchParams: P
 
   const targets = roleTargets(me.role, cohorts); // 5차 T-5 — 겸직자는 여럿이다
 
-  // ★ **로그인 직후이고 거점이 하나뿐이면 홈을 거치지 않는다**(ADR-173 · 지시 case 1·2).
-  //
-  //   **표지가 있을 때만 판정한다.** 늘 튕기면 시트의 「내 홈」이 갈 곳을 잃고,
-  //   `/home` 의 타일·소식·갈무리 재촉을 **영영 못 보는 사람**이 생긴다.
-  //   판정은 `landingFor` 한 곳이고 그것은 `roleTargets` 산출을 그대로 센다 —
-  //   「막바로 갈 것인가」를 여기서 다시 정하면 판정이 두 곳이 된다.
-  const spRaw = (await searchParams).from;
-  const from = Array.isArray(spRaw) ? spRaw[0] : spRaw;
-  if (from === LOGIN_ENTRY) {
-    const to = landingFor(targets);
-    if (to) redirect(to);
-  }
   // 좁은 자리(시트 머리) 값. 실패해도 화면이 멈추지 않게 기본값으로 받는다.
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
