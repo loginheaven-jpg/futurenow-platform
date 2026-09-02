@@ -42,6 +42,42 @@ export default function AboutPage() {
           lead="여섯 번의 자리에서 매번 손으로 남긴다. 설명을 듣고 끝나는 시간이 아니라, 쓰고 나누고 한 걸음을 걷는 시간입니다."
         />
 
+        {/* ★ **맨 위로 올렸다**(지휘부 지시 2026-09-02). 소개 화면에 온 사람이 가장 먼저 묻는 것은
+            「이게 나에게 맞는가」다. 그 답을 아래로 내려 두면 거기까지 안 내려간 사람은 못 읽는다.
+            그래서 세미나 설명보다 **먼저** 선다. */}
+        <section className="site-section site-aud">
+          <SectionTitle title="이런 분께 권합니다" />
+
+          {/* ★ **목록이 먼저다**(가독성). 전에는 lg↑ 에서 문단 한 덩어리만 보였고
+              폰에서만 목록이 보였다 — 맨 위로 올라오니 **읽기 전에 훑을 수 있어야** 한다.
+              문안은 한 글자도 안 바꿨다. **폭에 따라 하나만 고르던 것을 둘 다 쓰되
+              역할을 나눈 것**이다: 목록이 「누구인가」, 문단이 「그래서 무엇을 하는가」. */}
+          <ul className="site-aud__list">
+            {AUDIENCE_LIST.map((a) => (
+              <li key={a}>{a}</li>
+            ))}
+          </ul>
+
+          {/* 원고 §4.1 — **버리지 않는다.** 뒤 세 문장(「답을 건네는 자리가 아니라…」 ·
+              「여섯 번의 만남 동안…」 · 「미래가 선명해지면…」)은 **여기에만 있는 문안**이라
+              목록으로 바꾸면 사라진다. 문장을 쪼개 옮기는 것은 파생이므로 하지 않았다. */}
+          <p className="site-aud__para">{AUDIENCE_PARA}</p>
+
+          {/* 신청 CTA — **골드 primary 는 세미나 신청 전용**이다(원고 §3.4 위계). 도착점은 `/join`. */}
+          <div className="site-cta">
+            <Link
+              href="/join"
+              className="ui-btn ui-btn--primary"
+              style={{ background: 'var(--color-accent)', color: 'var(--color-text-on-gold)', textDecoration: 'none' }}
+            >
+              세미나 신청하기
+            </Link>
+            <span className="site-cta__note">
+              코드를 받으셨다면 같은 자리에서 입장하실 수 있습니다.
+            </span>
+          </div>
+        </section>
+
         <section className="site-section">
           <SectionTitle title="퓨처나우 세미나" desc="무엇을 하는 시간인가" />
           {/* 단일 출처. 이 안의 문장은 여기서 고치지 않는다 — `SeminarIntro` 를 고치면 세 화면이 함께 움직인다. */}
@@ -101,30 +137,6 @@ export default function AboutPage() {
           />
         </section>
 
-        <section className="site-section">
-          <SectionTitle title="이런 분께 권합니다" />
-          {/* 발주 §2 — lg↑ 단락형(§4.1) / md↓ 리스트형(§4.2). **화면당 하나만** 보인다. */}
-          <p className="site-aud__para">{AUDIENCE_PARA}</p>
-          <ul className="site-aud__list">
-            {AUDIENCE_LIST.map((a) => (
-              <li key={a}>{a}</li>
-            ))}
-          </ul>
-
-          {/* 신청 CTA — **골드 primary 는 세미나 신청 전용**이다(원고 §3.4 위계). 도착점은 `/join`. */}
-          <div className="site-cta">
-            <Link
-              href="/join"
-              className="ui-btn ui-btn--primary"
-              style={{ background: 'var(--color-accent)', color: 'var(--color-text-on-gold)', textDecoration: 'none' }}
-            >
-              세미나 신청하기
-            </Link>
-            <span className="site-cta__note">
-              코드를 받으셨다면 같은 자리에서 입장하실 수 있습니다.
-            </span>
-          </div>
-        </section>
       </>
 
     </>

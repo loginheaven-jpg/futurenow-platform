@@ -163,10 +163,14 @@ export function buildCheckinRead(
     pushText(out, copy.step.what.label, text(answers, copy.step.what.key));
     pushText(out, copy.step.when.label, text(answers, copy.step.when.key));
     pushText(out, copy.step.blocker.label, text(answers, copy.step.blocker.key));
-    // 공개 여부는 본인에게만 되돌려 준다 — 켰으면 토글 원문, 껐으면 공개 고지 원문.
-    if (isSelf && share) {
-      if (flags.stepPrivate && share.toggleLabel) out.push({ kind: 'flag', label: share.toggleLabel });
-      else out.push({ kind: 'note', text: share.notice });
+    // 공개 여부는 본인에게만 되돌려 준다 — **켰을 때만** 토글 원문을 되비춘다.
+    //
+    // ★ **껐을 때의 「공개 고지」를 걷었다**(지휘부 판정 2026-09-02). 되읽기도 작성과 같은 이유다 —
+    //   누가 읽는지는 모집 자료·세미나에서 이미 공지되고, **또 보이면 자기검열이 생긴다.**
+    //   켰을 때 남는 것은 「누가 본다」가 아니라 **내가 비공개로 뒀다는 내 선택의 되비춤**이다.
+    //   그래서 그쪽은 남는다. 정책은 한 글자도 안 바뀌었다.
+    if (isSelf && share && flags.stepPrivate && share.toggleLabel) {
+      out.push({ kind: 'flag', label: share.toggleLabel });
     }
   }
 
