@@ -59,6 +59,16 @@ describe('★★ 시트에 출구가 있다 — 언제든 나갈 수 있어야 �
     expect(hrefs(s.groups)).toContain('/my/cohorts/c1/report');
   });
 
+  it('★★ 홈이 곧 그 회기면 「내 회기」를 **또 두지 않는다** — 배포해서 눈으로 잡았다', async () => {
+    const dash = await buildMemberSheet(ctx(), [cohort()], { hasFeed: false, now: 0, role: 'user', cohortCount: 1, homeIsDashboard: true });
+    expect(labels(dash.groups).filter((l) => l === '내 회기'), '같은 화면으로 가는 문이 둘이다').toHaveLength(0);
+    expect(hrefs(dash.groups), '내 홈은 그대로 있어야 한다').toContain(HOME_DOOR.href);
+
+    // 겸직자는 홈이 카드 화면이므로 「내 회기」가 그대로 필요하다.
+    const both = await buildMemberSheet(ctx(), [cohort()], { hasFeed: false, now: 0, role: 'coach', cohortCount: 1, homeIsDashboard: false });
+    expect(labels(both.groups), '겸직자에게서 내 회기 문이 사라졌다').toContain('내 회기');
+  });
+
   it('★ 갈 곳이 없으면 문을 만들지 않는다 — 없는 곳으로 보내지 않는다', async () => {
     const one = await buildMemberSheet(ctx(), [cohort()], { hasFeed: false, now: 0, role: 'user', cohortCount: 1 });
     // 회기가 하나면 「내 세미나」 목록은 군더더기다 — 위 「내 회기」가 곧 그 회기다.
