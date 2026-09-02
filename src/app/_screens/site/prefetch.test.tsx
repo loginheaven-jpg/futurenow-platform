@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SiteGnb } from './SiteGnb';
 import { PUBLIC_NAV } from './publicNav';
+import { navPrefetch } from './navPrefetch';
 import { isProtectedPath } from '@/proxy.guard';
 
 const read = (f: string) => readFileSync(f, 'utf8');
@@ -24,13 +25,43 @@ describe('★ 미인증이면 보호 링크를 미리 받지 않는다', () => {
     expect(guarded.every((i) => i.href.startsWith('/'))).toBe(true);
   });
 
-  it('★★ 판정을 **프록시와 같은 함수**로 한다 — 사본을 만들지 않는다(불변식 23)', () => {
-    const src = read('src/app/_screens/site/SiteGnb.tsx');
-    expect(src, '보호 판정을 부품이 따로 적었다').toContain('isProtectedPath');
-    expect(src, '프리페치를 안 끈다').toContain('prefetch={');
-    // 접두사 목록을 부품이 베껴 쓰면 한쪽만 고쳐지는 날 조용히 어긋난다.
-    for (const copy of ["'/home'", "'/coach'", "'/admin'"]) {
-      expect(src, `접두사를 베껴 적었다: ${copy}`).not.toContain(copy);
+  it('★★ 같은 링크를 그리는 **세 자리 전부**가 규칙을 쓴다 — 벨트만 고쳐서 놓쳤다', () => {
+    // ★ 실제로 놓쳤다. 첫 판은 `SiteGnb` 만 고쳤는데 **배포 뒤에도 헛 프리페치가 그대로** 나갔다 —
+    //   푸터가 같은 「진단」을 그리고 있었다. 시트도 같은 목록을 그린다.
+    //   **사본이 셋이면 규칙을 하나로 뗀다**(불변식 23).
+    for (const f of ['src/app/_screens/site/SiteGnb.tsx',
+                     'src/app/_screens/site/MenuSheet.tsx',
+                     'src/app/_screens/site/SiteFooter.tsx']) {
+      const src = read(f);
+      expect(src, `${f} 가 규칙을 안 쓴다`).toContain('navPrefetch(');
+      // 규칙을 손으로 다시 적으면 한쪽만 고쳐지는 날 조용히 어긋난다.
+      expect(src, `${f} 가 보호 판정을 따로 적었다`).not.toContain('isProtectedPath');
+      for (const copy of ["'/home'", "'/coach'", "'/admin'"]) {
+        expect(src, `${f} 가 접두사를 베껴 적었다: ${copy}`).not.toContain(copy);
+      }
+    }
+    // 규칙 자체는 프록시와 같은 함수를 쓴다.
+    expect(read('src/app/_screens/site/navPrefetch.ts')).toContain('isProtectedPath');
+  });
+
+  it('★ 규칙을 **실행으로** 잰다 — 「있는가」가 아니라 값으로', () => {
+    // 조항 ⑬ — 문자열 검사만 두면 값이 틀려도 통과한다. 함수는 순수하니 먹여서 본다.
+    expect(navPrefetch('/home/assessments', false), '미인증인데 받아 둔다').toBe(false);
+    expect(navPrefetch('/home/assessments', true), '로그인했는데 막는다').toBeUndefined();
+    expect(navPrefetch('/about', false), '공개 링크를 막는다').toBeUndefined();
+    expect(navPrefetch('/library', false)).toBeUndefined();
+    // 벨트·푸터가 실제로 드는 목록으로도 먹여 본다 — 표가 바뀌면 저절로 따라간다.
+    for (const it of PUBLIC_NAV) {
+      expect(navPrefetch(it.href, false), it.label).toBe(isProtectedPath(it.href) ? false : undefined);
+    }
+  });
+
+  it('★ 판독을 두 벌 두지 않는다 — 쿠키를 읽는 자리는 하나다', () => {
+    // `PublicGnb` 와 `PublicShell` 이 각자 읽으면 화면마다 다른 답이 날 수 있다.
+    for (const f of ['src/app/_screens/site/PublicGnb.tsx', 'src/app/_screens/site/PublicShell.tsx']) {
+      const src = read(f);
+      expect(src, `${f} 가 쿠키를 직접 읽는다`).not.toContain('parseCookieHeader');
+      expect(src, `${f} 가 훅을 안 쓴다`).toContain('useSignedIn');
     }
   });
 
@@ -42,11 +73,13 @@ describe('★ 미인증이면 보호 링크를 미리 받지 않는다', () => {
     for (const it of PUBLIC_NAV) expect(out, `${it.label} 이 사라졌다`).toContain(it.href);
   });
 
-  it('로그인한 사람에게는 막지 않는다 — 값이 참이면 조건이 통째로 통과다', () => {
-    const src = read('src/app/_screens/site/SiteGnb.tsx');
-    expect(src).toContain('signedIn || !isProtectedPath(');
-    // 기본값이 false 여야 «모르면 안 받아 둔다» 가 된다.
-    expect(src, '기본값이 안전한 쪽이 아니다').toContain('signedIn = false');
+  it('★ 기본값이 **안전한 쪽**이다 — 모르면 안 받아 둔다', () => {
+    // 프롭을 안 넘긴 자리가 생겨도 «받아 두는» 쪽으로 기울지 않아야 한다.
+    for (const f of ['src/app/_screens/site/SiteGnb.tsx',
+                     'src/app/_screens/site/MenuSheet.tsx',
+                     'src/app/_screens/site/SiteFooter.tsx']) {
+      expect(read(f), `${f} 의 기본값이 안전한 쪽이 아니다`).toContain('signedIn = false');
+    }
   });
 
   it('★ **모든 `<SiteGnb>` 호출부가** 이 값을 넘긴다 — 하나라도 빠지면 그 화면만 조용히 낡는다', () => {

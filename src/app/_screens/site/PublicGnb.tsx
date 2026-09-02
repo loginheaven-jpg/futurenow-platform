@@ -27,32 +27,12 @@
 //   `/login` 으로 보낸다 — **지금과 같은 결과이고 더 나빠지지 않는다.**
 //   게다가 `proxy` 가 **매 요청**에서 `getUser()` 로 검증·갱신하며 공개 경로도 그 matcher 안이라
 //   (불변식 17 — 좁히지 않는다) 현관을 여는 그 요청에서 이미 정리된다. 어긋나는 창이 좁다.
-import { useCallback, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
-import { isAuthCookieName, parseCookieHeader } from '@/core/supabase/cookiePolicy';
+import { useSignedIn } from './useSignedIn';
 import { SiteGnb, type GnbItem } from './SiteGnb';
 import { HOME_DOOR } from '@/app/_vocab/doors';
 import { PUBLIC_SHEET_MINE, publicHeaderAction } from './publicNav';
 
-function hasAuthCookie(): boolean {
-  if (typeof document === 'undefined') return false;
-  return parseCookieHeader(document.cookie).some((c) => isAuthCookieName(c.name));
-}
-
-/**
- * 다른 탭에서 로그아웃하고 이 탭으로 돌아오는 경우가 있다. 그때 버튼이 옛 상태로 남으면
- * **버튼이 거짓말을 한다** — 이 조항의 목적과 정반대다. 창이 다시 보일 때 한 번 더 읽는다.
- * (폴링하지 않는다. 끝이 없는 기다림을 만들지 않는다 · §11.)
- */
-function subscribe(onChange: () => void): () => void {
-  if (typeof window === 'undefined') return () => {};
-  window.addEventListener('focus', onChange);
-  window.addEventListener('pageshow', onChange);
-  return () => {
-    window.removeEventListener('focus', onChange);
-    window.removeEventListener('pageshow', onChange);
-  };
-}
 
 export function PublicGnb({
   logo,
@@ -71,7 +51,7 @@ export function PublicGnb({
   //   이 부품은 이미 클라이언트라 `usePathname()` 으로 스스로 안다.
   const currentPath = usePathname() ?? '/';
   // 서버 스냅샷은 **비로그인**이다 — 정적 HTML 이 그렇게 캐시되므로 그것과 같아야 한다.
-  const signedIn = useSyncExternalStore(subscribe, hasAuthCookie, useCallback(() => false, []));
+  const signedIn = useSignedIn();
 
   // ★ **「내 홈」을 시트 맨 위에 얹는다**(ADR-174). 로그인하면 벨트 우측 글자가 햄버거가 되어
   //   그 문이 사라지므로 시트가 잇는다. **비로그인에게는 주지 않는다** — 갈 수 없는 곳으로

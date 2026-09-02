@@ -7,16 +7,23 @@
 //   그 페이지가 아직 없는데도 자리가 생기고 **눌리는데 아무 일도 없는 링크**가 남는다.
 //   무엇이 있는지는 화면만 안다(F-2 시점에 그 둘은 아직 없다 — 완주 보고 §부재).
 import Link from 'next/link';
+import { navPrefetch } from './navPrefetch';
 import './site.css';
 
 export function SiteFooter({
   org,
   links = [],
   note,
+  signedIn = false,
 }: {
   /** 소속 한 줄(`퓨처나우 · 청계로벤하임`) */
   org: React.ReactNode;
   links?: { href: string; label: string }[];
+  /**
+   * 지금 보는 사람이 로그인했는가(ADR-176). **부품이 세션을 읽지 않는다** — 껍데기가 내려준다.
+   * 미인증이면 보호 링크를 미리 받지 않는다. 기본값이 `false` 라 **모르면 안 받아 둔다.**
+   */
+  signedIn?: boolean;
   /** 소속 아래 보조 문장. 없으면 그리지 않는다 */
   note?: React.ReactNode;
 }) {
@@ -30,7 +37,7 @@ export function SiteFooter({
         {links.length > 0 ? (
           <nav className="site-foot__nav" aria-label="이용 안내">
             {links.map((l) => (
-              <Link key={l.href} href={l.href}>
+              <Link key={l.href} href={l.href} prefetch={navPrefetch(l.href, signedIn)}>
                 {l.label}
               </Link>
             ))}

@@ -25,6 +25,7 @@
 // **로고는 처음 화면(`/`)으로 이동만 한다 — 로그아웃이 아니다**(§12.3 규칙 3).
 //   그 동작은 `SiteGnb` 가 이미 갖고 있고 여기서 바꾸지 않는다.
 import { PublicGnb } from './PublicGnb';
+import { useSignedIn } from './useSignedIn';
 import { SiteFooter } from './SiteFooter';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
@@ -37,6 +38,7 @@ import {
 } from './publicNav';
 
 export function PublicShell({ children }: { children: React.ReactNode }) {
+  const signedIn = useSignedIn();
   // **공개 껍데기도 같은 표를 읽는다**(지휘부 판정) — 껍데기가 하나이므로 표도 하나다.
   //   표에 `bar` 로 적힌 공개 라우트(`/signup`)는 상단바 대신 **제목 바**가 선다.
   //   그 항목은 `flow`(출구 없음)라 **푸터도 그리지 않는다** — 푸터의 링크가 곧 출구다.
@@ -101,6 +103,9 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
   // 푸터는 **평상시에만** 선다. 제목 바(`flow`)와 민무늬에는 두지 않는다 — 푸터의 링크가 곧 출구다.
   const footer = override || chrome?.kind === 'bar' || chrome?.kind === 'none' ? null : (
     <SiteFooter
+      /* 미인증이면 보호 링크를 미리 받지 않는다(ADR-176) — 푸터도 벨트와 **같은 「진단」**을 그린다.
+         첫 판에서 벨트만 고쳤더니 배포 뒤에도 헛 프리페치가 그대로 나갔다. 판독은 훅 하나가 한다. */
+      signedIn={signedIn}
       org={SITE_ORG}
       links={PUBLIC_FOOTER_LINKS}
       note={

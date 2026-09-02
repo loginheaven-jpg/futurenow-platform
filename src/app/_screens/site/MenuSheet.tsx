@@ -9,6 +9,7 @@
 //   여는 쪽(#9 SiteGnb)이 상태를 갖는다. 시트가 스스로 열리지 않는다.
 import { useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { navPrefetch } from './navPrefetch';
 import { SessionChipStrip, type SessionChip } from './SessionChipStrip';
 import { sheetKeyAction, shouldCloseOnOverlay } from './sheetKeys';
 import './site.css';
@@ -34,6 +35,7 @@ export function MenuSheet({
   cohort,
   groups,
   chips,
+  signedIn = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -45,6 +47,11 @@ export function MenuSheet({
   groups: MenuGroup[];
   /** 회차 칩 스트립(발주 §3-7 — #8 을 품는다). 없으면 구획을 만들지 않는다. */
   chips?: SessionChip[];
+  /**
+   * 지금 보는 사람이 로그인했는가(ADR-176). **부품이 세션을 읽지 않는다** — 껍데기가 내려준다.
+   * 미인증이면 보호 링크를 미리 받지 않는다(프록시가 되돌린 307 이 캐시에 남는다).
+   */
+  signedIn?: boolean;
 }) {
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -134,7 +141,14 @@ export function MenuSheet({
             <div className="site-sheet__group" key={g.title}>
               <div className="site-sheet__h">{g.title}</div>
               {g.items.map((it) => (
-                <Link key={it.href} href={it.href} className="site-sheet__item" onClick={onClose}>
+                <Link
+                  key={it.href}
+                  href={it.href}
+                  className="site-sheet__item"
+                  onClick={onClose}
+                  // 따라갈 수 없는 링크는 미리 받아 두지 않는다(ADR-176).
+                  prefetch={navPrefetch(it.href, signedIn)}
+                >
                   {it.label}
                 </Link>
               ))}
