@@ -25,7 +25,12 @@ export const dynamic = 'force-dynamic';
 export default async function AssessmentsPage() {
   const ctx = await createServerContext();
   const me = await ctx.currentUser();
-  if (!me) redirect('/login');
+  // ★ **되돌릴 때 `returnTo` 를 단다**(ADR-175). 없으면 로그인 화면에 **갇힌다** —
+  //   로그인 직후 세션이 서버에 닿기 전 이 화면이 미인증으로 보고 되돌리는데,
+  //   갈 곳을 안 적으면 되돌아올 길이 없다. `/feed` 는 처음부터 달고 있었고 그래서 멀쩡했다.
+  //   **실측 2026-09-02**: `returnTo=/home/assessments` 로 로그인하면 60초에도 못 들어갔다.
+  //   같은 화면이 직접 열기 0.6초 · 로그인 뒤 링크 이동 0.6초로 멀쩡했다.
+  if (!me) redirect('/login?returnTo=/home/assessments');
 
   // **화면 게이트를 걷었다**(최박사 확정 2026-08-30).
   //
