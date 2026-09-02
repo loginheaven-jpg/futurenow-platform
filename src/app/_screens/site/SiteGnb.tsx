@@ -17,7 +17,7 @@
 //   훅을 안에서 부르는 물건이 아니었다. 화면이 한 번 읽어 내려준다.
 import { useState } from 'react';
 import Link from 'next/link';
-import { isProtectedPath } from '@/proxy.guard';
+import { navPrefetch } from './navPrefetch';
 import { MenuSheet, type MenuGroup } from './MenuSheet';
 import type { SessionChip } from './SessionChipStrip';
 import './site.css';
@@ -102,11 +102,8 @@ export function SiteGnb({
                 <Link
                   key={it.href}
                   href={it.href}
-                  // 따라갈 수 없는 링크는 미리 받아 두지 않는다(ADR-176).
-                  //   미인증이면 프록시가 되돌리므로 그 프리페치는 100% 버려지고,
-                  //   버려지는 것으로 끝나지 않고 캐시에 남아 로그인 뒤를 망친다.
-                  //   보호 여부는 프록시와 같은 판정을 쓴다 - 사본을 만들지 않는다(불변식 23).
-                  prefetch={signedIn || !isProtectedPath(it.href) ? undefined : false}
+                  // 따라갈 수 없는 링크는 미리 받아 두지 않는다 - 규칙은 navPrefetch 한 곳에 있다.
+                  prefetch={navPrefetch(it.href, signedIn)}
                   aria-current={isCurrent(it.href) ? 'page' : undefined}
                 >
                   {it.label}
@@ -136,6 +133,7 @@ export function SiteGnb({
 
       {sheet ? (
         <MenuSheet
+          signedIn={signedIn}
           open={open}
           onClose={() => setOpen(false)}
           name={sheet.name}
