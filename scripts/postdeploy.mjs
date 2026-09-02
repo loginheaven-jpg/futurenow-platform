@@ -156,14 +156,22 @@ async function checks() {
     }
   }
 
-  // 5-2 · ★★ **returnTo 로그인 착지**(ADR-175 — 2026-09-02 별건).
-  //   미인증으로 로그인 화면을 열면 벨트의 「진단」을 프리페치하고
-  //   미들웨어가 되돌린 **307 이 라우터 캐시에 남는다.** 그대로면 로그인 뒤에도
-  //   그 캐시가 쓰여 **영원히 못 들어간다**(실측: 착지 0/3).
-  //   ★ **정적 검사로는 잡힐 수 없다** — 「프리페치 캐시를 쓰는가」는 **런타임 행동**이다(⑨-c).
-  //   자격이 없으면 **조용히 넘어가지 않는다** — 못 잴 것과 통과는 다르다.
+  // 5-2 · ★★ **로그인 착지 — 여러 경로를 재고 상한을 둔다**(ADR-175·176).
+  //   ★ **정적 검사로는 잡힐 수 없다** — 「프리페치 캐시를 쓰는가」·「몇 초 걸리는가」는
+  //   둘 다 **런타임 행동**이다(⑨-c). 그리고 **한 경로만 재면 창이 좁다**(⑨-a):
+  //   ADR-175 의 결함은 벨트에 링크가 있는 화면 하나에만 났고 `/feed` 는 멀쩡했다 —
+  //   한 줄만 봤으면 「괜찮다」로 읽혔다. 그래서 **성질이 다른 셋**을 잰다:
+  //     ⑴ 벨트가 프리페치하는 보호 화면(ADR-175 가 난 자리)
+  //     ⑵ 벨트에 없는 보호 화면(대조군 — 여기가 느려지면 원인이 다른 것이다)
+  //     ⑶ 착지를 서버에 묻는 홈 경로(왕복이 하나 더 붙는 유일한 갈래)
+  //   자격이 없으면 **통과가 아니라 실패**로 적는다 — 못 잰 것과 통과는 다르다.
   {
-    const TARGET = '/home/assessments';
+    const LIMIT_MS = 8000;   // 상한. 실측 중앙 0.9초 · 최지연 1.4초(2026-09-02)에서 넉넉히 잡았다.
+    const CASES = [
+      ['/home/assessments', '벨트가 프리페치하는 자리'],
+      ['/feed', '벨트에 없는 대조군'],
+      [null, '홈 착지(서버에 묻는 갈래)'],
+    ];
     try {
       const { readFileSync } = await import('node:fs');
       const env = readFileSync('.env.local', 'utf8');
@@ -172,28 +180,38 @@ async function checks() {
       if (!mail || !pw) throw new Error('.env.local 에 QA_USER_EMAIL/PASSWORD 가 없다');
       const { chromium } = await import('playwright');
       const browser = await chromium.launch();
-      const page = await (await browser.newContext()).newPage();
-      await page.goto(`${BASE}/login?returnTo=${encodeURIComponent(TARGET)}`, { waitUntil: 'load', timeout: 30000 });
-      // 벨트 링크가 살아야 프리페치가 난다 — **물 것을 먼저 세운다**(계열 ⑧).
-      await page.waitForSelector('.site-gnb__nav a', { timeout: 15000 });
-      await page.getByLabel(/이메일/).fill(mail);
-      await page.getByLabel(/비밀번호/).fill(pw);
-      const t0 = Date.now();
-      await page.getByRole('button', { name: /로그인/ }).click();
-      let ms = null;
-      try {
-        // 기다림은 조건으로 끝나고 상한이 있고 넘기면 시끄럽게 실패한다(§11).
-        await page.waitForFunction(
-          (t) => location.pathname === t && !(document.body.innerText || '').includes('불러오는 중'),
-          TARGET, { timeout: 25000 });
-        ms = Date.now() - t0;
-      } catch { /* 못 간 것은 아래에서 붉게 적는다 */ }
-      const url = await page.evaluate(() => location.pathname + location.search);
+      const rows = [];
+      for (const [target, why] of CASES) {
+        const page = await (await browser.newContext()).newPage();
+        const url = `${BASE}/login${target ? `?returnTo=${encodeURIComponent(target)}` : ''}`;
+        await page.goto(url, { waitUntil: 'load', timeout: 30000 });
+        // 벨트 링크가 살아야 프리페치가 난다 — **물 것을 먼저 세운다**(계열 ⑧).
+        await page.waitForSelector('.site-gnb__nav a', { timeout: 15000 });
+        await page.getByLabel(/이메일/).fill(mail);
+        await page.getByLabel(/비밀번호/).fill(pw);
+        const t0 = Date.now();
+        await page.getByRole('button', { name: /로그인/ }).click();
+        let ms = null;
+        try {
+          // 기다림은 조건으로 끝나고 상한이 있고 넘기면 시끄럽게 실패한다(§11).
+          await page.waitForFunction(
+            (t) => !location.pathname.startsWith('/login')
+              && (t === null || location.pathname === t)
+              && !(document.body.innerText || '').includes('불러오는 중'),
+            target, { timeout: LIMIT_MS });
+          ms = Date.now() - t0;
+        } catch { /* 못 간 것은 아래에서 붉게 적는다 */ }
+        const url2 = await page.evaluate(() => location.pathname + location.search);
+        rows.push({ target: target ?? '(없음·홈)', why, ms, url2 });
+        await page.close();
+      }
       await browser.close();
-      if (ms !== null) ok('returnTo 로그인 착지', `${TARGET} · ${(ms / 1000).toFixed(1)}초`);
-      else bad('returnTo 로그인 착지', `25초 안 못 갔다 — 끝 URL ${url} (프리페치 캐시 재발 의심)`);
+      const slow = rows.filter((r) => r.ms === null);
+      const detail = rows.map((r) => `${r.target} ${r.ms === null ? '못감' : (r.ms / 1000).toFixed(1) + 's'}`).join(' · ');
+      if (slow.length === 0) ok('로그인 착지 3경로', `${detail} (상한 ${LIMIT_MS / 1000}초)`);
+      else bad('로그인 착지 3경로', `${detail} — 못 간 것: ${slow.map((r) => `${r.target}(${r.why}) 끝 URL ${r.url2}`).join(', ')}`);
     } catch (e) {
-      bad('returnTo 로그인 착지', `재지 못했다: ${String(e).slice(0, 70)}`);
+      bad('로그인 착지 3경로', `재지 못했다: ${String(e).slice(0, 70)}`);
     }
   }
 

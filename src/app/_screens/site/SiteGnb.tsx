@@ -17,6 +17,7 @@
 //   훅을 안에서 부르는 물건이 아니었다. 화면이 한 번 읽어 내려준다.
 import { useState } from 'react';
 import Link from 'next/link';
+import { isProtectedPath } from '@/proxy.guard';
 import { MenuSheet, type MenuGroup } from './MenuSheet';
 import type { SessionChip } from './SessionChipStrip';
 import './site.css';
@@ -35,6 +36,7 @@ export function SiteGnb({
   variant = 'public',
   sheet,
   transparent = false,
+  signedIn = false,
 }: {
   /** 로고 문안. 강조 부분은 `<b>` 슬롯으로 — 부품이 문장을 쪼개지 않는다. */
   logo: React.ReactNode;
@@ -52,6 +54,17 @@ export function SiteGnb({
   items?: GnbItem[];
   /** 로그인 버튼. **로그인한 사람에게는 주지 않는다**(없으면 그리지 않는다). */
   login?: { href: string; label: string };
+  /**
+   * 지금 보는 사람이 로그인했는가(ADR-176).
+   *
+   * **따라갈 수 없는 링크를 미리 받아 두지 않으려고** 쓴다. 미인증으로 보호 화면을
+   * 프리페치하면 프록시가 로그인으로 되돌리고, **그 응답이 라우터 캐시에 남아**
+   * 로그인 뒤 그리로 갈 때 재사용된다(ADR-175 가 그 결함이다).
+   *
+   * 부품이 세션을 읽지 않는다 - 화면 층이 한 번 읽어 내려준다(`transparent` 와 같은 규약).
+   * 기본값이 `false` 라 **모르면 안 받아 둔다** - 안전한 쪽이 기본이다.
+   */
+  signedIn?: boolean;
   /**
    * `public`(기본) — 시안 P1 `.gnb`: md↑ 메뉴 + 골드 로그인 · md↓ 햄버거.
    * `member` — 시안 B `.topbar`: **로고 + 햄버거뿐**이다. 폭과 무관하게 시트가 내비다.
@@ -86,7 +99,16 @@ export function SiteGnb({
           {items.length > 0 ? (
             <nav className="site-gnb__nav" aria-label="주 메뉴">
               {items.map((it) => (
-                <Link key={it.href} href={it.href} aria-current={isCurrent(it.href) ? 'page' : undefined}>
+                <Link
+                  key={it.href}
+                  href={it.href}
+                  // 따라갈 수 없는 링크는 미리 받아 두지 않는다(ADR-176).
+                  //   미인증이면 프록시가 되돌리므로 그 프리페치는 100% 버려지고,
+                  //   버려지는 것으로 끝나지 않고 캐시에 남아 로그인 뒤를 망친다.
+                  //   보호 여부는 프록시와 같은 판정을 쓴다 - 사본을 만들지 않는다(불변식 23).
+                  prefetch={signedIn || !isProtectedPath(it.href) ? undefined : false}
+                  aria-current={isCurrent(it.href) ? 'page' : undefined}
+                >
                   {it.label}
                 </Link>
               ))}

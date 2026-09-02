@@ -20,6 +20,23 @@ const SAFE_RETURN: RegExp[] = [
   //   proxy 가 `?returnTo=/feed` 를 붙이고, 여기 없으면 로그인 뒤 /home 으로 흘러 딥링크가 끊긴다.
   //   기수 전환 쿼리(`?cohort=`)는 proxy 가 애초에 싣지 않는다 — 로그인 뒤 기본 기수로 착지한다.
   /^\/feed$/,
+  // ── 참여자 자기 화면(ADR-176 · 2026-09-02 실측으로 끊긴 것을 확인하고 이었다) ──────────
+  //   프록시는 보호 경로 **전부**에 `?returnTo=` 를 싣는데(`loginRedirectSearch`)
+  //   여기 없으면 조용히 버려져 로그인 뒤 **엉뚱한 화면**에 떨어진다.
+  //   실측(라이브 · 미인증 딥링크 → 로그인): `/account` · `/my/cohorts` ·
+  //   `/my/cohorts/{id}/journey` · `/my/cohorts/{id}/report` **넷 다 착지 실패**했다.
+  //   («/my/cohorts/{id}» 는 「도착」처럼 보였는데 **그 사람의 착지가 마침 같은 주소**였을 뿐이다 —
+  //    자가 속은 것이지 통과한 것이 아니다.)
+  //   전부 **본인 것만 보이는 화면**이고 목적지 자체에 자격 게이트가 따로 있다.
+  /^\/account$/,
+  /^\/my\/cohorts$/,
+  /^\/my\/cohorts\/[0-9a-fA-F-]{36}$/,
+  /^\/my\/cohorts\/[0-9a-fA-F-]{36}\/journey$/,
+  /^\/my\/cohorts\/[0-9a-fA-F-]{36}\/report$/,
+  // ★ **일부러 뺀 것 — `/coach/**` · `/admin/**` · `/preview/**`.**
+  //   막혀서가 아니라 **정책이라서** 뺐다. 권한 화면으로 보내는 링크를 누가 만들 수 있는가는
+  //   보안 판단이고 그것은 지휘부 결재다. 지금은 그 셋만 로그인 뒤 착지 규칙(ADR-173)으로 간다.
+  //   결재가 나면 여기 한 줄씩 더한다 — 잠금이 「뺀 것도 일부러 뺐다」를 함께 잰다.
 ];
 
 export function safeReturnTo(raw: string | null | undefined): string | null {
