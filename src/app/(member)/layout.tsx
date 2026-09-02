@@ -15,7 +15,7 @@
 //   시트 조회도 이것으로 정해진다 — **껍데기를 안 두르면 시트 조회도 안 돈다.**
 // ─────────────────────────────────────────────────────────────────────────────
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser, requestConsents, requestCohorts } from '@/app/_lib/requestScope';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
 import { buildMemberSheet } from '@/app/_lib/memberSheet';
 import { ChromeProvider } from '@/app/_screens/shell/chromeContext';
@@ -23,8 +23,10 @@ import { MemberShell } from '@/app/_screens/shell/MemberShell';
 import { COHORT_ROLE_LABEL } from '@/core/membershipVocab';
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178). 껍데기와 화면이 각자 컨텍스트를 만들면
+  //   `users` SELECT·동의·차수가 **두 벌씩** 돈다 — 인스턴스 메모는 인스턴스가 둘이면 안 듣는다.
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   // **판정만 하고 화면을 바꾸지 않는다.** 어떤 화면을 그릴지는 여전히 `/home` 이 정한다 —
@@ -36,8 +38,9 @@ export default async function MemberLayout({ children }: { children: React.React
   //   여기서 당겨오는 것은 **본인의 차수**다(RLS 가 본인 것만 낸다). 미동의자에게는
   //   그 조회가 헛돌지만 새어 나가는 것은 없다 — 값이 아니라 왕복 하나를 버리는 것뿐이다.
   const [consents, cohorts] = await Promise.all([
-    ctx.listMyConsents().catch(() => []),
-    ctx.listMyCohorts().catch(() => []),
+    requestConsents(),
+    // 삼킴은 **부르는 자리에** 그대로 남긴다 — 홈은 안 삼킨다(성질을 파생하지 않는다).
+    requestCohorts().catch(() => []),
   ]);
   const consented = consents.some((c) => c.type === 'privacy_use' && c.version === CONSENT_VERSION);
   if (!consented) return <>{children}</>;
