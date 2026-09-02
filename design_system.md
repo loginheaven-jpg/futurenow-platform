@@ -498,8 +498,8 @@ export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3
 
 | # | 부품 | 쓰임 · 구성 | 토큰·반응형 | 금지 | 현재 |
 |---|---|---|---|---|---|
-| 1 | **`SiteHero`** | 공개 현관 머리. eyebrow · 헤드라인(`<b>` 강조 슬롯) · lead · CTA 0~2 | `surface-inverse` 150deg · 헤드라인 **52px(lg↑)/26px** · 강조·eyebrow `accent-strong` · lg↑ 2단 1.05:0.95 | 빈 슬롯을 자리로 남기지 않는다 — 없으면 **그리지 않는다** | `SiteHero.tsx` |
-| 2 | **`GrowAxis`** | GROW+F 5행. 글자·영문·한글·회차 4슬롯 | 라벨 `--color-accent` 36px(md↑) · **md↓ 가로 5점 트랙**(모바일 우선) | 부품에 축 이름을 박지 않는다 — **G·R·O·W·F 도 prop** | `GrowAxis.tsx` |
+| 1 | **`SiteHero`** | 공개 현관 머리. eyebrow · 헤드라인(`<b>` 강조 슬롯) · lead · CTA 0~2 · **`features` 0~3**(v2) | `surface-inverse` 150deg · 헤드라인 **52px(lg↑)/26px** · 강조·eyebrow `accent-strong` · lg↑ 2단 1.05:0.95 · **v2(ADR-171): md↑ 배경 장면**(`hero-dawn-*.webp` + 네이비 오버레이 3단) · **CTA 는 `--on-dark` 갈래** · md↓ 배경 이미지 **없음** | 빈 슬롯을 자리로 남기지 않는다 — 없으면 **그리지 않는다** · **md↓ 로 이미지를 내리지 않는다**(폰이 바이트를 받지 않는 것이 사양이다) | `SiteHero.tsx` |
+| 2 | **`GrowAxis`** | GROW+F 5행. 글자·영문·한글·회차 4슬롯 · **`desc` 1**(v2 · lg↑ 에서만) | 라벨 `--color-accent` 36px(md↑) · **md↓ 가로 5점 트랙**(모바일 우선) · **v2(ADR-171): lg↑ 에서 라벨이 78px 원형 노드**가 되고 노드끼리 세로선으로 잇는다 | 부품에 축 이름을 박지 않는다 — **G·R·O·W·F 도 prop** · **마크업을 갈래마다 다르게 두지 않는다**(한 벌이고 CSS 가 모양을 바꾼다) | `GrowAxis.tsx` |
 | 3 | **`CardBand3`** | 3장 카드 띠. 키커·제목·본문 | lg↑ 3열/1열 · 키커 `gold-700` · 면은 `surface-2` | 키커 없으면 그리지 않는다 | `CardBand3.tsx` |
 | 4 | **`WeekTimeline`** | 6주 여정. 회차·제목·산출물 3슬롯 | lg↑ 6열/2열 · 칸 상단 2px 규칙선, 현재만 `--color-accent` | **현재 회차는 `currentIndex` prop.** 없으면 아무 칸도 강조하지 않는다 | `WeekTimeline.tsx` |
 | 5 | **`SiteRoleCard`** | 로그인 홈 역할 카드. 기수 배지 · 소속 · 제목 · 부제 · CTA 1 | `surface-inverse` + 우상단 골드 방사 원 · 배지 `accent-strong` 테두리 | CTA 없으면 **링크가 아니다** — 갈 곳 없는 링크를 만들지 않는다 | `RoleCard.tsx` |

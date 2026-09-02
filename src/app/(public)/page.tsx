@@ -22,7 +22,7 @@ import { RecruitCard } from '@/app/_screens/site/RecruitCard';
 import { recentNews } from '@/app/_lib/publicNews';
 import { CURRENT_INTAKE } from '@/app/(public)/recruit/intake';
 import { shortDate } from '@/app/_lib/shortDate';
-import { GROW_ROWS, BAND_CARDS, WEEK_CELLS } from '@/app/_screens/site/programCopy';
+import { GROW_ROWS, BAND_CARDS, WEEK_CELLS, HERO_FEATURES } from '@/app/_screens/site/programCopy';
 
 export const revalidate = 300;
 
@@ -57,13 +57,25 @@ export default async function Home() {
 
       <>
         <SiteHero
-          eyebrow={`6주의 여정 · ${CURRENT_INTAKE.label}`}
-          headline={<>꿈꾸는 미래를<br />지금 <b>살자</b></>}
-          lead="도서 『퓨처나우』를 바탕으로 한 6주 세미나입니다. 매주 손으로 쓰고, 함께 나누고, 한 걸음을 정합니다."
+          eyebrow={`6주, 꿈을 목표로 바꾸는 시간 · ${CURRENT_INTAKE.label}`}
+          headline={<>잃어버린 <b>꿈</b>을<br />다시 꾸기 시작합니다</>}
+          lead="꿈은 꾸는 것이 아니라, 이루는 것입니다. 6주 동안, 막연했던 꿈을 구체적인 목표로 바꾸고, 그 목표를 향한 첫 걸음을 함께 시작합니다."
           ctas={[
-            { href: '/recruit', label: '참여 신청', tone: 'primary' },
-            { href: '/about', label: '프로그램 소개', tone: 'ghost' },
+            // GNB 에 이미 「참여 신청」이 있어 같은 말이 한 화면에 둘이었다 — v2 가 그 중복을 없앤다.
+            { href: '/recruit', label: '지금 시작하기', tone: 'primary' },
+            { href: '/about', label: '6주 여정 살펴보기', tone: 'ghost' },
           ]}
+          features={HERO_FEATURES.map((f) => (
+            <div className="hero-feature" key={f.title}>
+              {/* 아이콘 부품이 `design_system` 에 없다(불변식 20) — **점 하나로 둔다.**
+                  그림을 새로 지으면 부품 사양이 도착했을 때 두 번 짓는다. */}
+              <span className="hero-feature__dot" aria-hidden="true" />
+              <span>
+                <span className="hero-feature__title">{f.title}</span>
+                <span className="hero-feature__sub">{f.sub}</span>
+              </span>
+            </div>
+          ))}
           aside={
             <>
               <GrowAxis rows={GROW_ROWS} />

@@ -19,6 +19,7 @@ import { QuickTiles } from './QuickTiles';
 import { SessionChipStrip } from './SessionChipStrip';
 import { MenuSheet } from './MenuSheet';
 import { SiteGnb } from './SiteGnb';
+import { readFileSync } from 'node:fs';
 import { PublicGnb } from './PublicGnb';
 import { SectionTitle } from './SectionTitle';
 import { NewsRow } from './NewsRow';
@@ -44,8 +45,13 @@ describe('1 · SiteHero', () => {
     const html = renderToStaticMarkup(
       <SiteHero headline="t" ctas={[{ href: '/a', label: '신청', tone: 'primary' }, { href: '/b', label: '소개', tone: 'ghost' }]} />,
     );
-    expect(html).toContain('ui-btn--primary');
-    expect(html).toContain('ui-btn--ghost');
+    // ★ **클래스 이름이 바뀌었다**(ADR-171) — 히어로는 어두운 면이라 `--on-dark` 갈래를 쓴다.
+    //   이 잠금이 지키던 것은 **「두 톤이 서로 다른 클래스를 쓴다」** 이지 이름 자체가 아니다.
+    //   이름을 따라 옮겨 적되 **지키던 것을 그대로 잰다.**
+    expect(html).toContain('ui-btn--on-dark');
+    expect(html).toContain('ui-btn--on-dark-ghost');
+    // 밝은 면 갈래가 히어로에 섞이면 배경에 묻힌다 — 그것이 이 잠금의 뜻이다.
+    expect(html, '밝은 면 갈래가 섞였다').not.toMatch(/ui-btn--primary|ui-btn--ghost"/);
   });
 });
 
@@ -144,6 +150,29 @@ describe('7 · MenuSheet', () => {
 });
 
 describe('9 · SiteGnb', () => {
+  // ★ **헤드벨트 투명은 홈에서만이다**(ADR-171). 변이를 물려 보니 이 자리에 잠금이 **없었다** —
+  //   전 공개 화면을 투명하게 만들어도 아무도 울지 않았다. 그래서 둘로 잠근다:
+  //   ⑴ prop 이 **실제로 모양을 바꾸는가**(행동) ⑵ 판정이 **홈으로 한정되는가**(화면 층).
+  //
+  //   왜 한정이 중요한가 — 다른 공개 화면에는 배경 이미지가 없다. 투명해지면
+  //   **흰 바탕에 흰 로고**가 된다. 취향이 아니라 안 보이는 것이다.
+  it('★ transparent prop 이 띠의 모양을 바꾼다 — 기본은 불투명이다', () => {
+    const on = renderToStaticMarkup(<SiteGnb logo="로고" transparent />);
+    const off = renderToStaticMarkup(<SiteGnb logo="로고" />);
+    expect(on).toContain('is-transparent');
+    expect(off, '기본이 투명이다').not.toContain('is-transparent');
+  });
+
+  it('★★ 판정은 화면 층이 하고 **홈으로 한정된다**', () => {
+    const src = readFileSync('src/app/_screens/site/PublicGnb.tsx', 'utf8');
+    // 상수로 켜면 열두 공개 화면이 함께 투명해진다.
+    expect(src, '헤드벨트를 무조건 투명하게 켰다').not.toMatch(/transparent=\{true\}|transparent(?!=)/);
+    expect(src, '홈 한정 판정이 없다').toContain("currentPath === '/'");
+    // 부품은 판정하지 않는다 — 경로를 부품이 알면 그 순간 사본이 둘이다.
+    const cmp = readFileSync('src/app/_screens/site/SiteGnb.tsx', 'utf8');
+    expect(cmp, '부품이 경로를 안다').not.toContain("=== '/'");
+  });
+
   const items = [{ href: '/about', label: '소개' }, { href: '/library', label: '자료실' }];
   const login = { href: '/login', label: '로그인' };
 

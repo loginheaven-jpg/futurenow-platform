@@ -73,6 +73,13 @@ export function PublicGnb({
   const signedIn = useSyncExternalStore(subscribe, hasAuthCookie, useCallback(() => false, []));
 
   return (
-    <SiteGnb logo={logo} en={en} items={items} currentPath={currentPath} login={publicHeaderAction(signedIn)} sheet={sheet} />
+    // **홈에서만 띠를 투명하게 둔다**(ADR-171) — 히어로 장면이 위까지 이어진다.
+    //   다른 공개 화면은 배경 이미지가 없어 투명하면 흰 바탕에 흰 글자가 된다.
+    //   판정은 여기(화면 층)가 하고 부품은 받아 그린다.
+    <SiteGnb
+      logo={logo} en={en} items={items} currentPath={currentPath}
+      login={publicHeaderAction(signedIn)} sheet={sheet}
+      transparent={currentPath === '/'}
+    />
   );
 }

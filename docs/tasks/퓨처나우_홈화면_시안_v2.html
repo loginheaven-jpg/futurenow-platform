@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>퓨처나우 — 잃어버린 꿈을 다시 꾸기 시작합니다</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       퓨처나우 홈 화면 시안 v2 — 시안 이미지(hero_redesign_v1) 완전 재구현
+       
+       **헤더는 기존 유지** — 로고, 메뉴, 로그인 버튼 모두 변경하지 않음.
+       **히어로는 이미지 수준으로 화려하게** — 배경 이미지 + 원형 노드 + 아이콘 피처.
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    :root {
+      --navy-950: #060d1a;
+      --navy-900: #0a1628;
+      --navy-800: #14243d;
+      --navy-700: #1e3352;
+      --navy-300: #7f94ae;
+      --navy-200: #a8bdd4;
+      --gold-500: #d4af37;
+      --gold-400: #e0c05a;
+      --gold-300: #ebd07d;
+      --white: #ffffff;
+      --gray-100: #f5f6f8;
+      --gray-200: #e8eaed;
+      --gray-600: #5f6b7a;
+      --gray-800: #2d3748;
+      
+      --color-surface-inverse: var(--navy-900);
+      --color-text-on-accent: var(--white);
+      --color-text-on-gold: var(--navy-900);
+      --color-accent: var(--gold-500);
+      --color-accent-strong: var(--gold-400);
+      --color-text: var(--gray-800);
+      --color-text-secondary: var(--gray-600);
+      --color-text-muted: var(--navy-300);
+      --color-border: var(--gray-200);
+      
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      
+      --radius-lg: 12px;
+      --border-hair: 1px;
+      --tap-min: 44px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      background: var(--gray-100);
+      color: var(--color-text);
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       헤더 (GNB) — **기존 유지, 변경 없음**
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .site-gnb {
+      background: var(--navy-900);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-4);
+      height: 70px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .site-gnb__brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .site-gnb__logo {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--color-text-on-accent);
+      letter-spacing: -0.01em;
+    }
+
+    .site-gnb__logo b { color: var(--color-accent-strong); }
+
+    .site-gnb__en {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--navy-300);
+      letter-spacing: 0.2em;
+    }
+
+    .site-gnb__nav {
+      display: none;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .site-gnb__nav a {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-on-accent);
+      text-decoration: none;
+      opacity: 0.85;
+      transition: opacity 0.2s;
+    }
+
+    .site-gnb__nav a:hover { opacity: 1; }
+    .site-gnb__nav a[aria-current="page"] { opacity: 1; color: var(--color-accent-strong); }
+
+    .site-gnb__login {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--color-text-on-gold);
+      background: var(--color-accent);
+      border-radius: 8px;
+      padding: 9px 18px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .site-gnb__login:hover { background: var(--gold-400); }
+
+    .site-gnb__burger {
+      background: none;
+      border: 0;
+      cursor: pointer;
+      color: var(--color-text-on-accent);
+      min-height: var(--tap-min);
+      min-width: var(--tap-min);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (min-width: 768px) {
+      .site-gnb { padding: 0 40px; }
+      .site-gnb__nav { display: flex; }
+      .site-gnb__burger { display: none; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       히어로 — **시안 이미지 수준으로 완전 재구현**
+       
+       구성:
+       1. 배경: 생성된 산 실루엣·별·여명 이미지 + 네이비 오버레이
+       2. 좌측: eyebrow + 대형 헤드라인 + 리드 + CTA(화살표) + 하단 아이콘 피처 3개
+       3. 우측: 원형 GROW+F 노드 5개 + 연결선 + 각 노드 제목/설명
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .site-hero {
+      position: relative;
+      padding: 90px var(--space-6) 70px;
+      overflow: hidden;
+      /* 배경 이미지 — 코딩 AI는 이 경로를 실제 에셋 경로로 교체 */
+      background: 
+        linear-gradient(180deg, rgba(6,13,26,0.55) 0%, rgba(10,22,40,0.35) 50%, rgba(6,13,26,0.75) 100%),
+        url('assets/hero_bg_dawn.png') center/cover no-repeat,
+        linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 100%);
+      background-color: var(--navy-950);
+    }
+
+    .site-hero__in {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 56px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── 좌측 콘텐츠 ─────────────────────────────────────────── */
+    .site-hero__eyebrow {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--color-accent-strong);
+      margin-bottom: var(--space-5);
+    }
+
+    .site-hero__h1 {
+      font-size: 40px;
+      line-height: 1.18;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      margin: 0;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+
+    .site-hero__h1 b {
+      color: var(--color-accent-strong);
+      font-weight: 900;
+    }
+
+    .site-hero__lead {
+      margin-top: 26px;
+      font-size: 16.5px;
+      line-height: 1.8;
+      color: var(--navy-200);
+      max-width: 480px;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+    }
+
+    /* ── CTA 버튼 (화살표 포함) ──────────────────────────────── */
+    .site-hero__cta {
+      margin-top: 40px;
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .ui-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 16px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      min-height: 56px;
+    }
+
+    .ui-btn--primary {
+      background: linear-gradient(135deg, var(--gold-400) 0%, var(--gold-500) 100%);
+      color: var(--color-text-on-gold);
+      box-shadow: 0 6px 24px rgba(212, 175, 55, 0.4);
+    }
+
+    .ui-btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(212, 175, 55, 0.55);
+    }
+
+    .ui-btn--ghost {
+      background: rgba(10, 22, 40, 0.4);
+      color: var(--white);
+      border: 1.5px solid var(--gold-500);
+      backdrop-filter: blur(4px);
+    }
+
+    .ui-btn--ghost:hover {
+      background: rgba(212, 175, 55, 0.12);
+      border-color: var(--gold-400);
+    }
+
+    .ui-btn__arrow {
+      font-size: 18px;
+      font-weight: 400;
+      transition: transform 0.25s ease;
+    }
+
+    .ui-btn:hover .ui-btn__arrow {
+      transform: translateX(4px);
+    }
+
+    /* ── 하단 아이콘 피처 3개 ────────────────────────────────── */
+    .site-hero__features {
+      margin-top: 64px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+
+    .hero-feature {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .hero-feature__icon {
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent-strong);
+    }
+
+    .hero-feature__title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.35;
+    }
+
+    .hero-feature__sub {
+      font-size: 12px;
+      color: var(--navy-300);
+      margin-top: 2px;
+    }
+
+    @media (min-width: 768px) {
+      .site-hero__features {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-5);
+      }
+      .hero-feature {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+      }
+    }
+
+    /* ── 우측: 원형 GROW+F 노드 ──────────────────────────────── */
+    .grow-orbit {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+      padding-left: 0;
+    }
+
+    .grow-node {
+      display: flex;
+      align-items: center;
+      gap: var(--space-5);
+      position: relative;
+      padding: 6px 0;
+    }
+
+    /* 연결선 — 원 사이 세로선 */
+    .grow-node:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 39px;
+      top: 84px;
+      bottom: -6px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--gold-500) 0%, rgba(212,175,55,0.3) 100%);
+    }
+
+    .grow-node__circle {
+      flex: 0 0 80px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--gold-500);
+      background: rgba(10, 22, 40, 0.55);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--color-accent-strong);
+      box-shadow: 0 0 24px rgba(212, 175, 55, 0.25), inset 0 0 20px rgba(212,175,55,0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .grow-node:hover .grow-node__circle {
+      box-shadow: 0 0 36px rgba(212, 175, 55, 0.5), inset 0 0 24px rgba(212,175,55,0.12);
+      transform: scale(1.05);
+    }
+
+    /* 노드와 텍스트 사이 골드 도트+선 */
+    .grow-node__link {
+      flex: 0 0 28px;
+      height: 2px;
+      background: var(--gold-500);
+      position: relative;
+    }
+
+    .grow-node__link::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold-400);
+      box-shadow: 0 0 8px rgba(212,175,55,0.7);
+    }
+
+    .grow-node__text {
+      min-width: 0;
+    }
+
+    .grow-node__title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.01em;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+    }
+
+    .grow-node__desc {
+      font-size: 13px;
+      color: var(--navy-200);
+      margin-top: 4px;
+      line-height: 1.55;
+    }
+
+    /* 모바일: 노드 가로 스크롤 → 세로 간결화 */
+    @media (max-width: 1023px) {
+      .grow-orbit {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: var(--space-4);
+        padding-bottom: var(--space-3);
+      }
+      .grow-node {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+        min-width: 120px;
+        text-align: center;
+        padding: 0;
+      }
+      .grow-node:not(:last-child)::after { display: none; }
+      .grow-node__circle {
+        flex: 0 0 64px;
+        width: 64px;
+        height: 64px;
+        font-size: 26px;
+      }
+      .grow-node__link { display: none; }
+      .grow-node__title { font-size: 14px; }
+      .grow-node__desc { display: none; }
+    }
+
+    @media (min-width: 1024px) {
+      .site-hero {
+        padding: 110px 48px 90px;
+      }
+      .site-hero__in {
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 80px;
+      }
+      .site-hero__h1 { font-size: 64px; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       섹션 공통
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .site-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 64px var(--space-5) 0;
+    }
+
+    .site-section:last-of-type { padding-bottom: 64px; }
+
+    @media (min-width: 1024px) {
+      .site-section { padding: 80px 40px 0; }
+      .site-section:last-of-type { padding-bottom: 80px; }
+    }
+
+    .site-sect {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-bottom: var(--space-5);
+      border-bottom: var(--border-hair) solid var(--color-border);
+      padding-bottom: var(--space-3);
+    }
+
+    .site-sect__t {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+      margin: 0;
+    }
+
+    .site-sect__d {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      margin: 6px 0 0;
+      line-height: 1.6;
+    }
+
+    @media (min-width: 1024px) {
+      .site-sect { align-items: flex-end; }
+      .site-sect__t { font-size: 28px; }
+      .site-sect__d { display: inline-block; margin: 0 0 0 var(--space-3); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       카드 밴드 (3장)
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .site-band {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    @media (min-width: 1024px) {
+      .site-band { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .ui-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      border: 1px solid var(--color-border);
+      border-top: 3px solid var(--gold-500);
+      transition: all 0.25s ease;
+    }
+
+    .ui-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .site-band__kicker {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-accent-strong);
+      letter-spacing: 0.1em;
+      margin-bottom: var(--space-2);
+    }
+
+    .site-band__title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--color-text);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .site-band__body {
+      font-size: 14.5px;
+      line-height: 1.8;
+      color: var(--color-text-secondary);
+      margin-top: var(--space-3);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       6주 여정 타임라인
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .site-weeks {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (min-width: 1024px) {
+      .site-weeks {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 16px;
+      }
+    }
+
+    .site-weeks__cell {
+      border-top: 3px solid var(--color-border);
+      padding-top: 20px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .site-weeks__cell::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--color-accent);
+      transition: width 0.3s ease;
+    }
+
+    .site-weeks__cell:hover::before { width: 100%; }
+
+    .site-weeks__n {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--color-accent-strong);
+      letter-spacing: 0.12em;
+    }
+
+    .site-weeks__t {
+      font-size: 15px;
+      font-weight: 800;
+      margin-top: 10px;
+      line-height: 1.4;
+      color: var(--color-text);
+    }
+
+    .site-weeks__out {
+      font-size: 12.5px;
+      color: var(--color-text-secondary);
+      margin-top: var(--space-2);
+      line-height: 1.5;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       푸터 — **기존 유지**
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .site-foot {
+      background: var(--navy-900);
+      margin-top: 64px;
+    }
+
+    .site-foot__in {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .site-foot__org {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-on-accent);
+    }
+
+    .site-foot__note {
+      font-size: 12px;
+      color: var(--navy-300);
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+
+    @media (min-width: 768px) {
+      .site-foot__in {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 32px 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       헤더 (GNB) — **기존 유지, 변경 없음**
+       ═══════════════════════════════════════════════════════════════════ -->
+  <header class="site-gnb">
+    <a href="/" class="site-gnb__brand">
+      <span class="site-gnb__logo">퓨처<b>나우</b></span>
+      <span class="site-gnb__en">FUTURE NOW</span>
+    </a>
+
+    <div style="display: flex; align-items: center; gap: var(--space-4);">
+      <nav class="site-gnb__nav" aria-label="주 메뉴">
+        <a href="/about">소개</a>
+        <a href="/recruit">참여 신청</a>
+        <a href="/assessments">진단</a>
+        <a href="/library">서가</a>
+        <a href="/news">소식</a>
+        <a href="/contact">문의</a>
+      </nav>
+      <a href="/login" class="site-gnb__login">로그인</a>
+      <button type="button" class="site-gnb__burger" aria-label="전체 메뉴 열기">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ═══════════════════════════════════════════════════════════════════
+         히어로 — **시안 이미지 수준 완전 재구현**
+         ═══════════════════════════════════════════════════════════════════ -->
+    <section class="site-hero">
+      <div class="site-hero__in">
+        <!-- 좌측 콘텐츠 -->
+        <div>
+          <div class="site-hero__eyebrow">6주, 꿈을 목표로 바꾸는 시간 · 예봄 2기</div>
+          <h1 class="site-hero__h1">잃어버린 <b>꿈</b>을<br>다시 꾸기 시작합니다</h1>
+          <p class="site-hero__lead">꿈은 꾸는 것이 아니라, 이루는 것입니다.<br>6주 동안, 막연했던 꿈을 구체적인 목표로 바꾸고,<br>그 목표를 향한 첫 걸음을 함께 시작합니다.</p>
+          <div class="site-hero__cta">
+            <a href="/recruit" class="ui-btn ui-btn--primary">지금 시작하기 <span class="ui-btn__arrow">›</span></a>
+            <a href="/about" class="ui-btn ui-btn--ghost">6주 여정 살펴보기 <span class="ui-btn__arrow">›</span></a>
+          </div>
+
+          <!-- 하단 아이콘 피처 3개 -->
+          <div class="site-hero__features">
+            <div class="hero-feature">
+              <span class="hero-feature__icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </span>
+              <div>
+                <div class="hero-feature__title">소수 정예 그룹</div>
+                <div class="hero-feature__sub">함께 성장하는 동료</div>
+              </div>
+            </div>
+
+            <div class="hero-feature">
+              <span class="hero-feature__icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="6"/>
+                  <circle cx="12" cy="12" r="2"/>
+                </svg>
+              </span>
+              <div>
+                <div class="hero-feature__title">실전 중심 커리큘럼</div>
+                <div class="hero-feature__sub">실천 가능한 전략과 도구</div>
+              </div>
+            </div>
+
+            <div class="hero-feature">
+              <span class="hero-feature__icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                  <polyline points="17 6 23 6 23 12"/>
+                </svg>
+              </span>
+              <div>
+                <div class="hero-feature__title">지속 가능한 성장</div>
+                <div class="hero-feature__sub">6주 후, 새로운 시작의 나</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 원형 GROW+F 노드 -->
+        <div class="grow-orbit">
+          <div class="grow-node">
+            <div class="grow-node__circle">G</div>
+            <div class="grow-node__link"></div>
+            <div class="grow-node__text">
+              <div class="grow-node__title">꿈을 찾다</div>
+              <div class="grow-node__desc">나의 진짜 꿈과 가치를 발견합니다.</div>
+            </div>
+          </div>
+
+          <div class="grow-node">
+            <div class="grow-node__circle">R</div>
+            <div class="grow-node__link"></div>
+            <div class="grow-node__text">
+              <div class="grow-node__title">현실을 직면하다</div>
+              <div class="grow-node__desc">현재의 나를 객관적으로 돌아봅니다.</div>
+            </div>
+          </div>
+
+          <div class="grow-node">
+            <div class="grow-node__circle">O</div>
+            <div class="grow-node__link"></div>
+            <div class="grow-node__text">
+              <div class="grow-node__title">목표를 선택하다</div>
+              <div class="grow-node__desc">꿈을 구체적인 목표로 정의합니다.</div>
+            </div>
+          </div>
+
+          <div class="grow-node">
+            <div class="grow-node__circle">W</div>
+            <div class="grow-node__link"></div>
+            <div class="grow-node__text">
+              <div class="grow-node__title">환경을 설계하다</div>
+              <div class="grow-node__desc">목표 달성을 위한 환경과 전략을 만듭니다.</div>
+            </div>
+          </div>
+
+          <div class="grow-node">
+            <div class="grow-node__circle">F</div>
+            <div class="grow-node__link"></div>
+            <div class="grow-node__text">
+              <div class="grow-node__title">오늘을 살아내다</div>
+              <div class="grow-node__desc">작은 실천으로, 위대한 변화를 만듭니다.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         이 세미나가 하는 일
+         ═══════════════════════════════════════════════════════════════════ -->
+    <section class="site-section">
+      <div class="site-sect">
+        <div>
+          <h2 class="site-sect__t">이 세미나가 하는 일</h2>
+          <p class="site-sect__d">꿈을 목표로, 목표를 실행으로</p>
+        </div>
+      </div>
+
+      <div class="site-band">
+        <div class="ui-card">
+          <div class="site-band__kicker">꿈이 목표가 되는 순간</div>
+          <h3 class="site-band__title">여섯 주의 기록</h3>
+          <p class="site-band__body">매주 쓰는 갈무리 카드가 쌓이면, 막연했던 꿈이 구체적인 목표로 바뀝니다. 6주 뒤, 당신은 다른 사람이 되어 있을 것입니다.</p>
+        </div>
+
+        <div class="ui-card">
+          <div class="site-band__kicker">혼자가 아닌 함께</div>
+          <h3 class="site-band__title">같이 걷는 사람</h3>
+          <p class="site-band__body">같은 꿈을 꾸는 사람들과 함께 걷습니다. 서로의 목표를 응원하고, 실행을 점검하며, 변화를 나눕니다.</p>
+        </div>
+
+        <div class="ui-card">
+          <div class="site-band__kicker">변화를 확인하는 시간</div>
+          <h3 class="site-band__title">사전·사후 진단</h3>
+          <p class="site-band__body">6주 전과 후, 같은 질문에 답해 봅니다. 달라진 답변 속에서, 당신의 변화를 확인합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         6주 여정
+         ═══════════════════════════════════════════════════════════════════ -->
+    <section class="site-section">
+      <div class="site-sect">
+        <div>
+          <h2 class="site-sect__t">6주 여정</h2>
+          <p class="site-sect__d">매주 한 걸음씩, 꿈에서 목표로, 목표에서 현실로</p>
+        </div>
+      </div>
+
+      <div class="site-weeks">
+        <div class="site-weeks__cell">
+          <div class="site-weeks__n">1회차</div>
+          <div class="site-weeks__t">잃어버린 꿈을 찾다</div>
+          <div class="site-weeks__out">나의 존재가치 선언</div>
+        </div>
+
+        <div class="site-weeks__cell">
+          <div class="site-weeks__n">2회차</div>
+          <div class="site-weeks__t">꿈의 모습을 그리다</div>
+          <div class="site-weeks__out">5년 뒤 나의 모습</div>
+        </div>
+
+        <div class="site-weeks__cell">
+          <div class="site-weeks__n">3회차</div>
+          <div class="site-weeks__t">현실과 마주하다</div>
+          <div class="site-weeks__out">현실 직면과 습관 재설계</div>
+        </div>
+
+        <div class="site-weeks__cell">
+          <div class="site-weeks__n">4회차</div>
+          <div class="site-weeks__t">목표를 선택하다</div>
+          <div class="site-weeks__out">인생을 바꿀 단 하나의 목표</div>
+        </div>
+
+        <div class="site-weeks__cell">
+          <div class="site-weeks__n">5회차</div>
+          <div class="site-weeks__t">환경을 설계하다</div>
+          <div class="site-weeks__out">실행을 돕는 환경 설계</div>
+        </div>
+
+        <div class="site-weeks__cell">
+          <div class="site-weeks__n">6회차</div>
+          <div class="site-weeks__t">오늘을 살아내다</div>
+          <div class="site-weeks__out">6주의 변화와 다음 걸음</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       푸터 — **기존 유지**
+       ═══════════════════════════════════════════════════════════════════ -->
+  <footer class="site-foot">
+    <div class="site-foot__in">
+      <div>
+        <div class="site-foot__org">퓨처나우</div>
+        <div class="site-foot__note">꿈꾸는 미래를 지금 살아가는 사람들</div>
+      </div>
+      <nav style="display: flex; flex-wrap: wrap; gap: var(--space-4);">
+        <a href="/about" style="font-size: 12.5px; color: var(--navy-300); text-decoration: none;">소개</a>
+        <a href="/recruit" style="font-size: 12.5px; color: var(--navy-300); text-decoration: none;">참여 신청</a>
+        <a href="/contact" style="font-size: 12.5px; color: var(--navy-300); text-decoration: none;">문의</a>
+      </nav>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -41,6 +41,63 @@
   outline-offset: 2px;
 }
 
+/* ── 버튼 — 형태는 전역, 색은 배경이 정한다 (ADR-171 · 지휘부 판정 2026-09-02) ──
+ *
+ * 지휘부가 「버튼 디자인에 일관성을 부여해야 한다」고 했다. 시안의 버튼을 그대로
+ *   전역에 놓는 안이 있었으나 **못 쓴다** — 시안 ghost 가 `color: white` 인데
+ *   참여자·운영 화면 바탕이 밝고(`--color-bg: var(--gray-0)`) **흰 바탕에 흰 글자**가 된다.
+ *   취향이 아니라 안 보이는 것이다.
+ *
+ * 그래서 **일관성을 색이 아니라 형태가 준다.** 아래 셋은 배경과 무관해 어디서나 같게 보인다:
+ *   ⑴ 눌렀을 때 살짝 들림 ⑵ 화살표 슬롯 ⑶ 전이.
+ *   **모서리·높이는 옮기지 않았다** — `--radius`(10px)·`--tap-min`(44px) 토큰이
+ *   이미 갈래를 주고 있어 히어로가 `--radius-lg`(12px)를 고르면 그만이다.
+ *   전역으로 키우면 28곳의 버튼이 함께 커진다(실측 `rg -l "ui-btn" src --glob "*.tsx" | rg -v "\.test\."`).
+ */
+.ui-btn { gap: var(--space-2); }
+.ui-btn:not(:disabled):hover { transform: translateY(-1px); }
+.ui-btn { transition: filter .12s ease, background .12s ease, transform .12s ease, box-shadow .12s ease; }
+
+/** 화살표 — **쓰는 곳만 넣는다.** 부품이 문장을 쪼개지 않듯 화살표도 슬롯이다. */
+.ui-btn__arrow { font-weight: 400; transition: transform .2s ease; }
+.ui-btn:hover .ui-btn__arrow { transform: translateX(3px); }
+
+/* ── 어두운 면 위 변종 (신설) ────────────────────────────
+ *
+ * §1.5 「네이비 = 앱의 틀 / 골드 = 참여자의 흔적」은 **밝은 면의 규칙**이다.
+ *   어두운 면(공개 현관 히어로)에서는 네이비가 배경과 같은 색이라 단추가 사라진다 —
+ *   거기서는 골드가 **틀이 아니라 유일하게 보이는 것**이다.
+ *   그래서 규칙을 뒤집지 않고 **어두운 면 갈래를 따로 둔다.** 밝은 면은 한 글자도 안 바뀐다.
+ */
+.ui-btn--on-dark {
+  background: var(--color-accent);
+  color: var(--color-text-on-gold);
+  border-color: transparent;
+  border-radius: var(--radius-lg);
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  font-weight: 700;
+}
+.ui-btn--on-dark:not(:disabled):hover { filter: brightness(1.06); }
+
+.ui-btn--on-dark-ghost {
+  background: transparent;
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+  border-radius: var(--radius-lg);
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  font-weight: 700;
+}
+.ui-btn--on-dark-ghost:not(:disabled):hover { background: rgb(from var(--color-accent) r g b / 0.14); }
+
+/* **동작을 줄여 달라는 사람에게는 줄인다.** 들림·미끄러짐은 장식이다. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-btn, .ui-btn__arrow { transition: none; }
+  .ui-btn:not(:disabled):hover { transform: none; }
+  .ui-btn:hover .ui-btn__arrow { transform: none; }
+}
+
 /* ── Card ─────────────────────────────────────────────── */
 .ui-card {
   background: var(--color-surface-2);
