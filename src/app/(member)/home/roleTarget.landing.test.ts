@@ -114,6 +114,33 @@ describe('★★ 링크가 우선이다 (지휘부 확정 2026-09-02)', () => {
     expect(client, '홈 주소를 손으로 박았다').not.toContain("=== '/home'");
   });
 
+  it('★★ 로그인 뒤 이동은 **문서를 새로 받는다** — 라우터 캐시를 쓰지 않는다', () => {
+    // **정적 검사로는 원인을 못 잡는다**(⑨-c). 이 잠금은 **고친 것이 되돌아오는 것만** 막고,
+    //   「프리페치 캐시를 쓰는가」는 `scripts/postdeploy.mjs` 가 **실행으로** 잰다.
+    //
+    //   실측 2026-09-02 — 미인증으로 로그인 화면을 열면 벨트의 「진단」이 프리페치되고
+    //   미들웨어가 되돌린 307 이 캐시에 남아 로그인 뒤에도 그것이 쓰였다(착지 0/3).
+    const client = readFileSync('src/app/(public)/login/LoginClient.tsx', 'utf8');
+    expect(client, '문서를 새로 받지 않는다').toContain('window.location.replace(');
+    for (const bad of ['router.replace(', 'router.push(']) {
+      expect(client, `클라이언트 라우터로 되돌아갔다: ${bad}`).not.toContain(bad);
+    }
+    // `replace` 여야 한다 — `assign` 이면 히스토리에 /login 이 남아 뒤로가기가 폼을 보인다(4차 F-5 B행).
+    expect(client, '히스토리에 로그인 화면이 남는다').not.toContain('window.location.assign(');
+    // 실행으로 재는 창이 실재하는가(계열 ⑦) — 없으면 이 정적 잠금뿐이라 층이 어긋난다.
+    const post = readFileSync('scripts/postdeploy.mjs', 'utf8');
+    expect(post, 'postdeploy 에 착지 검사가 없다').toContain('returnTo 로그인 착지');
+    // ★ 처음엔 「어딘가에 `bad(` 가 있는가」로 물었는데 **같은 이름의 `bad(` 가 하나 더 있어**
+    //   `ok` 로 바꿔 심어도 초록이었다(⑬ · 물려서 잡았다). **catch 블록만** 본다.
+    const at = post.indexOf("const { readFileSync } = await import('node:fs')");
+    expect(at, '착지 검사의 try 를 못 찾았다').toBeGreaterThan(-1);
+    const catchAt = post.indexOf('} catch (e) {', at);
+    expect(catchAt, '착지 검사에 catch 가 없다').toBeGreaterThan(-1);
+    const rescue = post.slice(catchAt, post.indexOf('}', post.indexOf(');', catchAt)));
+    expect(rescue, '못 잰 것을 통과로 적는다 — 못 잰 것과 통과는 다르다').toContain('bad(');
+    expect(rescue, '못 잰 것을 통과로 적는다').not.toContain('ok(');
+  });
+
   it('★ 홈에는 리다이렉트가 **없다** — 서버 redirect 가 loading 과 겹쳐 화면이 멈췄다', () => {
     // 배포해서 잡았다. 「불러오는 중…」에서 멈췄고 /home·/coach 는 직접 열면 멀쩡했다.
     const home = readFileSync('src/app/(member)/home/page.tsx', 'utf8');
