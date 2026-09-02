@@ -420,6 +420,20 @@
 
 /* 로그인 홈 GNB(시안 B `.topbar`) — 폭과 무관하게 햄버거가 선다. 시트가 내비이기 때문이다. */
 .site-gnb__right.is-member .site-gnb__burger { display: block; }
+/* ★ **시트를 받았으면 여는 문이 md↑ 에서도 보인다**(ADR-174). 로그인한 공개 현관이 그 자리다 —
+ *   메뉴 여섯과 시트를 함께 들고, 로그인 버튼이 있던 자리를 햄버거가 잇는다. */
+.site-gnb__right.has-sheet .site-gnb__burger { display: block; }
+
+/* ── 벨트 슬롯 — 제목바가 서는 화면 위에 벨트를 얹는다 (ADR-174 · A안) ──
+ *
+ * ★ **lg↑ 에서만 선다.** 폰은 지금도 메뉴가 시트 안이라 두 겹이 **얻는 것 없이 세로만 먹는다**
+ *   (벨트 44 + 제목바 40 = 84px 가 844px 화면의 10%). 지휘부 판정 2026-09-02.
+ *
+ * ★ **폭 가르기를 CSS 로 한다.** 트리를 폭에 따라 바꾸면 SSR 과 하이드레이션이 어긋나고,
+ *   무엇보다 껍데기의 **「트리 모양을 바꾸지 않는다」** 규약을 깬다(U-4 재마운트 사고).
+ *   여기서는 **늘 그리고 CSS 가 감춘다** — 트리가 한 벌이므로 JS 가 0 이다. */
+.belt-slot { display: none; }
+@media (min-width: 1024px) { .belt-slot { display: block; } }
 
 /* ── 로그인 홈(/home · 시안 B) 셸 — 4차 F-3 ─────────────────── */
 .home-shell { max-width: 480px; margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-8); }

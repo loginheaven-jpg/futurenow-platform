@@ -53,6 +53,15 @@ export const SITE_ORG = SITE_NAME;
 export const PUBLIC_MENU_TITLE = '이용 안내';
 
 /**
+ * 로그인한 사람의 시트 첫 구획 이름(ADR-174).
+ *
+ * ※ **이 한 낱말은 제가 지었습니다 — 결재를 청합니다.**
+ *   `PUBLIC_MENU_TITLE`(「이용 안내」)과 짝이 되게 두 글자로 골랐고,
+ *   그 아래 드는 것은 `HOME_DOOR`(「내 홈」) 하나다.
+ */
+export const PUBLIC_SHEET_MINE = '내 자리';
+
+/**
  * 푸터 링크 줄 — **폰에서 이것이 메뉴다.**
  *
  * §9.6 이 *"공개 현관은 평문 링크로 확정한다"* 로 못 박았고(3차 판정 A), 시안 A 의 아이콘

@@ -27,6 +27,8 @@ import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { AppHeader } from '@/app/_screens/AppHeader';
 import { MenuSheet } from '@/app/_screens/site/MenuSheet';
+import { SiteGnb } from '@/app/_screens/site/SiteGnb';
+import { PUBLIC_NAV } from '@/app/_screens/site/publicNav';
 import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { consoleNav, isCurrent } from './consoleNav';
 import { SCREEN_CHROME, patternOf, resolveBack } from '@/app/_lib/screenChrome';
@@ -60,6 +62,18 @@ export function ConsoleShell({
 
   return (
     <div className="console-shell">
+      {/* ★ **벨트를 제목바 위에 얹는다**(ADR-174 · A안). `MemberShell` 과 같은 이유·같은 모양이다 —
+          부품도 CSS 도 두 벌 만들지 않는다. **lg↑ 에서만 선다**(`.belt-slot`).
+          시트를 넘기지 않는다 — 콘솔은 **자기 시트**를 아래에서 따로 열고, 여기 또 넘기면
+          같은 화면에 여는 문이 둘이 된다(U-4 §4 「문은 하나씩이다」). */}
+      <div className="belt-slot">
+        <SiteGnb
+          logo={<>퓨처<b>나우</b></>}
+          en="FUTURE NOW"
+          items={PUBLIC_NAV}
+          currentPath={pathname}
+        />
+      </div>
       {/* **제목·뒤로는 표가 든다**(§3) — U-2 가 만든 `screenChrome` 을 콘솔도 쓴다. 두 벌 만들지 않는다.
           **콘솔의 홈은 `콘솔` 이다**(공통 규칙 3) — 표의 `/coach` 항목이 그 이름을 든다.
           `root` 인 자리는 뒤로가 없다(홈이 제목을 겸한다) — **홈 어포던스를 둘로 두지 않는다**(규칙 4). */}

@@ -16,6 +16,7 @@ import { HeaderActions } from '@/app/_screens/HeaderActions';
 import { HOME_DOOR } from '@/app/_vocab/doors';
 import { useState } from 'react';
 import { SiteGnb } from '@/app/_screens/site/SiteGnb';
+import { PUBLIC_NAV } from '@/app/_screens/site/publicNav';
 import { MenuSheet } from '@/app/_screens/site/MenuSheet';
 import type { MenuGroup } from '@/app/_screens/site/MenuSheet';
 import type { SessionChip } from '@/app/_screens/site/SessionChipStrip';
@@ -70,10 +71,41 @@ export function MemberShell({ sheet, children }: { sheet: ShellSheet | null; chi
     </button>
   ) : null;
 
+  // ★ **벨트를 제목바 위에 얹는다**(ADR-174 · A안 · 지휘부 확정 2026-09-02).
+  //
+  //   지시는 *「메뉴 벨트를 일관되게 유지한다」* 였다. `bar` 가 서는 화면은 **제목과 뒤로가
+  //   반드시 필요해** 벨트만으로는 못 서므로, **둘을 겹쳐** 벨트를 늘 보이게 한다.
+  //   **lg↑ 에서만 선다** — 폰은 지금도 메뉴가 시트 안이라 두 겹이 세로만 먹는다(`.belt-slot`).
+  //
+  //   ★ **트리를 폭에 따라 바꾸지 않는다.** 늘 그리고 **CSS 가 감춘다** —
+  //     그래야 껍데기의 「트리 모양을 바꾸지 않는다」 규약이 산다(U-4 재마운트 사고).
+  //   ★ **`head` 슬롯 **안**에서만 더한다.** `{children}` 의 자리는 한 칸도 안 움직인다.
+  const belt = (
+    <div className="belt-slot">
+      <SiteGnb
+        logo={<>퓨처<b>나우</b></>}
+        en="FUTURE NOW"
+        items={PUBLIC_NAV}
+        currentPath={pathname}
+        sheet={sheetProp}
+      />
+    </div>
+  );
+
   const head = bare ? null : chrome.kind === 'gnb' ? (
-    <SiteGnb logo={<>퓨처<b>나우</b></>} variant="member" currentPath={pathname} sheet={sheetProp} />
+    // ★ **메뉴 여섯을 준다**(ADR-174). 전에는 `member` 라 로고+햄버거뿐이었고
+    //   그래서 로그인하면 메뉴가 사라졌다 — 지시가 고치라 한 자리다.
+    //   `variant` 는 그대로 둔다(시트가 유일한 내비인 화면의 규칙은 안 바뀐다).
+    <SiteGnb
+      logo={<>퓨처<b>나우</b></>}
+      en="FUTURE NOW"
+      items={PUBLIC_NAV}
+      currentPath={pathname}
+      sheet={sheetProp}
+    />
   ) : (
     <>
+      {belt}
       <AppHeader
         variant={override ? (override.variant ?? (override.onBack || override.backHref ? 'sub' : 'flow')) : chrome.variant}
         title={override?.title ?? chrome.title}
