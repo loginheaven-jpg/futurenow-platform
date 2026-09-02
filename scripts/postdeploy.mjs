@@ -1,11 +1,11 @@
-// 병합 후 배포 확인 + 실브라우저 5건 — **한 명령으로** (4차 F-5 병합 준비).
+// 병합 후 배포 확인 + 실브라우저 검사 — **한 명령으로** (4차 F-5 병합 준비).
 //
 // 1~3차 병합에서 매번 손으로 `curl` 을 쳤고, 그때마다 **위양성을 두 번 냈다**
 //   (별칭이 옛 배포를 서빙하는데 새 배포로 읽었다). 그래서 순서를 코드로 고정한다:
-//   **배포 신원이 기대 커밋과 같아진 뒤에야 5건을 잰다.**
+//   **배포 신원이 기대 커밋과 같아진 뒤에야 검사를 잰다.**
 //
 // **기다림에는 끝이 있어야 하고, 끝났는지 확인할 수 있어야 한다**(`CLAUDE.md` §11).
-//   폴링에 **상한**이 있고(`DEPLOY_WAIT_MS`), 넘기면 **시끄럽게 실패**한다 — 조용히 5건으로 넘어가지 않는다.
+//   폴링에 **상한**이 있고(`DEPLOY_WAIT_MS`), 넘기면 **시끄럽게 실패**한다 — 조용히 검사로 넘어가지 않는다.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // **규율: 적히는 모든 값은 둘 중 하나다** — 따라가야 하는 값이거나, 얼어야 하는 값이거나.
@@ -86,10 +86,10 @@ async function waitDeploy() {
 const get = async (path, redirect = 'manual') =>
   fetch(`${BASE}${path}`, { redirect, cache: 'no-store', headers: { 'user-agent': 'postdeploy-check' } });
 
-/** ②~⑥ 실브라우저 5건. **HTTP 200 을 통과로 보지 않는다**(불변식 19) — 본문을 본다. */
+/** 실브라우저 검사. **HTTP 200 을 통과로 보지 않는다**(불변식 19) — 본문을 본다. */
 async function checks() {
   console.log("");
-  console.log('[실브라우저 5건]');
+  console.log('[실브라우저 검사]');
 
   // 1 · 공개 현관
   {
@@ -156,6 +156,47 @@ async function checks() {
     }
   }
 
+  // 5-2 · ★★ **returnTo 로그인 착지**(ADR-175 — 2026-09-02 별건).
+  //   미인증으로 로그인 화면을 열면 벨트의 「진단」을 프리페치하고
+  //   미들웨어가 되돌린 **307 이 라우터 캐시에 남는다.** 그대로면 로그인 뒤에도
+  //   그 캐시가 쓰여 **영원히 못 들어간다**(실측: 착지 0/3).
+  //   ★ **정적 검사로는 잡힐 수 없다** — 「프리페치 캐시를 쓰는가」는 **런타임 행동**이다(⑨-c).
+  //   자격이 없으면 **조용히 넘어가지 않는다** — 못 잴 것과 통과는 다르다.
+  {
+    const TARGET = '/home/assessments';
+    try {
+      const { readFileSync } = await import('node:fs');
+      const env = readFileSync('.env.local', 'utf8');
+      const pick = (k) => ((env.match(new RegExp('^' + k + '=(.*)$', 'm')) || [])[1] || '').trim();
+      const mail = pick('QA_USER_EMAIL'), pw = pick('QA_USER_PASSWORD');
+      if (!mail || !pw) throw new Error('.env.local 에 QA_USER_EMAIL/PASSWORD 가 없다');
+      const { chromium } = await import('playwright');
+      const browser = await chromium.launch();
+      const page = await (await browser.newContext()).newPage();
+      await page.goto(`${BASE}/login?returnTo=${encodeURIComponent(TARGET)}`, { waitUntil: 'load', timeout: 30000 });
+      // 벨트 링크가 살아야 프리페치가 난다 — **물 것을 먼저 세운다**(계열 ⑧).
+      await page.waitForSelector('.site-gnb__nav a', { timeout: 15000 });
+      await page.getByLabel(/이메일/).fill(mail);
+      await page.getByLabel(/비밀번호/).fill(pw);
+      const t0 = Date.now();
+      await page.getByRole('button', { name: /로그인/ }).click();
+      let ms = null;
+      try {
+        // 기다림은 조건으로 끝나고 상한이 있고 넘기면 시끄럽게 실패한다(§11).
+        await page.waitForFunction(
+          (t) => location.pathname === t && !(document.body.innerText || '').includes('불러오는 중'),
+          TARGET, { timeout: 25000 });
+        ms = Date.now() - t0;
+      } catch { /* 못 간 것은 아래에서 붉게 적는다 */ }
+      const url = await page.evaluate(() => location.pathname + location.search);
+      await browser.close();
+      if (ms !== null) ok('returnTo 로그인 착지', `${TARGET} · ${(ms / 1000).toFixed(1)}초`);
+      else bad('returnTo 로그인 착지', `25초 안 못 갔다 — 끝 URL ${url} (프리페치 캐시 재발 의심)`);
+    } catch (e) {
+      bad('returnTo 로그인 착지', `재지 못했다: ${String(e).slice(0, 70)}`);
+    }
+  }
+
   // 5 · 게이트 화면 — **200 을 통과로 보지 않는다**(불변식 19)
   {
     const r = await get('/feed');
@@ -175,5 +216,5 @@ if (fails.length) {
   console.error(`X 실패 ${fails.length}건: ${fails.join(', ')}`);
   process.exitCode = 1;
 } else {
-  console.log('O 배포 확인 + 실브라우저 5건 전항 통과');
+  console.log('O 배포 확인 + 실브라우저 검사 전항 통과');
 }

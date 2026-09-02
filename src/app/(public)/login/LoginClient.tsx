@@ -2,7 +2,6 @@
 // 인도자 로그인 오케스트레이션 — supabase.auth.signInWithPassword → 역할별 리다이렉트.
 // 로그인 전용(가입은 /join). 비밀번호·토큰을 로그·URL에 싣지 않는다. 폼은 LoginForm(프레젠테이션).
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/core/supabase/client';
 import { LoginForm } from './LoginForm';
 import { loginOutcome, LOGIN_HOME } from './loginOutcome';
@@ -10,7 +9,6 @@ import { loginLandingAction } from './landingAction';
 
 export function LoginClient({ returnTo = null }: { returnTo?: string | null }) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
-  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,7 +43,21 @@ export function LoginClient({ returnTo = null }: { returnTo?: string | null }) {
         const to = outcome.redirect === LOGIN_HOME
           ? await loginLandingAction().catch(() => LOGIN_HOME)
           : outcome.redirect;
-        router.replace(to);
+        // ★★ **문서를 새로 받는다 — `router.replace` 가 아니다**(ADR-175).
+        //   **신원이 방금 바뀌었으므로 그 전에 받아 둔 것은 전부 낡았다.**
+        //   미인증으로 이 화면을 열면 벨트의 「진단」(`/home/assessments`) 을 Next 가 프리페치하고,
+        //   미들웨어가 로그인으로 되돌린 **307 이 라우터 캐시에 남는다.** 로그인 뒤 그리로 가면
+        //   캐시가 그대로 쓰여 **로그인 화면으로 되돌아온다** — 영원히.
+        //
+        //   **실측 2026-09-02**(`_rsc` 요청을 막고/안 막고 3회씩):
+        //     그대로       착지 0/3   (막은 요청 0)
+        //     프리페치 막고  착지 3/3   0.8~1.0초  (막은 요청 12)
+        //   벨트에 없는 보호 화면은 프리페치가 안 돼 멀쩡했다 — `/feed` 1.3초 · `/my/values` 0.8초.
+        //
+        //   **어느 항목이 낡았는지 골라내지 않는다.** 고르려면 추론해야 하고 그 추론이 틀린 것이
+        //   바로 이 결함이다. 문서를 새로 받으면 추론할 것이 없다.
+        //   `replace` 는 유지한다 — 히스토리에 `/login` 을 남기지 않는다(4차 F-5 B행).
+        window.location.replace(to);
       }
       else setBusy(false);
     } catch {
