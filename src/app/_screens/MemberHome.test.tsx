@@ -3,6 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemberHome } from './MemberHome';
 import type { MyCohortSummary } from '@/contracts';
 import { TOOL } from '@/app/_vocab/tool';
+import { readFileSync } from 'node:fs';
+import { JOIN_BY_CODE, MY_REPORT, MY_SEMINARS } from '@/app/_vocab/memberMenu';
+import { roleTargets } from '@/app/(member)/home/roleTarget';
 
 const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
   cohortId: 'co1',
@@ -29,79 +32,48 @@ describe('MemberHome (멤버 홈 본문 — 진입-3)', () => {
     expect(html).toContain('--color-text-on-gold'); // 골드 버튼 네이비 글자
   });
 
-  it('진행 중 없으면(전부 완료) 카드 생략 + 내 리포트 활성(완료 1건 직접)', () => {
+  it('진행 중 없으면(전부 완료) 카드 생략', () => {
     const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'c2', preDone: true })]} />);
     expect(html).not.toContain(`진행 중인 ${TOOL.short}`);
-    expect(html).toContain('내 리포트');
-    expect(html).toContain('href="/my/cohorts/c2/report"');
   });
 
-  it('내 세미나 행(참여 중 N · 완료 M) → /my/cohorts, 코드 참여 → /join', () => {
+  it('사후 개시·미완이면 마무리 체크 카드', () => {
     const html = renderToStaticMarkup(
-      <MemberHome greetingName="이멤버" cohorts={[cohort({ preDone: true }), cohort({ cohortId: 'co3', preDone: false })]} />,
+      <MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'c3', preDone: true, postOpened: true, postDone: false })]} />,
     );
-    expect(html).toContain('내 세미나');
-    expect(html).toContain('참여 중 2 · 완료 1');
-    expect(html).toContain('href="/my/cohorts"');
-    expect(html).toContain('코드로 세미나 참여');
-    expect(html).toContain('href="/join"');
-  });
-
-  it('빈 상태(차수 0) — 카드 생략·참여 0/완료 0·내 리포트 비활성 안내', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[]} />);
-    expect(html).not.toContain(`진행 중인 ${TOOL.short}`);
-    expect(html).toContain('참여 중 0 · 완료 0');
-    expect(html).toContain(`${TOOL.short}를 마치면 거울이 생겨요`);
-  });
-
-  it('사후 개시·미완 → 마무리 체크 카드(B-2, pre 없을 때)', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'cp', preDone: true, postOpened: true, postDone: false })]} />);
-    expect(html).toContain(`${TOOL.post}가 열렸어요`);
     expect(html).toContain(`${TOOL.post} 하기`);
-    expect(html).toContain('wave=post'); // /join?cohort=cp&(amp;)wave=post
+    expect(html).toContain('href="/join?cohort=c3&amp;wave=post"');
+  });
+});
+
+// ★★ **옮겨 간 것을 「사라졌다」로 재지 않는다** (ADR-181).
+//
+//   옛 잠금 일곱이 여기서 「내 세미나」·「내 리포트」·「코드로 세미나 참여」·운영 카드를 쟀다.
+//   그 넷은 **지워진 것이 아니라 시트와 역할 카드로 갔다**(지시: 「메뉴들은 햄버거버튼 휘하에 있다」).
+//   그러므로 잠금도 **없어졌는가가 아니라 옮겨 갔는가**를 재야 한다 — 지우면 그 문들이
+//   다음 회차에 조용히 사라져도 아무도 모른다.
+describe('★★ 옮겨 간 문들이 새 자리에 실재한다', () => {
+  it('본문에는 더 이상 없다 — 한 화면에서 두 번 말하지 않는다', () => {
+    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ preDone: true })]} />);
+    for (const gone of [MY_SEMINARS, MY_REPORT, JOIN_BY_CODE, '인도자 콘솔', '본부']) {
+      expect(html, `본문에 아직 있다: ${gone}`).not.toContain(gone);
+    }
   });
 
-  it('사전 미완 우선 — 사후 개시돼도 pre 카드', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'a', preDone: false, postOpened: true, postDone: false })]} />);
-    expect(html).toContain(`${TOOL.pre}를 아직 마치지`); // pre 카드 우선
-    expect(html).not.toContain(`${TOOL.post}가 열렸어요`);
+  it('★ 시트가 그 셋을 든다 — 이름이 바뀌지 않았다', () => {
+    const sheet = readFileSync('src/app/_lib/memberSheet.ts', 'utf8');
+    for (const moved of ['MY_SEMINARS', 'MY_REPORT', 'JOIN_BY_CODE']) {
+      expect(sheet, `시트가 ${moved} 를 안 든다`).toContain(moved);
+    }
+    // 이름은 한 곳에서 온다 — 옮기면서 손으로 다시 적지 않았다(불변식 23).
+    expect(MY_SEMINARS).toBe('내 세미나');
+    expect(MY_REPORT).toBe('내 리포트');
+    expect(JOIN_BY_CODE).toBe('코드로 세미나 참여');
   });
 
-  it('참여자 화면 — 의미색 토큰 0', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort()]} />);
-    expect(html).not.toMatch(/--care|--danger|--warning/);
-  });
-
-  it('참여자(기본) — 운영 카드 미노출(A′-1 자격자만)', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[]} />);
-    expect(html).not.toContain('인도자 콘솔');
-    expect(html).not.toContain('본부');
-  });
-
-  it('코치 — 인도자 콘솔 카드(→/coach), 본부 미노출', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="김코치" cohorts={[]} role="coach" />);
-    expect(html).toContain('인도자 콘솔');
-    expect(html).toContain('href="/coach"');
-    expect(html).not.toContain('본부');
-  });
-
-  it('운영자 — 인도자 콘솔 + 본부 카드(→/admin)', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="관리자" cohorts={[]} role="admin" />);
-    expect(html).toContain('인도자 콘솔');
-    expect(html).toContain('본부');
-    expect(html).toContain('href="/admin"');
-  });
-
-  it('운영자 본부 카드 — 승인 대기 건수 노출(정합 마감·홈 알림)', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="관리자" cohorts={[]} role="admin" pendingCoachApps={3} />);
-    expect(html).toContain('승인 대기 3건');
-  });
-
-  // 성능 감사 2026-08-25 — /my/cohorts 는 차수가 하나면 즉시 리다이렉트한다(page.tsx:20).
-  //   목록을 경유하면 서버 렌더가 한 번 더 돈다. 대다수 참여자가 단일 차수라 이 한 줄이 매번 걸린다.
-  it('차수가 하나면 내 세미나가 목록을 건너뛰고 차수 홈으로 직결한다', () => {
-    const html = renderToStaticMarkup(<MemberHome greetingName="이멤버" cohorts={[cohort({ cohortId: 'only1', preDone: true })]} />);
-    expect(html).toContain('href="/my/cohorts/only1"');
-    expect(html).not.toContain('href="/my/cohorts"');
+  it('★★ 운영 두 문은 **역할 카드**가 든다 — 승인 대기 건수까지', () => {
+    expect(roleTargets('admin', [], { pendingCoachApps: 2 }).map((t) => t.href)).toContain('/admin');
+    expect(roleTargets('coach', []).map((t) => t.href)).toContain('/coach');
+    expect(roleTargets('admin', [], { pendingCoachApps: 2 })[0].sub, '건수를 잃었다').toContain('2건');
   });
 });

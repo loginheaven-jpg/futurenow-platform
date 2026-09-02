@@ -282,7 +282,9 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
 //   Phase 2 에서 컴포넌트 존재 단언이 실제로 작동함이 음성 대조로 증명됐으므로 같은 방식으로 건다.
 describe('진행·상태 문구가 되돌아가지 않는다 (ADR-102 Phase 3)', () => {
   const card = readFileSync(new URL('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx', import.meta.url), 'utf8');
-  const home = readFileSync(new URL('../../../app/(member)/my/cohorts/[cohortId]/page.tsx', import.meta.url), 'utf8');
+  // ★ **조립이 옮겨 갔다**(ADR-181) — 회기 홈과 `/home` 이 같은 함수를 쓰므로 문구도 거기 있다.
+  //   잠금이 지키는 것은 «파일»이 아니라 **«카드와 홈이 같은 문장을 쓴다»** 이므로 자리만 고친다.
+  const home = readFileSync(new URL('../../../app/(member)/my/cohorts/[cohortId]/dashboard.tsx', import.meta.url), 'utf8');
   // 4차 F-4 — 표시 층이 갈렸다. 진행 표시·오늘 카드는 이제 화면 부품에 있다.
   const screen = readFileSync(new URL('../../../app/(member)/my/cohorts/[cohortId]/CohortHomeScreen.tsx', import.meta.url), 'utf8');
   // 금지어 검사는 **주석을 걷어내고** 본다. 규율을 설명하는 주석이 금지어를 인용하는 것은 정상이고

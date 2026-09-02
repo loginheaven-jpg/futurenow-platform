@@ -41,7 +41,7 @@ describe.skipIf(!DIR)('로그인 홈(시안 B·E) 마크업', () => {
       `${DIR}/home.html`,
       renderToStaticMarkup(
         <HomeScreen {...HOME_FIXTURE}>
-          <MemberHome greetingName={SHEET_FIXTURE.name} cohorts={HOME_COHORTS} role="user" />
+          <MemberHome greetingName={SHEET_FIXTURE.name} cohorts={HOME_COHORTS} />
         </HomeScreen>,
       ),
       'utf8',

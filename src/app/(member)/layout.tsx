@@ -46,8 +46,23 @@ export default async function MemberLayout({ children }: { children: React.React
   if (!consented) return <>{children}</>;
 
   const active = cohorts.filter((c) => c.status === 'active');
-  // eslint-disable-next-line react-hooks/purity
-  const sheetData = await buildMemberSheet(ctx, cohorts, { hasFeed: active.length > 0, now: Date.now() })
+  // ★ 시트가 **출구와 옮겨 온 문들**을 든다(ADR-181). 판정에 쓰는 값은 여기서 한 번만 센다 —
+  //   「회기가 몇이냐」를 화면마다 다르게 세던 것이 이번 회차가 드러낸 결함이다(전체/활성/전체 셋).
+  //   **여기서는 전체를 센다** — 시트의 「내 세미나」는 보관된 회기도 보여 주는 목록이기 때문이다.
+  //
+  //   ★ 억제 주석은 `Date.now()` **바로 앞줄**에 있어야 듣는다 — 설명을 사이에 끼웠다가
+  //   억제가 끊겨 린트가 붉어졌고, 객체를 여러 줄로 펼치자 그 줄이 또 내려갔다(둘 다 그 자리에서 잡았다).
+  const reportCohort = cohorts.filter((c) => c.preDone);
+  const sheetData = await buildMemberSheet(ctx, cohorts, {
+    hasFeed: active.length > 0,
+    // 서버 컴포넌트(요청 시점 벽시계) — 회차 개폐 판정에 필수다.
+    // eslint-disable-next-line react-hooks/purity
+    now: Date.now(),
+    role: me.role,
+    cohortCount: cohorts.length,
+    // 리포트는 **갈 곳이 하나로 정해질 때만** 낸다 — 여럿이면 어느 것인지 말할 수 없다.
+    reportCohortId: reportCohort.length === 1 ? reportCohort[0].cohortId : null,
+  })
     .catch(() => null);
 
   const sheet = sheetData

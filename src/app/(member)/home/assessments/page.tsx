@@ -63,13 +63,13 @@ export default async function AssessmentsPage() {
   const sections: AssessSection[] = [
     {
       title: '여정 진단',
-      desc: valueCohort?.name ?? '기수와 함께 걷는 동안 두 번',
+      desc: valueCohort?.name ?? '회기와 함께 걷는 동안 두 번',
       items: [
         {
           key: 'pre',
           icon: 'pre',
           title: TOOL.pre,
-          note: !canJourney ? '기수에 속하면 열립니다.'
+          note: !canJourney ? '회기에 속하면 열립니다.'
             : pre ? `${pre.name} · 아직 하지 않으셨어요.`
             : '이미 마치셨어요.',
           status: !canJourney ? undefined : pre ? '시작' : '완료',
@@ -115,7 +115,7 @@ export default async function AssessmentsPage() {
       //   차수 회원과 개인 회원의 문장이 다른 이유는 실제로 보는 사람이 다르기 때문이다.
       privacy={
         valueCohort ? (
-          <><b>이 결과는 우리 기수 인도자와 함께 봅니다.</b> 다음 만남의 질문과 실행을 정하는 데 사용합니다.</>
+          <><b>이 결과는 우리 회기 인도자와 함께 봅니다.</b> 다음 만남의 질문과 실행을 정하는 데 사용합니다.</>
         ) : (
           <><b>이 결과는 나만 봅니다.</b> 다음 선택의 기준을 찾는 데 사용합니다.</>
         )

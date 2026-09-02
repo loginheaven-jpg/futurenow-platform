@@ -9,11 +9,29 @@
 //   `내 홈` — `publicHeaderAction` 이 들고 배포되어 최박사 실기기에서 확인된 말(ADR-138 계열).
 //   `콘솔` — 표의 `/coach` 제목(U-3 · 지휘부 공통 규칙 3).
 //
-// **로고는 여기에 없다.** 로고는 이름이 아니라 상표이고, 하는 일은 *처음 화면으로 이동*뿐이다
+import { SITE_NAME } from '@/app/_screens/site/publicNav';
+
+// **로고는 여기에 없다(계속).** 로고는 이름이 아니라 상표이고, 하는 일은 *처음 화면으로 이동*뿐이다
 //   (공통 규칙 3 — 로그아웃이 아니다). 그 동작은 `SiteGnb` 가 이미 들고 있고 바꾸지 않는다.
 
 /** 회원의 홈. 역할과 무관한 단일 홈이다(A′-2 · ADR-51). */
 export const HOME_DOOR = { href: '/home', label: '내 홈' } as const;
+
+/**
+ * **서비스 현관** — 로그인 전에도 뒤에도 같은 자리다(지휘부 지시 2026-09-02
+ * 「서비스홈으로, 사용자홈으로 언제든 갈 수 있어야 한다」).
+ *
+ * ★ 위 주석이 *「로고는 여기에 없다 — 로고는 이름이 아니라 상표다」* 라고 적었고 그 판단은 그대로다.
+ *   **그런데 로고가 없는 화면이 있다** — 폰의 제목바 화면에는 벨트가 서지 않으므로(ADR-174)
+ *   상표를 누를 자리가 없다. 그래서 **시트에 문을 낸다.** 로고를 대신하는 것이 아니라
+ *   로고가 닿지 않는 자리를 잇는 것이다.
+ *
+ * **이름을 짓지 않았다** — 상표 이름 `SITE_NAME` 을 그대로 읽는다(불변식 23).
+ */
+export const SITE_DOOR = { href: '/', label: SITE_NAME } as const;
+
+/** 운영자 본부. 이름은 이미 쓰이던 말이다(`roleTargets`·`screenChrome` 의 「본부」). */
+export const ADMIN_DOOR = { href: '/admin', label: '본부' } as const;
 
 /** 인도자 콘솔의 홈. */
 export const CONSOLE_DOOR = { href: '/coach', label: '콘솔' } as const;

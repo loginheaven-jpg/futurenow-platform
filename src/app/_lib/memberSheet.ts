@@ -13,6 +13,9 @@ import { buildSessionChips } from '@/app/(member)/home/sessionChips';
 import { openedSessionNos } from '@/app/(member)/my/cohorts/[cohortId]/progress';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
+import { HOME_DOOR, CONSOLE_DOOR, ADMIN_DOOR, SITE_DOOR } from '@/app/_vocab/doors';
+import { PUBLIC_SHEET_MINE } from '@/app/_screens/site/publicNav';
+import { JOIN_BY_CODE, MY_REPORT, MY_SEMINARS } from '@/app/_vocab/memberMenu';
 
 export interface MemberSheet {
   groups: MenuGroup[];
@@ -36,7 +39,7 @@ export interface MemberSheet {
 export async function buildMemberSheet(
   ctx: CoreContext,
   cohorts: MyCohortSummary[],
-  opts: { hasFeed: boolean; now: number },
+  opts: { hasFeed: boolean; now: number; role?: 'user' | 'coach' | 'admin'; cohortCount?: number; reportCohortId?: string | null },
 ): Promise<MemberSheet> {
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
@@ -65,14 +68,33 @@ export async function buildMemberSheet(
 
   // 시안 E 그룹 넷. **로그아웃은 넣지 않는다** — 폼 액션이라 링크 목록에 섞으면
   //   생김새는 같은데 하나만 다르게 동작한다. `/account` 안에 이미 있다(F-3 판정 · 지휘부 승인).
+  const isStaff = opts.role === 'coach' || opts.role === 'admin';
+  const many = (opts.cohortCount ?? 0) > 1;
+
   const groups: MenuGroup[] = [
+    // ★ **출구 구획**(ADR-181 · 지휘부 지시 2026-09-02 「서비스홈으로, 사용자홈으로 언제든 갈 수 있어야 한다」).
+    //   전에는 회원 시트에 `/` 도 `/home` 도 `/coach` 도 **없었다** — 실측으로 확인한 구멍이다.
+    //   폰의 제목바 화면에는 벨트가 안 서므로(ADR-174) 상표를 누를 자리조차 없었다.
+    //   **이름은 하나도 짓지 않았다** — `_vocab/doors` 가 단일 출처다.
+    //   구획 이름은 공개 시트와 **같은 낱말**을 쓴다(뜻이 같은데 다르게 부르지 않는다).
+    {
+      title: PUBLIC_SHEET_MINE,
+      items: [
+        HOME_DOOR,
+        ...(isStaff ? [CONSOLE_DOOR] : []),
+        ...(opts.role === 'admin' ? [ADMIN_DOOR] : []),
+        SITE_DOOR,
+      ],
+    },
     {
       title: '여정',
       items: [
         primary
-          ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 기수' }
-          : { href: '/my/cohorts', label: '내 기수' },
+          ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 회기' }
+          : { href: '/my/cohorts', label: '내 회기' },
         ...(opts.hasFeed ? [{ href: '/feed', label: '동행' }] : []),
+        // 회기가 둘 이상일 때만 목록 문을 낸다 — 하나면 위 항목이 곧 그 회기다(없는 곳으로 보내지 않는다).
+        ...(many ? [{ href: '/my/cohorts', label: MY_SEMINARS }] : []),
       ],
     },
     {
@@ -82,10 +104,13 @@ export async function buildMemberSheet(
         primary
           ? { href: `/my/cohorts/${primary.cohortId}/values`, label: VALUE_TOOL }
           : { href: '/my/values', label: VALUE_TOOL },
+        // 리포트는 **갈 곳이 있을 때만** 낸다 — 사전 진단을 마친 회기가 하나로 정해질 때다.
+        ...(opts.reportCohortId ? [{ href: `/my/cohorts/${opts.reportCohortId}/report`, label: MY_REPORT }] : []),
       ],
     },
     { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
-    { title: '계정', items: [{ href: '/account', label: '내 정보' }] },
+    // 「코드로 세미나 참여」는 홈 아래쪽에 있던 것을 여기로 옮겼다(지시: 메뉴는 햄버거 휘하).
+    { title: '계정', items: [{ href: '/account', label: '내 정보' }, { href: '/join', label: JOIN_BY_CODE }] },
   ];
 
   return { groups, chips, cohortName: primary?.name };

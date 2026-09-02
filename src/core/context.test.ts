@@ -769,3 +769,45 @@ describe('setName (본인 표시 이름 — users.name, role 미포함)', () => 
     spy.mockRestore();
   });
 });
+
+describe('★ 동행 피드 — 내가 마지막으로 쓴 날 (ADR-180)', () => {
+  it('RPC 이름과 인자 이름이 **정본과 같다** — 지어낸 이름을 부르면 셋 다 초록인 채로 배포된다', async () => {
+    // 5차 사고: 없는 함수 이름을 불렀는데 롤백·통합·회귀가 전부 초록이었다(같은 가짜 이름을 셋이 불렀다).
+    //   그래서 **이름과 인자를 값으로 박고**, 실물 존재는 마이그레이션 적용 때 카탈로그로 확인했다.
+    const seen: { name: string; args: unknown }[] = [];
+    const { ctx } = ctxWith({
+      authUser: { id: 'u1', email: 'u1@t.test' },
+      rpcResolver: (name, args) => {
+        seen.push({ name, args });
+        return { data: '2026-08-30T01:02:03.000Z', error: null };
+      },
+    });
+    const got = await ctx.feedMyLastPostAt('c-1');
+    expect(got).toBe('2026-08-30T01:02:03.000Z');
+    expect(seen).toHaveLength(1);
+    expect(seen[0].name, 'RPC 이름이 다르다').toBe('feed_my_last_post_at');
+    expect(seen[0].args, '인자 이름이 다르다 — PostgREST 는 이름으로 찾는다').toEqual({ p_cohort_id: 'c-1' });
+  });
+
+  it('쓴 적이 없으면 `null` 이다 — 없는 것과 0을 섞지 않는다', async () => {
+    const { ctx } = ctxWith({ authUser: { id: 'u1', email: 'u1@t.test' }, rpcResolver: () => ({ data: null, error: null }) });
+    expect(await ctx.feedMyLastPostAt('c-1')).toBeNull();
+  });
+
+  it('실패를 삼키지 않는다 — 이웃과 같은 모양', async () => {
+    const { ctx } = ctxWith({ authUser: { id: 'u1', email: 'u1@t.test' }, rpcResolver: () => ({ data: null, error: { message: 'boom' } }) });
+    await expect(ctx.feedMyLastPostAt('c-1')).rejects.toThrow(/boom/);
+  });
+
+  it('★ **회기 전체의 마지막 글과 다른 것**이다 — 둘을 섞지 않는다', () => {
+    // `feed_my_cohorts.last_post_at` 은 author 필터가 없다(정본 확인) = 누구든 쓴 마지막 글.
+    //   새 함수는 `author_id = auth.uid()` 가 있다 = 내가 쓴 마지막 글. 이름이 비슷해 섞이기 쉽다.
+    const sql = readFileSync('supabase/migrations/20260904100000_feed_my_last_post.sql', 'utf8');
+    expect(sql, '자기 것만 낸다는 조건이 없다').toContain('author_id = auth.uid()');
+    expect(sql, '삭제한 글을 센다').toContain('deleted_at IS NULL');
+    expect(sql, '열람 자격을 안 본다').toContain('feed_can_access');
+    // `revoke ... from PUBLIC` 은 anon 을 지우지 않는다 — 그래서 anon 을 따로 적어야 한다.
+    expect(sql, 'anon 을 따로 회수하지 않았다').toMatch(/FROM PUBLIC, anon/);
+    expect(sql, '사용자를 인자로 받는다 — 남의 활동을 물어보는 문이 생긴다').not.toMatch(/p_user_id|p_uid/);
+  });
+});
