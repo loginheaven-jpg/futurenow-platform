@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { createCoreContext, type CreateCoreContextOptions } from './context';
-import { CoreAuthError, CoreForbiddenError, CoreNotFoundError, CoreValidationError } from './errors';
+import { CoreAuthError, CoreError, CoreForbiddenError, CoreNotFoundError, CoreValidationError } from './errors';
 import { makeMockSupabase, type MockOptions } from './__testhelpers__/mockSupabase';
 
 function ctxWith(mock: MockOptions, opts: CreateCoreContextOptions = {}) {
@@ -44,6 +45,65 @@ describe('currentUser / requireRole', () => {
     });
     const u = await ctx.currentUser();
     expect(u).toMatchObject({ id: 'u1', role: 'coach' });
+  });
+
+  // ★★ 조회 실패와 행 부재를 가른다 (ADR-179 · 지휘부 지시 2026-09-02).
+  //   전에는 둘이 같은 길로 흘러 **실패해도 `role: 'user'` 합성 객체**가 나갔다 —
+  //   코치·운영자가 조용히 참여자로 내려앉고 콘솔에서 튕겼다. 셋을 **각각 먹여서** 가른다.
+  describe('★★ 조회 실패 ≠ 행 부재', () => {
+    const failing = (msg = 'timeout') => ({
+      authUser: { id: 'u1', email: 'u1@t.test' },
+      tableResolver: (c: { table: string }) =>
+        c.table === 'users' ? { data: null, error: { message: msg } } : { data: null, error: null },
+    });
+
+    it('★ 조회가 **실패하면 던진다** — 참여자로 내려앉지 않는다', async () => {
+      const { ctx } = ctxWith(failing());
+      await expect(ctx.currentUser()).rejects.toThrow(CoreError);
+      // 무엇이 잘못됐는지 드러나야 한다 — 원인 문자열을 삼키지 않는다(이웃 관용구와 같은 모양).
+      await expect(ctxWith(failing('boom')).ctx.currentUser()).rejects.toThrow(/boom/);
+    });
+
+    it('★ 실패를 **역할 강등으로 바꾸지 않는다** — 이것이 실제 피해였다', async () => {
+      const { ctx } = ctxWith(failing());
+      let got: unknown = null;
+      await ctx.currentUser().catch((e) => { got = e; });
+      expect(got, '실패인데 조용히 값이 나왔다').toBeInstanceOf(CoreError);
+    });
+
+    it('★ 행이 **없는 것은 오류가 아니다** — 가입 트리거 직후가 그렇다', async () => {
+      const { ctx } = ctxWith({
+        authUser: { id: 'u9', email: 'u9@t.test' },
+        tableResolver: () => ({ data: null, error: null }),
+      });
+      const me = await ctx.currentUser();
+      expect(me, '행 부재를 오류로 바꿨다').not.toBeNull();
+      expect(me?.id).toBe('u9');
+      expect(me?.role, '최소 구성의 역할이 바뀌었다').toBe('user');
+      expect(me?.email, 'fallback 경로의 이메일을 잃었다').toBe('u9@t.test');
+    });
+
+    it('★ 정상 행은 그대로 — 역할이 살아 있다', async () => {
+      const { ctx } = ctxWith({
+        authUser: { id: 'c1', email: 'c1@t.test' },
+        tableResolver: (c: { table: string }) =>
+          c.table === 'users' ? { data: userRow('c1', 'coach'), error: null } : { data: null, error: null },
+      });
+      expect((await ctx.currentUser())?.role).toBe('coach');
+    });
+
+    it('★ 비로그인은 여전히 `null` 이다 — 던지지 않는다', async () => {
+      const { ctx } = ctxWith({ authUser: null });
+      expect(await ctx.currentUser()).toBeNull();
+    });
+
+    it('★★ `null` 로 내지 않는 이유가 살아 있다 — 로그인 화면이 되돌려 보낸다', () => {
+      // 실패에 `null` 을 내면 게이트가 `/login` 으로 보내고, `/login` 은 세션이 살아 있으면
+      //   **다시 그 화면으로 돌려보낸다** — 고리가 된다. 그 되돌림이 실재하는지 확인한다(계열 ⑦).
+      const login = readFileSync('src/app/(public)/login/page.tsx', 'utf8');
+      expect(login, '로그인 화면이 되돌려 보내지 않는다 — 그러면 이 근거가 낡았다').toContain('redirect(');
+      expect(login).toContain('data.user');
+    });
   });
 
   it('currentUser 요청 단위 메모이즈(C-2) — N회+내부 재호출에도 users SELECT 1회', async () => {
