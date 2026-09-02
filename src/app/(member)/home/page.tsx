@@ -14,7 +14,7 @@ import { MemberHome } from '@/app/_screens/MemberHome';
 import { CheckinPrompt } from '@/app/_screens/CheckinPrompt';
 import { ConsentGate } from '@/app/_consent/ConsentGate';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser, requestConsents, requestCohorts } from '@/app/_lib/requestScope';
 import type { QuickTile } from '@/app/_screens/site/QuickTiles';
 import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
@@ -26,17 +26,18 @@ import { LIBRARY_NAME } from '@/app/_vocab/library';
 export const dynamic = 'force-dynamic';
 
 export default async function MemberHomePage() {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ 껍데기가 이미 물은 것을 **다시 묻지 않는다**(ADR-178) — 같은 렌더면 같은 값이다.
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   // 개인정보 동의 소급 게이트(ADR-76): 필수(privacy_use) 최신 버전 미동의면 홈 대신 동의 화면. 기존 회원 소급.
-  const consents = await ctx.listMyConsents().catch(() => []);
+  const consents = await requestConsents();
   const consented = consents.some((c) => c.type === 'privacy_use' && c.version === CONSENT_VERSION);
   if (!consented) return <ConsentGate />;
 
   const greetingName = me.name?.trim() || me.email.split('@')[0] || '회원';
-  const cohorts = await ctx.listMyCohorts(); // my_cohorts DEFINER RPC(본인 차수+진행). 앱은 cohorts·responses 직접 select 안 함.
+  const cohorts = await requestCohorts(); // my_cohorts DEFINER RPC(본인 차수+진행). 앱은 cohorts·responses 직접 select 안 함.
   // 운영자 로그인 알림(정합 마감): admin 은 /home 착지(loginOutcome 전원 /home)이므로 승인 대기 건수를 '본부' 카드에 노출(A3 배너를 홈에서도).
   const pendingCoachApps = me.role === 'admin' ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
 
