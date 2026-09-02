@@ -126,11 +126,17 @@ export type CheckinSession = {
     companion?: CheckinField;
     // 공개 토글(step_private 컬럼) — 2회차부터. 없으면 비공개(1회차).
     /**
-     * 나눔 고지. **`toggleLabel` 은 선택이다**(ADR-116) — 마지막 회차에는 공개 토글이 없다.
-     *   다음 시간이 없어 화면에 띄울 자리가 없기 때문이다.
-     *   **그래도 `notice` 는 남는다** — 토글이 사라진다고 누가 읽는지까지 사라지면 안 된다.
+     * 공개 토글. **`toggleLabel` 은 선택이다**(ADR-116) — 마지막 회차에는 공개 토글이 없다.
+     *
+     * ★ **`notice` 도 선택이 됐다**(지휘부 판정 2026-09-02). 전에는 필수였고 그 주석이
+     *   *「토글이 사라진다고 누가 읽는지까지 사라지면 안 된다」* 였다 — **그 판단이 뒤집혔다.**
+     *   누가 읽는지는 **모집 자료·세미나 진행 중에 이미 공지되고**, 쓰는 순간에 또 보이면
+     *   **자기검열이 생긴다.** 솔직히 적어야 값이 나오는 칸에서 그것을 되뇌게 하지 않는다.
+     *
+     *   **타입을 넓힌 것이지 정책을 바꾼 것이 아니다** — 인도자·운영자는 전과 똑같이 읽는다.
+     *   지금은 여섯 회차 전부 `notice` 가 **없다**. 되살리려면 판정을 다시 받는다.
      */
-    share?: { notice: string; toggleLabel?: string };
+    share?: { notice?: string; toggleLabel?: string };
   };
   wrap: {
     confidence: { key: string; label: string; help: string; min: number; max: number; leftLabel: string; rightLabel: string };
@@ -150,12 +156,16 @@ export type CheckinSession = {
     selfNote: CheckinField & { mirrors?: MirrorSet };
   };
   /**
-   * `notice2` 는 **열람 범위 고지**다(누가 읽는가). `notice1` 이 기한을 말한다.
+   * `notice1` 이 기한을 말한다. `notice2` 는 **열람 범위 고지**였다(누가 읽는가).
    *
-   * ★ **타입은 선택이나 6회차도 값을 유지한다**(CC_MEMO_session6_corrections §1).
-   *   1~5회차 전수가 같은 문장을 갖고 있고(실측 · 바이트 동일), 여기서 빠지면
-   *   **6회차만 열람 주체를 안 밝히는 유일한 카드**가 되어 개인정보 동의서와 어긋난다.
-   *   마지막 회차는 가장 사적인 문장이 모이는 자리라 하필 거기서 고지가 빠진다.
+   * ★ **여섯 회차 전부에서 걷었다**(지휘부 판정 2026-09-02).
+   *   전에는 *「6회차만 열람 주체를 안 밝히는 유일한 카드가 되면 안 된다」* 로 **여섯을 맞췄는데**,
+   *   이제 **여섯을 다 걷어 다시 맞췄다** — 한 회차만 다른 상황은 그대로 없다.
+   *
+   *   **고지를 안 하는 것이 아니라 자리를 옮긴 것이다.** 모집 자료(`recruit` 의 `ONLINE.foot`)가
+   *   지금도 인도자·운영자를 명시하고, 세미나 진행 중에도 공지된다.
+   *   **쓰는 순간에 또 보이면 자기검열이 생긴다** — 그것이 이 판정의 이유다.
+   *   **정책은 한 글자도 안 바뀌었다.** 되살리려면 판정을 다시 받는다.
    */
   save: { button: string; notice1: string; notice2?: string };
   done: { title: string; stepHeading: string; toHome: string; edit: string };

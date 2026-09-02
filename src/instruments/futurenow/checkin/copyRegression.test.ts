@@ -250,9 +250,24 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
     expect(koreanLiterals('session1').has('이건 진단이 아닙니다. 점수도, 정답도 없습니다.')).toBe(true);
   });
 
-  it('사진 첨부 프라이버시 고지 — 컴포넌트', () => {
-    expect(src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx'))
-      .toContain('첨부한 사진은 인도자와 운영자가 볼 수 있습니다.');
+  it('★ 사진 열람 고지를 **걷었다** — 되살아나면 운다 (지휘부 판정 2026-09-02)', () => {
+    // 전에는 「고지가 있는가」를 쟀다. 그 고지를 걷었으므로 **잠금을 뒤집는다** —
+    //   없어서 빠진 것이 아니라 일부러 뺐고, 다음 사람이 결손으로 보고 되살리면 안 된다.
+    //   ★ **위치정보 제거는 그대로 돈다** — 말을 걷었지 동작을 걷은 것이 아니다.
+    const s = src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx');
+    for (const bad of ['인도자와 운영자가 볼 수 있습니다', '위치정보는 자동으로 지워져요']) {
+      // 주석에는 남아 있어도 된다 — 화면에 뜨는 것만 잰다.
+      const shown = s.split(String.fromCharCode(10))
+        .filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join(String.fromCharCode(10));
+      expect(shown, `열람 고지가 되살아났다: ${bad}`).not.toContain(bad);
+    }
+    // ★ **동작은 살아 있다** — EXIF 제거(재디코드)가 그대로다.
+    //   처음엔 `/canvas|drawImage|toBlob/` 로 쟀는데 **셋 중 하나만 있어도 통과**했다 —
+    //   물려 보니 `drawImage`·`toBlob` 을 지워도 `canvas` 가 남아 초록이었다(⑨-b 창이 넓다).
+    //   재디코드는 **넷이 이어져야** 성립하므로 넷을 다 요구한다.
+    for (const step of ['createImageBitmap', 'canvas', 'drawImage', 'toBlob']) {
+      expect(s, `EXIF 제거 단계가 사라졌다: ${step}`).toContain(step);
+    }
   });
 
   it('결측 안내 패널 — 컴포넌트', () => {

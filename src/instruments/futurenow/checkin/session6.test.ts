@@ -106,26 +106,27 @@ describe('★ 다중 되비추기 (ADR-115)', () => {
   });
 });
 
+/** 회차 상수는 리터럴로 좁아져 **걷어 낸 칸이 타입에서 사라진다.**
+ *   되살아났는지 재려면 넓혀서 봐야 한다 — 없는 것을 재는 잠금의 숙명이다. */
+const widen = (x: unknown) => x as { save: { notice2?: string }; step: { share?: object } };
+
 describe('★ 마지막 회차 구조 (ADR-116)', () => {
-  it('공개 토글이 없고 **열람 고지는 남는다**', () => {
-    // 다음 시간이 없어 띄울 자리가 없다. 그러나 토글이 사라진다고 누가 읽는지까지 사라지면 안 된다.
-    expect('toggleLabel' in c.step.share!, '마지막 회차에 공개 토글이 붙었다').toBe(false);
-    expect(c.step.share?.notice).toBeTruthy();
+  it('공개 토글이 없다 — 다음 시간이 없어 띄울 자리가 없다', () => {
+    // ★ **「열람 고지는 남는다」를 걷었다**(지휘부 판정 2026-09-02). 전에는 그 짝을 지켰는데
+    //   고지 자체가 여섯 회차에서 사라졌다. 마지막 회차는 `share` 가 통째로 없다 —
+    //   토글도 고지도 없으므로 빈 구획을 만들 이유가 없다.
+    expect(widen(c).step.share, '마지막 회차에 공개 구획이 생겼다').toBeUndefined();
   });
 
-  it('★ 열람 범위 문안이 「인도자와 운영자」다 — 새로 쓰지 않고 복제한다', () => {
-    // CC_MEMO §2 규율. ADR-77 §4.3 이 확정한 문구이고, 새로 쓰면 반드시 한쪽이 빠진다.
-    //   실제로 「인도자와 나만」으로 적혔던 것이 그 실례다.
-    expect(c.step.share!.notice).toContain('인도자와 운영자');
-    expect(c.step.share!.notice, '운영자가 빠졌다').not.toContain('나만');
-  });
-
-  it('★ `notice2` 를 **유지한다** — 1~5회차와 바이트 동일', () => {
-    // 여기서 빠지면 6회차만 열람 주체를 안 밝히는 유일한 카드가 된다(CC_MEMO §1).
-    const prior = CHECKIN_SESSION_5.save.notice2;
-    expect(c.save.notice2).toBe(prior);
-    for (const s of [CHECKIN_SESSION_1, CHECKIN_SESSION_2, CHECKIN_SESSION_3, CHECKIN_SESSION_4]) {
-      expect(s.save.notice2).toBe(prior);
+  it('★★ 열람 고지를 **여섯이 함께** 걷었다 — 한 회차만 다른 상황을 만들지 않는다', () => {
+    // 전에는 「6회차만 열람 주체를 안 밝히는 유일한 카드가 되면 안 된다」로 여섯을 맞췄다.
+    //   이제 **여섯을 다 걷어 다시 맞췄다** — 맞춘다는 규율은 그대로이고 값만 뒤집혔다.
+    //   **되살아나면 운다.** 없어서 빠진 것이 아니라 일부러 뺐다.
+    for (const raw of [CHECKIN_SESSION_1, CHECKIN_SESSION_2, CHECKIN_SESSION_3,
+                       CHECKIN_SESSION_4, CHECKIN_SESSION_5, c]) {
+      const s = widen(raw);
+      expect(s.save.notice2, '열람 고지가 되살아났다').toBeUndefined();
+      expect(Object.keys(s.step.share ?? {}), '공개 고지가 되살아났다').not.toContain('notice');
     }
   });
 

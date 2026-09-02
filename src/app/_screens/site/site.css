@@ -369,19 +369,35 @@
 .site-book__bulk { font-size: 12.5px; margin: var(--space-2) 0 0; }
 
 /* ── 참여 대상 — lg↑ 단락형(§4.1) / md↓ 리스트형(§4.2). **화면당 하나만**(발주 §2). */
-.site-aud__para { display: none; }
-.site-aud__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+/* ── 이런 분께 권합니다 — **맨 위 구획**(ADR-172 · 지휘부 지시 2026-09-02) ──
+ *
+ * ★ **폭에 따라 하나만 고르던 것을 둘 다 쓰되 역할을 나눴다.**
+ *   전에는 lg↑ 에서 문단 한 덩어리만 보였다 — 맨 위로 올라오니 **읽기 전에 훑을 수 있어야** 한다.
+ *   목록이 「누구인가」, 문단이 「그래서 무엇을 하는가」다.
+ *   **새 부품을 만들지 않았다**(불변식 20) — 목록 점·2열 격자·토큰 전부 이 파일에 이미 있는 관용구다.
+ */
+.site-aud__list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--space-3);
+}
 .site-aud__list li {
-  font-size: 14px; line-height: 1.6; color: var(--color-text);
-  padding-left: 20px; position: relative;
+  font-size: 15px; line-height: 1.65; color: var(--color-text);
+  padding-left: 22px; position: relative;
 }
 .site-aud__list li::before {
-  content: ""; position: absolute; left: 4px; top: 9px;
+  content: ""; position: absolute; left: 4px; top: 10px;
   width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent);
 }
-@media (min-width: 1024px) {
-  .site-aud__para { display: block; font-size: 15.5px; line-height: 1.95; color: var(--color-text); margin: 0; max-width: 780px; }
-  .site-aud__list { display: none; }
+/* 문단은 목록 **아래 설명**으로 선다. 뒤 세 문장이 여기에만 있는 문안이라 버릴 수 없다. */
+.site-aud__para {
+  margin: var(--space-6) 0 0; padding-top: var(--space-5);
+  border-top: var(--border-hair) solid var(--color-border);
+  font-size: 15px; line-height: 1.9; color: var(--color-text-secondary);
+  max-width: 68ch;
+}
+@media (min-width: 768px) {
+  /* 다섯 줄이 한 열로 서면 스캔이 느리다 — **두 열**로 나눈다(`.site-band` 와 같은 격자 관용구). */
+  .site-aud__list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); }
 }
 
 /* 신청 CTA — 골드 primary 는 **세미나 신청 전용**이다(원고 §3.4 위계). */

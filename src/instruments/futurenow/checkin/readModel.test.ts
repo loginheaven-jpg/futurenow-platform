@@ -276,11 +276,17 @@ describe('가시성 — 지휘부 결정 2026-08-02', () => {
 
   it('공개 고지·연락 요청 — 본인/인도자 각각의 규칙', () => {
     const self = buildCheckinRead(2, ANSWERS_2, { ...OPEN, contactRequest: true }, 'self');
-    // 미체크(공개)면 본인에게 공개 고지 원문을 되돌려 준다.
-    expect(has(self, CHECKIN_SESSION_2.step.share.notice)).toBe(true);
+    // ★ **잠금을 뒤집었다**(지휘부 판정 2026-09-02). 전에는 「미체크면 공개 고지를 되돌려 준다」를
+    //   지켰는데, 그 고지 자체를 걷었다 — 되읽기도 작성과 같은 이유다(또 보이면 자기검열이 생긴다).
+    //   그래서 이제 **되돌아오면 우는 쪽**으로 잰다. 없어서 빠진 것이 아니라 일부러 뺐다.
+    expect(Object.keys((CHECKIN_SESSION_2.step as { share?: object }).share ?? {}), '공개 고지가 되살아났다').not.toContain('notice');
     const fac = buildCheckinRead(2, ANSWERS_2, { ...OPEN, contactRequest: true }, 'facilitator');
-    // 인도자에게는 참여자용 공개 고지를 싣지 않는다.
-    expect(has(fac, CHECKIN_SESSION_2.step.share.notice)).toBe(false);
+    for (const view of [self, fac]) {
+      const flat = JSON.stringify(view);
+      for (const bad of ['인도자와 운영자가', '이름과 함께 나눕니다']) {
+        expect(flat, `되읽기에 열람 고지가 들어왔다: ${bad}`).not.toContain(bad);
+      }
+    }
     // 연락 요청은 양쪽 다 — '코칭 세션이 아닙니다' 보조문구를 달고.
     const flag = flatten(fac).find((x) => x.kind === 'flag');
     expect(flag?.kind === 'flag' && flag.help).toBe(CHECKIN_SESSION_2.wrap.facilitatorBox.contactRequest.help);

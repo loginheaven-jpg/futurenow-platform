@@ -116,9 +116,10 @@ export function LetterPhotos({ cohortId, sessionNo, userId }: { cohortId: string
           </label>
         ) : null}
       </div>
-      <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>
-        첨부한 사진은 인도자와 운영자가 볼 수 있습니다. 언제든 직접 지우실 수 있어요. 위치정보는 자동으로 지워져요.
-      </p>
+      {/* ★ **열람 고지를 걷었다**(지휘부 판정 2026-09-02) — 회차 문안의 `notice2` 와 같은 이유다.
+          누가 보는지는 모집 자료·세미나 진행 중에 이미 공지되고, **쓰는 순간에 또 보이면
+          자기검열이 생긴다.** 정책은 한 글자도 안 바뀌었다 — 위치정보 제거(EXIF)도 그대로 돈다
+          (이 파일 머리 참조). **없어서 빠진 것이 아니라 일부러 뺐다. 되살리지 마라.** */}
       {err ? <p className="t-caption" style={{ color: 'var(--color-danger)', margin: 'var(--space-1) 0 0' }}>{err}</p> : null}
     </div>
   );
