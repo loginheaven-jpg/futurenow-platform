@@ -28,7 +28,7 @@ describe('loginOutcome (로그인 결과 → 행로)', () => {
 
   it('returnTo 오픈 리다이렉트 시도 → /home 으로 폴백(수용 11-a)', () => {
     expect(loginOutcome({ error: null, hasSession: true, returnTo: 'https://evil.example' }).redirect).toBe(LOGIN_HOME);
-    expect(loginOutcome({ error: null, hasSession: true, returnTo: '/admin' }).redirect).toBe(LOGIN_HOME);
+    expect(loginOutcome({ error: null, hasSession: true, returnTo: '/nope' }).redirect).toBe(LOGIN_HOME);
   });
 });
 

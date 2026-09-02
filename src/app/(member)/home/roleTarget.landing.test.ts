@@ -100,7 +100,7 @@ describe('★★ 링크가 우선이다 (지휘부 확정 2026-09-02)', () => {
   });
 
   it('★ 화이트리스트 밖 주소는 여전히 막힌다 — 오픈 리다이렉트 방어가 살아 있다', () => {
-    for (const bad of ['https://evil.test', '//evil.test', '/admin', '\\\\evil']) {
+    for (const bad of ['https://evil.test', '//evil.test', '/nope', '\\\\evil']) {
       expect(loginOutcome({ ...ok, returnTo: bad }).redirect, bad).toBe(LOGIN_HOME);
     }
   });
