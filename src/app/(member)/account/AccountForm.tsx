@@ -87,6 +87,7 @@ export function AccountForm({
   onSaveName,
   onSaveContact,
   onSavePassword,
+  email,
   keepSignedIn,
   onKeepSignedIn,
   membership,
@@ -110,6 +111,7 @@ export function AccountForm({
   onSaveContact: () => void;
   onSavePassword: () => void;
   // 소건 1-마 — **판정하지 않는다.** 값도 저장도 오케스트레이터가 한다(폼은 프레젠테이션).
+  email: string;
   keepSignedIn: boolean;
   onKeepSignedIn: (v: boolean) => void;
   /**
@@ -124,6 +126,15 @@ export function AccountForm({
           최박사 지시: *"포럼회원, 00기참여자, 00기인도자는 택일이 아니라 병행표현되어야 한다."*
           tier 는 늘 하나이므로 **한 줄**, 소속은 여럿이므로 **칩으로 나열**한다.
           **판정하지 않는다**(발주 §4) — 등급·대기 여부는 서버가 산출해 prop 으로 내려온다. */}
+      {/* ★ **로그인 계정**(지휘부 결재 2026-09-03 「가」) — 전에는 이 화면에 ID 가 한 글자도 없었다.
+          `CoreUser.email` 은 이미 서버가 갖고 있었고 **화면까지 배선만 없었다**(새 조회 0).
+          **읽기 전용이다** — 이메일 변경은 `auth.users` 이고 지금 저장소에 그 경로가 없다.
+          없는 것을 있는 것처럼 보이지 않게 입력칸이 아니라 **글**로 둔다. */}
+      <section style={section}>
+        <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 2 }}>로그인 계정</div>
+        <div className="t-body" style={{ color: 'var(--color-text)', wordBreak: 'break-all' }}>{email}</div>
+      </section>
+
       {membership ? (
         <section style={section}>
           {/* ① 자격 — 늘 한 줄.

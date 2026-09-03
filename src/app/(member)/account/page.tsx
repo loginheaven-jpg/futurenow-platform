@@ -27,6 +27,7 @@ export default async function AccountPage() {
       {/* **헤더는 껍데기가 그린다**(U-2 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다 —
           제목은 라우트의 성질이지 화면의 사정이 아니다. */}
       <AccountClient
+        email={me.email}
         initialName={me.name ?? ''}
         initialPhone={contact?.phone ?? ''}
         initialAddress={contact?.address ?? ''}

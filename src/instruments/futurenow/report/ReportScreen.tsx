@@ -14,7 +14,7 @@ const panelStyle: CSSProperties = {
   padding: 'var(--space-4)',
 };
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+export function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section style={panelStyle}>
       <h3 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-4)' }}>

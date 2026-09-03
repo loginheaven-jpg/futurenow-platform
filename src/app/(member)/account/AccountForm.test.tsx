@@ -23,6 +23,7 @@ const profile = {
 const render = (over: Partial<Parameters<typeof AccountForm>[0]> = {}) =>
   renderToStaticMarkup(
     <AccountForm
+      email="u1@t.test"
       name="홍길동"
       phone="010-1234-5678"
       address="서울시 예봄로 1"

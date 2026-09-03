@@ -21,6 +21,13 @@ import { HOME_DOOR, CONSOLE_DOOR, ADMIN_DOOR, SITE_DOOR } from '@/app/_vocab/doo
 import { PUBLIC_NAV, PUBLIC_SHEET_MINE } from '@/app/_screens/site/publicNav';
 import { JOIN_BY_CODE, MY_REPORT, MY_SEMINARS } from '@/app/_vocab/memberMenu';
 
+/**
+ * 로그아웃이 붙는 구획의 이름(ADR-185). **자료는 여기, 동작은 화면 층**이 붙인다 —
+ * `memberSheet` 는 `.ts` 이고 부수효과·JSX 를 두지 않는다(그 규약을 깨지 않는다).
+ * 이름을 양쪽이 손으로 적으면 한쪽만 고쳐지는 날 로그아웃이 조용히 사라진다(불변식 23).
+ */
+export const ACCOUNT_GROUP = '계정';
+
 export interface MemberSheet {
   groups: MenuGroup[];
   chips: SessionChip[];
@@ -126,7 +133,7 @@ export async function buildMemberSheet(
     },
     { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
     // 「코드로 세미나 참여」는 홈 아래쪽에 있던 것을 여기로 옮겼다(지시: 메뉴는 햄버거 휘하).
-    { title: '계정', items: [{ href: '/account', label: '내 정보' }, { href: '/join', label: JOIN_BY_CODE }] },
+    { title: ACCOUNT_GROUP, items: [{ href: '/account', label: '내 정보' }, { href: '/join', label: JOIN_BY_CODE }] },
   ];
 
   return { groups, chips, cohortName: primary?.name };

@@ -18,7 +18,8 @@ import { redirect } from 'next/navigation';
 import { requestContext, requestUser, requestConsents, requestCohorts } from '@/app/_lib/requestScope';
 import { CONSENT_VERSION } from '@/app/_consent/consent';
 import { roleTargets, homeIsCohortDashboard } from '@/app/(member)/home/roleTarget';
-import { buildMemberSheet } from '@/app/_lib/memberSheet';
+import { ACCOUNT_GROUP, buildMemberSheet } from '@/app/_lib/memberSheet';
+import { LogoutButton } from '@/app/_screens/LogoutButton';
 import { ChromeProvider } from '@/app/_screens/shell/chromeContext';
 import { MemberShell } from '@/app/_screens/shell/MemberShell';
 import { COHORT_ROLE_LABEL } from '@/core/membershipVocab';
@@ -73,7 +74,12 @@ export default async function MemberLayout({ children }: { children: React.React
         name: me.name?.trim() || me.email.split('@')[0] || '회원',
         role: me.role === 'coach' ? COHORT_ROLE_LABEL.coach : COHORT_ROLE_LABEL.participant,
         cohort: sheetData.cohortName,
-        groups: sheetData.groups,
+        // ★ **로그아웃을 계정 구획에 붙인다**(ADR-185 · 지휘부 결재 2026-09-03 「가」).
+        //   자료(`buildMemberSheet`)는 순수하게 두고 **동작만 여기서** 얹는다 —
+        //   링크 목록에 섞지 않고 구분선 아래에 세운다(F-3 의 우려를 그대로 지킨다).
+        groups: sheetData.groups.map((g) =>
+          g.title === ACCOUNT_GROUP ? { ...g, action: <LogoutButton /> } : g,
+        ),
         chips: sheetData.chips,
       }
     : null;

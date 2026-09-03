@@ -18,6 +18,7 @@ export function ReportPrintHeader({
   waveLabel,
   dateStr,
   title = '개인 체크 리포트',
+  screen = false,
 }: {
   participantName: string;
   cohortName: string;
@@ -25,9 +26,15 @@ export function ReportPrintHeader({
   dateStr: string;
   /** 문서 종류. 갈무리 세로 보기(ADR-118)가 같은 헤더를 쓰되 표제만 다르다 — 사본을 만들지 않는다. */
   title?: string;
+  /**
+   * 화면에도 세울 것인가(ADR-185). 기본은 **인쇄 전용**이다 — 인도자 화면은 그대로다.
+   * 참여자 리포트가 «표제부는 인도자용과 동일» 이라 이 문서 머리를 화면에서 쓴다.
+   * **사본을 만들지 않는다** — 같은 머리를 두 벌 두면 한쪽만 고쳐지는 날 두 문서가 달라진다.
+   */
+  screen?: boolean;
 }) {
   return (
-    <header className="print-only" style={wrap}>
+    <header className={screen ? undefined : 'print-only'} style={wrap}>
       <div>
         <div className="t-caption" style={{ color: 'var(--color-accent)', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>퓨처나우</div>
         <div className="t-display" style={{ color: 'var(--color-primary)', fontSize: 26, marginTop: 2 }}>{title}</div>
