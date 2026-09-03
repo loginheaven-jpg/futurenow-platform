@@ -1,5 +1,5 @@
 'use client';
-// §8.1 콘솔 홈 — 돌봄·할 일 중심. 먼저 챙길 분(최상단) → 진행 차수 → 모든 차수/새 차수.
+// §8.1 콘솔 홈 — 돌봄·할 일 중심. 먼저 챙길 분(최상단) → 진행 회기 → 모든 회기/새 회기.
 import { Button, ListRow } from '@/core/ui';
 import { CohortCard } from './CohortCard';
 import type { CohortSummary, RosterMember } from '../types';
@@ -18,7 +18,7 @@ export function ConsoleHome({
   coachName: string;
   careMembers: RosterMember[];
   cohorts: CohortSummary[];
-  isAdmin?: boolean; // 운영자 = 모든 인도자 차수 감독 뷰(헤딩·빈 안내 문구 분기). ADR-74
+  isAdmin?: boolean; // 운영자 = 모든 인도자 회기 감독 뷰(헤딩·빈 안내 문구 분기). ADR-74
   pendingCoachApps?: number; // 운영자 로그인 알림 — 승인 대기 건수(>0 이면 본부 유도 배너)
   onGoAdmin?: () => void;
   onOpenCohort?: (id: string) => void;
@@ -65,11 +65,11 @@ export function ConsoleHome({
 
       <section style={{ marginBottom: 'var(--space-6)' }}>
         <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-3)' }}>
-          {isAdmin ? '모든 인도자 차수' : '진행 중 차수'}
+          {isAdmin ? '모든 인도자 회기' : '진행 중 회기'}
         </h2>
         {cohorts.length === 0 ? (
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-            {isAdmin ? '아직 개설된 차수가 없어요.' : '아직 개설한 차수가 없어요. 아래 [+ 새 차수]로 첫 차수를 시작해 보세요.'}
+            {isAdmin ? '아직 개설된 회기가 없어요.' : '아직 개설한 회기가 없어요. 아래 [+ 새 회기]로 첫 회기를 시작해 보세요.'}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -81,8 +81,8 @@ export function ConsoleHome({
       </section>
 
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-        <Button variant="ghost" onClick={onAllCohorts} style={{ flex: 1 }}>모든 차수</Button>
-        <Button onClick={onNewCohort} style={{ flex: 1 }}>+ 새 차수</Button>
+        <Button variant="ghost" onClick={onAllCohorts} style={{ flex: 1 }}>모든 회기</Button>
+        <Button onClick={onNewCohort} style={{ flex: 1 }}>+ 새 회기</Button>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import type { MyCohortSummary } from '@/contracts';
 import { roleTargets, landingFor, homeIsCohortDashboard } from './roleTarget';
 import { loginOutcome, LOGIN_HOME } from '@/app/(public)/login/loginOutcome';
 
-/** 차수 하나 — 착지 판정에 쓰이는 칸만 채운다. 나머지는 이 잠금이 보지 않는다. */
+/** 회기 하나 — 착지 판정에 쓰이는 칸만 채운다. 나머지는 이 잠금이 보지 않는다. */
 const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary =>
   ({
     cohortId: 'c1', name: '예봄 2기', status: 'active',
@@ -19,13 +19,13 @@ const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary =>
 const NONE: MyCohortSummary[] = [];
 
 describe('★ 역할 카드 — 지시 case 1~4', () => {
-  it('case 1 · 참여자(기수 하나) — 카드 한 장', () => {
+  it('case 1 · 참여자(회기 하나) — 카드 한 장', () => {
     const t = roleTargets('user', [cohort()]);
     expect(t).toHaveLength(1);
     expect(t[0].href).toBe('/my/cohorts/c1');
   });
 
-  it('case 2 · 인도자(기수 없음) — 카드 한 장', () => {
+  it('case 2 · 인도자(회기 없음) — 카드 한 장', () => {
     const t = roleTargets('coach', NONE);
     expect(t).toHaveLength(1);
     expect(t[0].href).toBe('/coach');
@@ -37,19 +37,19 @@ describe('★ 역할 카드 — 지시 case 1~4', () => {
   });
 
   it('★★ case 4 · 운영자 — **인도자 카드가 선다**', () => {
-    // 이것이 이번 회차에서 더한 것이다. 권한은 전부터 있었고(운영자가 콘솔에서 전 차수를 본다)
+    // 이것이 이번 회차에서 더한 것이다. 권한은 전부터 있었고(운영자가 콘솔에서 전 회기를 본다)
     //   `role` 이 단일값이라 홈에 그 길만 없었다.
     const t = roleTargets('admin', [cohort()]);
     expect(t.map((x) => x.href)).toEqual(['/admin', '/coach', '/my/cohorts/c1']);
     const coachCard = t[1];
     // `who` 는 이 카드에서 언제나 「인도자」다 — 참여자 카드가 역할과 무관하게 「참여자」인 것과 같다.
     expect(coachCard.who).toBe('인도자');
-    // `sub` 만 갈린다 — 운영자는 자기 차수가 아니라 전부를 본다.
-    expect(coachCard.sub).toBe('모든 차수를 봅니다.');
-    expect(roleTargets('coach', NONE)[0].sub).toBe('내 차수와 조원을 봅니다.');
+    // `sub` 만 갈린다 — 운영자는 자기 회기가 아니라 전부를 본다.
+    expect(coachCard.sub).toBe('모든 회기를 봅니다.');
+    expect(roleTargets('coach', NONE)[0].sub).toBe('내 회기와 조원을 봅니다.');
   });
 
-  it('기수 없는 운영자도 카드 둘이다 — 홈에서 고른다', () => {
+  it('회기 없는 운영자도 카드 둘이다 — 홈에서 고른다', () => {
     expect(roleTargets('admin', NONE).map((x) => x.href)).toEqual(['/admin', '/coach']);
   });
 });
@@ -61,7 +61,7 @@ describe('★★ 착지 — 거점이 하나뿐일 때만 홈을 건너뛴다', 
 
   it('★★ case 1 — 참여자는 **홈에 남는다**(ADR-181). 홈이 곧 그 화면이기 때문이다', () => {
     // 옛 사실: 회기 홈으로 **직행**했다(ADR-173). **지우지 않고 옮겨 적는다** —
-    //   지시(「참여자 → 막바로 참여기수 메뉴로 진입」)는 그대로 지켜진다.
+    //   지시(「참여자 → 막바로 참여회기 메뉴로 진입」)는 그대로 지켜진다.
     //   가는 방법이 «리다이렉트» 에서 «홈이 그것을 그린다» 로 바뀌었고 **왕복이 하나 준다.**
     const t = roleTargets('user', [cohort()]);
     expect(t).toHaveLength(1);

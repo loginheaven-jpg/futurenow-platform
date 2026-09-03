@@ -152,7 +152,7 @@ export const CHECKIN_SESSION_2 = {
     facilitatorBox: {
       title: '인도자에게 하고 싶은 말',
       summary: '부탁 · 세미나 제안 · 연락 요청',
-      defaultOpen: false, // 7회차만 true — 마지막 회차의 세미나 제안은 다음 기수 설계의 최대 수확처다.
+      defaultOpen: false, // 7회차만 true — 마지막 회차의 세미나 제안은 다음 회기 설계의 최대 수확처다.
       need: { key: 'need', label: '인도자에게 부탁하고 싶은 것이 있나요?' },
       suggestion: { key: 'suggestion', label: '세미나에 대해 바라는 점이 있나요?' },
       suggestionAnon: { key: 'suggestion_anon', label: '이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.' },
@@ -192,7 +192,7 @@ export const CHECKIN_SESSION_2 = {
   done: {
     title: '갈무리를 저장했습니다.',
     stepHeading: '다음 시간까지의 한 걸음',
-    toHome: '차수 홈으로',
+    toHome: '회기 홈으로',
     edit: '고쳐 쓰기',
   },
   filledCount: (a) => countFilled(REQUIRED_2, a),

@@ -4,7 +4,17 @@
 //   다음 사람이 결손으로 보고 되살리면 **한 화면에서 두 번 말하는 상태로 되돌아간다.**
 //   그래서 「사라졌는가」가 아니라 **「새 자리에 있는가」**를 잰다.
 import { describe, expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+
+/** 디렉터리 아래 `.ts`·`.tsx` 전부. **글롭을 쓰지 않는다** — 글롭이 그 자리를 안 덮는 사고를 이미 겪었다. */
+function walk(dir: string, out: string[] = []): string[] {
+  for (const e of readdirSync(dir)) {
+    const p = `${dir}/${e}`;
+    if (statSync(p).isDirectory()) walk(p, out);
+    else if (/\.tsx?$/.test(p)) out.push(p);
+  }
+  return out;
+}
 import type { CoreContext, MyCohortSummary } from '@/contracts';
 import { buildMemberSheet } from './memberSheet';
 import { HOME_DOOR, CONSOLE_DOOR, ADMIN_DOOR, SITE_DOOR } from '@/app/_vocab/doors';
@@ -85,7 +95,11 @@ describe('★ 어휘 — 회기 (지휘부 확정 2026-09-02)', () => {
   it('참여자 대면 문안이 **회기**를 쓴다', async () => {
     const s = await buildMemberSheet(ctx(), [cohort()], { hasFeed: false, now: 0, role: 'user', cohortCount: 1 });
     expect(labels(s.groups).some((l) => l.includes(COHORT_WORD)), '시트가 아직 옛 낱말을 쓴다').toBe(true);
-    expect(labels(s.groups).some((l) => l.includes('기수')), '옛 낱말이 남았다').toBe(false);
+    // ★ **금지 낱말은 옛 낱말이다** — U-6 의 일괄 치환이 이 줄까지 바꿔 앞줄과 모순을 만들었다.
+    //   되돌리면서 **둘 다** 잰다(「차수」도 옛 낱말이다 — U-6 이 62자리를 마저 옮겼다).
+    for (const old of ['기수', '차수']) {
+      expect(labels(s.groups).some((l) => l.includes(old)), `옛 낱말 「${old}」 가 남았다`).toBe(false);
+    }
   });
 
   it('★ 낱말이 **한 곳**에서 온다 — 화면마다 박으면 다음에 반드시 한쪽이 남는다', () => {
@@ -94,18 +108,55 @@ describe('★ 어휘 — 회기 (지휘부 확정 2026-09-02)', () => {
     expect(vocab, '왜 바꿨는지·어디까지 바꿨는지가 안 적혀 있다').toContain('회기 소속');
   });
 
-  it('★★ **전면으로 갔다**(지휘부 확정 2026-09-03 「회기 로 갑니다」)', () => {
-    // 옛 잠금은 「모집 랜딩·갈무리 문항은 일부러 안 바꿨다」를 적어 두는 자리였다.
-    //   **지휘부가 전면 확정했으므로 그 사실이 뒤집혔다** — 지우지 않고 옮겨 적는다.
-    //   갈무리 문항 잠금(`copyRegression`)이 이 변경을 **정확히 잡았고**(늘어남 1·사라짐 1)
-    //   `regenCopyBaseline --write` 로 스냅샷을 새 사실로 다시 뽑았다.
-    for (const f of ['src/app/(public)/recruit/intake.ts', 'src/instruments/futurenow/checkin/session6.ts',
-                     'src/app/_screens/console/consoleNav.ts', 'src/app/admin/memberActions.ts']) {
-      const src = readFileSync(f, 'utf8');
-      // 주석은 그대로 둔다 — 옛 낱말을 지우면 왜 바뀌었는지 자취가 사라진다. **문안만** 잰다.
-      const copy = src.split(String.fromCharCode(10)).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join(' ');
-      expect(copy, `${f} 에 옛 낱말이 남았다`).not.toContain('기수');
-    }
+  // ★ **네 파일 잠금은 걷었다**(U-6). ADR-182 가 세운 그 잠금은
+  //   `recruit/intake.ts`·`checkin/session6.ts`·`console/consoleNav.ts`·`admin/memberActions.ts`
+  //   **넷만** 봤고, 그 좁은 창 위에서 「어휘 전면」이 선언됐다. 아래 전수 잠금이 그것을 삼킨다 —
+  //   같은 것을 두 자로 재면 언젠가 둘이 갈리고, 그때 어느 쪽이 참인지 알 수 없다(불변식 23).
+
+  // ★★★ **네 파일이 아니라 저장소를 잰다**(U-6).
+  //
+  //   윗 잠금은 **네 파일만** 봤고, ADR-182 는 그것을 근거로 「어휘 전면 · 화면 문안 24건」이라 적었다.
+  //   U-6 이 실측하니 화면에 나가는 옛 낱말이 **111자리**였다 — **판정의 창이 판정하려는 것보다 좁았고**,
+  //   초록은 「막았다」가 아니라 **「그 자리를 안 봤다」**였다(§11 ⑨-a).
+  //
+  //   **얼린 자리는 하나뿐이다.** 갈무리 익명 고지문은 최박사 문장 대체표 §8 「변경하지 않는 자리」에
+  //   유지로 박혀 있다(`docs/tasks/futurenow_copy_replacement_final (1).md`). 예외를 **여기 한 줄로**
+  //   적어 두는 것이 규율이다 — 별도 문서에 두면 다음 사람이 본문만 읽고 판단한다(§12.1).
+  const FROZEN = '이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.';
+
+  /** 주석을 걷고 얼린 문장을 뺀 뒤 옛 낱말이 남았는지 본다. **순수 함수라 물려 볼 수 있다.** */
+  function oldWordsIn(src: string): string[] {
+    const noBlock = src.replace(/\/\*[\s\S]*?\*\//g, '');
+    const body = noBlock
+      .split(String.fromCharCode(10))
+      .filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'))
+      // 줄 끝 주석도 걷는다 — `https://` 를 자르지 않도록 앞에 공백을 요구한다.
+      .map((l) => l.replace(/\s\/\/.*$/, ''))
+      .join(String.fromCharCode(10))
+      .split(FROZEN)
+      .join('');
+    return ['기수', '차수'].filter((w) => body.includes(w));
+  }
+
+  it('**자가 문다** — 옛 낱말을 심으면 잡히고, 주석·얼린 문장은 안 잡힌다', () => {
+    expect(oldWordsIn("const a = '내 차수';"), '심은 변이를 놓쳤다').toEqual(['차수']);
+    expect(oldWordsIn("const a = '어느 기수의 자료인가요';")).toEqual(['기수']);
+    expect(oldWordsIn('// 옛 이름은 차수였다')).toEqual([]);
+    expect(oldWordsIn('const a = 1; // 옛 이름은 기수였다')).toEqual([]);
+    expect(oldWordsIn('/* 차수 */ const a = 1;')).toEqual([]);
+    expect(oldWordsIn(`const l = '${FROZEN}';`), '얼린 문장을 잡았다').toEqual([]);
+    expect(oldWordsIn("const u = 'https://x/y'; const a = '회기';")).toEqual([]);
+  });
+
+  it('★★ **화면에 옛 낱말이 없다** — `src/app`·`src/instruments` 전수', () => {
+    const files = walk('src/app').concat(walk('src/instruments')).filter((f) => !/\.test\.tsx?$/.test(f));
+    // ⑦ **잴 것이 실재하는가** — 창이 비면 초록은 아무 말도 하지 않는다.
+    expect(files.length, '읽은 파일이 0이다 — 도구가 고장 났다').toBeGreaterThan(100);
+    const offenders = files
+      .map((f) => [f, oldWordsIn(readFileSync(f, 'utf8'))] as const)
+      .filter(([, w]) => w.length > 0)
+      .map(([f, w]) => `${f} :: ${w.join(',')}`);
+    expect(offenders, '지휘부 확정 2026-09-03 「회기 로 갑니다」 — 얼린 고지문 말고는 남지 않는다').toEqual([]);
   });
 
   it('★ 회기명 데이터는 문안이 아니다 — 여기서 못 바꾼다', () => {

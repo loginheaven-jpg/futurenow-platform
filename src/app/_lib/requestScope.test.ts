@@ -47,7 +47,9 @@ describe('★★ memo 는 여기서 증명할 수 없다 — 그 사실을 박�
     const uses = body.split('createServerContext(').length - 1;
     expect(uses, '팩토리를 부르는 자리가 하나가 아니다 — 우회 경로가 생겼다').toBe(1);
     // 그리고 나머지 셋은 전부 그 문을 지난다.
-    for (const fn of ['requestUser', 'requestConsents', 'requestCohorts']) {
+    // ★ **손으로 열거한 목록이다** — 새 로더를 더하면 여기도 더해야 한다(U-6 이 `requestCohort` 를 더했다).
+    //   전수로 바꾸려면 export 를 훑어야 하는데 그러면 `requestContext` 자신이 걸린다.
+    for (const fn of ['requestUser', 'requestConsents', 'requestCohorts', 'requestCohort']) {
       const at = src.indexOf(`export const ${fn} =`);
       expect(at, `${fn} 이 없다`).toBeGreaterThan(-1);
       const seg = src.slice(at, src.indexOf(';', at));

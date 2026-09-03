@@ -227,12 +227,12 @@ describe('운영자 — 넷째 축 (최박사가 표시 대상에 넣으셨다)'
     tier: 'forum', underReview: false, cohortRoles: [], isAdmin: false, ...over,
   });
 
-  it('운영자면 칩이 선다 — 기수에 매이지 않아 이름만 단다', () => {
+  it('운영자면 칩이 선다 — 회기에 매이지 않아 이름만 단다', () => {
     const html = render({ membership: view({ isAdmin: true }) });
     expect(html).toContain('운영자');
   });
 
-  it('**소속이 없어도 운영자 칩만으로 줄이 선다** — 넷째 축은 기수와 무관하다', () => {
+  it('**소속이 없어도 운영자 칩만으로 줄이 선다** — 넷째 축은 회기와 무관하다', () => {
     const html = render({ membership: view({ isAdmin: true, cohortRoles: [] }) });
     expect(html).toContain('운영자');
   });
@@ -242,7 +242,7 @@ describe('운영자 — 넷째 축 (최박사가 표시 대상에 넣으셨다)'
     expect(html).not.toMatch(/>\s*운영자\s*</);
   });
 
-  it('**운영자 칩이 소속 칩보다 앞에 선다** — 기수에 안 매인 것이 먼저 읽힌다', () => {
+  it('**운영자 칩이 소속 칩보다 앞에 선다** — 회기에 안 매인 것이 먼저 읽힌다', () => {
     const html = render({
       membership: view({ isAdmin: true, cohortRoles: [{ cohortId: 'c2', cohortName: '퓨처나우2026예봄2기', kind: 'participant', firstSessionAt: null }] }),
     });
@@ -279,7 +279,7 @@ describe('승급 안내 병기 (최박사 확정 2026-08-30)', () => {
     const html = render({
       membership: view({ cohortRoles: [{ cohortId: 'c1', cohortName: '퓨처나우2026예봄1기', kind: 'participant', firstSessionAt: '2026-07-26' }] }),
     });
-    expect(html).toContain('1기 참여자');           // 명칭은 기수 참여자
+    expect(html).toContain('1기 참여자');           // 명칭은 회기 참여자
     expect(html).toContain('방문회원');              // 자격 이름은 그대로
     expect(html).toContain('촉진자포럼에 가입하고');   // 승급 길이 보인다
   });

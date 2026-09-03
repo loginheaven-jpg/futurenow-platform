@@ -71,7 +71,13 @@ try {
   } else {
     note('③ 승인 큐 화면에 그 사람이 뜨는가', inQueue ? 'O 뜬다' : '★ 안 뜬다');
   }
-  await coach.screenshot({ path: `${OUT}/03-approvals.png` });
+  // ★★ **그림 이름이 담긴 화면과 달랐다**(U-6 · 반증자가 잡았다). 게이트가 되돌리면 이 그림에는
+  //   승인 큐가 아니라 **착지한 다른 화면**이 담기는데 파일 이름은 `03-approvals.png` 그대로였다.
+  //   *없는 그림*은 목록에서 티가 나지만 **이름이 맞아 보이는 그림**은 「봤다」고 착각하게 만든다.
+  //   그래서 **착지한 곳을 파일 이름에 싣는다** — 이름과 내용이 갈릴 수 없게.
+  const shotName = landed === '/admin/approvals' ? '03-approvals' : `03-approvals-BLOCKED${landed.replace(/\//g, '_')}`;
+  await coach.screenshot({ path: `${OUT}/${shotName}.png` });
+  note('③ 그림', `${shotName}.png — 담긴 화면은 ${landed} 다`);
   note('③ 승인 큐 문장', qText.split('\n').map((s) => s.trim()).filter((s) => s.length > 1).slice(0, 8).join(' | '));
 
   // ── ⑥ 갈무리: QA 기수에 회차 일정을 넣는다

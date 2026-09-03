@@ -1,6 +1,6 @@
 // 개인 리포트 상단 신상정보 패널(코치/운영자 전용). cohort_member_detail(ADR-75) 결과 표시.
 //   화면 전용(.no-print) — 연락처·개인정보는 공유 가능한 PDF 에 싣지 않는다(임상 리포트는 진단에 집중).
-//   전화·이메일은 tel/mailto 링크(바로 연락). 참여 이력은 호출자 가시 범위(운영자=전체·코치=자기 차수)로 스코프됨.
+//   전화·이메일은 tel/mailto 링크(바로 연락). 참여 이력은 호출자 가시 범위(운영자=전체·코치=자기 회기)로 스코프됨.
 import type { ReactNode } from 'react';
 import type { CohortMemberDetail } from '@/contracts';
 import { CURRENT_YEAR } from '@/instruments/futurenow/profileVocab';

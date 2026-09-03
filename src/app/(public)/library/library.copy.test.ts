@@ -76,7 +76,7 @@ describe('§12 개명 — 두 이름이 공존하지 않는다', () => {
     const files = [
       'src/app/_screens/site/publicNav.ts',
       'src/app/_lib/memberSheet.ts',
-      'src/app/_screens/console/consoleNav.ts',
+      'src/app/_screens/console/consoleSheet.ts',
       'src/app/(member)/home/page.tsx',
       'src/app/(member)/feed/page.tsx',
       'src/app/(member)/pending/page.tsx',
@@ -96,7 +96,7 @@ describe('§12 개명 — 두 이름이 공존하지 않는다', () => {
     // `screenChrome` 은 여기 없다 — `/library` 를 `gnb` 로 두어 **표가 제목을 들지 않기** 때문이다.
     //   (`bar` 로 두면 공개 GNB 가 사라져 로고가 없어진다 · U-4 §5 의 근거가 깨진다.)
     for (const f of ['src/app/_screens/site/publicNav.ts', 'src/app/_lib/memberSheet.ts',
-                     'src/app/_screens/console/consoleNav.ts', 'src/app/(public)/library/page.tsx']) {
+                     'src/app/_screens/console/consoleSheet.ts', 'src/app/(public)/library/page.tsx']) {
       expect(readFileSync(f, 'utf8'), `${f} 가 이름을 스스로 적고 있다`).toContain("from '@/app/_vocab/library'");
     }
   });

@@ -251,7 +251,7 @@ export const CHECKIN_SESSION_6 = {
   done: {
     title: '갈무리를 저장했습니다.',
     stepHeading: '앞으로 90일의 한 걸음',
-    toHome: '차수 홈으로',
+    toHome: '회기 홈으로',
     edit: '고쳐 쓰기',
   },
   filledCount: (a) => countFilled(REQUIRED_6, a),

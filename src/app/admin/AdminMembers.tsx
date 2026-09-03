@@ -52,15 +52,19 @@ export function AdminMembers({
   notices?: ReactNode;
 }) {
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
+    <>
+      {/* **폭과 이름은 라우트가 든다**(U-6) — 이 부품은 내용만 그린다(단독 렌더가 되어야 한다). */}
 
       {notices}
 
-      {/* ① 승인 대기 — 인도자 신청 큐(멤버 역할 관리와 구분) */}
+      {/* ★ **같은 낱말이 다른 큐를 가리키고 있었다**(U-6 실측 · 지휘부 결재 2026-09-03 「중복없이」).
+          이 구획은 **인도자 신청** 큐(`listCoachApplications`)인데 제목이 「승인 대기」였고,
+          별도 화면 `/admin/approvals`(「가입 승인」)의 **가입** 큐도 같은 낱말을 썼다.
+          둘 사이에 링크가 없어 운영자는 어느 큐를 보는지 이름으로 구별할 수 없었다.
+          **새 낱말을 지어내지 않았다** — 바로 이 주석이 이미 「인도자 신청 큐」라 부르고 있었다. */}
       <section style={{ marginBottom: 'var(--space-6)' }}>
         <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 17, margin: '0 0 var(--space-1)' }}>
-          승인 대기{applications.length > 0 ? ` (${applications.length})` : ''}
+          인도자 신청{applications.length > 0 ? ` (${applications.length})` : ''}
         </h2>
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
           인도자 신청을 검토해 승인하거나 거절합니다. 승인하면 곧바로 인도자로 전환돼요.
@@ -114,6 +118,6 @@ export function AdminMembers({
           ))}
         </div>
       </section>
-    </div>
+    </>
   );
 }

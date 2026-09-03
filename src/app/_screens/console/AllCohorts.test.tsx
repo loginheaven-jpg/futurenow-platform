@@ -10,8 +10,8 @@ const cohorts: CohortSummary[] = [
 ];
 const noop = () => {};
 
-describe('AllCohorts (모든 차수 — Step 3.2)', () => {
-  it('목록: 차수 카드(이름) + 헤더 액션 슬롯 전달, 빈 상태 아님', () => {
+describe('AllCohorts (모든 회기 — Step 3.2)', () => {
+  it('목록: 회기 카드(이름) + 헤더 액션 슬롯 전달, 빈 상태 아님', () => {
     const html = renderToStaticMarkup(
       <AllCohorts cohorts={cohorts} onNewCohort={noop} />,
     );
@@ -21,15 +21,15 @@ describe('AllCohorts (모든 차수 — Step 3.2)', () => {
     expect(html).toContain('봄 1기');
     expect(html).toContain('청년부 2기');
 
-    expect(html).not.toContain('아직 만든 차수가 없어요');
+    expect(html).not.toContain('아직 만든 회기가 없어요');
     // **홈 아이콘 단언은 껍데기로 옮겼다**(U-3) — `ConsoleShell.test.tsx` 가 잰다.
     //   화면은 본문만 그리므로 여기서 재면 «화면이 헤더를 그린다» 는 뜻이 된다.
   });
 
-  it('빈 상태: 차수 0 → 안내 + 새 차수 버튼', () => {
+  it('빈 상태: 회기 0 → 안내 + 새 회기 버튼', () => {
     const html = renderToStaticMarkup(<AllCohorts cohorts={[]} onNewCohort={noop} />);
-    expect(html).toContain('아직 만든 차수가 없어요');
-    expect(html).toContain('새 차수');
+    expect(html).toContain('아직 만든 회기가 없어요');
+    expect(html).toContain('새 회기');
   });
 
   it('미리보기 안전: headerActions 미전달 시 액션 0', () => {

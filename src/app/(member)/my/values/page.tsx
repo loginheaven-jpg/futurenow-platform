@@ -1,8 +1,8 @@
-// 가치 카드 — **개인 응시**(차수 미소속 · S-2 · ADR-122).
+// 가치 카드 — **개인 응시**(회기 미소속 · S-2 · ADR-122).
 //
-// 차수 경로(`/my/cohorts/[cohortId]/values`)와 **같은 컴포넌트를 쓴다.** 화면을 복제하지 않는다
+// 회기 경로(`/my/cohorts/[cohortId]/values`)와 **같은 컴포넌트를 쓴다.** 화면을 복제하지 않는다
 //   (발주서 §3.2). 두 라우트 파일이 다른 것은 **`cohortId` 를 어떻게 해석하는가** 하나뿐이다.
-//     차수 경로 — URL 의 cohortId 를 자기 차수 목록과 대조해 통과시킨다
+//     회기 경로 — URL 의 cohortId 를 자기 회기 목록과 대조해 통과시킨다
 //     이 경로   — cohortId 가 **없다**(null). 대신 응시 자격을 본다
 //
 // **게이트 두 겹.** ① `/my` 는 PROTECTED_PREFIXES 라 미인증이 미들웨어에서 /login 으로 걸린다.
@@ -34,7 +34,7 @@ export default async function PersonalValuesPage() {
       {/* **헤더는 껍데기가 그린다**(U-2 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다 —
           제목은 라우트의 성질이지 화면의 사정이 아니다. */}
       {/* 열람 고지(IA §4.2 ①) — 허락을 구하는 문장이 아니라 알려 주는 문장이다.
-          차수 경로는 "우리 회기 인도자와 함께 봅니다", 개인 경로는 이것이다. */}
+          회기 경로는 "우리 회기 인도자와 함께 봅니다", 개인 경로는 이것이다. */}
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-3)' }}>
         이 결과는 나만 봅니다.
       </p>

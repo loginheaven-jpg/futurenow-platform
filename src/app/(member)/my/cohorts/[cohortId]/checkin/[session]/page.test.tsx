@@ -85,7 +85,7 @@ describe('갈무리 카드 — ?edit=1 이 편집을 연다', () => {
   it('key 가 모드를 포함한다 — 회차만으로는 ?edit=1 전환을 가르지 못한다', async () => {
     const read = find(await render(false));
     const edit = find(await render(true));
-    // 같은 차수·같은 회차이므로, 둘을 가르는 것은 모드뿐이다.
+    // 같은 회기·같은 회차이므로, 둘을 가르는 것은 모드뿐이다.
     expect(String(read?.key)).toContain('read');
     expect(String(edit?.key)).toContain('edit');
   });

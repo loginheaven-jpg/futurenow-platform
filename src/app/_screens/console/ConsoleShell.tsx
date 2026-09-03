@@ -7,9 +7,10 @@
 //   탭이 이미 «지금 어디»를 말하므로 제목바는 같은 말을 두 번 했다.
 //
 //   제목바가 들던 넷의 행선지:
-//     · 제목 → 회기 화면은 **탭**이, 탭이 없는 화면(`/coach`·`/coach/cohorts`·`/coach/new`·
-//       `/admin`·`/admin/approvals`)은 **본문 첫 줄**이 든다(결재 물음 2 답).
-//       그 한 줄은 아래 `.console-title` 이고, 이름은 여전히 **표**에서만 온다(사본 0).
+//     · 제목 → 탭이 켜지는 화면은 **탭**이, 그 밖의 화면은 **본문 첫 줄**(`ConsoleTitle`)이 든다
+//       (결재 물음 2 답). **U-6 에서 그 한 줄을 껍데기에서 화면 컨테이너 «안»으로 옮겼다** —
+//       껍데기가 그리면 본문 폭(∞·480·480·560·1200)과 맞출 길이 없어 다섯 중 넷이 어긋났다.
+//       이름은 여전히 **표**에서만 온다(사본 0).
 //     · 뒤로 → **폐지**(결재 「뒤로가기는 불필요」). 벨트와 탭이 갈 곳을 다 든다.
 //     · 도구(`HeaderActions`) → 시트로. 「내 정보」는 시트 계정 구획에 있다.
 //     · 햄버거 → **벨트 하나로 합쳤다.** 전에는 벨트와 제목바에 각각 있어 한 화면에 문이 둘이었다
@@ -22,12 +23,10 @@
 // **회기 띠는 여기 없다.** 회기 이름은 서버 데이터라 이 껍데기가 알 수 없다 —
 //   `/coach/cohort/[cohortId]/layout.tsx` 가 그린다(`ConsoleBand` 머리 주석에 근거).
 // ─────────────────────────────────────────────────────────────────────────────
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { SiteGnb } from '@/app/_screens/site/SiteGnb';
 import type { MenuGroup } from '@/app/_screens/site/MenuSheet';
 import { PUBLIC_NAV } from '@/app/_screens/site/publicNav';
-import { cohortIdOf } from './consoleNav';
-import { SCREEN_CHROME, patternOf } from '@/app/_lib/screenChrome';
 
 export function ConsoleShell({
   role,
@@ -40,12 +39,7 @@ export function ConsoleShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname() ?? '';
-  const params = useParams() as Record<string, string | string[] | undefined>;
-  const chrome = SCREEN_CHROME[patternOf(pathname, params)];
   if (role === 'user') return <>{children}</>; // 참여자 — 셸 없이 그대로(발주 §5)
-
-  // 회기 안이면 띠가 제목을 말한다. 그 밖에서만 본문 첫 줄이 든다.
-  const bodyTitle = cohortIdOf(pathname) == null && chrome?.kind === 'bar' ? chrome.title : null;
 
   return (
     <div className="console-shell">
@@ -59,10 +53,7 @@ export function ConsoleShell({
         signedIn
         sheet={sheet ?? undefined}
       />
-      <div className="console-main">
-        {bodyTitle ? <h1 className="console-title t-h1">{bodyTitle}</h1> : null}
-        {children}
-      </div>
+      <div className="console-main">{children}</div>
     </div>
   );
 }

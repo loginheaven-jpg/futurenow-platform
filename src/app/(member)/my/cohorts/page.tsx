@@ -1,5 +1,5 @@
-// 내 차수 목록(/my/cohorts, Step 1.2) — 본인 참여 차수. 서버 컴포넌트(세션 의존 → force-dynamic).
-// 게이트: 미인증→/login 만(A′-1 역할 감금 해제 — 코치·운영자도 본인 참여 차수를 본다). 셸 헤더+로그아웃+홈(→/home).
+// 내 회기 목록(/my/cohorts, Step 1.2) — 본인 참여 회기. 서버 컴포넌트(세션 의존 → force-dynamic).
+// 게이트: 미인증→/login 만(A′-1 역할 감금 해제 — 코치·운영자도 본인 참여 회기를 본다). 셸 헤더+로그아웃+홈(→/home).
 // 데이터: listMyCohorts(my_cohorts DEFINER RPC, auth.uid() 스코프). 앱은 cohorts·responses 직접 select 안 함.
 import { redirect } from 'next/navigation';
 import { MyCohorts } from '@/app/_screens/MyCohorts';
@@ -14,7 +14,7 @@ export default async function MyCohortsPage() {
 
   const cohorts = await ctx.listMyCohorts();
 
-  // 차수 1개면 목록은 불필요한 경유 — 막바로 차수 홈으로. (0개=빈 상태, 2개+=목록이 값을 함)
+  // 회기 1개면 목록은 불필요한 경유 — 막바로 회기 홈으로. (0개=빈 상태, 2개+=목록이 값을 함)
   if (cohorts.length === 1) redirect(`/my/cohorts/${cohorts[0].cohortId}`);
 
   return (

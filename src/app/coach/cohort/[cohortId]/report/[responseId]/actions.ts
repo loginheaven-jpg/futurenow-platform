@@ -13,7 +13,7 @@ export interface InterpretationVM {
   coachEdited: boolean;
 }
 
-// 지연 생성 트리거(B③-A). getResponse RLS(차수 코치·운영자·본인)가 권한 강제 — 비소유 접근은 예외 → 실패 반환(누출 0).
+// 지연 생성 트리거(B③-A). getResponse RLS(회기 코치·운영자·본인)가 권한 강제 — 비소유 접근은 예외 → 실패 반환(누출 0).
 // 멱등: generateInterpretation existing 선확인 + saveInterpretation '없을 때만' + aiChat useCache. 동시 열람 중복은 낭비이나 정합 안전(락 기각).
 export async function ensureInterpretationAction(
   responseId: string,
@@ -35,7 +35,7 @@ export async function ensureInterpretationAction(
 }
 
 // 코치 검수 — 수정본 확정(B③-B). 코치가 다듬은 문구 저장(edited_by=본인·edited_at=now). 이후 effective=코치본.
-// 권한: setCoachInterpretation → RLS(코치/운영자). 참여자·타 차수 코치는 정책상 차단 → 예외 → 실패 반환.
+// 권한: setCoachInterpretation → RLS(코치/운영자). 참여자·타 회기 코치는 정책상 차단 → 예외 → 실패 반환.
 export async function saveCoachInterpretationAction(
   responseId: string,
   content: InterpretationContent,

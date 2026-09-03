@@ -19,7 +19,7 @@ export function CodeInput({ onSubmit, onExperience }: { onSubmit?: (code: string
       <Button onClick={() => onSubmit?.(code)} disabled={code.length !== 5} style={{ width: '100%' }}>
         확인
       </Button>
-      {/* 체험 진단 진입(트랙 D-2) — 코드 입력 시도 후 '없음'을 깨닫는 지점. general 예약 차수로 합류(딥링크 동형). */}
+      {/* 체험 진단 진입(트랙 D-2) — 코드 입력 시도 후 '없음'을 깨닫는 지점. general 예약 회기로 합류(딥링크 동형). */}
       {onExperience ? (
         <div style={{ marginTop: 'var(--space-6)', textAlign: 'center' }}>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>

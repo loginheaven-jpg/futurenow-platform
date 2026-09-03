@@ -12,7 +12,7 @@ export function instrumentDisplay(instrumentId: string): { label: string; minute
 // 콘솔 샘플/표시용 명단 행
 export interface RosterMember {
   id: string; // 응답자=responseId(리포트 진입)·미응답=userId
-  userId: string; // 참여자 식별(휴지통 — 차수에서 제거). id 와 별도(id 는 응답자면 responseId). ADR-73
+  userId: string; // 참여자 식별(휴지통 — 회기에서 제거). id 와 별도(id 는 응답자면 responseId). ADR-73
   name: string;
   status: 'care' | 'done' | 'pending';
   note?: string; // 먼저 챙길 분 사유(인도자 화면)
@@ -22,8 +22,8 @@ export interface RosterMember {
 export interface CohortSummary {
   id: string;
   name: string;
-  description?: string | null; // 코치 차수 소개(편집용 — 차수 상세에서만 채움)
-  coachName?: string | null; // 소유 인도자 이름(운영자 전체 차수 뷰에서만 채움 — 누구의 차수인지). ADR-74
+  description?: string | null; // 코치 회기 소개(편집용 — 회기 상세에서만 채움)
+  coachName?: string | null; // 소유 인도자 이름(운영자 전체 회기 뷰에서만 채움 — 누구의 회기인지). ADR-74
   instrumentLabel: string;
   responded: number;
   total: number;

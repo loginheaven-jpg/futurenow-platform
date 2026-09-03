@@ -1,6 +1,6 @@
 'use client';
-// §8.2 차수 개설 — 3스텝(이름 → 정원·소개 → 완료·코드 공유). 한 화면 한 질문, 진행바.
-// 차수는 wave 중립(B-4): 사전/사후 선택 없음 — 사후는 개설이 아니라 코치가 차수 상세에서 개시(open_post_wave·ADR-55).
+// §8.2 회기 개설 — 3스텝(이름 → 정원·소개 → 완료·코드 공유). 한 화면 한 질문, 진행바.
+// 회기는 wave 중립(B-4): 사전/사후 선택 없음 — 사후는 개설이 아니라 코치가 회기 상세에서 개시(open_post_wave·ADR-55).
 import { useState, type CSSProperties } from 'react';
 import { Button, ProgressBar, Stepper } from '@/core/ui';
 
@@ -76,7 +76,7 @@ export function CreateCohort({
     const res = await onCreate({ name: name.trim(), maxMembers: cap, description: description.trim() || undefined });
     setSubmitting(false);
     if (res.error || !res.code) {
-      setError(res.error ?? '차수 생성에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      setError(res.error ?? '회기 생성에 실패했어요. 잠시 후 다시 시도해 주세요.');
       return;
     }
     setCreatedCode(res.code);
@@ -92,9 +92,9 @@ export function CreateCohort({
 
       {step === 1 && (
         <section>
-          <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 18, margin: '0 0 var(--space-2)' }}>차수 이름을 정해 주세요</h2>
+          <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 18, margin: '0 0 var(--space-2)' }}>회기 이름을 정해 주세요</h2>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>참여자에게 보이는 이름이에요.</p>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 2026 봄 미래의 나 1기" aria-label="차수 이름" />
+          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 2026 봄 미래의 나 1기" aria-label="회기 이름" />
           <Button onClick={() => setStep(2)} disabled={!name.trim()} style={{ width: '100%', marginTop: 'var(--space-6)' }}>다음</Button>
         </section>
       )}
@@ -115,8 +115,8 @@ export function CreateCohort({
               onChange={(e) => setDescription(e.target.value)}
               maxLength={500}
               rows={3}
-              placeholder="이 차수를 소개하는 글 (선택) — 참여자 미리보기에 보여요."
-              aria-label="차수 소개"
+              placeholder="이 회기를 소개하는 글 (선택) — 참여자 미리보기에 보여요."
+              aria-label="회기 소개"
               style={{ ...inputStyle, minHeight: 80, padding: 'var(--space-3)', resize: 'vertical', marginTop: 'var(--space-1)', display: 'block' }}
             />
           </div>
@@ -131,7 +131,7 @@ export function CreateCohort({
 
       {step === 3 && (
         <section>
-          <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 18, margin: '0 0 var(--space-2)' }}>차수가 만들어졌어요</h2>
+          <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 18, margin: '0 0 var(--space-2)' }}>회기가 만들어졌어요</h2>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-4)' }}>아래 코드를 참여자에게 전해 주세요.</p>
           <div style={{ background: 'var(--color-primary)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', textAlign: 'center', marginBottom: 'var(--space-4)' }}>
             <div className="t-display tnum" style={{ color: 'var(--color-accent)', letterSpacing: 6 }}>{shownCode}</div>

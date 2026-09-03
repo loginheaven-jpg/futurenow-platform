@@ -30,7 +30,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       status: 200,
       headers: {
         'content-type': file.contentType,
-        // **캐시하지 않는다.** 자격은 언제든 바뀌고(보류 · 기수 이동),
+        // **캐시하지 않는다.** 자격은 언제든 바뀌고(보류 · 회기 이동),
         //   중간 캐시가 들고 있으면 그것이 곧 잔여 창이다.
         'cache-control': 'private, no-store',
         'content-disposition': `inline; filename*=UTF-8''${encodeURIComponent(source.title)}`,

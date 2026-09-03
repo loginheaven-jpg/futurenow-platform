@@ -64,7 +64,7 @@ describe('value_restart — 권한과 경계', () => {
     expect(SQL).toContain('SET search_path = public');
   });
 
-  it('응시 게이트와 차수 검증을 그대로 지난다', () => {
+  it('응시 게이트와 회기 검증을 그대로 지난다', () => {
     expect(SQL).toContain("member_can_assess(auth.uid(), 'standing')");
     expect(SQL).toContain('is_cohort_member(p_cohort_id, auth.uid())');
   });

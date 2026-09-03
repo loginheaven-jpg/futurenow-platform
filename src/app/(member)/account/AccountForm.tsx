@@ -198,8 +198,8 @@ export function AccountForm({
               **칩은 이름만 단다**(최박사 확정 4번) — 설명은 위 자격 줄이 든다. */}
           {membership.cohortRoles.length > 0 || membership.isAdmin ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
-                {/* 운영자 — **넷째 축**이라 기수 칩과 같은 줄에 서되 기수명이 없다.
-                    맨 앞에 둔다: 기수에 매이지 않는 것이 매인 것들보다 먼저 읽히는 편이 자연스럽다. */}
+                {/* 운영자 — **넷째 축**이라 회기 칩과 같은 줄에 서되 회기명이 없다.
+                    맨 앞에 둔다: 회기에 매이지 않는 것이 매인 것들보다 먼저 읽히는 편이 자연스럽다. */}
                 {membership.isAdmin ? (
                   <span
                     className="t-caption"

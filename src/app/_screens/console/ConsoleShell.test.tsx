@@ -4,7 +4,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { ACCOUNT_DOOR, CONSOLE_DOOR, HOME_DOOR } from '@/app/_vocab/doors';
 import { ACCOUNT_GROUP } from '@/app/_lib/memberSheet';
 import { consoleSheet } from './consoleSheet';
-import { SCREEN_CHROME } from '@/app/_lib/screenChrome';
 
 // 콘솔 껍데기 — **화면에서 옮겨온 단언이 사는 자리** (U-3 · U-5 로 갱신).
 //
@@ -70,18 +69,24 @@ describe('콘솔 껍데기 — 벨트 한 겹', () => {
     expect(html, '껍데기가 띠를 그렸다 — 이름 없이 그리게 된다').not.toContain('console-tabs');
   });
 
-  it('**탭이 없는 화면은 이름을 본문 첫 줄이 든다**(결재 물음 2 답)', async () => {
-    const html = await render('/coach/cohorts', 'coach');
-    expect(html).toContain('console-title');
-    const entry = SCREEN_CHROME['/coach/cohorts'];
-    // 표에서 읽는다 — 이름을 여기 손으로 적으면 사본이 둘이다(불변식 23).
-    expect(entry.kind, '표가 이 화면을 제목바로 적고 있지 않다').toBe('bar');
-    expect(html).toContain(entry.kind === 'bar' ? entry.title : '');
+  it('**껍데기는 이름을 그리지 않는다**(U-6) — 화면 컨테이너 «안»으로 옮겼다', async () => {
+    // U-5 는 껍데기가 그렸고, 본문 폭이 화면마다 달라 **다섯 중 넷에서 제목만 왼쪽으로 튀었다**.
+    //   누가 그리는지는 `tests/consoleNames.test.ts` 가 라우트 전수로 잠근다.
+    for (const p of ['/coach', '/coach/cohorts', `${COHORT}/checkin`]) {
+      expect(await render(p, 'coach'), `${p} — 껍데기가 이름을 다시 그린다`).not.toContain('console-title');
+    }
   });
 
-  it('**회기 안에서는 본문 제목을 그리지 않는다** — 띠가 이미 말한다', async () => {
-    const html = await render(`${COHORT}/checkin`, 'coach');
-    expect(html, '띠와 본문이 같은 말을 두 번 한다').not.toContain('console-title');
+  it('**운영자 화면도 같은 껍데기를 쓴다**(U-6) — 실브라우저로 못 본 자리다', async () => {
+    // `.env.local` 에 `QA_ADMIN_*` 키가 없어 실라우트 캡처가 막혀 있다(U-6 실측).
+    //   그 층을 못 재는 만큼 **여기서는 재는 것을 넓힌다** — 전에는 `/admin` 을 한 번도 렌더하지 않았다.
+    for (const p of ['/admin', '/admin/approvals']) {
+      const html = await render(p, 'admin');
+      expect(html, `${p} 에 벨트가 없다`).toContain('site-gnb');
+      expect(html.split('site-gnb__burger').length - 1, `${p} 의 문이 하나가 아니다`).toBe(1);
+      expect(html.split('<header').length - 1, `${p} 에 머리 띠가 둘이다`).toBe(1);
+      expect(html, `${p} 에 띠가 섰다 — 회기 밖이다`).not.toContain('console-tabs');
+    }
   });
 
   it('참여자에게는 껍데기를 두르지 않는다 — 대조군', async () => {

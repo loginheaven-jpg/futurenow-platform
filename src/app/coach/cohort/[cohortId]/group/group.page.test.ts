@@ -66,7 +66,7 @@ describe('★ 이름 링크 (인수 7)', () => {
 });
 
 describe('★ 참여자 미노출 (인수 8 · 회귀 잠금)', () => {
-  it('멤버는 되돌리고 비소유 차수는 404 다', () => {
+  it('멤버는 되돌리고 비소유 회기는 404 다', () => {
     const src = read(PAGE);
     expect(src, '참여자 차단이 사라졌다').toContain("me.role === 'user'");
     expect(src).toContain("redirect('/home')");

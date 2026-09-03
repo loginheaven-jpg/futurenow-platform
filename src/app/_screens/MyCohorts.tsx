@@ -1,4 +1,4 @@
-// 내 차수 목록 본문(프레젠테이션 — 부수효과 없음). 멤버 시점: 내가 속한 차수 + 진행 상태.
+// 내 회기 목록 본문(프레젠테이션 — 부수효과 없음). 멤버 시점: 내가 속한 회기 + 진행 상태.
 // 참여자 팔레트·중립. danger/warning/care 의미색 0(§0.4). 완료 배지만 accent(골드=진행 흔적).
 // 다음 행동: 사전 미완→[진단 시작하기] · 사후 개시·미완→[사후 진단하기](B-2) · 그 외→[내 리포트](순화 뷰, 라우트 구현 완료).
 import Link from 'next/link';
@@ -45,10 +45,10 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
           key={c.cohortId}
           style={{ position: 'relative', padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' }}
         >
-          {/* 카드 전체 탭 → 차수 홈(진단 둘 + 갈무리 일곱을 담는 본체, ADR-80). 스트레치드 링크 — 버튼만 위로 올려 자기 액션 유지 */}
+          {/* 카드 전체 탭 → 회기 홈(진단 둘 + 갈무리 일곱을 담는 본체, ADR-80). 스트레치드 링크 — 버튼만 위로 올려 자기 액션 유지 */}
           <a
             href={`/my/cohorts/${c.cohortId}`}
-            aria-label={`${c.name} 차수 홈 열기`}
+            aria-label={`${c.name} 회기 홈 열기`}
             style={{ position: 'absolute', inset: 0, zIndex: 0, borderRadius: 'var(--radius)' }}
           />
 
@@ -56,7 +56,7 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
           <div style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
             <div className="t-body-lg" style={{ color: 'var(--color-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 'var(--space-2)' }}>
               <span>{c.name}</span>
-              <span aria-hidden style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>차수 홈 ›</span>
+              <span aria-hidden style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>회기 홈 ›</span>
             </div>
             <div className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
               {c.coachName ?? '인도자'} · {c.status === 'archived' ? '마감' : '진행 중'}
@@ -68,7 +68,7 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
             </div>
           </div>
 
-          {/* 우선순위 버튼(카드 링크 위 — 자기 목적지). 사전 미완 → 진단 · 열린 회차 미제출 → 이번 주 갈무리 · 사후 개시·미완 → 사후 · 그 외 → 차수 열기 */}
+          {/* 우선순위 버튼(카드 링크 위 — 자기 목적지). 사전 미완 → 진단 · 열린 회차 미제출 → 이번 주 갈무리 · 사후 개시·미완 → 사후 · 그 외 → 회기 열기 */}
           <div style={{ position: 'relative', zIndex: 1 }}>
             {!c.preDone ? (
               <Link className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}`} style={full}>{TOOL.pre} 시작하기</Link>
@@ -78,7 +78,7 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
             ) : c.postOpened && !c.postDone ? (
               <Link className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>{TOOL.post} 하기</Link>
             ) : (
-              <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>차수 열기</Link>
+              <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>회기 열기</Link>
             )}
           </div>
         </div>

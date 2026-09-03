@@ -47,7 +47,7 @@ export default function EntryPreviewPage() {
         <StepHeader step="code" />
         <CodeInput />
       </Frame>
-      <Frame label="② 차수 미리보기">
+      <Frame label="② 회기 미리보기">
         <StepHeader step="preview" />
         <CohortPreview meta={sampleMeta} />
       </Frame>

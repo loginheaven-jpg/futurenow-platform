@@ -40,13 +40,13 @@ export default function ConsolePreviewPage() {
       <Frame label="§8.1 콘솔 홈">
         <ConsoleHome coachName="김인도 인도자" careMembers={careMembers} cohorts={cohorts} />
       </Frame>
-      <Frame label="§8.3 차수 상세">
+      <Frame label="§8.3 회기 상세">
         <CohortDetail cohort={cohorts[0]} roster={roster} />
       </Frame>
-      <Frame label="§8.2 차수 개설(3스텝)">
+      <Frame label="§8.2 회기 개설(3스텝)">
         <CreateCohort />
       </Frame>
-      <Frame label="§8.4 모든 차수">
+      <Frame label="§8.4 모든 회기">
         <AllCohorts cohorts={cohorts} />
       </Frame>
     </div>

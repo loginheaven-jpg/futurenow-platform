@@ -1,5 +1,5 @@
 'use client';
-// 차수 요약 카드(콘솔 홈·모든 차수 공용). 진행률·돌봄 수. 의미색은 돌봄에만.
+// 회기 요약 카드(콘솔 홈·모든 회기 공용). 진행률·돌봄 수. 의미색은 돌봄에만.
 import { Card, ProgressBar } from '@/core/ui';
 import type { CohortSummary } from '../types';
 

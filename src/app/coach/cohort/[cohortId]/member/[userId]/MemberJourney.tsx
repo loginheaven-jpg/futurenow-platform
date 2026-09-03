@@ -52,7 +52,6 @@ export function MemberJourney({
   cohortId,
   userId,
   name,
-  cohortName,
   sessions,
   rows,
   photos,
@@ -62,7 +61,6 @@ export function MemberJourney({
   cohortId: string;
   userId: string;
   name: string;
-  cohortName: string;
   sessions: CohortSession[];
   rows: CheckinRecord[];
   photos: Record<number, CheckinPhoto[]>;
@@ -81,12 +79,11 @@ export function MemberJourney({
 
   return (
     <div>
-      {/* ① 머리 — 이름·차수·진행. 회차 수는 cohort_sessions 가 정한다(7로 박지 않는다). */}
+      {/* ① 머리 — 이름·회기·진행. 회차 수는 cohort_sessions 가 정한다(7로 박지 않는다). */}
       <div style={{ borderBottom: 'var(--border-hair) solid var(--color-border)', paddingBottom: 'var(--space-4)' }}>
-        <div className="t-h2" style={{ color: 'var(--color-text)', fontSize: 20 }}>
-          {name}
-          {cohortName ? <span className="t-caption" style={{ ...gray, marginLeft: 'var(--space-2)' }}>· {cohortName}</span> : null}
-        </div>
+        {/* ★ **회기 이름은 띠의 칩이 든다**(U-6) — 여기 또 붙이면 한 화면에 둘이다.
+            이 줄의 주인은 **사람 이름**이다. */}
+        <div className="t-h2" style={{ color: 'var(--color-text)', fontSize: 20 }}>{name}</div>
         {/* 두 문서가 서로를 알되 섞이지 않는다 — 리포트가 없으면 버튼을 그리지 않는다. */}
         {reportId ? (
           <div style={{ marginTop: 'var(--space-3)' }}>

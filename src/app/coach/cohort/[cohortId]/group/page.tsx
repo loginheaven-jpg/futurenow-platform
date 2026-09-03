@@ -1,10 +1,11 @@
-// 그룹 리포트(/coach/cohort/[id]/group, §B③ · Step 3.3) — 차수 집계(축 평균·분포). 코치 전용 리얼.
+// 그룹 리포트(/coach/cohort/[id]/group, §B③ · Step 3.3) — 회기 집계(축 평균·분포). 코치 전용 리얼.
 // B-3: 사전·사후 각각 그룹 평균을 산출. 사후 응답이 있으면 사전/사후 두 평균을 라벨링해 비교, 없으면 사전 단독(폴백).
 // 게이트: 미인증→/login · 멤버→/home · getCohort 소유 게이트 — 비소유·미존재 → 404. 멤버 순화(participantMirror)와 분리(ADR-30).
 // 데이터: listResponses(wave별) → latestPerUser(재진단 dedup, 각 wave 최신 1건) → futurenowScoring.score → GroupView. 계약·DB 변경 0.
+import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
-import { createServerContext } from '@/core/supabase/server';
+import { requestCohort, requestContext, requestUser } from '@/app/_lib/requestScope';
 import { GroupView } from '@/instruments/futurenow/report/GroupView';
 import { GroupDesign } from '@/instruments/futurenow/report/GroupDesign';
 import type { GroupMember } from '@/instruments/futurenow/report/groupModel';
@@ -17,13 +18,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function GroupReportPage({ params }: { params: Promise<{ cohortId: string }> }) {
   const { cohortId } = await params;
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 콘솔로 넓혔다) — 껍데기가 이미 물은 것을 다시 묻지 않는다.
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버 차단(리얼 비노출)
 
-  const cohort = await ctx.getCohort(cohortId).catch(() => null);
-  if (!cohort) notFound(); // 미존재/RLS 차단(비소유·비멤버) → 404 (차수 상세와 동일 게이트)
+  const cohort = await requestCohort(cohortId).catch(() => null);
+  if (!cohort) notFound(); // 미존재/RLS 차단(비소유·비멤버) → 404 (회기 상세와 동일 게이트)
 
   // 사전·사후 각각 user별 최신 1건(재진단 dedup) → 평균. 사후 있으면 비교(B-3).
   //
@@ -69,7 +71,7 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
     //   이 주석은 (a) 당시 「다음 회차에 붙인다」였는데, 붙인 뒤 고쳐지지 않아 낡아 있었다.
     <div className="group-report-root" style={{ maxWidth: 900, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* ★ **PDF 전용 문서 헤더**(`.print-only`) — 화면에는 안 보이고 인쇄에만 나온다.
-          종이로 뽑으면 **어느 기수의 언제 자료인지**가 종이 위에 없다. 개인 리포트가
+          종이로 뽑으면 **어느 회기의 언제 자료인지**가 종이 위에 없다. 개인 리포트가
           같은 자리에 같은 패턴을 쓴다(ADR-69 계열). */}
       <div className="print-only" style={{ display: 'none', marginBottom: 'var(--space-4)' }}>
         <div className="t-h2" style={{ fontSize: 16, margin: 0 }}>{cohort.name} · 그룹 리포트</div>
@@ -84,9 +86,11 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
           ★ `.no-print` — 앱 크롬(부제·주의 문구·툴바)은 **인쇄에서 빠진다**(인수 2).
             주의 문구는 화면을 투사하지 말라는 말이라 **종이에서는 뜻이 없다.** */}
       <div className="group-report-chrome no-print">
+        {/* ★ **이 화면은 이름이 어디에도 없었다**(U-6 실측) — 탭에 없고 인쇄 머리에만 있었다. */}
+        <ConsoleTitle />
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)', margin: '0 0 var(--space-2)' }}>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-            {hasComparison ? `${TOOL.pre}·${TOOL.post} 비교 · 차수 평균` : `${TOOL.pre} · 차수 평균`}
+            {hasComparison ? `${TOOL.pre}·${TOOL.post} 비교 · 회기 평균` : `${TOOL.pre} · 회기 평균`}
           </p>
           {/* 개인 리포트와 **같은 부품·같은 자리**다 — 이미 두 화면이 재사용 중이라 새로 만들지 않는다. */}
           <ReportPrintButton />

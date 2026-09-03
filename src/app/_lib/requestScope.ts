@@ -8,7 +8,7 @@
 //
 // **무엇이 문제였나**: 회원 껍데기(`(member)/layout.tsx`)와 그 아래 화면이 **각자**
 //   `createServerContext()` 를 부른다. `CoreContext` 의 `currentUser` 메모는 **인스턴스 필드**라
-//   인스턴스가 둘이면 듣지 않는다 — 그래서 착지 한 번에 `users` SELECT · 동의 · 차수가
+//   인스턴스가 둘이면 듣지 않는다 — 그래서 착지 한 번에 `users` SELECT · 동의 · 회기가
 //   **두 벌씩** 돈다. 그 파일의 주석은 「CoreContext 는 요청마다 새로 생성 → 인스턴스 캐시 = 요청 단위」
 //   라고 적지만 **팩토리가 호출 단위**라 사실이 아니다.
 //
@@ -44,7 +44,7 @@ export const requestConsents = cache(async () =>
 );
 
 /**
- * 내 차수. **여기서 삼키지 않는다** — 껍데기는 삼키고 홈은 안 삼켰다.
+ * 내 회기. **여기서 삼키지 않는다** — 껍데기는 삼키고 홈은 안 삼켰다.
  *   그 차이를 부르는 자리에 그대로 남긴다(성질을 파생하지 않는다).
  *
  * ★ **알고 받아들인 것 하나**: `cache()` 는 성공값뿐 아니라 **거절도 메모한다.**
@@ -52,3 +52,19 @@ export const requestConsents = cache(async () =>
  *   대신 **실패가 한 번으로 끝나고 정직하게 드러난다** — 조용히 두 번 두드리지 않는다.
  */
 export const requestCohorts = cache(async () => (await requestContext()).listMyCohorts());
+
+/**
+ * 그 회기 하나. **인자를 받는 첫 로더다**(U-6) — `cache()` 는 인자별로 메모하므로
+ * 키가 다르면 각각 한 번씩 돈다(리포트 상세가 `resp.cohortId` 로 부르는 자리가 그것이다).
+ *
+ * **왜 필요했나**: U-5 가 회기 띠를 세우며 `/coach/cohort/[cohortId]/layout.tsx` 에 `getCohort` 를
+ *   더했는데, 그 아래 일곱 화면이 **이미 각자 부르고 있었다** — 한 화면에 같은 단일행 조회가 둘이다.
+ *   여덟 라우트 합계 15회였다(7×2 + 1×1). 이제 라우트당 1회다.
+ *
+ * ★ **속도로 정당화하지 않는다.** ADR-178 이 왕복 셋을 줄이고도 짝지은 차이 중앙 2ms(소음 ±13ms)였다.
+ *   이 변경의 근거는 **「같은 것을 두 번 묻지 않는다」와 DB 부하**이지 응답 시간이 아니다.
+ *
+ * **삼키지 않는다** — 실패 처방이 화면마다 다르다(무시 다섯 · `notFound()` 둘 · `redirect` 하나).
+ *   그 차이를 부르는 자리에 그대로 남긴다(`requestCohorts` 와 같은 규율).
+ */
+export const requestCohort = cache(async (cohortId: string) => (await requestContext()).getCohort(cohortId));

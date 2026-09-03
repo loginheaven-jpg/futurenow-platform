@@ -1,14 +1,16 @@
 // 본부 멤버 관리(§8.6 첫 조각) — 운영자 전용 서버 컴포넌트. listUsers(기존 메서드) 배선.
 import { REPORT_NOTICE } from '@/app/(public)/library/copy';
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { AdminClient } from './AdminClient';
+import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 콘솔로 넓혔다) — 껍데기가 이미 물은 것을 다시 묻지 않는다.
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 멤버는 자기 집으로
   if (me.role !== 'admin') redirect('/coach'); // 코치(비운영자)는 코치 콘솔로
@@ -51,7 +53,14 @@ export default async function AdminPage() {
 
   const allNotices = (notices || reportNotice) ? (<>{notices}{reportNotice}</>) : null;
 
-  return <AdminClient members={members} applications={applications} currentUserId={me.id}
-      // **서버가 내린다** — 화면이 이메일로 판정하지 않는다(이메일 상수는 `is_super_admin` 한 곳뿐).
-      isSuperAdmin={members.find((m) => m.id === me.id)?.isSuperAdmin === true} notices={allNotices} />;
+  // ★ **본문 폭과 화면 이름은 라우트가 든다**(U-6). 표현 부품 안에 두면 그 부품이
+  //   라우팅에 매여 단독 렌더가 안 되고, 폭이 부품마다 흩어진다.
+  return (
+    <div className="console-body console-body--mid">
+      <ConsoleTitle />
+      <AdminClient members={members} applications={applications} currentUserId={me.id}
+        // **서버가 내린다** — 화면이 이메일로 판정하지 않는다(이메일 상수는 `is_super_admin` 한 곳뿐).
+        isSuperAdmin={members.find((m) => m.id === me.id)?.isSuperAdmin === true} notices={allNotices} />
+    </div>
+  );
 }

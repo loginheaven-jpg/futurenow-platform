@@ -50,7 +50,7 @@ export function MenuSheet({
   name: string;
   /** 이름 옆 작은 글씨 — `참여자`·`인도자` */
   role?: string;
-  /** 기수 배지 — 없으면 그리지 않는다 */
+  /** 회기 배지 — 없으면 그리지 않는다 */
   cohort?: string;
   groups: MenuGroup[];
   /** 회차 칩 스트립(발주 §3-7 — #8 을 품는다). 없으면 구획을 만들지 않는다. */

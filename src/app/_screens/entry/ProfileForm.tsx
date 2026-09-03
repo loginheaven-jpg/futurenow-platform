@@ -61,7 +61,7 @@ export function ProfileForm({ accountProfile, onSubmit, busy }: { accountProfile
 
   return (
     <div>
-      {/* 출구(홈) 제공 — sub 우상단 홈 아이콘(/home). 응답 전 단계라 홈 이탈 안전(가입·차수 유지, 재개 가능). */}
+      {/* 출구(홈) 제공 — sub 우상단 홈 아이콘(/home). 응답 전 단계라 홈 이탈 안전(가입·회기 유지, 재개 가능). */}
       {/* **헤더는 껍데기가 그린다**(U-4 §1). 단계 제목·뒤로는 `join/joinChrome` 표가 들고 `useSetChrome` 이 껍데기에 알린다. */}
 
       <div style={fieldGap}>

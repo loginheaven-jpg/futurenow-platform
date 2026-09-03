@@ -1,7 +1,7 @@
 // 콘솔 내비 항목 계산 — **순수 함수**(3차 T-4).
 //
 // 경로 하나에서 항목을 낸다. 서버 데이터를 받지 않는 이유는 두 가지다 —
-//   ⓐ 내비가 데이터를 기다리면 화면이 늦게 서고, ⓑ 레이아웃이 차수를 조회하면
+//   ⓐ 내비가 데이터를 기다리면 화면이 늦게 서고, ⓑ 레이아웃이 회기를 조회하면
 //   모든 콘솔 화면에 왕복이 하나씩 는다. 경로가 이미 문맥을 담고 있으므로 그것만 읽는다.
 //
 // ★ **ⓑ 는 U-5 에서 실측으로 뒤집혔다** — `/coach/cohort/[cohortId]` 아래 **여덟 중 일곱이
@@ -12,8 +12,8 @@
 // `loginOutcome`·`safeReturn`·`rosterModel` 과 같은 관행이다 — 판정을 순수 함수로 떼어
 //   테스트가 닿게 한다.
 
-import { CONSOLE_DOOR } from '@/app/_vocab/doors';
-import { LIBRARY_NAME } from '@/app/_vocab/library';
+
+import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 
 export interface ConsoleNavItem {
   href: string;
@@ -43,66 +43,39 @@ export function cohortTabs(cohortId: string): ConsoleNavItem[] {
   return [
     { href: `/coach/cohort/${cohortId}`, label: '대시보드' },
     { href: `/coach/cohort/${cohortId}/checkin`, label: '회차 갈무리' },
-    { href: `/coach/cohort/${cohortId}/matrix`, label: '진단 결과' },
-    { href: `/coach/cohort/${cohortId}/values`, label: '가치 카드' },
+    // ★ **탭 이름이 화면의 실체와 달랐다**(U-6 실측) — 이 화면은 `listCohortCheckins` 로 그리는
+    //   **갈무리 격자**이고 진짜 진단 결과는 `/group`·`/report` 다. 표(`SCREEN_CHROME`)와
+    //   본문 링크(「격자로 보기」)는 처음부터 「갈무리 격자」였고 **탭만 달랐다.**
+    { href: `/coach/cohort/${cohortId}/matrix`, label: '갈무리 격자' },
+    // ★ **표는 `VALUE_TOOL` 을 읽는데 탭만 손으로 적고 있었다**(U-6 · 반증자가 잡았다).
+    //   글자가 같다는 것과 한 출처를 읽는다는 것은 다르다 — 잠금 없는 사본 둘이었다.
+    { href: `/coach/cohort/${cohortId}/values`, label: VALUE_TOOL },
     { href: `/feed?cohort=${cohortId}`, label: '동행' },
   ];
 }
 
-/** `/coach/cohort/{uuid}/…` 에서 차수 id 를 꺼낸다. 아니면 null. */
+/** `/coach/cohort/{uuid}/…` 에서 회기 id 를 꺼낸다. 아니면 null. */
 export function cohortIdOf(pathname: string): string | null {
   const m = /^\/coach\/cohort\/([0-9a-fA-F-]{36})(?:\/|$)/.exec(pathname);
   return m ? m[1] : null;
 }
 
-/**
- * 역할과 경로로 내비를 만든다.
- *
- * 시안 P2 는 사이드바 항목이 **기수 문맥**을 갖는다(기수 대시보드·회차 갈무리·진단 결과·동행…).
- *   그래서 차수 안에 있을 때만 그 묶음을 낸다 — 차수 밖에서 차수 항목을 보이면 어디로 가는지 모른다.
- *
- * **운영자에게도 인도자 묶음을 준다.** 운영자는 자기 차수를 갖고(ADR-74 수퍼바이저 뷰)
- *   콘솔을 그대로 쓴다. 역할로 화면을 가르지 않는 것이 ADR-51 의 방향이다.
- */
-export function consoleNav(input: { role: 'user' | 'coach' | 'admin'; pathname: string }): ConsoleNavGroup[] {
-  const { role, pathname } = input;
-  if (role === 'user') return []; // 참여자 화면에는 콘솔 내비를 두지 않는다(발주 §5)
-
-  const groups: ConsoleNavGroup[] = [];
-
-  groups.push({
-    title: '인도자',
-    items: [
-      { href: CONSOLE_DOOR.href, label: CONSOLE_DOOR.label }, // U-4 §3 — 표의 제목과 같은 이름을 쓴다
-      { href: '/coach/cohorts', label: '모든 차수' },
-      { href: '/coach/new', label: '차수 개설' },
-    ],
-  });
-
-  const cohortId = cohortIdOf(pathname);
-  if (cohortId) groups.push({ title: TAB_GROUP, items: cohortTabs(cohortId) });
-
-  if (role === 'admin') {
-    groups.push({
-      title: '운영',
-      items: [
-        { href: '/admin', label: '본부' },
-        { href: '/admin/approvals', label: '가입 승인' },
-      ],
-    });
-  }
-
-  groups.push({ title: null, items: [{ href: '/library', label: LIBRARY_NAME }] });
-  return groups;
-}
+// ★★ **`consoleNav()` 를 걷었다**(U-6). 런타임 호출자가 **0**이었다 —
+//   콘솔 시트를 짓는 것은 `consoleSheet.ts`(`ConsoleLayout` 이 부른다)이고, 띠는 `cohortTabs` 다.
+//   그런데 이 파일 안에 「모든 회기」·「회기 개설」·「본부」·「가입 승인」이 **또** 적혀 있어
+//   시트와 사본 둘이었다. 고아를 남기면 다음 사람이 살아 있는 줄 알고 그것을 고친다.
+//
+//   **잠금 둘이 이 파일을 근거로 삼고 있었다** — `MemberShell.test.tsx`(`CONSOLE_DOOR`)와
+//   `library.copy.test.ts`(`_vocab/library`). 죽은 파일을 근거로 삼은 잠금은 함께 죽으므로
+//   **먼저 그 둘을 `consoleSheet.ts` 로 옮기고** 걷었다(반증자가 이 순서를 잡아 주었다).
 
 /**
  * 현재 항목 판정 — **가장 긴 일치가 이긴다.**
  *
  * `exact` 플래그로 가르지 않는 이유: 그러면 내비에 없는 화면(리포트 상세·조원 세로 보기)에서
  *   **아무것도 켜지지 않아 사용자가 자기 위치를 잃는다.** 긴 일치를 쓰면
- *   `/coach/cohort/X/report/…` 에서 상위 문맥인 '기수 대시보드'가 켜져 위치가 남는다.
- *   동시에 `/coach/cohort/X/checkin` 에서는 '회차 갈무리'가 '기수 대시보드'를 이긴다.
+ *   `/coach/cohort/X/report/…` 에서 상위 문맥인 '회기 대시보드'가 켜져 위치가 남는다.
+ *   동시에 `/coach/cohort/X/checkin` 에서는 '회차 갈무리'가 '회기 대시보드'를 이긴다.
  *
  * 경계는 세그먼트 단위다 — `/coach` 가 `/coaching` 을 켜지 않는다.
  * 쿼리(`/feed?cohort=…`)는 경로만 비교한다.

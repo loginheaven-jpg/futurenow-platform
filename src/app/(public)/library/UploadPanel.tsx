@@ -184,7 +184,7 @@ export function UploadPanel({
 
           {cohorts.length > 0 ? (
             <label className="t-caption" style={muted}>
-              어느 기수의 자료인가요 (선택)
+              어느 회기의 자료인가요 (선택)
               <select className="ui-input" value={cohortId} onChange={(e) => setCohortId(e.target.value)}
                 style={{ display: 'block', width: '100%' }}>
                 <option value="">회기 무관</option>

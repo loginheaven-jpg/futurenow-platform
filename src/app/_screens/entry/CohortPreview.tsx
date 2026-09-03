@@ -1,5 +1,5 @@
 'use client';
-// §7.2 차수 미리보기 — resolve_cohort_by_code 공개 메타. 민감정보 미노출. 비로그인 표시 가능.
+// §7.2 회기 미리보기 — resolve_cohort_by_code 공개 메타. 민감정보 미노출. 비로그인 표시 가능.
 import type { CohortPreviewMeta } from '@/contracts';
 import { Button } from '@/core/ui';
 import { SeminarIntro } from '../SeminarIntro';
@@ -53,7 +53,7 @@ export function CohortPreview({ meta, onEnter, onCancel, busy, isGeneral = false
             `instrumentDisplay` 타입을 쓰는 세 화면이 깨진다. 읽는 곳은 이 줄 하나뿐이었다(실측). */}
       </div>
 
-      {/* 공통 소개(SeminarIntro 단일 출처 — 랜딩과 공유). 차수별 소개(description)는 위 카드 이름 아래. */}
+      {/* 공통 소개(SeminarIntro 단일 출처 — 랜딩과 공유). 회기별 소개(description)는 위 카드 이름 아래. */}
       <SeminarIntro />
 
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>

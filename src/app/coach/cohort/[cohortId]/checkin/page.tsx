@@ -3,7 +3,7 @@
 //   지각은 submitted_at > closes_at 파생(컬럼 없음). care 의미색은 연락요청·돌봄 표시에만.
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestCohort, requestContext, requestUser } from '@/app/_lib/requestScope';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { anonNoticeText, buildCheckinRead, readAnonSuggestion } from '@/instruments/futurenow/checkin/readModel';
 import { ScheduleSeedClient } from './ScheduleSeedClient';
@@ -23,8 +23,9 @@ export default async function CoachCheckinPage({
   const { cohortId } = await params;
   const sp = await searchParams;
   const openUserId = (Array.isArray(sp.open) ? sp.open[0] : sp.open) ?? null;
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 콘솔로 넓혔다) — 껍데기가 이미 물은 것을 다시 묻지 않는다.
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home');
 
@@ -33,7 +34,7 @@ export default async function CoachCheckinPage({
     // 참여자만(ADR-118) — 이 명단은 코칭 대상이지 참가자 목록이 아니다. 운영자가 섞이면
     //   그들이 제출하지 않아 '연속 미착수' 신호가 인도자 자신에게 켜진다. 명단이 11 → 9 로 줄어드는 것은 의도다.
     ctx.listCohortMembers(cohortId, true),
-    ctx.getCohort(cohortId).catch(() => null),
+    requestCohort(cohortId).catch(() => null),
   ]);
   const hasSchedule = sessions.length > 0;
   const reqSession = typeof sp.session === 'string' ? Number(sp.session) : NaN;
@@ -127,17 +128,9 @@ export default async function CoachCheckinPage({
     <div style={{ maxWidth: 560, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
-      {/* 격자(ADR-118) — 명단 × 회차를 한 화면에. 이탈 조기 발견·소그룹 편성·연락 대상 고르기. */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
-        <Link
-          className="t-caption"
-          href={`/coach/cohort/${cohortId}/matrix`}
-          style={{ padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius)', border: 'var(--border-hair) solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
-        >
-          격자로 보기
-        </Link>
-      </div>
-
+      {/* ★ **격자로 가는 문은 띠의 탭이 든다**(U-6). 전에는 한 목적지에 이름이 셋이었다 —
+          표 「갈무리 격자」 · 탭 「진단 결과」 · 본문 「격자로 보기」. 탭 이름을 표에 맞추고
+          본문 링크를 걷어 **이름 하나 · 문 하나**로 만들었다(ADR-118 의 기능은 그대로다). */}
       <ScheduleSeedClient cohortId={cohortId} code={cohort?.code ?? ''} sessions={sessions} />
 
       {!hasSchedule ? null : (

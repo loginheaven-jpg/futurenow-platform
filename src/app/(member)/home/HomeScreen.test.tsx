@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { HomeScreen, type HomeScreenProps } from './HomeScreen';
 
 const base: HomeScreenProps = {
-  roles: [{ badge: '예봄 2기', who: '참여자', title: '내 기수로 가기', sub: '2회차 갈무리가 열려 있습니다', href: '/my/cohorts/c1', ctaLabel: '기수 홈' }],
+  roles: [{ badge: '예봄 2기', who: '참여자', title: '내 회기로 가기', sub: '2회차 갈무리가 열려 있습니다', href: '/my/cohorts/c1', ctaLabel: '회기 홈' }],
   tiles: [{ icon: 'checkin', title: '오늘의 갈무리', hint: '2회차', href: '/my/cohorts/c1/checkin/2' }],
   news: [{ id: 'n1', title: '2회차 준비물 안내', date: '8.20', href: '/news/n1' }],
 };
@@ -23,7 +23,7 @@ describe('HomeScreen — 시안 B', () => {
   it('역할 카드가 목적지 하나를 가리킨다 — 판정은 페이지가 한다', () => {
     const html = renderToStaticMarkup(<HomeScreen {...base} />);
     expect(html).toContain('href="/my/cohorts/c1"');
-    expect(html).toContain('내 기수로 가기');
+    expect(html).toContain('내 회기로 가기');
     expect(html).toContain('예봄 2기'); // 배지
   });
 
@@ -58,27 +58,27 @@ describe('HomeScreen — 역할 카드 복수 (T-5)', () => {
   const dual: HomeScreenProps = {
     ...base,
     roles: [
-      { who: '인도자', title: '인도자 콘솔', sub: '내 차수와 조원을 봅니다.', href: '/coach', ctaLabel: '콘솔로 가기' },
-      { badge: '예봄 2기', who: '참여자', title: '내 기수로 가기', href: '/my/cohorts/c1', ctaLabel: '기수 홈' },
+      { who: '인도자', title: '인도자 콘솔', sub: '내 회기와 조원을 봅니다.', href: '/coach', ctaLabel: '콘솔로 가기' },
+      { badge: '예봄 2기', who: '참여자', title: '내 회기로 가기', href: '/my/cohorts/c1', ctaLabel: '회기 홈' },
     ],
   };
 
   it('둘을 다 그린다 — 겸직자가 자기 여정으로 갈 길을 잃지 않는다', () => {
     const html = renderToStaticMarkup(<HomeScreen {...dual} />);
     expect(html).toContain('인도자 콘솔');
-    expect(html).toContain('내 기수로 가기');
+    expect(html).toContain('내 회기로 가기');
     expect(html).toContain('/coach');
     expect(html).toContain('/my/cohorts/c1');
   });
 
   it('**순서는 역할이 먼저다** — 참여자 카드는 덧붙는 것이다', () => {
     const html = renderToStaticMarkup(<HomeScreen {...dual} />);
-    expect(html.indexOf('인도자 콘솔')).toBeLessThan(html.indexOf('내 기수로 가기'));
+    expect(html.indexOf('인도자 콘솔')).toBeLessThan(html.indexOf('내 회기로 가기'));
   });
 
   it('하나면 하나만 그린다 — 늘어나는 것은 카드 수뿐이다', () => {
     const html = renderToStaticMarkup(<HomeScreen {...base} />);
     expect(html).not.toContain('인도자 콘솔');
-    expect(html).toContain('내 기수로 가기');
+    expect(html).toContain('내 회기로 가기');
   });
 });

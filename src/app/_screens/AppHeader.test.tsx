@@ -24,7 +24,7 @@ describe('AppHeader 모드 셸 (X2a — 동선 규칙 강제)', () => {
   });
 
   it("variant='sub' + onBack(콜백): backHref 없으면 button 뒤로", () => {
-    const html = renderToStaticMarkup(<AppHeader variant="sub" title="새 차수" onBack={noop} />);
+    const html = renderToStaticMarkup(<AppHeader variant="sub" title="새 회기" onBack={noop} />);
     expect(html).toContain('aria-label="뒤로"');
     expect(html).toContain('<button'); // 콜백 뒤로(위저드 단계 등)
   });

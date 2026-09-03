@@ -28,7 +28,7 @@ export async function loginLandingAction(): Promise<string> {
     // ★ **둘을 함께 기다린다**(ADR-176). `listMyCohorts` 는 `me` 를 인자로 쓰지 않는다 —
     //   직렬로 두면 **왕복 하나가 통째로 줄을 선다.** 이 액션은 홈 착지 경로에만 붙고
     //   실측으로 그 경로가 딥링크보다 정확히 이만큼 느렸다(2026-09-02 · 서버액션 290ms).
-    //   **미인증이면 차수 조회가 헛돈다** — 그러나 그 경우는 곧 `/home` 이고,
+    //   **미인증이면 회기 조회가 헛돈다** — 그러나 그 경우는 곧 `/home` 이고,
     //   RLS 가 본인 것만 내주므로 남의 것을 당겨오지 않는다. 인증 게이트는 프록시가 이미 지났다.
     const [me, cohorts] = await Promise.all([
       ctx.currentUser(),

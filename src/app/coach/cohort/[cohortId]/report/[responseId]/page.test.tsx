@@ -25,7 +25,7 @@ vi.mock('@/core/supabase/server', () => ({
       id, instrumentId: 'futurenow', cohortId: COHORT, userId: `user-of-${id}`,
       wave: 'pre', answers: {}, subjectProfile: {}, createdAt: '2026-08-27T00:00:00Z',
     }),
-    getCohort: async () => ({ id: COHORT, name: '기수', code: 'ABCDE' }),
+    getCohort: async () => ({ id: COHORT, name: '회기', code: 'ABCDE' }),
     listCohortMembers: async () => [],
     // 페이지는 effective 와 aiContent 가 **둘 다** 있을 때만 initialVm 을 만든다(page.tsx:57).
     getInterpretation: async (id: string) => ({

@@ -117,10 +117,10 @@ describe('★ 로그인 길의 조회를 줄로 세우지 않는다 (ADR-176)', 
     expect(src).toContain('ctx.currentUser()');
     expect(src).toContain('ctx.listMyCohorts()');
     // 앞의 결과를 뒤가 쓰면 병렬로 묶을 수 없다 — 그 모양이 되돌아오면 붉어진다.
-    expect(src, '차수 조회가 me 에 기댄다').not.toMatch(/listMyCohorts\([^)]*me/);
+    expect(src, '회기 조회가 me 에 기댄다').not.toMatch(/listMyCohorts\([^)]*me/);
   });
 
-  it('회원 레이아웃이 동의·차수를 함께 기다린다 — **인증 게이트는 그 앞이다**', () => {
+  it('회원 레이아웃이 동의·회기를 함께 기다린다 — **인증 게이트는 그 앞이다**', () => {
     const src = read('src/app/(member)/layout.tsx');
     const gate = src.indexOf("redirect('/login')");
     const par = src.indexOf('Promise.all');

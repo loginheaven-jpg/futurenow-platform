@@ -16,6 +16,7 @@
 //   한 번 지어냈다가 되돌렸다 — 터미널이 한글을 깨뜨린 출력을 옮겨 적어 다섯이 틀렸고,
 //   파일로 뽑아 읽어 고쳤다(계열 ⑦ — 정본에서 읽지 않고 추측한 값).
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
+import { MY_SEMINARS } from '@/app/_vocab/memberMenu';
 
 /**
  * 헤더 모드 — `AppHeader` 의 `variant` 셋에 `member` 를 더한다.
@@ -71,10 +72,10 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   // 조상이 `/` 라 규칙이 안 통한다 — 회원의 처음 화면은 `/home` 이다.
   '/feed': { kind: 'bar', variant: 'sub', title: '동행', back: '/home', menu: true },
   '/pending': { kind: 'bar', variant: 'sub', title: '가입 신청', back: '/home', menu: true },
-  '/my/cohorts': { kind: 'bar', variant: 'root', title: '내 차수', menu: true, actions: true },
+  '/my/cohorts': { kind: 'bar', variant: 'root', title: MY_SEMINARS, menu: true, actions: true }, // 시트와 같은 낱말(U-6)
   '/my/cohorts/[cohortId]/checkin/[session]': { kind: 'bar', variant: 'sub', title: '오늘의 갈무리', menu: true, actions: true },
   '/my/cohorts/[cohortId]/journey': { kind: 'bar', variant: 'sub', title: '나의 기록', menu: true, actions: true },
-  // 조상은 차수 홈이나 **원래 목적지가 차수 목록**이었다 — 규칙을 덮는다.
+  // 조상은 회기 홈이나 **원래 목적지가 회기 목록**이었다 — 규칙을 덮는다.
   '/my/cohorts/[cohortId]/report': { kind: 'bar', variant: 'sub', title: '내 마음의 거울', back: '/my/cohorts', menu: true, actions: true },
 
   // ── `flow` 둘 — **메뉴를 달지 않는다.**
@@ -104,7 +105,7 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   //     `/c/[code]/[session]` → `/my/cohorts/{id}/checkin/{session}`
   //     `/c/[code]/values`   → `/my/cohorts/{id}/values`
   //   **실패할 때만 안내 카드를 그린다.** 중앙정렬 한 덩이 + `홈으로` 하나다:
-  //     `코드를 찾을 수 없어요.` · `{기수} 참여자 명단에 없어요.` · `Notice(SHORTCUT.notFound)` 등
+  //     `코드를 찾을 수 없어요.` · `{회기} 참여자 명단에 없어요.` · `Notice(SHORTCUT.notFound)` 등
   //
   //   그 안내는 **자기 문장을 이미 들고 있고 제목 슬롯이 없다.** 껍데기를 씌우면
   //   *안내 한 줄* 위에 제목 바가 얹혀 오히려 이상해진다 — 그래서 **문안 결재가 필요 없다.**
@@ -133,15 +134,15 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   // ── 콘솔(U-3) — **제목·뒤로는 각 화면이 쓰던 값 그대로다.** 소스에서 뽑아 옮겼다.
   //
   //   **`subtitle` 은 표가 들지 않고 본문이 든다**(최박사 결재 2026-09-01).
-  //     차수 이름·비교 문구는 **서버 데이터**라 라우트의 성질이 아니다.
-  //     `/matrix`·`/values` 는 기수 이름을, `/group` 은 비교 문구를 **본문 첫 줄**에 그린다.
+  //     회기 이름·비교 문구는 **서버 데이터**라 라우트의 성질이 아니다.
+  //     `/matrix`·`/values` 는 회기 이름을, `/group` 은 비교 문구를 **본문 첫 줄**에 그린다.
   //     **헤더 부제 통로가 서면 U-4 에서 옮길지 판단한다** — 지금은 통로가 없고,
   //     통로를 만드는 것은 새 기제라 이 회차의 범위가 아니다.
   '/coach': { kind: 'bar', variant: 'root', title: '콘솔', menu: true },
-  '/coach/cohorts': { kind: 'bar', variant: 'sub', title: '모든 차수', back: '/coach', menu: true },
-  '/coach/new': { kind: 'bar', variant: 'sub', title: '차수 개설', back: '/coach/cohorts', menu: true },
-  '/coach/cohort/[cohortId]': { kind: 'bar', variant: 'sub', title: '회기 대시보드', back: '/coach/cohorts', menu: true },
-  '/coach/cohort/[cohortId]/checkin': { kind: 'bar', variant: 'sub', title: '회차 갈무리 현황', menu: true },
+  '/coach/cohorts': { kind: 'bar', variant: 'sub', title: '모든 회기', back: '/coach', menu: true },
+  '/coach/new': { kind: 'bar', variant: 'sub', title: '회기 개설', back: '/coach/cohorts', menu: true },
+  '/coach/cohort/[cohortId]': { kind: 'bar', variant: 'sub', title: '대시보드', back: '/coach/cohorts', menu: true },
+  '/coach/cohort/[cohortId]/checkin': { kind: 'bar', variant: 'sub', title: '회차 갈무리', menu: true },
   '/coach/cohort/[cohortId]/checkin/preview': { kind: 'bar', variant: 'sub', title: '갈무리 카드 미리보기', menu: true },
   '/coach/cohort/[cohortId]/group': { kind: 'bar', variant: 'sub', title: '그룹 리포트', menu: true },
   '/coach/cohort/[cohortId]/matrix': { kind: 'bar', variant: 'sub', title: '갈무리 격자', back: '/coach/cohort/[cohortId]/checkin', menu: true },

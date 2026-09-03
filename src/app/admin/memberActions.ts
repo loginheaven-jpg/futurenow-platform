@@ -24,7 +24,7 @@ export function memberStateLabel(state: MemberState): string {
       //   운영자 어휘로는 승인 화면 버튼 이름 `확인 대기` 가 이미 확정돼 있다(최박사 2026-08-29).
       return HELD_ADMIN_LABEL;
     case 'cohort':
-      // 차수 회원은 **산출**이라 자격 이름이 아니다 — 소속이 곧 상태다.
+      // 회기 회원은 **산출**이라 자격 이름이 아니다 — 소속이 곧 상태다.
       return '회기 참여 중';
     case 'pending':
     default:

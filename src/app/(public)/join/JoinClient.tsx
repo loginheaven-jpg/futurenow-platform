@@ -14,7 +14,7 @@ import { ResponseRunner } from '@/core/response/ResponseRunner';
 //   `/join` 은 공개 라우트인데 이 줄 때문에 사전진단 문항 원문 전량(copy.ts itemPrompts 27개)이
 //   미인증 방문자에게도 내려가는 클라이언트 청크에 실린다. 러너는 인증 뒤(step==='runner')에야 그려지지만
 //   **번들은 첫 로드에 함께 나간다.** ADR-93 이 /preview 를 닫으며 발견했고, 전수 조사에서 공개 라우트 중
-//   유일하게 남은 자리다. 노출의 실질은 '코드 없이 누구나'이나, 차수 코드를 가진 사람은 어차피 문항을
+//   유일하게 남은 자리다. 노출의 실질은 '코드 없이 누구나'이나, 회기 코드를 가진 사람은 어차피 문항을
 //   전부 보므로 **코드 소지자와 동등한 노출**로 보고 감수하기로 했다.
 //   **되돌리려 하지 말 것** — next/dynamic 지연 로드는 청크 이름이 매니페스트에 남아 진짜 게이트가 아니고,
 //   제대로 닫으려면 스키마를 인가 후 서버에서 내려주는 구조 변경이라 ResponseRunner 의 schema prop 계약에
@@ -97,7 +97,7 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
     setError(null);
     const m = await previewCohort(c);
     if (!m) {
-      setError('해당 코드의 차수를 찾지 못했어요. 코드를 다시 확인해 주세요.');
+      setError('해당 코드의 회기를 찾지 못했어요. 코드를 다시 확인해 주세요.');
       return;
     }
     setCode(c);

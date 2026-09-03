@@ -32,8 +32,8 @@ describe('ConsoleHome (인도자 콘솔 셸 — Step 3.1)', () => {
     expect(html).not.toContain('본부에서 확인');
   });
 
-  it('차수 0건 — 진행 중 차수 빈 상태 안내(A6)', () => {
+  it('회기 0건 — 진행 중 회기 빈 상태 안내(A6)', () => {
     const html = renderToStaticMarkup(<ConsoleHome coachName="김코치" careMembers={[]} cohorts={[]} />);
-    expect(html).toContain('아직 개설한 차수가 없어요');
+    expect(html).toContain('아직 개설한 회기가 없어요');
   });
 });
