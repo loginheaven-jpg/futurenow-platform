@@ -222,7 +222,6 @@ export default async function RecruitPage() {
               <p className="rc-body">{b.body}</p>
             </div>
           ))}
-          <p className="rc-foot">{ONLINE.foot}</p>
         </section>
 
         {/* 8 · 이런 분께 — 카드 9 */}

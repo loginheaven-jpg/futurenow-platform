@@ -83,7 +83,6 @@ export const LABEL = {
   // 3칸 중 1칸 필수(S2-10). 같은 회차에 갈무리 필수 5칸이 함께 있어 부담을 나눈다.
   required: '가장 마음이 가는 하나부터 적으세요. 셋을 다 적으면 셋이 다 남습니다.',
   placeholder: '한 줄로',
-  notice: '적으신 내용은 인도자와 운영자가 읽습니다.',
   next: '다음',
 } as const;
 
@@ -95,7 +94,6 @@ export const COMPARE = {
   strength: '그때 드러난 나의 강점',
   longing: '상처 뒤에서 찾은 나의 갈망',
   placeholder: '한 단어',
-  notice: '적으신 내용은 인도자와 운영자가 읽습니다.',
   next: '다음',
   skip: '아직 못 찾았어요 · 건너뛰기',
   // 정합 판정

@@ -93,9 +93,11 @@ describe('축2 — 이 칸이 어디로 이어지는지 말한다', () => {
     expect(COPY.TIDY.tooMany(15)).toContain('3장');
   });
 
-  it('열람 고지가 입력 화면 둘에 있다 (2차 검토 R2-5)', () => {
-    expect(COPY.COMPARE.notice).toBe('적으신 내용은 인도자와 운영자가 읽습니다.');
-    expect(COPY.LABEL.notice).toBe(COPY.COMPARE.notice);
+  // ADR-185 — 쓰기 화면에서 열람 주체를 말하지 않는다. 그 고지의 자리는 가입 동의서다.
+  it('입력 화면에 열람 주체 고지가 없다 (ADR-185)', () => {
+    const 전문 = JSON.stringify(COPY);
+    expect(전문).not.toContain('읽습니다');
+    expect(전문).not.toContain('운영자');
   });
 });
 

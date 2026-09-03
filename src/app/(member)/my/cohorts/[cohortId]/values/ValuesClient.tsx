@@ -283,7 +283,6 @@ export function ValuesClient({ cohortId, initial }: { cohortId: string | null; i
               onChange={(e) => setLabels((s) => ({ ...s, [keys[idx]]: e.target.value }))} />
           </div>
         ))}
-        <p className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{LABEL.notice}</p>
         {Err}
         <div style={row}>
           <button className="ui-btn ui-btn--primary" style={{ width: '100%' }} disabled={busy || !some}
@@ -313,7 +312,6 @@ export function ValuesClient({ cohortId, initial }: { cohortId: string | null; i
               onChange={(e) => setWb((s) => ({ ...s, [f.k]: e.target.value }))} />
           </div>
         ))}
-        <p className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{COMPARE.notice}</p>
         {Err}
         {/* 건너뛰기는 '다음'과 같은 비중이다(문안 원칙 §3 예외 자리 — 여기서 몰아세우면 이탈한다). */}
         <div style={row}>

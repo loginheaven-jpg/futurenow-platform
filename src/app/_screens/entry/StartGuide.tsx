@@ -1,5 +1,7 @@
 'use client';
-// §7.4 시작 안내 — 호흡 고르기 + 보안 고지. 버튼=동의(명시 체크박스 없음, 신뢰 기반).
+// §7.4 시작 안내 — 호흡 고르기. 버튼=동의(명시 체크박스 없음, 신뢰 기반).
+//   열람 범위 고지는 여기 두지 않는다(ADR-185). 쓰기 직전에 '읽힌다'고 말하면 글이 달라진다.
+//   그 고지의 자리는 가입 동의서다.
 import { Button } from '@/core/ui';
 
 // **`cohortName` 을 걷었다**(U-4 §1) — 이 부품에서 그 값이 하던 일은 **헤더 부제** 하나였고
@@ -16,19 +18,6 @@ export function StartGuide({ onStart }: { onStart?: () => void }) {
       >
         {'정답을 찾는 시간이 아닙니다. 지금의 생각을 그대로 적어 주세요.\n중간에 멈춰도 적은 것은 저장됩니다.'}
       </p>
-      <div
-        style={{
-          background: 'var(--color-surface-1)',
-          border: 'var(--border-hair) solid var(--color-border)',
-          borderRadius: 'var(--radius)',
-          padding: 'var(--space-4)',
-          marginBottom: 'var(--space-6)',
-        }}
-      >
-        <p className="t-body" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-          여기 적는 모든 것은 세미나 인도자와 운영자만 봅니다.
-        </p>
-      </div>
       <Button onClick={onStart} style={{ width: '100%' }}>시작하기</Button>
     </div>
   );
