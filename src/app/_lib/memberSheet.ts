@@ -17,7 +17,7 @@ const RECRUIT_DOOR = PUBLIC_NAV.find((i) => i.href === '/recruit') ?? { href: '/
 import { openedSessionNos } from '@/app/(member)/my/cohorts/[cohortId]/progress';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
-import { HOME_DOOR, CONSOLE_DOOR, ADMIN_DOOR, SITE_DOOR } from '@/app/_vocab/doors';
+import { ACCOUNT_DOOR, HOME_DOOR, CONSOLE_DOOR, ADMIN_DOOR, SITE_DOOR } from '@/app/_vocab/doors';
 import { PUBLIC_NAV, PUBLIC_SHEET_MINE } from '@/app/_screens/site/publicNav';
 import { JOIN_BY_CODE, MY_REPORT, MY_SEMINARS } from '@/app/_vocab/memberMenu';
 
@@ -133,7 +133,7 @@ export async function buildMemberSheet(
     },
     { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
     // 「코드로 세미나 참여」는 홈 아래쪽에 있던 것을 여기로 옮겼다(지시: 메뉴는 햄버거 휘하).
-    { title: ACCOUNT_GROUP, items: [{ href: '/account', label: '내 정보' }, { href: '/join', label: JOIN_BY_CODE }] },
+    { title: ACCOUNT_GROUP, items: [ACCOUNT_DOOR, { href: '/join', label: JOIN_BY_CODE }] },
   ];
 
   return { groups, chips, cohortName: primary?.name };

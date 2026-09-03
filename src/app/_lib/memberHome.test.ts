@@ -207,3 +207,25 @@ describe('★★ 회기 선택과 회기 0 (ADR-182 · 지휘부 확정 2026-09-
     }
   });
 });
+
+describe('★ 시트의 로그아웃이 **보인다** (ADR-188 후속)', () => {
+  it('시트에서는 아이콘이 아니라 **글자**다 — 흰 바탕에 흰 아이콘이라 안 보였다', () => {
+    const btn = readFileSync('src/app/_screens/LogoutButton.tsx', 'utf8');
+    // 아이콘 변형은 네이비 제목바 위의 것이다. 시트는 흰 바탕이라 색이 반대다.
+    expect(btn, '시트 변형이 없다').toContain("variant === 'sheet'");
+    expect(btn, '시트에서 글자로 안 그린다').toContain('site-sheet__logout');
+    for (const f of ['src/app/(member)/layout.tsx', 'src/app/_screens/site/PublicGnb.tsx']) {
+      expect(readFileSync(f, 'utf8'), `${f} 가 아이콘 변형을 시트에 넣는다`).toContain('variant="sheet"');
+    }
+  });
+
+  it('★ 공개 시트도 로그인하면 계정 구획을 준다 — 공개 화면에서도 나갈 수 있다', () => {
+    const pub = readFileSync('src/app/_screens/site/PublicGnb.tsx', 'utf8');
+    expect(pub).toContain('ACCOUNT_GROUP');
+    expect(pub).toContain('ACCOUNT_DOOR');
+    // 비로그인에게는 주지 않는다 — 갈 수 없는 곳으로 보내지 않는다.
+    expect(pub, '로그인 여부를 안 본다').toContain('sheet && signedIn');
+    // 문패를 손으로 적지 않는다(불변식 23).
+    expect(pub, '이름을 손으로 적었다').not.toContain("label: '내 정보'");
+  });
+});
