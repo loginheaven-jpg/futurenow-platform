@@ -137,19 +137,35 @@ describe('이월 목록 — 비면 완성이다 (U-3 → U-4)', () => {
     }
   });
 
-  // **부제는 되살아났다**(최박사 결재 2026-09-01) — 이월에서 빠지고 **본문이 든다.**
-  //   그래서 잠금도 «이월에 있는가» 에서 «본문에 있는가» 로 옮긴다.
-  //   지우면 *기수 이름을 다시 잃어도 아무도 모른다* 가 되고, 그것이 이번에 겪은 일이다.
-  it('**부제가 본문 첫 줄에 산다** — 헤더에서 잃은 것을 본문이 받았다', () => {
-    const matrix = readFileSync('src/app/coach/cohort/[cohortId]/matrix/page.tsx', 'utf8');
-    const values = readFileSync('src/app/coach/cohort/[cohortId]/values/page.tsx', 'utf8');
-    const group = readFileSync('src/app/coach/cohort/[cohortId]/group/page.tsx', 'utf8');
-    expect(matrix, 'matrix 가 기수 이름을 안 그린다').toContain('{cohort.name}');
-    expect(values, 'values 가 기수 이름을 안 그린다').toContain('{cohort.name}');
-    expect(group, 'group 이 비교 문구를 안 그린다').toContain('차수 평균`');
-    // **새 부품을 만들지 않았다** — 이 계열이 이미 쓰던 보조 줄 패턴이다.
-    for (const [n, src] of [['matrix', matrix], ['values', values], ['group', group]] as const) {
-      expect(src, `${n} 이 새 형태를 만들었다`).toContain('className="t-caption"');
+  // ★★★ **회기 이름의 자리가 옮겨졌다 — 근거를 전부 적고 각각 판정한다**(불변식 22).
+  //
+  //   ⑴ **최박사 결재 2026-09-01**: *「`subtitle` 은 표가 들지 않고 **본문이 든다**. 차수 이름·비교
+  //      문구는 **서버 데이터**라 라우트의 성질이 아니다. `/matrix`·`/values` 는 기수 이름을,
+  //      `/group` 은 비교 문구를 **본문 첫 줄**에 그린다.」*
+  //      → 이 결재가 **막으려던 것**은 «라우트 표가 서버 데이터를 드는 것» 이다. **그것은 지금도 지킨다** —
+  //        회기 이름은 `SCREEN_CHROME` 을 지나지 않고 회기 레이아웃이 서버에서 읽어 띠에 넘긴다.
+  //
+  //   ⑵ **그 결재가 서 있던 사실**: *「실측상 이 화면 어디에도 기수 이름이 없었다」*(U-3 후속 주석).
+  //      → **그 사실이 U-5 에서 뒤집혔다.** 띠에 회기 칩이 서면서 같은 문자열이 한 화면에 **둘**이 됐다
+  //        (`/matrix`·`/values`·`/member` 셋 — U-6 실측). 근거가 사라지면 결론도 다시 판정해야 한다.
+  //
+  //   ⑶ **지휘부 결재 2026-09-03**: *「모든 기능을 빠짐없이 제공하되 **중복없이**, **일관된 위치**에서」*
+  //      → 회기 이름의 «일관된 위치» 는 **띠의 칩**이다(회기 안 여덟 화면 전부에 선다).
+  //        본문 셋만 따로 드는 것은 그 자체가 불일치다.
+  //
+  //   **그래서 잠금을 뒤집는다** — 이제 재는 것은 «본문이 회기 이름을 그리지 **않는가**» 다.
+  //   지우면 *중복이 다시 생겨도 아무도 모른다* 가 되므로, 지우지 않고 방향만 바꾼다.
+  it('**회기 이름은 띠의 칩만 든다** — 본문이 또 그리지 않는다(지휘부 결재 2026-09-03)', () => {
+    const band = readFileSync('src/app/_screens/console/ConsoleBand.tsx', 'utf8');
+    // ⑦ **물 것이 실재하는가** — 칩이 없으면 이 잠금은 «이름을 아무도 안 든다» 를 통과시킨다.
+    expect(band, '띠가 회기 이름을 안 그린다 — 그러면 이름을 드는 곳이 0이 된다').toContain('{name}');
+    for (const f of ['matrix/page.tsx', 'values/page.tsx', 'member/[userId]/MemberJourney.tsx']) {
+      const src = readFileSync(`src/app/coach/cohort/[cohortId]/${f}`, 'utf8');
+      const noComment = src.replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(noComment, `${f} 가 회기 이름을 또 그린다 — 칩과 합쳐 한 화면에 둘이다`).not.toMatch(/\{cohort\.name\}|\{cohortName\}/);
     }
+    // `/group` 의 비교 문구는 회기 이름이 아니다 — 그대로 본문이 든다(최박사 결재의 나머지 절반).
+    const group = readFileSync('src/app/coach/cohort/[cohortId]/group/page.tsx', 'utf8');
+    expect(group, 'group 이 비교 문구를 안 그린다').toContain('회기 평균`');
   });
 });

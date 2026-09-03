@@ -24,7 +24,7 @@ export default async function LibraryPage() {
   ]);
   const muted = { color: 'var(--color-text-secondary)' } as const;
 
-  // 기수 목록은 **올릴 수 있는 사람에게만** 필요하다(자료에 소속을 달 때 고른다).
+  // 회기 목록은 **올릴 수 있는 사람에게만** 필요하다(자료에 소속을 달 때 고른다).
   const cohorts = canUpload ? await ctx.listMyCohorts().catch(() => []) : [];
 
   return (

@@ -1,5 +1,5 @@
 'use client';
-// §8.3 차수 상세 클라이언트 래퍼 — 라우팅·관리 액션 배선 + 결과 토스트(2.4 패턴). 데이터는 서버 컴포넌트가 주입.
+// §8.3 회기 상세 클라이언트 래퍼 — 라우팅·관리 액션 배선 + 결과 토스트(2.4 패턴). 데이터는 서버 컴포넌트가 주입.
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/core/ui';
@@ -11,7 +11,7 @@ import { applyOptimistic, refineActionError } from './cohortAdmin';
 
 type MoveTarget = { id: string; name: string };
 
-// 운영자 참여자 이동 행 — 이름 + 대상 선택 + [이동]. 대상=다른 차수/미배정(체험)/휴지통(삭제).
+// 운영자 참여자 이동 행 — 이름 + 대상 선택 + [이동]. 대상=다른 회기/미배정(체험)/휴지통(삭제).
 function MoveRow({ member, targets, onMove }: { member: RosterMember; targets: MoveTarget[]; onMove: (userId: string, name: string, toId: string, toName: string) => Promise<void> }) {
   const [to, setTo] = useState('');
   const [busy, setBusy] = useState(false);
@@ -65,11 +65,11 @@ export function CohortDetailClient({
   maxMembers: number;
   postOpened: boolean; // 사후 진단 개시 여부(cohort.post_opened_at != null). ADR-55
   backHref: string; // 진입 출처 기반(A′-4) — 서버가 ?from= 로 산출(콘솔/목록)
-  isAdmin: boolean; // 운영자면 데이터 있는 차수도 삭제 가능(코치는 빈 차수만). ADR-67
-  canManageMembers: boolean; // 참여자 휴지통 노출 — 해당 차수 코치 또는 운영자만(서버 판정). ADR-73
+  isAdmin: boolean; // 운영자면 데이터 있는 회기도 삭제 가능(코치는 빈 회기만). ADR-67
+  canManageMembers: boolean; // 참여자 휴지통 노출 — 해당 회기 코치 또는 운영자만(서버 판정). ADR-73
   memberCount: number; // 참여 수(삭제 가능 판정·컨펌 영향 표시)
   responseCount: number; // 응답 수(동)
-  moveTargets: MoveTarget[]; // 운영자 이동 대상(같은 진단 차수 + 미배정/휴지통, 현재 차수 제외). 비운영자는 빈 배열. ADR-84
+  moveTargets: MoveTarget[]; // 운영자 이동 대상(같은 진단 회기 + 미배정/휴지통, 현재 회기 제외). 비운영자는 빈 배열. ADR-84
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -111,11 +111,11 @@ export function CohortDetailClient({
     });
   }
 
-  // 차수 삭제(파괴적·ADR-67) — 성공 시 차수 소멸이라 refresh 대신 목록으로 이동 + 토스트. 실패 시 정제 토스트(예약/데이터 가드 메시지 노출).
+  // 회기 삭제(파괴적·ADR-67) — 성공 시 회기 소멸이라 refresh 대신 목록으로 이동 + 토스트. 실패 시 정제 토스트(예약/데이터 가드 메시지 노출).
   async function onDelete() {
     const res = await deleteCohortAction(summary.id);
     if (res.ok) {
-      toast.success('차수를 삭제했어요.');
+      toast.success('회기를 삭제했어요.');
       router.push(backHref);
     } else {
       toast.error(refineActionError(res.error));
@@ -126,7 +126,7 @@ export function CohortDetailClient({
   async function onRemoveMember(userId: string, name: string) {
     const res = await removeCohortMemberAction(summary.id, userId);
     if (res.ok) {
-      toast.success(`${name} 님을 차수에서 지웠어요.`);
+      toast.success(`${name} 님을 회기에서 지웠어요.`);
       router.refresh();
     } else {
       toast.error(refineActionError(res.error));
@@ -161,21 +161,21 @@ export function CohortDetailClient({
         onGroupReport={() => router.push(`/coach/cohort/${summary.id}/group`)}
         onOpenMember={(responseId) => router.push(`/coach/cohort/${summary.id}/report/${responseId}`)}
         actionPending={pending}
-        onArchive={() => run(() => archiveCohortAction(summary.id), '차수를 마감했어요.')}
+        onArchive={() => run(() => archiveCohortAction(summary.id), '회기를 마감했어요.')}
         onSetCap={(n) => run(() => setCohortCapAction(summary.id, n), '정원을 바꿨어요.')}
         onRename={renameOptimistic}
         onSetDescription={(description) => run(() => setCohortDescriptionAction(summary.id, description), '소개를 저장했어요.')}
-        onReopen={() => run(() => reopenCohortAction(summary.id), '차수를 다시 열었어요.')}
+        onReopen={() => run(() => reopenCohortAction(summary.id), '회기를 다시 열었어요.')}
         onOpenPost={() => run(() => openPostWaveAction(summary.id), '마무리 체크를 개시했어요.')}
         onDelete={onDelete}
       />
 
-      {/* 운영자 참여자 이동(ADR-84) — 다른 차수·미배정(체험)·휴지통(삭제)으로. 응답·갈무리는 원 차수에 남고 통계에서 빠짐. */}
+      {/* 운영자 참여자 이동(ADR-84) — 다른 회기·미배정(체험)·휴지통(삭제)으로. 응답·갈무리는 원 회기에 남고 통계에서 빠짐. */}
       {isAdmin && moveTargets.length > 0 && roster.length > 0 ? (
         <section style={{ marginTop: 'var(--space-6)' }}>
           <h2 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 16, margin: '0 0 var(--space-1)' }}>참여자 이동 <span className="t-caption" style={{ color: 'var(--color-text-muted)' }}>· 운영자</span></h2>
           <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-3)' }}>
-            다른 차수·미배정(체험)·휴지통(삭제)으로 옮깁니다. 응답·갈무리는 원 차수에 남고, 옮기면 이 차수 통계에서 빠집니다. 휴지통에서 다시 옮기면 복원됩니다.
+            다른 회기·미배정(체험)·휴지통(삭제)으로 옮깁니다. 응답·갈무리는 원 회기에 남고, 옮기면 이 회기 통계에서 빠집니다. 휴지통에서 다시 옮기면 복원됩니다.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {roster.map((m) => <MoveRow key={m.userId} member={m} targets={moveTargets} onMove={onMove} />)}

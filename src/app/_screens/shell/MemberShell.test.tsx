@@ -90,7 +90,10 @@ describe('회원 껍데기 — 표를 읽어 헤더를 그린다', () => {
       expect(readFileSync(f, 'utf8'), `${f} 가 문 이름을 스스로 적고 있다`).toContain("from '@/app/_vocab/doors'");
     }
     // 콘솔도 같다 — 시트 항목과 표의 제목이 한 말이다.
-    expect(readFileSync('src/app/_screens/console/consoleNav.ts', 'utf8')).toContain('CONSOLE_DOOR');
+    // ★ **살아 있는 자리를 잰다**(U-6) — 전에는 `consoleNav.ts` 를 읽었는데 그 함수는
+    //   호출자가 0인 죽은 코드였다. **죽은 파일을 근거로 삼은 잠금은 함께 죽는다.**
+    //   지금 콘솔 시트를 짓는 것은 `consoleSheet.ts` 다(`ConsoleLayout` 이 부른다).
+    expect(readFileSync('src/app/_screens/console/consoleSheet.ts', 'utf8')).toContain('CONSOLE_DOOR');
     expect(readFileSync('src/app/_lib/screenChrome.ts', 'utf8')).toContain(`title: '${CONSOLE_DOOR.label}'`);
   });
 });

@@ -1,8 +1,8 @@
 // 가치 카드 — 참여자 화면(ADR-121).
 //
 // **게이트 두 겹.** ① `/my` 는 `proxy.guard.ts` PROTECTED_PREFIXES 에 있어 미인증이 미들웨어에서 /login 으로 걸린다.
-//   ② 그것은 *인증*만 본다. **차수 소속**은 여기서 본다 — 남의 cohortId 를 URL 에 넣어도 자기 차수가 아니면 못 들어간다.
-//   차수 홈(`../page.tsx`)이 쓰는 것과 같은 방식이고, 게이트를 데이터보다 **먼저** 통과시킨다(CLAUDE §9).
+//   ② 그것은 *인증*만 본다. **회기 소속**은 여기서 본다 — 남의 cohortId 를 URL 에 넣어도 자기 회기가 아니면 못 들어간다.
+//   회기 홈(`../page.tsx`)이 쓰는 것과 같은 방식이고, 게이트를 데이터보다 **먼저** 통과시킨다(CLAUDE §9).
 import { redirect } from 'next/navigation';
 import { createServerContext } from '@/core/supabase/server';
 import { ValuesClient } from './ValuesClient';

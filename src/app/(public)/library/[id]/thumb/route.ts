@@ -66,7 +66,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       status: 200,
       headers: {
         'content-type': type,
-        // 파일 프록시와 **같은 정책**이다. 자격은 언제든 바뀌고(보류·기수 이동),
+        // 파일 프록시와 **같은 정책**이다. 자격은 언제든 바뀌고(보류·회기 이동),
         //   중간 캐시가 들고 있으면 그것이 곧 잔여 창이다.
         'cache-control': 'private, no-store',
       },

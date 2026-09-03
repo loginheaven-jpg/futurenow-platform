@@ -34,8 +34,8 @@ export function consoleSheet(role: 'user' | 'coach' | 'admin'): MenuGroup[] {
     {
       title: '인도자',
       items: [
-        { href: '/coach/cohorts', label: '모든 차수' },
-        { href: '/coach/new', label: '차수 개설' },
+        { href: '/coach/cohorts', label: '모든 회기' },
+        { href: '/coach/new', label: '회기 개설' },
         ...(isAdmin ? [{ href: '/admin/approvals', label: '가입 승인' }] : []),
       ],
     },

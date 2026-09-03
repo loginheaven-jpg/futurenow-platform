@@ -286,7 +286,7 @@ describe('진행 요약 (회차 수는 cohort_sessions 가 정한다)', () => {
     expect(p).toEqual({ total: 5, submitted: 1, drafting: 1, open: 2, notopen: 1 });
   });
 
-  it('7 로 박지 않는다 — 차수마다 회차 수가 다르다', () => {
+  it('7 로 박지 않는다 — 회기마다 회차 수가 다르다', () => {
     expect(journeyProgress([], SESSIONS.slice(0, 2), NOW).total).toBe(2);
   });
 });

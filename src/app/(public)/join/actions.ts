@@ -17,14 +17,14 @@ async function ctx() {
   });
 }
 
-// 코드의 차수 공개 메타(미가입·비로그인 가능 — SECURITY DEFINER RPC).
+// 코드의 회기 공개 메타(미가입·비로그인 가능 — SECURITY DEFINER RPC).
 export async function previewCohort(code: string): Promise<CohortPreviewMeta | null> {
   return (await ctx()).previewCohortByCode(code);
 }
 
-// cohortId 로 차수 메타(러너 재진입 — Step 3.정비). 코드 재입력 없이 가입자가 진단을 이어서 풀게.
+// cohortId 로 회기 메타(러너 재진입 — Step 3.정비). 코드 재입력 없이 가입자가 진단을 이어서 풀게.
 // 권한은 RLS 가 강제: getCohort 의 cohorts_select = 본인(coach)·가입자(is_cohort_member)·운영자만 읽힘 →
-// 타 차수 cohortId 주입/비로그인 시 NotFound/예외 → null 반환 → JoinClient 가 코드 흐름으로 안전 폴백.
+// 타 회기 cohortId 주입/비로그인 시 NotFound/예외 → null 반환 → JoinClient 가 코드 흐름으로 안전 폴백.
 export async function getCohortMeta(cohortId: string): Promise<CohortPreviewMeta | null> {
   try {
     const c = await ctx();

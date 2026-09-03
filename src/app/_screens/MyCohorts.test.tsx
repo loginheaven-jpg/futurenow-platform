@@ -19,14 +19,14 @@ const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
   ...over,
 });
 
-describe('MyCohorts (내 차수 목록)', () => {
+describe('MyCohorts (내 회기 목록)', () => {
   it('빈 상태: 안내 + [코드로 참여]→/join', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[]} />);
     expect(html).toContain('아직 참여한 세미나가 없어요');
     expect(html).toContain('href="/join"');
   });
 
-  it('차수 카드: 이름·코치명·status·진행 배지', () => {
+  it('회기 카드: 이름·코치명·status·진행 배지', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ status: 'active' })]} />);
     expect(html).toContain('2026 봄 1기');
     expect(html).toContain('김코치');
@@ -41,9 +41,9 @@ describe('MyCohorts (내 차수 목록)', () => {
     expect(html).toContain('href="/join?cohort=co1"');
   });
 
-  it('사전 완료·열린 회차 없음 → [차수 열기] → 차수 홈(ADR-80 Phase 3)', () => {
+  it('사전 완료·열린 회차 없음 → [회기 열기] → 회기 홈(ADR-80 Phase 3)', () => {
     const html = renderToStaticMarkup(<MyCohorts cohorts={[cohort({ cohortId: 'co1', preDone: true })]} />);
-    expect(html).toContain('차수 열기');
+    expect(html).toContain('회기 열기');
     expect(html).toContain('href="/my/cohorts/co1"');
   });
 

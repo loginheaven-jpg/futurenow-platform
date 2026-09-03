@@ -7,15 +7,17 @@
 //   결과뿐이라, 원값이 브라우저 번들에 실리지 않는다(불변식 13 · 초안 §4.2 승인분).
 //   전체 노출이 필요하면 기존 게이트(`getContactDetail`)를 지난다 — 여기에 우회로를 만들지 않는다.
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { maskPhone } from '@/app/_lib/maskPhone';
 import { ApprovalsClient, type QueueRowView } from './ApprovalsClient';
+import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ApprovalsPage() {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 콘솔로 넓혔다) — 껍데기가 이미 물은 것을 다시 묻지 않는다.
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home');
   if (me.role !== 'admin') redirect('/coach');
@@ -38,13 +40,18 @@ export default async function ApprovalsPage() {
 
   const defaultValidUntil = rows[0]?.defaultValidUntil ?? null;
 
+  // ★ **본문 폭과 화면 이름은 라우트가 든다**(U-6). 표현 부품 안에 두면 그 부품이
+  //   라우팅에 매여 단독 렌더가 안 되고, 폭이 부품마다 흩어진다.
   return (
-    <ApprovalsClient
+    <div className="console-body console-body--wide">
+      <ConsoleTitle />
+      <ApprovalsClient
       rows={view}
       // 유효기간 기본값은 **DB 가 계산해 보낸 값**이다. TS 는 기본 개월수를 모른다
       //   — 상수는 `membership_default_months()` 한 곳에만 있다(IA §12-2 확정 시 그것만 고친다).
       defaultValidUntil={defaultValidUntil}
       currentUserId={me.id}
-    />
+      />
+    </div>
   );
 }

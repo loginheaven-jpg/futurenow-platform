@@ -33,7 +33,7 @@ export default async function Home() {
 
   // 시안 소식 첫 줄은 **모집 공지**다(`모집` 배지 + `예봄 2기 — 9월 20일 시작`).
   //   그 줄만 DB 가 아니라 `CURRENT_INTAKE` 에서 온다 — 모집은 소식 글이 아니라 상태이고,
-  //   글로 적어 두면 기수가 바뀔 때 두 곳을 고쳐야 한다(기수 변경은 `intake.ts` 한 파일 규율).
+  //   글로 적어 두면 회기가 바뀔 때 두 곳을 고쳐야 한다(회기 변경은 `intake.ts` 한 파일 규율).
   const intakeRow: NewsRowItem[] =
     CURRENT_INTAKE.status === 'open'
       ? [{
@@ -96,7 +96,7 @@ export default async function Home() {
         <section className="site-section">
           <SectionTitle title="6주 여정" desc="매주 한 걸음씩, 꿈에서 목표로, 목표에서 현실로" />
           {/* **현재 회차를 표시하지 않는다.** 공개 현관에는 '지금 몇 회차'라는 것이 없다 —
-              방문자마다 다르고, 기수마다 다르다. 시안의 `.wk.on` 두 칸은 시안 제작 시의
+              방문자마다 다르고, 회기마다 다르다. 시안의 `.wk.on` 두 칸은 시안 제작 시의
               시각 강조이지 상태가 아니다(완주 보고 §대조표에 그대로 적었다). */}
           <WeekTimeline cells={WEEK_CELLS} />
         </section>

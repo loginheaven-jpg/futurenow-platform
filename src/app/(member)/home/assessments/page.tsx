@@ -6,7 +6,7 @@
 //
 // **고지는 동의가 아니다**(IA §4.2 ①). 상시 체크를 시작할 때 열람 범위를 한 줄로 알린다 —
 //   허락을 구하는 문장이 아니라 알려 주는 문장이고, **동의 토글을 두지 않는다.**
-//   차수 회원과 개인 회원의 문장이 다른 이유는 실제로 보는 사람이 다르기 때문이다.
+//   회기 회원과 개인 회원의 문장이 다른 이유는 실제로 보는 사람이 다르기 때문이다.
 //
 // **참여자 화면 규율**(불변식 9·11 · 발주서 §7.3): 경고색·순위·막대 0.
 //   자격이 없어 닫힌 항목은 **색이 아니라 문장**으로 말한다.
@@ -48,13 +48,13 @@ export default async function AssessmentsPage() {
   const state = await ctx.getMyMemberState();
 
   const cohorts = await ctx.listMyCohorts();
-  // 여정은 **활성 차수**에만 붙는다. 마감된 기수는 여정이 끝났고 상시만 남는다.
+  // 여정은 **활성 회기**에만 붙는다. 마감된 회기는 여정이 끝났고 상시만 남는다.
   const active = cohorts.filter((c) => c.status === 'active');
   const pre = active.find((c) => !c.preDone) ?? null;
   const post = active.find((c) => c.postOpened && !c.postDone) ?? null;
 
-  // 가치 카드는 **소속으로 갈린다** — 차수가 있으면 그 차수 경로, 없으면 개인 경로(S-2).
-  //   차수가 여럿이면 첫 활성 차수로 보낸다(차수별 결과가 따로 서므로 임의 선택이 아니라 '지금 그 기수').
+  // 가치 카드는 **소속으로 갈린다** — 회기가 있으면 그 회기 경로, 없으면 개인 경로(S-2).
+  //   회기가 여럿이면 첫 활성 회기로 보낸다(회기별 결과가 따로 서므로 임의 선택이 아니라 '지금 그 회기').
   const valueCohort = active[0] ?? null;
   const valueHref = valueCohort ? `/my/cohorts/${valueCohort.cohortId}/values` : '/my/values';
   const canStanding = assessmentAccess(state, 'standing');
@@ -130,7 +130,7 @@ export default async function AssessmentsPage() {
       heading={{ title: '진단', lead: '현재의 나를 살피고, 다음 선택의 기준을 찾는 도구입니다.' }}
       sections={sections}
       // 열람 고지 — **동의가 아니라 알림**(IA §4.2 ①). 토글을 두지 않는다.
-      //   차수 회원과 개인 회원의 문장이 다른 이유는 실제로 보는 사람이 다르기 때문이다.
+      //   회기 회원과 개인 회원의 문장이 다른 이유는 실제로 보는 사람이 다르기 때문이다.
       privacy={
         valueCohort ? (
           <><b>이 결과는 우리 회기 인도자와 함께 봅니다.</b> 다음 만남의 질문과 실행을 정하는 데 사용합니다.</>

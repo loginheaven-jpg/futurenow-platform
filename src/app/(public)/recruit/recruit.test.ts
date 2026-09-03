@@ -144,9 +144,9 @@ describe('시안 HTML 이 문구의 최종 기준이다', () => {
   });
 });
 
-// 이 페이지의 존재 이유는 "기수마다 가입링크만 갈아 끼워 쓰는 공용 페이지"다(지휘부 2026-08-19).
+// 이 페이지의 존재 이유는 "회기마다 가입링크만 갈아 끼워 쓰는 공용 페이지"다(지휘부 2026-08-19).
 //   그 약속이 말로만 남지 않게 **3기를 가정한 상수로 갈아 끼워** 결과가 따라 바뀌는지 본다.
-describe('기수 교체 — 상수 하나로 갈린다', () => {
+describe('회기 교체 — 상수 하나로 갈린다', () => {
   const 삼기: Intake = { ...CURRENT_INTAKE, code: 'AB9CD', label: '예봄 3기' };
 
   it('CTA 링크가 상수의 code 를 따라간다', () => {
@@ -162,8 +162,8 @@ describe('기수 교체 — 상수 하나로 갈린다', () => {
     expect(joinHref({ ...CURRENT_INTAKE, code: 'A B&C' })).toBe('/join?code=A%20B%26C');
   });
 
-  // 코드가 문구 상수(copy.ts)에 새어 들어가면 상수를 바꿔도 화면 어딘가는 옛 기수를 가리킨다.
-  it('기수 고유값이 문구 상수에 하드코딩돼 있지 않다', () => {
+  // 코드가 문구 상수(copy.ts)에 새어 들어가면 상수를 바꿔도 화면 어딘가는 옛 회기를 가리킨다.
+  it('회기 고유값이 문구 상수에 하드코딩돼 있지 않다', () => {
     const 문구 = JSON.stringify([HERO, PROBLEM, WHAT, JOURNEY, RESULT, VOICES, ONLINE, AUDIENCE, SCHEDULE, FEE, TEAM, APPLY]);
     expect(문구).not.toContain(CURRENT_INTAKE.code);
     expect(문구).not.toContain(CURRENT_INTAKE.accountNumber);

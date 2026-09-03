@@ -1,4 +1,4 @@
-// 차수 명단 모델(앱층 순수 함수 — 계약 아님). 코치 콘솔 §8.3 의 3숫자·3묶음을 기존 메서드 산출에서 조립.
+// 회기 명단 모델(앱층 순수 함수 — 계약 아님). 코치 콘솔 §8.3 의 3숫자·3묶음을 기존 메서드 산출에서 조립.
 // 이름 = listCohortMembers(responseId→userId→name), null 폴백 '참여자'. 돌봄 = listAlerts care/red_flag.
 import type { RosterMember } from '@/app/_screens/types';
 
@@ -39,7 +39,7 @@ export function buildCohortRoster(input: {
   }
 
   // 응답을 사람(userId)별로 모은다. **등록된 멤버의 응답만** — 이동/삭제(등록 제거)된 사람의 응답은
-  // DB에 남아 있어도(불변) 집계에서 제외해 원 차수 통계를 clean 하게 유지한다(ADR-84 #4).
+  // DB에 남아 있어도(불변) 집계에서 제외해 원 회기 통계를 clean 하게 유지한다(ADR-84 #4).
   const enrolledSet = new Set(input.enrollments.map((e) => e.userId));
   const byUser = new Map<string, RespLike[]>();
   for (const r of input.responses) {

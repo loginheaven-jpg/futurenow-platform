@@ -31,11 +31,11 @@ describe('CohortDetail [그룹 리포트] 진입 (Step 3.3)', () => {
 describe('CohortDetail 참여자 휴지통 (ADR-73)', () => {
   it('canManageMembers 시 명단 행에 삭제(휴지통) 어포던스 노출', () => {
     const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} canManageMembers onRemoveMember={noop} />);
-    expect(html).toContain('차수에서 제거'); // aria-label/title
+    expect(html).toContain('회기에서 제거'); // aria-label/title
   });
 
   it('미전달(운영자/소유코치 아님) 시 휴지통 미노출', () => {
     const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} />);
-    expect(html).not.toContain('차수에서 제거');
+    expect(html).not.toContain('회기에서 제거');
   });
 });

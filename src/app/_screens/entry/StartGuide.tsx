@@ -6,7 +6,7 @@ import { Button } from '@/core/ui';
 
 // **`cohortName` 을 걷었다**(U-4 §1) — 이 부품에서 그 값이 하던 일은 **헤더 부제** 하나였고
 //   그것은 통로가 든다(`joinChrome('start').subtitle`). **값이 사라진 것이 아니라 드는 곳이 옮겨졌다** —
-//   같은 자리(제목 아래)에 같은 기수 이름이 그대로 선다.
+//   같은 자리(제목 아래)에 같은 회기 이름이 그대로 선다.
 export function StartGuide({ onStart }: { onStart?: () => void }) {
   return (
     <div>

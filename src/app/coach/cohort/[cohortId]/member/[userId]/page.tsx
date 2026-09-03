@@ -5,8 +5,9 @@
 //
 // 게이트는 회차 현황(`../checkin/page.tsx`)과 같다 — 코치/운영자 전용, 멤버는 자기 집으로.
 //   데이터 접근은 그 뒤에 온다(게이트-데이터 순서 · CLAUDE §9).
+import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestCohort, requestContext, requestUser } from '@/app/_lib/requestScope';
 import { ReportPrintButton } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintButton';
 import { ReportPrintHeader } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintHeader';
 import { MemberJourney } from './MemberJourney';
@@ -15,17 +16,18 @@ export const dynamic = 'force-dynamic';
 
 export default async function CoachMemberJourneyPage({ params }: { params: Promise<{ cohortId: string; userId: string }> }) {
   const { cohortId, userId } = await params;
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 콘솔로 넓혔다) — 껍데기가 이미 물은 것을 다시 묻지 않는다.
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
   if (me.role === 'user') redirect('/home'); // 코치/운영자 전용 — 멤버는 자기 집으로
 
   // 명단은 **참여자만**(ADR-118) — 이 화면은 코칭 대상 화면이다.
-  //   그 명단에 없는 userId 면 조회하지 않고 돌려보낸다(타 차수·비참여자 접근 차단).
+  //   그 명단에 없는 userId 면 조회하지 않고 돌려보낸다(타 회기·비참여자 접근 차단).
   const [sessions, members, cohort] = await Promise.all([
     ctx.listCohortSessions(cohortId),
     ctx.listCohortMembers(cohortId, true),
-    ctx.getCohort(cohortId).catch(() => null),
+    requestCohort(cohortId).catch(() => null),
   ]);
   const member = members.find((m) => m.userId === userId) ?? null;
   if (!member) redirect(`/coach/cohort/${cohortId}/checkin`);
@@ -58,6 +60,9 @@ export default async function CoachMemberJourneyPage({ params }: { params: Promi
           <ReportPrintButton />
         </div>
       </div>
+      {/* ★ **화면 이름이 인쇄 전용이었다**(U-6 실측 — `ReportPrintHeader` 는 `screen` 없이 불리면
+          `.print-only` 다). 화면에는 이름이 한 글자도 없었다. */}
+      <ConsoleTitle />
       <ReportPrintHeader
         title="갈무리 기록"
         participantName={member.name ?? '이름 미입력'}
@@ -69,7 +74,6 @@ export default async function CoachMemberJourneyPage({ params }: { params: Promi
         cohortId={cohortId}
         userId={userId}
         name={member.name ?? '이름 미입력'}
-        cohortName={cohort?.name ?? ''}
         sessions={sessions}
         rows={rows}
         photos={Object.fromEntries(photoPairs)}

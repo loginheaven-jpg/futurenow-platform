@@ -1,5 +1,5 @@
 'use server';
-// 차수 관리(마감·정원·이름·복구·삭제) — updateCohort/deleteCohort 위 배선. 권한은 앱 게이트 + cohorts_* RLS 이중.
+// 회기 관리(마감·정원·이름·복구·삭제) — updateCohort/deleteCohort 위 배선. 권한은 앱 게이트 + cohorts_* RLS 이중.
 import { GENERAL_CODE } from '@/app/_screens/entry/general';
 import { createServerContext } from '@/core/supabase/server';
 import { cohortNameValid } from './cohortAdmin';
@@ -8,23 +8,23 @@ async function ctx() {
   return await createServerContext();
 }
 
-// 차수 하드삭제(파괴적·ADR-67). 예약 general 차수(체험 진단·JOINF)는 **운영자 포함 삭제 금지**(인프라 보호) — 앱 액션이 강제(코어는 진단어휘 무지).
-//   나머지(운영자 임의·코치 빈차수만·소유 RLS)는 코어 deleteCohort. 성공 시 차수 소멸 → 호출측이 목록으로 이동.
+// 회기 하드삭제(파괴적·ADR-67). 예약 general 회기(체험 진단·JOINF)는 **운영자 포함 삭제 금지**(인프라 보호) — 앱 액션이 강제(코어는 진단어휘 무지).
+//   나머지(운영자 임의·코치 빈회기만·소유 RLS)는 코어 deleteCohort. 성공 시 회기 소멸 → 호출측이 목록으로 이동.
 export async function deleteCohortAction(cohortId: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const c = await ctx();
     const cohort = await c.getCohort(cohortId); // RLS 미달/부재 → throw → catch
-    if (cohort.code === GENERAL_CODE) return { ok: false, error: '예약된 체험 체크 차수는 삭제할 수 없어요.' };
+    if (cohort.code === GENERAL_CODE) return { ok: false, error: '예약된 체험 체크 회기는 삭제할 수 없어요.' };
 
     // **사진 회수 — RPC 보다 먼저**(발주 §4.2 · ADR-87). Supabase 는 storage.objects 직접 DELETE 를
-    //   막으므로 DB 행이 CASCADE 로 사라져도 **S3 바이트는 회수되지 않는다.** 차수가 사라지면
+    //   막으므로 DB 행이 CASCADE 로 사라져도 **S3 바이트는 회수되지 않는다.** 회기가 사라지면
     //   무엇을 지워야 할지 알 방법도 함께 사라지므로 순서를 뒤집을 수 없다.
     //
     //   `20260802100200` 주석은 이 절이 여기 있다고 적어 두었으나 **실제로는 없었다**(1차 이전부터의
     //   드리프트 · 2차 설계 보고 §9-②). 피드 사진을 넣으면서 갈무리 사진도 같은 자리에 함께 넣는다 —
     //   사양 변경이 아니라 미이행분 이행이다.
     //
-    //   실패해도 삭제 자체는 진행한다: 사진이 남는 것보다 차수가 안 지워지는 쪽이 나쁘다
+    //   실패해도 삭제 자체는 진행한다: 사진이 남는 것보다 회기가 안 지워지는 쪽이 나쁘다
     //   (removeCohortMemberAction 의 판단과 같다).
     try {
       for (const path of await c.listFeedPhotoPaths(cohortId)) {
@@ -100,7 +100,7 @@ export async function reopenCohortAction(cohortId: string): Promise<{ ok: boolea
   }
 }
 
-// 사후 진단 개시 — open_post_wave RPC 경유(코치 자기 차수·NULL→now() 멱등). 권한은 RPC 내부 게이트. ADR-55
+// 사후 진단 개시 — open_post_wave RPC 경유(코치 자기 회기·NULL→now() 멱등). 권한은 RPC 내부 게이트. ADR-55
 export async function openPostWaveAction(cohortId: string): Promise<{ ok: boolean; error?: string }> {
   try {
     await (await ctx()).openPostWave(cohortId);
@@ -110,8 +110,8 @@ export async function openPostWaveAction(cohortId: string): Promise<{ ok: boolea
   }
 }
 
-// 차수에서 참여자 제거(휴지통·파괴적·ADR-73) — removeCohortMember(remove_cohort_member RPC) 경유.
-//   권한(해당 차수 코치 OR 운영자)은 RPC 내부 is_cohort_coach/is_admin 게이트가 강제. 이 차수 한정 응답·참여 삭제.
+// 회기에서 참여자 제거(휴지통·파괴적·ADR-73) — removeCohortMember(remove_cohort_member RPC) 경유.
+//   권한(해당 회기 코치 OR 운영자)은 RPC 내부 is_cohort_coach/is_admin 게이트가 강제. 이 회기 한정 응답·참여 삭제.
 export async function removeCohortMemberAction(cohortId: string, userId: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const c = await ctx();
@@ -134,7 +134,7 @@ export async function removeCohortMemberAction(cohortId: string, userId: string)
   }
 }
 
-// 참여자 이동(운영자·ADR-84) — 등록만 옮김(응답·갈무리 불변). 대상=다른 차수/미배정(체험)/휴지통(삭제). 권한은 move_cohort_member(admin) 내부.
+// 참여자 이동(운영자·ADR-84) — 등록만 옮김(응답·갈무리 불변). 대상=다른 회기/미배정(체험)/휴지통(삭제). 권한은 move_cohort_member(admin) 내부.
 export async function moveMemberAction(userId: string, fromCohortId: string, toCohortId: string): Promise<{ ok: boolean; error?: string }> {
   try {
     await (await ctx()).moveCohortMember(userId, fromCohortId, toCohortId);

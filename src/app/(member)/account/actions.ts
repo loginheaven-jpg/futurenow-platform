@@ -42,7 +42,7 @@ export async function setContactAction(input: { phone: string; address: string; 
   }
 }
 
-// 참여 프로필(user_profiles) — 본인 upsert(RLS user_id=auth.uid). role·kpc 미포함(자기수정 봉쇄 유지).
+// 참여 프로필(user_profiles) — 본인 upsert(RLS user_id=auth.uid). role·kpc 미포함(자회기정 봉쇄 유지).
 export async function setProfileAction(input: {
   gender: string | null;
   birthYear: number | null;

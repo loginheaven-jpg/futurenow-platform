@@ -1,5 +1,5 @@
 'use client';
-// 명단 행(§8.3) — ListRow(응답자면 리포트 진입) + 휴지통(차수에서 제거·2단계 컨펌). 인도자(자기 차수)·운영자 전용.
+// 명단 행(§8.3) — ListRow(응답자면 리포트 진입) + 휴지통(회기에서 제거·2단계 컨펌). 인도자(자기 회기)·운영자 전용.
 //   삭제는 파괴적(응답·참여 영구 삭제)이라 반드시 컨펌 후 실행. 성공 시 부모가 refresh → 행 소멸.
 import { useState } from 'react';
 import { Button, ListRow } from '@/core/ui';
@@ -37,7 +37,7 @@ export function RosterRow({
     return (
       <div style={{ padding: 'var(--space-3)', background: 'var(--color-surface-1)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <p className="t-caption" style={{ color: 'var(--care-text)', margin: 0 }}>
-          <strong>{member.name}</strong> 님을 이 차수에서 지울까요? 이 참여자의 응답·참여가 영구 삭제돼요. 되돌릴 수 없어요.
+          <strong>{member.name}</strong> 님을 이 회기에서 지울까요? 이 참여자의 응답·참여가 영구 삭제돼요. 되돌릴 수 없어요.
         </p>
         <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
           <Button variant="ghost" onClick={() => setConfirm(false)} disabled={busy}>취소</Button>
@@ -78,8 +78,8 @@ export function RosterRow({
         <button
           type="button"
           onClick={() => setConfirm(true)}
-          aria-label={`${member.name} 차수에서 제거`}
-          title="차수에서 제거(휴지통)"
+          aria-label={`${member.name} 회기에서 제거`}
+          title="회기에서 제거(휴지통)"
           style={{
             flexShrink: 0,
             width: 'var(--tap-min)',

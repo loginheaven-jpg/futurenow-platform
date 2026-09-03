@@ -38,7 +38,7 @@ export default async function MemberHomePage() {
   if (!consented) return <ConsentGate />;
 
   const greetingName = me.name?.trim() || me.email.split('@')[0] || '회원';
-  const cohorts = await requestCohorts(); // my_cohorts DEFINER RPC(본인 차수+진행). 앱은 cohorts·responses 직접 select 안 함.
+  const cohorts = await requestCohorts(); // my_cohorts DEFINER RPC(본인 회기+진행). 앱은 cohorts·responses 직접 select 안 함.
   // 운영자 로그인 알림: 승인 대기 건수. **역할 카드의 곁말로 간다**(ADR-181 — 운영 구획을 걷었다).
   const pendingCoachApps = me.role === 'admin' ? (await ctx.listCoachApplications('pending').catch(() => [])).length : 0;
 
@@ -58,7 +58,7 @@ export default async function MemberHomePage() {
   }
 
   // 동행 피드 바로가기(2차 · 발주 §6.3) — **탭바를 짓지 않기로 확정**했으므로 진입은 기존 표면으로 낸다.
-  //   피드를 가진 기수가 없으면 타일 자체를 그리지 않는다 — **없는 곳으로 보내지 않는다.**
+  //   피드를 가진 회기가 없으면 타일 자체를 그리지 않는다 — **없는 곳으로 보내지 않는다.**
   //   이 규율은 삭제된 `FeedShortcut` 이 지키던 것이고, 파일을 지우면서 규율은 여기로 옮겨 왔다.
   //   조회 실패는 빈 배열이다 — 바로가기가 없는 것과 홈이 안 열리는 것은 심각도가 다르다.
   const feedCohorts = await ctx.listFeedCohorts().catch(() => []);
@@ -89,7 +89,7 @@ export default async function MemberHomePage() {
   const active = cohorts.filter((c) => c.status === 'active');
   const primary = active.length === 1 ? active[0] : null;
 
-  // 시트 자료는 **한 곳에서 만든다**(`buildMemberSheet`) — /home·차수 홈·진단 홈이 같은 시트를
+  // 시트 자료는 **한 곳에서 만든다**(`buildMemberSheet`) — /home·회기 홈·진단 홈이 같은 시트를
   //   각자 조립하면 메뉴 하나가 늘 때 세 곳이 어긋난다(불변식 23).
 
   // 시안 B `.quick-grid` — 네 칸. **갈 수 없는 곳은 칸을 만들지 않는다.**
@@ -109,7 +109,7 @@ export default async function MemberHomePage() {
   return (
     <HomeScreen
       // **좁은 자리 규칙**(최박사 확정 2026-08-30) — 시트 머리는 한 칸뿐이라 병행이 안 된다.
-      //   `참여자·인도자·운영자` 를 자격 이름보다 앞세우고, 동점은 **최근 기수 포지션**이다.
+      //   `참여자·인도자·운영자` 를 자격 이름보다 앞세우고, 동점은 **최근 회기 포지션**이다.
       //   `narrowLabel` 이 `null` 을 주면(소속도 운영자도 아니면) 쓰던 값을 그대로 쓴다.
       roles={targets.map((t) => ({
         badge: t.cohort, who: t.who, title: t.title, sub: t.sub, href: t.href, ctaLabel: t.ctaLabel,

@@ -50,7 +50,7 @@ describe('buildCohortRoster (§8.3 3숫자·3묶음·이름 매핑)', () => {
     expect(model.roster.find((m) => m.status === 'care')?.id).toBe('r1');
   });
 
-  it('userId 는 응답/미응답 모두 참여자 식별(휴지통 — 차수에서 제거)', () => {
+  it('userId 는 응답/미응답 모두 참여자 식별(휴지통 — 회기에서 제거)', () => {
     // 응답자: id=responseId 여도 userId 는 사용자(u1). 미응답: id==userId.
     expect(model.roster.find((m) => m.id === 'r1')?.userId).toBe('u1'); // care
     expect(model.roster.find((m) => m.id === 'r2')?.userId).toBe('u2'); // done

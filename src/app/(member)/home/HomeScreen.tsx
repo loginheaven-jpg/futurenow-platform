@@ -15,7 +15,7 @@ import { NewsRow, type NewsRowItem } from '@/app/_screens/site/NewsRow';
 import '@/app/_screens/site/site.css';
 
 export interface HomeScreenProps {
-  /** 시트 머리에 서는 이름·역할·기수. */
+  /** 시트 머리에 서는 이름·역할·회기. */
   /** **걷었다**(U-2 §3) — 시트 자료는 껍데기가 든다. 화면이 나르지 않는다.
    *  `who`·`groups`·`chips` 가 여기 있던 자리다. */
   /**

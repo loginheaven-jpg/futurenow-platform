@@ -1,7 +1,6 @@
 'use client';
-// §8.3 차수 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
+// §8.3 회기 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
 // 덜 쓰는 관리(마감·정원)는 헤더 메뉴. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
-import Link from 'next/link';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, Stepper } from '@/core/ui';
 import { GENERAL_CODE } from '../entry/general';
@@ -87,11 +86,11 @@ export function CohortDetail({
   onSetDescription?: (description: string | null) => void | Promise<void>; // 소개 수정 → updateCohort({description}). 빈 값=null
   onReopen?: () => void | Promise<void>; // 마감 복구 → updateCohort({status:'active'})
   onOpenPost?: () => void | Promise<void>; // 사후 진단 개시 → openPostWave(단방향 멱등). ADR-55
-  onGroupReport?: () => void; // 차수 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
-  onDelete?: () => void | Promise<void>; // 차수 하드삭제(파괴적) → deleteCohort. ADR-67
+  onGroupReport?: () => void; // 회기 단위 집계 진입 → 그룹 리포트(코치 전용·리얼)
+  onDelete?: () => void | Promise<void>; // 회기 하드삭제(파괴적) → deleteCohort. ADR-67
   onRemoveMember?: (userId: string, name: string) => void | Promise<void>; // 참여자 제거(휴지통) → removeCohortMember. ADR-73
-  canManageMembers?: boolean; // 휴지통 노출 — 해당 차수 코치 또는 운영자만(서버 판정)
-  isAdmin?: boolean; // 운영자 = 데이터 있는 차수도 삭제 가능(코치는 빈 차수만). ADR-67
+  canManageMembers?: boolean; // 휴지통 노출 — 해당 회기 코치 또는 운영자만(서버 판정)
+  isAdmin?: boolean; // 운영자 = 데이터 있는 회기도 삭제 가능(코치는 빈 회기만). ADR-67
   memberCount?: number; // 참여 수(삭제 가능 판정·컨펌 영향)
   responseCount?: number; // 응답 수(동)
 }) {
@@ -110,7 +109,7 @@ export function CohortDetail({
   const [shared, setShared] = useState<'link' | null>(null); // 재공유 피드백(토스트 미의존)
   const archived = status === 'archived';
 
-  // 삭제 가능 판정(ADR-67): 예약 general 차수(체험)는 불가(인프라). 운영자=임의 / 코치=빈 차수만(참여·응답 0).
+  // 삭제 가능 판정(ADR-67): 예약 general 회기(체험)는 불가(인프라). 운영자=임의 / 코치=빈 회기만(참여·응답 0).
   const isReserved = cohort.code === GENERAL_CODE;
   const isEmptyCohort = memberCount === 0 && responseCount === 0;
   const canDelete = !isReserved && (isAdmin || isEmptyCohort);
@@ -195,7 +194,7 @@ export function CohortDetail({
   async function doDelete() {
     setBusy(true);
     try {
-      await onDelete?.(); // 성공 시 래퍼가 목록으로 이동(차수 소멸)
+      await onDelete?.(); // 성공 시 래퍼가 목록으로 이동(회기 소멸)
     } finally {
       setBusy(false);
       setConfirmDelete(false);
@@ -227,7 +226,7 @@ export function CohortDetail({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={40}
-                aria-label="차수 이름"
+                aria-label="회기 이름"
               />
               <Button variant="ghost" onClick={saveName} disabled={busy || !nameValid || !nameChanged}>저장</Button>
             </div>
@@ -241,8 +240,8 @@ export function CohortDetail({
               onChange={(e) => setDescription(e.target.value)}
               maxLength={500}
               rows={3}
-              placeholder="이 차수를 소개하는 글 (선택)"
-              aria-label="차수 소개"
+              placeholder="이 회기를 소개하는 글 (선택)"
+              aria-label="회기 소개"
               style={{ ...nameInputStyle, minHeight: 72, padding: 'var(--space-3)', resize: 'vertical', marginTop: 'var(--space-1)', display: 'block', width: '100%' }}
             />
             <Button variant="ghost" onClick={saveDescription} disabled={busyAny || !descChanged} style={{ marginTop: 'var(--space-2)' }}>소개 저장</Button>
@@ -270,11 +269,11 @@ export function CohortDetail({
           </div>
           {archived ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 차수예요.</p>
+              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 회기예요.</p>
               <Button variant="ghost" onClick={doReopen} disabled={busyAny} style={{ width: '100%' }}>다시 열기</Button>
             </div>
           ) : !confirmArchive ? (
-            <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busyAny} style={{ width: '100%' }}>차수 마감</Button>
+            <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busyAny} style={{ width: '100%' }}>회기 마감</Button>
           ) : (
             <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
               <Button variant="ghost" onClick={() => setConfirmArchive(false)} style={{ flex: 1 }}>취소</Button>
@@ -282,21 +281,21 @@ export function CohortDetail({
             </div>
           )}
 
-          {/* 차수 삭제(파괴적·ADR-67) — 예약 체험 차수는 숨김. 코치+데이터 있으면 마감 유도, 운영자 또는 빈 차수면 삭제(위험색·2단계 컨펌·영향 표시). */}
+          {/* 회기 삭제(파괴적·ADR-67) — 예약 체험 회기는 숨김. 코치+데이터 있으면 마감 유도, 운영자 또는 빈 회기면 삭제(위험색·2단계 컨펌·영향 표시). */}
           {isReserved ? null : !canDelete ? (
             <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>
               참여자·응답이 있어 삭제할 수 없어요. 마감을 이용해 주세요.
             </p>
           ) : !confirmDelete ? (
             <Button variant="ghost" onClick={() => setConfirmDelete(true)} disabled={busyAny} style={{ width: '100%', color: 'var(--care-text)', borderColor: 'var(--care-text)' }}>
-              차수 삭제
+              회기 삭제
             </Button>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <p className="t-caption" style={{ color: 'var(--care-text)', margin: 0 }}>
                 {isEmptyCohort
-                  ? '이 차수를 삭제할까요? 되돌릴 수 없어요.'
-                  : `참여 ${memberCount} · 응답 ${responseCount} 이 있는 차수예요. 삭제하면 되돌릴 수 없어요.`}
+                  ? '이 회기를 삭제할까요? 되돌릴 수 없어요.'
+                  : `참여 ${memberCount} · 응답 ${responseCount} 이 있는 회기예요. 삭제하면 되돌릴 수 없어요.`}
               </p>
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
                 <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={busyAny} style={{ flex: 1 }}>취소</Button>
@@ -313,21 +312,17 @@ export function CohortDetail({
         <Stat n={care.length} label="돌봄" color="var(--care-text)" />
       </div>
 
-      {/* 차수 단위 집계 — 1주차 오프닝 핵심(그룹 평균·분포). 코치 전용 리얼 리포트. */}
+      {/* 회기 단위 집계 — 1주차 오프닝 핵심(그룹 평균·분포). 코치 전용 리얼 리포트. */}
       {onGroupReport ? (
         <Button onClick={onGroupReport} style={{ width: '100%', marginBottom: 'var(--space-3)' }}>
           그룹 리포트 보기
         </Button>
       ) : null}
 
-      {/* 회차 갈무리 현황(ADR-80 · Phase 7) — 회차 일정 등록·명단·한 걸음. */}
-      <Link
-        className="ui-btn ui-btn--ghost"
-        href={`/coach/cohort/${cohort.id}/checkin`}
-        style={{ width: '100%', textDecoration: 'none', textAlign: 'center', marginBottom: 'var(--space-6)' }}
-      >
-        회차 갈무리 현황
-      </Link>
+      {/* ★ **「회차 갈무리」로 가는 문은 띠의 탭이 든다**(U-6 · 「중복없이, 일관된 위치」).
+          바로 위 탭과 같은 목적지를 본문이 또 내면 한 화면에 문이 둘이고, 이름도 둘이 된다
+          (탭 「회차 갈무리」 vs 본문 「회차 갈무리 현황」).
+          **「그룹 리포트 보기」는 남긴다** — 그것은 탭에 없는 화면이라 본문이 유일한 문이다. */}
 
       {care.length > 0 && (
         <Group title="먼저 챙길 분" color="var(--care-text)">

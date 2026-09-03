@@ -1,5 +1,5 @@
 // 인쇄 전용 브랜드 문서 헤더(.print-only) — PDF 상단 표제. 화면엔 미노출(앱은 AppHeader 사용), 인쇄에서만 나타난다.
-//   서비스 정체성 + 리포트 종류 + 대상·차수·회차·날짜. 디자인 토큰만 사용(디자인시스템 §8 준수).
+//   서비스 정체성 + 리포트 종류 + 대상·회기·회차·날짜. 디자인 토큰만 사용(디자인시스템 §8 준수).
 import type { CSSProperties } from 'react';
 
 const wrap: CSSProperties = {

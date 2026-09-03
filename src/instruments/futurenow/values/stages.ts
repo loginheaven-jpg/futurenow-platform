@@ -16,7 +16,7 @@ export function stageIndex(s: ValueStage): number {
   return STAGE_ORDER.indexOf(s);
 }
 
-/** 1차에 속하는가 — 차수 홈 카드 문구와 이어하기 분기가 읽는다. */
+/** 1차에 속하는가 — 회기 홈 카드 문구와 이어하기 분기가 읽는다. */
 export function isFirstSession(s: ValueStage): boolean {
   return s === 'exploring' || s === 'candidates';
 }

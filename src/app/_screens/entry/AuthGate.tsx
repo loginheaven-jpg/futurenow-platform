@@ -74,7 +74,7 @@ export function AuthGate({
   onLogin,
 }: {
   allowCoachApply?: boolean;
-  // `/signup`(일반 가입)에서만 켠다. `/join`(코드 가입)은 차수 코드가 곧 승인이라 대조 키가 필요 없다.
+  // `/signup`(일반 가입)에서만 켠다. `/join`(코드 가입)은 회기 코드가 곧 승인이라 대조 키가 필요 없다.
   allowForumMatch?: boolean;
   // **`title`·`onBack` 을 걷었다**(U-4 §1) — 헤더 전용 프롭이었다.
   //   제목은 `join/joinChrome` 이 들고 뒤로는 `JoinClient` 가 껍데기에 알린다.

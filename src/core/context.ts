@@ -117,7 +117,7 @@ export function createCoreContext(
   return new SupabaseCoreContext(supabase, options.validators ?? {}, options.verifiedUserId ?? null);
 }
 
-// resolve_cohort_by_code(SECURITY DEFINER) 가 반환하는 차수 공개 메타(비민감).
+// resolve_cohort_by_code(SECURITY DEFINER) 가 반환하는 회기 공개 메타(비민감).
 interface CohortMeta {
   id: string;
   coach_id: string;
@@ -462,7 +462,7 @@ class SupabaseCoreContext implements CoreContext {
     }
   }
 
-  // ── 차수·참여 ──────────────────────────────────────────────
+  // ── 회기·참여 ──────────────────────────────────────────────
   // 가입 결정용 공개 메타(coachName·memberCount 포함). resolve_cohort_by_code 메타를 버리지 않고 매핑.
   async previewCohortByCode(code: string): Promise<CohortPreviewMeta | null> {
     const meta = await this.resolveMeta(code);
@@ -480,8 +480,8 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   async resolveCohortByCode(code: string): Promise<Cohort | null> {
-    // resolve_cohort_by_code(SECURITY DEFINER)는 활성·미만료 차수의 공개 메타를 반환한다.
-    // 미가입자도 코드만 알면 차수 정보를 확인하고 가입을 결정할 수 있다(민감정보 미노출).
+    // resolve_cohort_by_code(SECURITY DEFINER)는 활성·미만료 회기의 공개 메타를 반환한다.
+    // 미가입자도 코드만 알면 회기 정보를 확인하고 가입을 결정할 수 있다(민감정보 미노출).
     const meta = await this.resolveMeta(code);
     if (!meta) return null;
     return {
@@ -514,7 +514,7 @@ class SupabaseCoreContext implements CoreContext {
 
     // 정원 검사(낙관적 — 동시성 한계는 추후 보완).
     if (Number(meta.member_count) >= meta.max_members) {
-      throw new CoreError('차수 정원이 초과되었습니다');
+      throw new CoreError('회기 정원이 초과되었습니다');
     }
 
     const { data, error } = await this.sb
@@ -535,7 +535,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) {
       // 내부 진단은 보존(운영 가시성), 사용자 경로엔 일반 메시지만(raw PG·RLS 힌트 비노출).
       console.error('[resolveMeta] resolve_cohort_by_code 실패:', error);
-      throw new CoreError('차수 정보를 불러오지 못했어요.');
+      throw new CoreError('회기 정보를 불러오지 못했어요.');
     }
     const rows = (Array.isArray(data) ? data : data ? [data] : []) as CohortMeta[];
     return rows[0] ?? null;
@@ -548,23 +548,23 @@ class SupabaseCoreContext implements CoreContext {
       .eq('id', cohortId)
       .maybeSingle();
     if (error) throw new CoreError(`getCohort 실패: ${error.message}`);
-    if (!data) throw new CoreNotFoundError(`차수를 찾을 수 없습니다: ${cohortId}`);
+    if (!data) throw new CoreNotFoundError(`회기를 찾을 수 없습니다: ${cohortId}`);
     return rowToCohort(data as CohortRow);
   }
 
-  // 코치 사후 진단 개시(open_post_wave DEFINER RPC) — 자기 차수(또는 운영자)만·NULL→now() 멱등·post_opened_at 만 세팅. ADR-55
+  // 코치 사후 진단 개시(open_post_wave DEFINER RPC) — 자기 회기(또는 운영자)만·NULL→now() 멱등·post_opened_at 만 세팅. ADR-55
   async openPostWave(cohortId: string): Promise<void> {
     const { error } = await this.sb.rpc('open_post_wave', { p_cohort_id: cohortId });
     if (error) throw new CoreError(`openPostWave 실패: ${error.message}`);
   }
 
-  // 차수 하드삭제(파괴적·ADR-67). RLS(cohorts_delete: 소유 코치 OR 운영자)가 소유를 강제(이중 방어).
-  //   **운영자 = 임의 차수 / 코치(소유) = 빈 차수만**(참여·응답 0). 데이터 있는 차수를 코치가 지우는 파괴(응답 SET NULL 고아화)를 코드 경계에서 차단 — 데이터 있으면 마감 유도.
-  //   예약 general 차수(체험) 보호는 앱 액션 소관(코어는 진단어휘 무지). 빈 판정 = enrollments + responses(진행중 draft 는 CASCADE 로 함께 정리).
+  // 회기 하드삭제(파괴적·ADR-67). RLS(cohorts_delete: 소유 코치 OR 운영자)가 소유를 강제(이중 방어).
+  //   **운영자 = 임의 회기 / 코치(소유) = 빈 회기만**(참여·응답 0). 데이터 있는 회기를 코치가 지우는 파괴(응답 SET NULL 고아화)를 코드 경계에서 차단 — 데이터 있으면 마감 유도.
+  //   예약 general 회기(체험) 보호는 앱 액션 소관(코어는 진단어휘 무지). 빈 판정 = enrollments + responses(진행중 draft 는 CASCADE 로 함께 정리).
   async deleteCohort(cohortId: string): Promise<void> {
     const me = await this.requireUser();
     if (me.role !== 'coach' && me.role !== 'admin') {
-      throw new CoreForbiddenError('차수 삭제는 인도자 또는 운영자만 가능합니다');
+      throw new CoreForbiddenError('회기 삭제는 인도자 또는 운영자만 가능합니다');
     }
     if (me.role !== 'admin') {
       const [{ count: enrolled }, { count: responded }] = await Promise.all([
@@ -572,15 +572,15 @@ class SupabaseCoreContext implements CoreContext {
         this.sb.from('responses').select('*', { count: 'exact', head: true }).eq('cohort_id', cohortId),
       ]);
       if ((enrolled ?? 0) > 0 || (responded ?? 0) > 0) {
-        throw new CoreError('참여자나 응답이 있는 차수는 삭제할 수 없어요. 마감을 이용해 주세요.');
+        throw new CoreError('참여자나 응답이 있는 회기는 삭제할 수 없어요. 마감을 이용해 주세요.');
       }
     }
     const { error } = await this.sb.from('cohorts').delete().eq('id', cohortId);
     if (error) throw new CoreError(`deleteCohort 실패: ${error.message}`);
   }
 
-  // 차수에서 참여자 제거(휴지통). 권한(해당 차수 코치 OR 운영자)은 remove_cohort_member(DEFINER) 내부에서 강제.
-  //   이 차수 한정 삭제: responses(→alerts·해석 CASCADE)·response_drafts·enrollments. 계정·타 차수 데이터는 불변.
+  // 회기에서 참여자 제거(휴지통). 권한(해당 회기 코치 OR 운영자)은 remove_cohort_member(DEFINER) 내부에서 강제.
+  //   이 회기 한정 삭제: responses(→alerts·해석 CASCADE)·response_drafts·enrollments. 계정·타 회기 데이터는 불변.
   async removeCohortMember(cohortId: string, userId: string): Promise<void> {
     const { error } = await this.sb.rpc('remove_cohort_member', { p_cohort_id: cohortId, p_user_id: userId });
     if (error) throw new CoreError(`removeCohortMember 실패: ${error.message}`);
@@ -592,7 +592,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`moveCohortMember 실패: ${error.message}`);
   }
 
-  // 차수 개설(코치/운영자). 앱측 코드 생성 + 유니크 충돌(23505) 재시도. RLS(cohorts_insert)가 권한을 강제(이중 방어).
+  // 회기 개설(코치/운영자). 앱측 코드 생성 + 유니크 충돌(23505) 재시도. RLS(cohorts_insert)가 권한을 강제(이중 방어).
   async createCohort(input: {
     name: string;
     instrumentId: InstrumentId;
@@ -602,7 +602,7 @@ class SupabaseCoreContext implements CoreContext {
   }): Promise<Cohort> {
     const me = await this.requireUser();
     if (me.role !== 'coach' && me.role !== 'admin') {
-      throw new CoreForbiddenError('차수 개설은 인도자 또는 운영자만 가능합니다');
+      throw new CoreForbiddenError('회기 개설은 인도자 또는 운영자만 가능합니다');
     }
 
     // 코드 알파벳 — DB cohorts_code_check(^[…]{5}$)와 글자 그대로 일치(혼동문자 I·L·O·0·1 제외, 31자).
@@ -637,7 +637,7 @@ class SupabaseCoreContext implements CoreContext {
     throw new CoreError('createCohort 실패: 유니크 코드 생성 재시도 초과(5회)');
   }
 
-  // 차수 부분수정(코치/운영자). 불변 필드(coach_id·instrument_id·code·id)는 patch에 없음 —
+  // 회기 부분수정(코치/운영자). 불변 필드(coach_id·instrument_id·code·id)는 patch에 없음 —
   // 소유이전·링크파손·진단 불일치를 계약 표면에서 차단. RLS(cohorts_update: USING+WITH CHECK)가 소유를 강제.
   async updateCohort(
     cohortId: string,
@@ -651,7 +651,7 @@ class SupabaseCoreContext implements CoreContext {
   ): Promise<Cohort> {
     const me = await this.requireUser();
     if (me.role !== 'coach' && me.role !== 'admin') {
-      throw new CoreForbiddenError('차수 수정은 인도자 또는 운영자만 가능합니다');
+      throw new CoreForbiddenError('회기 수정은 인도자 또는 운영자만 가능합니다');
     }
 
     const payload: Record<string, unknown> = {};
@@ -669,11 +669,11 @@ class SupabaseCoreContext implements CoreContext {
       .select('id,coach_id,instrument_id,name,code,status,max_members,expires_at,post_opened_at')
       .maybeSingle();
     if (error) throw new CoreError(`updateCohort 실패: ${error.message}`);
-    if (!data) throw new CoreNotFoundError(`차수를 찾을 수 없거나 수정 권한이 없습니다: ${cohortId}`); // 행 0 = 미존재/RLS 차단
+    if (!data) throw new CoreNotFoundError(`회기를 찾을 수 없거나 수정 권한이 없습니다: ${cohortId}`); // 행 0 = 미존재/RLS 차단
     return rowToCohort(data as CohortRow);
   }
 
-  // 멤버 본인 차수+진행(비민감 메타). my_cohorts(DEFINER)가 auth.uid() 기준 격리 — 앱은 cohorts·responses 직접 select 안 함.
+  // 멤버 본인 회기+진행(비민감 메타). my_cohorts(DEFINER)가 auth.uid() 기준 격리 — 앱은 cohorts·responses 직접 select 안 함.
   async listMyCohorts(): Promise<MyCohortSummary[]> {
     const { data, error } = await this.sb.rpc('my_cohorts');
     if (error) throw new CoreError(`listMyCohorts 실패: ${error.message}`);
@@ -705,7 +705,7 @@ class SupabaseCoreContext implements CoreContext {
     }));
   }
 
-  // 코치 차수 목록(콘솔 홈). RLS(cohorts_select): 코치는 본인 차수, 운영자는 전체.
+  // 코치 회기 목록(콘솔 홈). RLS(cohorts_select): 코치는 본인 회기, 운영자는 전체.
   async listCohortsByCoach(coachId: string): Promise<Cohort[]> {
     const { data, error } = await this.sb
       .from('cohorts')
@@ -715,7 +715,7 @@ class SupabaseCoreContext implements CoreContext {
     return (data ?? []).map((r) => rowToCohort(r as CohortRow));
   }
 
-  // 전체 차수(운영자 콘솔 — 모든 인도자 차수 감독). coach 필터 없음 → RLS(cohorts_select)가 운영자=전체·그 외=본인/멤버 차수로 제한.
+  // 전체 회기(운영자 콘솔 — 모든 인도자 회기 감독). coach 필터 없음 → RLS(cohorts_select)가 운영자=전체·그 외=본인/멤버 회기로 제한.
   //   앱은 운영자에게만 호출(수퍼바이저 뷰); 비운영자가 호출해도 RLS 로 자기 스코프만 반환(안전). 최신순 정렬.
   async listAllCohorts(): Promise<Cohort[]> {
     const { data, error } = await this.sb
@@ -726,7 +726,7 @@ class SupabaseCoreContext implements CoreContext {
     return (data ?? []).map((r) => rowToCohort(r as CohortRow));
   }
 
-  // 차수 멤버 id+name(코치/운영자). 권한·노출은 cohort_member_directory(DEFINER) 내부에서 강제 — 미달 시 빈 결과.
+  // 회기 멤버 id+name(코치/운영자). 권한·노출은 cohort_member_directory(DEFINER) 내부에서 강제 — 미달 시 빈 결과.
   async listCohortMembers(cohortId: string, onlyParticipants = false, maskUnnamed = false): Promise<MemberRef[]> {
     // **마스킹은 DB 가 한다.** 여기서 이메일을 받아 가리지 않는다 —
     //   가리려는 것을 먼저 내보내는 순서가 되기 때문이다(불변식 13 과 같은 논리).
@@ -737,7 +737,7 @@ class SupabaseCoreContext implements CoreContext {
     return ((data ?? []) as { user_id: string; name: string | null }[]).map((r) => ({ userId: r.user_id, name: r.name }));
   }
 
-  // 차수 멤버 신상(코치=자기 조원만·운영자=전체). 권한·구성원 검사·스코프는 cohort_member_detail(DEFINER) 내부에서 강제.
+  // 회기 멤버 신상(코치=자기 조원만·운영자=전체). 권한·구성원 검사·스코프는 cohort_member_detail(DEFINER) 내부에서 강제.
   //   전화(user_contacts) 개방은 이 RPC 한정(§10 완화·ADR-75). RETURNS TABLE → 1행.
   async getCohortMemberDetail(cohortId: string, userId: string): Promise<CohortMemberDetail> {
     const { data, error } = await this.sb.rpc('cohort_member_detail', { p_cohort_id: cohortId, p_user_id: userId });
@@ -795,7 +795,7 @@ class SupabaseCoreContext implements CoreContext {
       .select('answers')
       .eq('cohort_id', query.cohortId)
       .eq('wave', query.wave)
-      .eq('instrument_id', query.instrumentId) // 차수 instrument 짝 검증
+      .eq('instrument_id', query.instrumentId) // 회기 instrument 짝 검증
       .maybeSingle(); // RLS 가 본인 행만 → 최대 1
     if (error) throw new CoreError(`getDraft 실패: ${error.message}`);
     return (data?.answers ?? null) as A | null;
@@ -879,7 +879,7 @@ class SupabaseCoreContext implements CoreContext {
   async setProfile(input: { gender?: string | null; birthYear?: number | null; religion?: string | null; faithYears?: number | null }): Promise<void> {
     const me = await this.currentUser();
     if (!me) throw new CoreError('setProfile: 로그인이 필요합니다.');
-    // 본인 행 upsert(RLS insert/update 모두 user_id=auth.uid). role·kpc 는 경로에 없음(자기수정 봉쇄 유지).
+    // 본인 행 upsert(RLS insert/update 모두 user_id=auth.uid). role·kpc 는 경로에 없음(자회기정 봉쇄 유지).
     const { error } = await this.sb.from('user_profiles').upsert(
       {
         user_id: me.id,
@@ -947,7 +947,7 @@ class SupabaseCoreContext implements CoreContext {
     aiContent: unknown;
     aiModel?: string | null;
   }): Promise<InterpretationView> {
-    // 없을 때만 저장(멱등) — 자격: 응답 소유자(참여자 사전생성·#3) OR 차수 코치 OR 운영자(save_report_interpretation DEFINER).
+    // 없을 때만 저장(멱등) — 자격: 응답 소유자(참여자 사전생성·#3) OR 회기 코치 OR 운영자(save_report_interpretation DEFINER).
     //   DEFINER 가 저장/기존 행을 반환 → 참여자(SELECT RLS 차단)도 재조회 없이 뷰 구성. 코치/운영자 경로는 기존과 동형.
     const { data, error } = await this.sb.rpc('save_report_interpretation', {
       p_response_id: input.responseId,
@@ -967,7 +967,7 @@ class SupabaseCoreContext implements CoreContext {
     const { error } = await this.sb
       .from('report_interpretations')
       .update({ coach_content: content, edited_by: me.id, edited_at: new Date().toISOString() })
-      .eq('response_id', responseId); // RLS(코치·운영자, 자기 차수)만 갱신
+      .eq('response_id', responseId); // RLS(코치·운영자, 자기 회기)만 갱신
     if (error) throw new CoreError(`setCoachInterpretation 실패: ${error.message}`);
   }
 
@@ -995,7 +995,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`raiseAlert 실패: ${error.message}`);
   }
 
-  // 차수 알림 읽기(콘솔 '먼저 챙길 분'의 저장된 출처). RLS(alerts_select): 차수 코치/운영자만.
+  // 회기 알림 읽기(콘솔 '먼저 챙길 분'의 저장된 출처). RLS(alerts_select): 회기 코치/운영자만.
   async listAlerts(cohortId: string): Promise<Alert[]> {
     const { data, error } = await this.sb
       .from('alerts')
@@ -1084,7 +1084,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`setUserRole 실패: ${error.message}`);
   }
 
-  // 멤버 세부(활동) — 소유/참여 차수·응답 수. admin_member_activity(DEFINER) 내부 is_admin 게이트. RETURNS TABLE → 1행 배열.
+  // 멤버 세부(활동) — 소유/참여 회기·응답 수. admin_member_activity(DEFINER) 내부 is_admin 게이트. RETURNS TABLE → 1행 배열.
   async getMemberActivity(userId: string): Promise<MemberActivity> {
     const { data, error } = await this.sb.rpc('admin_member_activity', { p_user_id: userId });
     if (error) throw new CoreError(`getMemberActivity 실패: ${error.message}`);
@@ -1195,7 +1195,7 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   async listCohortCheckins(cohortId: string, sessionNo?: number): Promise<CheckinRecord[]> {
-    // 회차를 지정하지 않으면 그 차수 전체(ADR-118). 조건을 **인자가 있을 때만** 붙인다.
+    // 회차를 지정하지 않으면 그 회기 전체(ADR-118). 조건을 **인자가 있을 때만** 붙인다.
     let q = this.sb.from('checkins').select(CHECKIN_COLS).eq('cohort_id', cohortId);
     if (sessionNo !== undefined) q = q.eq('session_no', sessionNo);
     const { data, error } = await q;
@@ -1204,9 +1204,9 @@ class SupabaseCoreContext implements CoreContext {
   }
 
   // 편지 사진(ADR-83) — storage RLS(본인/코치/운영자)로 게이트. 만료 signed URL 반환.
-  // 경로 접두어로 훑지 않는다(ADR-87) — 갈무리가 다른 차수로 이동해도 사진 파일은 업로드 시점 차수 경로에
+  // 경로 접두어로 훑지 않는다(ADR-87) — 갈무리가 다른 회기로 이동해도 사진 파일은 업로드 시점 회기 경로에
   // 그대로 남기 때문이다(Storage 는 실제 저장 키에 name 을 포함해 DB 만 고치면 파일이 깨진다).
-  // checkin_photo_paths RPC 가 '그 회차 갈무리가 지금 이 차수에 있는가'로 게이트하고 이름을 돌려준다.
+  // checkin_photo_paths RPC 가 '그 회차 갈무리가 지금 이 회기에 있는가'로 게이트하고 이름을 돌려준다.
   async listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]> {
     const { data, error } = await this.sb.rpc('checkin_photo_paths', {
       p_cohort: cohortId,
@@ -1342,7 +1342,7 @@ class SupabaseCoreContext implements CoreContext {
    *
    * 소속은 **T-5 와 같은 입력**에서 온다 — 참여는 `listMyCohorts()`(RPC `my_cohorts`),
    * 인도는 `listCohortsByCoach(me)`. *입력이 같고 출력이 다른 두 함수* 라는 정리 그대로다.
-   * **활성 기수만** 담는다(T-5 가 `status === 'active'` 만 본 것과 같은 기준) — 끝난 기수를
+   * **활성 회기만** 담는다(T-5 가 `status === 'active'` 만 본 것과 같은 기준) — 끝난 회기를
    * 소속으로 계속 세우면 *지금 무엇인가* 를 묻는 줄이 이력이 된다.
    */
   async getMyMembershipView(): Promise<MembershipView> {
@@ -1370,11 +1370,11 @@ class SupabaseCoreContext implements CoreContext {
       }
     }
 
-    // **첫 회차일 — 최근 기수를 재는 기준**(최박사 확정 2026-08-30).
+    // **첫 회차일 — 최근 회기를 재는 기준**(최박사 확정 2026-08-30).
     //   *"1기참여자 5기운영자 이면 5기운영자인 것이다. 최신의 정보가 중요하니까."*
-    //   이름 끝의 숫자로 재지 않는다 — 끝이 `n기` 가 아닌 기수가 섞이면 못 가린다.
-    //   회차가 없는 기수는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
-    //   **읽지 못해도 표시가 멈추지 않는다** — `null` 이면 그 기수가 *최근* 을 주장하지 못할 뿐이다.
+    //   이름 끝의 숫자로 재지 않는다 — 끝이 `n기` 가 아닌 회기가 섞이면 못 가린다.
+    //   회차가 없는 회기는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
+    //   **읽지 못해도 표시가 멈추지 않는다** — `null` 이면 그 회기가 *최근* 을 주장하지 못할 뿐이다.
     const withDates: CohortRole[] = [];
     for (const r of roles) {
       const sessions = await this.listCohortSessions(r.cohortId).catch(() => []);
@@ -1646,7 +1646,7 @@ class SupabaseCoreContext implements CoreContext {
 
   // ── 동행 피드(2차 · ADR-124) ───────────────────────────────
   //
-  // **판정을 여기서 하지 않는다.** 기수 자격은 `feed_can_access`, 보류 차단은 `feed_assert_writable`
+  // **판정을 여기서 하지 않는다.** 회기 자격은 `feed_can_access`, 보류 차단은 `feed_assert_writable`
   //   이 SQL 한 곳에서 본다. 코어는 나르기만 한다 — 화면이 버튼을 감추는 것은 표시일 뿐이고
   //   막는 것은 RPC 다(IA §5.8).
   //
@@ -1777,7 +1777,7 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`deleteFeedPhoto 실패: ${error.message}`);
   }
 
-  // 차수 하드삭제 전 회수 대상. RLS(feed_posts_select)가 이미 그 기수를 가르므로 여기서
+  // 회기 하드삭제 전 회수 대상. RLS(feed_posts_select)가 이미 그 회기를 가르므로 여기서
   //   권한을 다시 보지 않는다. 접두어로 스토리지를 훑지 않는 이유는 ADR-87 과 같다 —
   //   실제 저장 키를 아는 것은 DB 이고, 훑기는 경로 규약이 바뀌는 순간 조용히 빗나간다.
   async listFeedPhotoPaths(cohortId: string): Promise<string[]> {

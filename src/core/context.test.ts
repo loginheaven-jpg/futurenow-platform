@@ -438,7 +438,7 @@ describe('본부 데이터: 멤버명부 / 코치 신청 (RPC·임베드 매핑)
     expect(calls.find((c) => c.table === 'checkins')?.filters).toEqual({ cohort_id: 'co1', session_no: 3 });
   });
 
-  it('listCohortCheckins 는 sessionNo 를 생략하면 그 차수 전체를 돌려준다', async () => {
+  it('listCohortCheckins 는 sessionNo 를 생략하면 그 회기 전체를 돌려준다', async () => {
     const { ctx, calls } = ctxWith({ authUser: { id: 'c1' }, tableResolver: () => ({ data: [], error: null }) });
     await ctx.listCohortCheckins('co1');
     expect(calls.find((c) => c.table === 'checkins')?.filters).toEqual({ cohort_id: 'co1' });
@@ -503,10 +503,10 @@ describe('본부 데이터: 멤버명부 / 코치 신청 (RPC·임베드 매핑)
   });
 });
 
-describe('createCohort (차수 개설 — 코드 생성·재시도·권한)', () => {
+describe('createCohort (회기 개설 — 코드 생성·재시도·권한)', () => {
   const CODE_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{5}$/;
   const cohortRow = (code: string, max = 100) => ({
-    id: 'co9', coach_id: 'c1', instrument_id: 'futurenow', name: '새 차수', code, status: 'active', max_members: max, expires_at: null,
+    id: 'co9', coach_id: 'c1', instrument_id: 'futurenow', name: '새 회기', code, status: 'active', max_members: max, expires_at: null,
   });
 
   it('코치가 만들면 코드가 DB CHECK 정규식을 충족하고 coach_id 가 본인', async () => {
@@ -517,7 +517,7 @@ describe('createCohort (차수 개설 — 코드 생성·재시도·권한)', ()
           ? { data: userRow('c1', 'coach'), error: null }
           : { data: cohortRow((c.payload as { code: string }).code), error: null },
     });
-    const cohort = await ctx.createCohort({ name: '새 차수', instrumentId: 'futurenow' });
+    const cohort = await ctx.createCohort({ name: '새 회기', instrumentId: 'futurenow' });
     expect(cohort.code).toMatch(CODE_RE);
     const ins = calls.find((c) => c.table === 'cohorts' && c.op === 'insert');
     expect((ins?.payload as Record<string, unknown>).coach_id).toBe('c1');
@@ -568,7 +568,7 @@ describe('createCohort (차수 개설 — 코드 생성·재시도·권한)', ()
   });
 });
 
-describe('updateCohort (차수 수정 — 부분수정·불변필드·권한)', () => {
+describe('updateCohort (회기 수정 — 부분수정·불변필드·권한)', () => {
   const updatedRow = (over: Record<string, unknown>) => ({
     id: 'co1', coach_id: 'c1', instrument_id: 'futurenow', name: '1기', code: 'RSTUV', status: 'active', max_members: 10, expires_at: null, ...over,
   });
@@ -672,7 +672,7 @@ describe('본부 멤버 역할 (listUsers / setUserRole)', () => {
   });
 });
 
-describe('listMyCohorts (멤버 본인 차수 — my_cohorts RPC)', () => {
+describe('listMyCohorts (멤버 본인 회기 — my_cohorts RPC)', () => {
   it('RPC 결과를 MyCohortSummary[] 로 매핑(snake→camel)', async () => {
     const { ctx, rpcCalls } = ctxWith({
       authUser: { id: 'm1' },
@@ -711,7 +711,7 @@ describe('에러 정제 (raw PG 비노출 — enrollByCode·resolveMeta, 내부 
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { ctx } = ctxWith({ authUser: { id: 'u1' }, rpcResolver: () => ({ data: null, error: { message: raw } }) });
     const err = (await ctx.resolveCohortByCode('RSTUV').catch((e) => e)) as Error;
-    expect(err.message).toMatch(/차수 정보/); // 사용자 경로: 일반
+    expect(err.message).toMatch(/회기 정보/); // 사용자 경로: 일반
     expect(err.message).not.toMatch(/permission denied|RLS|relation/); // raw 비노출
     expect(JSON.stringify(spy.mock.calls)).toMatch(/permission denied/); // 내부 로그엔 보존
     spy.mockRestore();

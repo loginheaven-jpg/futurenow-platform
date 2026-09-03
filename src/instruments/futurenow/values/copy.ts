@@ -162,7 +162,7 @@ export const RESULT = {
   home: '내 세미나로',
 } as const;
 
-/** 차수 홈 진입 카드(§10-a). 상태 넷 — `stage` 가 넷이라 문구도 넷이다. */
+/** 회기 홈 진입 카드(§10-a). 상태 넷 — `stage` 가 넷이라 문구도 넷이다. */
 export const HOME_CARD: Record<'none' | 'exploring' | 'candidates' | 'done', { line: string; btn: string }> = {
   none: { line: '1회차 전에 마쳐 주세요', btn: '시작하기' },
   exploring: { line: '고르시던 곳부터 이어집니다', btn: '이어서 하기' },

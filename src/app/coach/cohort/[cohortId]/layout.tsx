@@ -7,13 +7,13 @@
 // **화면 여덟 곳에 띠를 붙이지 않는다** — 붙이면 새 화면이 늘 때마다 빠뜨리고,
 //   빠뜨린 화면에서만 띠가 사라진다(불변식 23 의 전형적인 모양).
 //
-// **왕복 하나가 는다**(단일행 `cohorts` select). 아래 여덟 중 일곱은 이미 각자 `getCohort` 를
-//   부르므로 같은 렌더에서 두 번이 된다 — 지금은 그대로 두고 완주 보고에 올렸다.
-//   합치려면 화면들을 `requestScope` 로 옮겨야 하고, 그것은 이 회차의 범위가 아니다.
+// ★ **왕복이 늘지 않는다**(U-6). U-5 에서는 아래 일곱이 각자 `getCohort` 를 불러 같은 렌더에
+//   단일행 조회가 둘이었다(여덟 라우트 합계 15회). 지금은 여기도 화면들도 `requestCohort` 를
+//   지나므로 **라우트당 한 번**이다 — 리포트 상세만 키가 다르면(`resp.cohortId`) 둘이고, 그것은 옳다.
 //
 // **게이트가 아니다.** 차단은 각 페이지와 RLS 가 한다 — 조회가 실패하면 이름 없이 통과시킨다
 //   (칩만 안 선다). 게이트를 여기 두면 같은 판정이 두 곳에 살게 된다.
-import { createServerContext } from '@/core/supabase/server';
+import { requestCohort } from '@/app/_lib/requestScope';
 import { ConsoleBand } from '@/app/_screens/console/ConsoleBand';
 
 export default async function CohortConsoleLayout({
@@ -24,8 +24,7 @@ export default async function CohortConsoleLayout({
   params: Promise<{ cohortId: string }>;
 }) {
   const { cohortId } = await params;
-  const ctx = await createServerContext();
-  const cohort = await ctx.getCohort(cohortId).catch(() => null);
+  const cohort = await requestCohort(cohortId).catch(() => null);
   return (
     <>
       <ConsoleBand cohortId={cohortId} name={cohort?.name ?? null} />

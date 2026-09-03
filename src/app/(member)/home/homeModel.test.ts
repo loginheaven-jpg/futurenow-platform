@@ -19,11 +19,11 @@ describe('roleTarget — **목적지를 한 곳도 바꾸지 않았다**(기존 
     ['admin' as const, [], '/admin'],
     ['coach' as const, [], '/coach'],
     ['user' as const, [], '/home/assessments'],
-  ])('%s · 차수 없음 → %s', (role, cohorts, href) => {
+  ])('%s · 회기 없음 → %s', (role, cohorts, href) => {
     expect(roleTarget(role, cohorts).href).toBe(href);
   });
 
-  it('참여자 · 활성 차수 하나 → 그 차수 홈(임의로 고르지 않는다)', () => {
+  it('참여자 · 활성 회기 하나 → 그 회기 홈(임의로 고르지 않는다)', () => {
     expect(roleTarget('user', [cohort()]).href).toBe('/my/cohorts/c1');
   });
 
@@ -37,14 +37,14 @@ describe('roleTarget — **목적지를 한 곳도 바꾸지 않았다**(기존 
     expect(t.participant, '참여자 거점 표시가 없다 — 그러면 홈이 대시보드를 안 그린다').toBe(true);
   });
 
-  it('**보관된 차수는 세지 않는다** — 활성만 거점이 된다', () => {
+  it('**보관된 회기는 세지 않는다** — 활성만 거점이 된다', () => {
     expect(roleTarget('user', [cohort({ status: 'archived' })]).href).toBe('/home/assessments');
   });
 
   it('열린 회차가 있으면 **사실만** 말한다 — 재촉 문구가 아니다', () => {
     const t = roleTarget('user', [cohort({ openSessionNo: 2, openSessionSubmitted: false })]);
     expect(t.sub).toBe('2회차 갈무리가 열려 있습니다');
-    expect(t.cohort, '기수명은 배지로 간다').toBe('예봄 2기');
+    expect(t.cohort, '회기명은 배지로 간다').toBe('예봄 2기');
   });
 
   it('제출을 마쳤으면 회차를 들먹이지 않는다', () => {
@@ -124,7 +124,7 @@ describe('roleTargets — 겸직자에게 카드가 둘 선다 (T-5)', () => {
     }
   });
 
-  it('인도자 + 자기 회기 → 콘솔 카드와 기수 카드 **둘**', () => {
+  it('인도자 + 자기 회기 → 콘솔 카드와 회기 카드 **둘**', () => {
     const t = roleTargets('coach', [cohort()]);
     expect(t).toHaveLength(2);
     expect(t[0].href).toBe('/coach');
@@ -132,10 +132,10 @@ describe('roleTargets — 겸직자에게 카드가 둘 선다 (T-5)', () => {
     expect(t[1].who, '두 번째 카드에서 나는 참여자다').toBe('참여자');
   });
 
-  it('운영자 + 자기 회기 → 본부·**인도자 콘솔**·기수 **셋**', () => {
+  it('운영자 + 자기 회기 → 본부·**인도자 콘솔**·회기 **셋**', () => {
     // ★ **가운데가 늘었다**(ADR-173). 전에는 둘이었고 그것이 이 잠금의 옛 사실이다 —
     //   `role` 이 단일값이라 운영자에게 인도자 카드가 안 섰다. **권한은 전부터 있었다**
-    //   (운영자가 콘솔에 들어가면 전 차수를 본다 · ADR-74) — 홈에 문패만 없었다.
+    //   (운영자가 콘솔에 들어가면 전 회기를 본다 · ADR-74) — 홈에 문패만 없었다.
     const t = roleTargets('admin', [cohort()]);
     expect(t.map((x) => x.href)).toEqual(['/admin', '/coach', '/my/cohorts/c1']);
   });

@@ -1,7 +1,7 @@
 'use client';
 // 본부 멤버 행 — 이름 클릭 시 세부(신원+활동) 펼침 + 삭제(2단계 확인). 운영자 화면(§8.6, 의미색 허용).
 //   세부는 이 행이 직접 조회(read-only·펼칠 때 1회·캐시). 삭제는 부모 핸들러(onDelete) — 토스트·갱신 중앙화.
-//   삭제 확인은 영향(소유 인도 차수 개수)을 함께 고지 — 인지 삭제(코치 삭제 시 차수·응답 연쇄).
+//   삭제 확인은 영향(소유 인도 회기 개수)을 함께 고지 — 인지 삭제(코치 삭제 시 회기·응답 연쇄).
 import { memberStateLabel, holdGate, promoteGate } from './memberActions';
 import { holdConfirm, holdCanProceed } from './approvals/holdConfirm';
 import { useState } from 'react';
@@ -199,9 +199,9 @@ export function MemberRow({
               {/* 활동 */}
               <dl style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', margin: 0 }}>
                 <Field label="응답 수" value={`${detail.activity.responseCount}건`} />
-                <Field label="참여 차수" value={detail.activity.enrolledCohorts.length ? detail.activity.enrolledCohorts.join(', ') : '—'} />
+                <Field label="참여 회기" value={detail.activity.enrolledCohorts.length ? detail.activity.enrolledCohorts.join(', ') : '—'} />
                 {detail.activity.ownedCohorts.length ? (
-                  <Field label="인도 차수" value={detail.activity.ownedCohorts.join(', ')} />
+                  <Field label="인도 회기" value={detail.activity.ownedCohorts.join(', ')} />
                 ) : null}
               </dl>
               {/* 비밀번호 리셋(임시·계정 복구) — 입력 후 [비번 리셋] → 1단계 확인 → 변경. 최소 8자. ADR-79 */}
@@ -242,7 +242,7 @@ export function MemberRow({
               ) : (
                 <div style={{ padding: 'var(--space-3)', background: 'var(--color-surface-sunken)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                   <p className="t-caption" style={{ color: 'var(--color-danger)', margin: 0 }}>
-                    이 계정과 관련 데이터가 영구 삭제돼요{detail.activity.ownedCohorts.length ? ` — 인도 차수 ${detail.activity.ownedCohorts.length}개도 함께 삭제됩니다` : ''}. 되돌릴 수 없어요.
+                    이 계정과 관련 데이터가 영구 삭제돼요{detail.activity.ownedCohorts.length ? ` — 인도 회기 ${detail.activity.ownedCohorts.length}개도 함께 삭제됩니다` : ''}. 되돌릴 수 없어요.
                   </p>
                   <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
                     <Button variant="ghost" onClick={() => setConfirm(false)} disabled={busy}>취소</Button>

@@ -111,7 +111,7 @@ describe('화면 C 배달 검증 — 편집 블록에 자신감·남긴 말·신
 
   it('가드가 헛돌지 않았다 — 같은 자료로 화면 A 는 셋을 전부 그린다', () => {
     const a = renderToStaticMarkup(
-      <MemberJourney cohortId={CO} userId="u1" name="참여자" cohortName="예봄 1기" sessions={SESSIONS} rows={LOUD} photos={{}} reportId={null} nowIso={NOW} />,
+      <MemberJourney cohortId={CO} userId="u1" name="참여자" sessions={SESSIONS} rows={LOUD} photos={{}} reportId={null} nowIso={NOW} />,
     );
     expect(a).toContain('자신감');
     expect(a).toContain('자료 미리 주세요');

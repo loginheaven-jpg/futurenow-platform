@@ -84,7 +84,7 @@ describe('문안 — 최박사 원문 그대로 (한 글자도 다듬지 않는�
 });
 
 describe('shortCohortName — 이름 끝의 `n기` 를 뽑는다 (최박사 확정 · 가)', () => {
-  it('실물 기수명이 줄어든다', () => {
+  it('실물 회기명이 줄어든다', () => {
     expect(shortCohortName('퓨처나우2026예봄1기')).toBe('1기');
     expect(shortCohortName('퓨처나우2026예봄2기')).toBe('2기');
   });
@@ -93,7 +93,7 @@ describe('shortCohortName — 이름 끝의 `n기` 를 뽑는다 (최박사 확�
     expect(shortCohortName('퓨처나우2027가을12기')).toBe('12기');
   });
 
-  it('**뽑히지 않는 기수는 전체 이름을 그대로 쓴다** — 규칙이 이름 형식에 의존한다', () => {
+  it('**뽑히지 않는 회기는 전체 이름을 그대로 쓴다** — 규칙이 이름 형식에 의존한다', () => {
     // 실물이다. 억지로 줄이면 없는 회차 번호를 만들어 내게 된다.
     expect(shortCohortName('[QA] 검증 전용')).toBe('[QA] 검증 전용');
     expect(shortCohortName('체험 진단')).toBe('체험 진단');
@@ -115,7 +115,7 @@ describe('shortCohortName — 이름 끝의 `n기` 를 뽑는다 (최박사 확�
   });
 });
 
-describe('cohortRoleLabel — 축약된 기수명 + 역할', () => {
+describe('cohortRoleLabel — 축약된 회기명 + 역할', () => {
   const r = (over: Partial<CohortRole> = {}): CohortRole => ({
     cohortId: 'c1', cohortName: '퓨처나우2026예봄2기', kind: 'participant', firstSessionAt: null, ...over,
   });
@@ -125,7 +125,7 @@ describe('cohortRoleLabel — 축약된 기수명 + 역할', () => {
     expect(cohortRoleLabel(r({ kind: 'coach' }))).toBe('2기 인도자');
   });
 
-  it('뽑히지 않는 기수는 전체 이름 + 역할', () => {
+  it('뽑히지 않는 회기는 전체 이름 + 역할', () => {
     expect(cohortRoleLabel(r({ cohortName: '[QA] 검증 전용' }))).toBe('[QA] 검증 전용 참여자');
   });
 });
@@ -207,7 +207,7 @@ describe('shortCohortName / narrowLabel / 승급 안내 — 확정 반영', () =
     expect(UPGRADE_HOWTO).toBe('촉진자포럼에 가입하고 정회원자격을 취득하시면 된다.');
   });
 
-  it('**최근 기수는 첫 회차일로 잰다** — 이름 끝의 숫자가 아니다', () => {
+  it('**최근 회기는 첫 회차일로 잰다** — 이름 끝의 숫자가 아니다', () => {
     const older = role({ cohortId: '1', cohortName: '퓨처나우2026예봄1기', kind: 'participant', firstSessionAt: '2026-07-26' });
     const newer = role({ cohortId: '2', cohortName: '퓨처나우2026예봄2기', kind: 'coach', firstSessionAt: '2026-09-20' });
     expect(isMoreRecent(newer, older)).toBe(true);
@@ -216,13 +216,13 @@ describe('shortCohortName / narrowLabel / 승급 안내 — 확정 반영', () =
     expect(narrowLabel([older, newer], false)).toBe('인도자');
   });
 
-  it('이름 끝이 `n기` 가 아닌 기수도 첫 회차일로 갈린다 — 축약 규칙과 무관하다', () => {
+  it('이름 끝이 `n기` 가 아닌 회기도 첫 회차일로 갈린다 — 축약 규칙과 무관하다', () => {
     const qa = role({ cohortId: 'q', cohortName: '[QA] 검증 전용', kind: 'coach', firstSessionAt: '2026-08-14' });
     const first = role({ cohortId: '1', cohortName: '퓨처나우2026예봄1기', kind: 'participant', firstSessionAt: '2026-07-26' });
     expect(narrowLabel([first, qa], false)).toBe('인도자'); // QA 가 더 최근
   });
 
-  it('**회차가 없는 기수는 가장 오래된 것으로 친다** — 시작한 적이 없다', () => {
+  it('**회차가 없는 회기는 가장 오래된 것으로 친다** — 시작한 적이 없다', () => {
     const noSession = role({ cohortId: 'n', kind: 'coach', firstSessionAt: null });
     const started = role({ cohortId: 's', kind: 'participant', firstSessionAt: '2026-01-01' });
     expect(narrowLabel([noSession, started], false)).toBe('참여자');
@@ -236,7 +236,7 @@ describe('shortCohortName / narrowLabel / 승급 안내 — 확정 반영', () =
     expect(narrowLabel([], false)).toBeNull();
   });
 
-  it('소속이 있으면 운영자보다 소속이 앞선다 — 최근 기수 포지션이 규칙이다', () => {
+  it('소속이 있으면 운영자보다 소속이 앞선다 — 최근 회기 포지션이 규칙이다', () => {
     expect(narrowLabel([role({ firstSessionAt: '2026-01-01' })], true)).toBe('참여자');
   });
 });

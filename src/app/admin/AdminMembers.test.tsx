@@ -17,7 +17,7 @@ const render = (over: Partial<Parameters<typeof AdminMembers>[0]> = {}) =>
     <AdminMembers members={members} applications={applications} currentUserId="a1" isSuperAdmin={false} onDecide={noop} onPromote={noop} onDemote={noop} onDelete={noop} onSetPassword={async () => ({ ok: true })} onApprove={noop} onReject={noop} {...over} />,
   );
 
-describe('AdminMembers (본부 — 승인 대기 + 멤버 관리)', () => {
+describe('AdminMembers (본부 — 인도자 신청 + 멤버 관리)', () => {
   const html = render();
 
   it('역할 라벨·이름(null 폴백)·이메일 렌더', () => {
@@ -40,15 +40,18 @@ describe('AdminMembers (본부 — 승인 대기 + 멤버 관리)', () => {
     expect(demoteCount).toBe(1); // coach(c1) 한 줄만
   });
 
-  it('승인 대기 섹션 — 신청자·계기 + 승인/거절 버튼(멤버 관리와 구분)', () => {
-    expect(html).toContain('승인 대기 (1)');
+  it('인도자 신청 섹션 — 신청자·계기 + 승인/거절 버튼(멤버 관리와 구분)', () => {
+    expect(html).toContain('인도자 신청 (1)');
+    // ★ **옛 이름이 돌아오지 못하게 잠근다**(U-6) — 같은 낱말이 `/admin/approvals` 의
+    //   **가입** 큐도 가리켰다. 이름이 되돌아오면 두 화면이 다시 구별되지 않는다.
+    expect(html, '「승인 대기」가 돌아왔다 — 가입 큐와 이름이 겹친다').not.toContain('승인 대기');
     expect(html).toContain('김신청');
     expect(html).toContain('함께 돕고 싶어요');
     expect(html).toContain('거절');
     expect(html).toContain('멤버 관리'); // 두 섹션 구분 헤더
   });
 
-  it('승인 대기 0건 — 빈 안내(신청자 미노출)', () => {
+  it('인도자 신청 0건 — 빈 안내(신청자 미노출)', () => {
     const empty = render({ applications: [] });
     expect(empty).toContain('대기 중인 신청이 없어요');
     expect(empty).not.toContain('김신청');

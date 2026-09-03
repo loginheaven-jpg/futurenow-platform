@@ -23,7 +23,7 @@ describe('CohortPreview — 이중 제출 가드(busy) + 소개', () => {
     expect(html).toMatch(/disabled/);
   });
 
-  it('정상: [들어가기] + 차수 소개(description) 표시', () => {
+  it('정상: [들어가기] + 회기 소개(description) 표시', () => {
     const html = renderToStaticMarkup(<CohortPreview meta={meta} onEnter={noop} onCancel={noop} />);
     expect(html).toContain('들어가기');
     expect(html).not.toContain('들어가는 중');
