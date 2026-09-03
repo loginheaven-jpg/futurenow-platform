@@ -5,7 +5,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/core/supabase/client';
 
-export function LogoutButton() {
+/**
+ * `variant`
+ * - `icon`(기본) — 네이비 제목바 위. 흰 테두리·흰 아이콘.
+ * - `sheet` — **흰 시트 안**. 아이콘 그대로 두면 **흰 바탕에 흰 아이콘**이라 안 보인다
+ *   (배포해서 눈으로 잡았다 — DOM 에는 있는데 화면에 없었다). 시트에서는 **글자**로 그린다.
+ */
+export function LogoutButton({ variant = 'icon' }: { variant?: 'icon' | 'sheet' } = {}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -22,6 +28,14 @@ export function LogoutButton() {
       setFailed(true);
       setBusy(false);
     }
+  }
+
+  if (variant === 'sheet') {
+    return (
+      <button type="button" onClick={logout} disabled={busy} className="site-sheet__logout" style={{ opacity: busy ? 0.6 : 1 }}>
+        {failed ? '로그아웃 다시 시도' : '로그아웃'}
+      </button>
+    );
   }
 
   return (

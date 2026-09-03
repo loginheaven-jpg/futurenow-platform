@@ -33,5 +33,8 @@ export const SITE_DOOR = { href: '/', label: SITE_NAME } as const;
 /** 운영자 본부. 이름은 이미 쓰이던 말이다(`roleTargets`·`screenChrome` 의 「본부」). */
 export const ADMIN_DOOR = { href: '/admin', label: '본부' } as const;
 
+/** 내 정보. 회원 시트와 공개 시트가 **같은 문패**를 읽는다(불변식 23). */
+export const ACCOUNT_DOOR = { href: '/account', label: '내 정보' } as const;
+
 /** 인도자 콘솔의 홈. */
 export const CONSOLE_DOOR = { href: '/coach', label: '콘솔' } as const;

@@ -78,7 +78,7 @@ export default async function MemberLayout({ children }: { children: React.React
         //   자료(`buildMemberSheet`)는 순수하게 두고 **동작만 여기서** 얹는다 —
         //   링크 목록에 섞지 않고 구분선 아래에 세운다(F-3 의 우려를 그대로 지킨다).
         groups: sheetData.groups.map((g) =>
-          g.title === ACCOUNT_GROUP ? { ...g, action: <LogoutButton /> } : g,
+          g.title === ACCOUNT_GROUP ? { ...g, action: <LogoutButton variant="sheet" /> } : g,
         ),
         chips: sheetData.chips,
       }

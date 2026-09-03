@@ -30,7 +30,9 @@
 import { usePathname } from 'next/navigation';
 import { useSignedIn } from './useSignedIn';
 import { SiteGnb, type GnbItem } from './SiteGnb';
-import { HOME_DOOR } from '@/app/_vocab/doors';
+import { ACCOUNT_DOOR, HOME_DOOR } from '@/app/_vocab/doors';
+import { ACCOUNT_GROUP } from '@/app/_lib/memberSheet';
+import { LogoutButton } from '@/app/_screens/LogoutButton';
 import { PUBLIC_SHEET_MINE, publicHeaderAction } from './publicNav';
 
 
@@ -56,8 +58,18 @@ export function PublicGnb({
   // ★ **「내 홈」을 시트 맨 위에 얹는다**(ADR-174). 로그인하면 벨트 우측 글자가 햄버거가 되어
   //   그 문이 사라지므로 시트가 잇는다. **비로그인에게는 주지 않는다** — 갈 수 없는 곳으로
   //   보내지 않는다(현관과 같은 규율). **문안은 `HOME_DOOR` 단일 출처**이고 여기서 짓지 않는다.
+  //   ★ **계정 구획도 함께 준다**(지휘부 결재 2026-09-03 「가」). 공개 화면에서도 나갈 수 있어야 한다 —
+  //   전에는 로그인한 사람이 `/about`·`/library` 에서 나가려면 「내 홈」을 한 번 거쳐야 했다.
+  //   **구획 이름과 문안은 회원 시트가 쓰는 것을 그대로 읽는다**(불변식 23) — 여기서 짓지 않는다.
   const sheetWithHome = sheet && signedIn
-    ? { ...sheet, groups: [{ title: PUBLIC_SHEET_MINE, items: [HOME_DOOR] }, ...sheet.groups] }
+    ? {
+        ...sheet,
+        groups: [
+          { title: PUBLIC_SHEET_MINE, items: [HOME_DOOR] },
+          ...sheet.groups,
+          { title: ACCOUNT_GROUP, items: [ACCOUNT_DOOR], action: <LogoutButton variant="sheet" /> },
+        ],
+      }
     : sheet;
 
   return (

@@ -154,10 +154,10 @@
 /* 시트의 **동작** — 링크가 아니라는 것이 보여야 한다(ADR-188).
    구분선으로 목록에서 떼고 글자를 한 단 낮춘다. 경고색은 쓰지 않는다(불변식 9). */
 .site-sheet__action { margin-top: var(--space-2); padding-top: var(--space-2); border-top: var(--border-hair) solid var(--color-border); }
-.site-sheet__action button {
-  display: block; width: 100%; text-align: left; min-height: var(--tap-min);
+.site-sheet__logout {
+  display: flex; align-items: center; width: 100%; text-align: left; min-height: var(--tap-min);
   background: none; border: 0; padding: 0; cursor: pointer;
-  font: inherit; font-size: 15px; color: var(--color-text-secondary);
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--color-text-secondary);
 }
 .site-sheet__chips { padding: 12px 20px 4px; }
 /* 시트 안에서만 칩 간격을 좁힌다. 390px 폰에서 시트 안쪽 폭은 min(360, 88vw) - 40 = 303px 인데
