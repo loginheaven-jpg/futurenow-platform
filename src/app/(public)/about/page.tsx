@@ -19,7 +19,7 @@ import { BookPanel } from '@/app/_screens/site/BookPanel';
 import { WEEK_CELLS } from '@/app/_screens/site/programCopy';
 import {
   LEADERS, BOOK_FACTS, BOOK_INTRO, BOOK_BUY, BOOK_NOTICE, BOOK_BULK,
-  GROWF_SUMMARY, AUDIENCE_PARA, AUDIENCE_LIST,
+  GROWF_SUMMARY, AUDIENCE_PARA_SCREEN, AUDIENCE_LIST,
 } from '@/app/_screens/site/siteContent';
 import { SeminarIntro } from '@/app/_screens/SeminarIntro';
 import { assetIfPresent, LEADER_DIR, BOOK_DIR } from '@/app/_screens/site/assets';
@@ -61,7 +61,7 @@ export default function AboutPage() {
           {/* 원고 §4.1 — **버리지 않는다.** 뒤 세 문장(「답을 건네는 자리가 아니라…」 ·
               「여섯 번의 만남 동안…」 · 「미래가 선명해지면…」)은 **여기에만 있는 문안**이라
               목록으로 바꾸면 사라진다. 문장을 쪼개 옮기는 것은 파생이므로 하지 않았다. */}
-          <p className="site-aud__para">{AUDIENCE_PARA}</p>
+          <p className="site-aud__para">{AUDIENCE_PARA_SCREEN}</p>
 
           {/* 신청 CTA — **골드 primary 는 세미나 신청 전용**이다(원고 §3.4 위계). 도착점은 `/join`. */}
           <div className="site-cta">

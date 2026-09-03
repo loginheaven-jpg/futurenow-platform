@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  LEADERS, BOOK_INTRO, AUDIENCE_PARA, AUDIENCE_LIST, GROWF_SUMMARY,
+  LEADERS, BOOK_INTRO, AUDIENCE_PARA, AUDIENCE_PARA_SCREEN, AUDIENCE_LIST, GROWF_SUMMARY,
   BOOK_FACTS, BOOK_BUY, MANUSCRIPT_COUNTS,
 } from './siteContent';
 
@@ -70,5 +70,42 @@ describe('글자 수 — 원고 표기와 실측', () => {
     //   그때 표기와 실측이 함께 맞는지 다시 본다.
     expect(LEADERS[1].intro.length).toBe(274);
     expect(MANUSCRIPT_COUNTS.choi).toBe(250);
+  });
+});
+
+describe('★★ 화면 몫 — 목록과 겹치는 앞부분을 걷었다 (ADR-184)', () => {
+  it('★ **원고는 안 고쳤다** — 정본 단락이 원문 그대로 남아 있다', () => {
+    // 걷은 것은 «화면에 무엇을 내보내는가» 지 «원고가 무엇인가» 가 아니다.
+    expect(inManuscript(AUDIENCE_PARA), '원고와 어긋났다').toBe(true);
+  });
+
+  it('★★ 화면 몫은 **잘라 낸 것**이지 손으로 적은 것이 아니다', () => {
+    // 손으로 적으면 원고가 바뀌는 날 둘이 갈라진다(§11 ⑴).
+    expect(AUDIENCE_PARA.endsWith(AUDIENCE_PARA_SCREEN), '원고 단락의 꼬리가 아니다').toBe(true);
+    expect(AUDIENCE_PARA_SCREEN.length, '아무것도 안 걷었다').toBeLessThan(AUDIENCE_PARA.length);
+  });
+
+  it('★★ 걷힌 것이 **목록이 이미 말한 그 넷**이다 — 지시가 가리킨 자리', () => {
+    const cut = AUDIENCE_PARA.slice(0, AUDIENCE_PARA.length - AUDIENCE_PARA_SCREEN.length);
+    // 대상을 세는 문장은 전부 「…분.」 으로 끝난다. 걷힌 쪽에만 있어야 한다.
+    expect(cut.split('분.').length - 1, '걷힌 문장이 넷이 아니다').toBe(4);
+    expect(AUDIENCE_PARA_SCREEN.includes('분.'), '대상 문장이 화면에 남았다').toBe(false);
+    // 남은 셋은 **거기에만 있는 문안**이다 — 목록으로 갈아타면 사라진다(ADR-172 의 판단 그대로).
+    for (const keep of ['퓨처나우는 답을 건네는 자리가 아니라', '여섯 번의 만남 동안', '미래가 선명해지면']) {
+      expect(AUDIENCE_PARA_SCREEN, `버리면 안 되는 문장이 사라졌다: ${keep}`).toContain(keep);
+    }
+  });
+
+  it('★ 표지를 못 찾으면 **전문을 쓴다** — 조용히 한 글자만 남지 않는다', () => {
+    // `indexOf` 가 -1 이면 `slice(-1)` 은 마지막 한 글자다. 그 사고를 막는 갈래가 실재하는가(계열 ⑦).
+    const src = readFileSync('src/app/_screens/site/siteContent.ts', 'utf8');
+    expect(src, '표지 부재를 안 가른다').toContain('AUDIENCE_PARA.includes(AUDIENCE_TAIL_MARK)');
+    expect(AUDIENCE_PARA_SCREEN.length, '한 글자만 남았다').toBeGreaterThan(50);
+  });
+
+  it('★★ 화면이 **원고 전문이 아니라 화면 몫**을 쓴다', () => {
+    const about = readFileSync('src/app/(public)/about/page.tsx', 'utf8');
+    expect(about, '화면이 아직 전문을 그린다').toContain('{AUDIENCE_PARA_SCREEN}');
+    expect(about, '전문을 그리는 자리가 남았다').not.toContain('{AUDIENCE_PARA}');
   });
 });
