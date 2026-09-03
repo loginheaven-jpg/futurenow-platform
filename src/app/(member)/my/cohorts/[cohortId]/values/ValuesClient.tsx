@@ -27,11 +27,12 @@ const box = { padding: 'var(--space-4)', background: 'var(--color-surface-1)', b
 const row = { display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' } as const;
 const inputStyle = { width: '100%', minHeight: 'var(--tap-min)', padding: 'var(--space-2) var(--space-3)', border: 'var(--border-hair) solid var(--color-border-strong)', borderRadius: 'var(--radius)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 16 } as const;
 
-function Card({ card, on, onClick }: { card: ValueCard; on: boolean; onClick: () => void }) {
+function Card({ card, on, onClick, locked }: { card: ValueCard; on: boolean; onClick: () => void; locked?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={locked}
       aria-pressed={on}
       className="ui-tappable"
       style={{
@@ -39,7 +40,8 @@ function Card({ card, on, onClick }: { card: ValueCard; on: boolean; onClick: ()
         padding: 'var(--space-3)', borderRadius: 'var(--radius)',
         border: `2px solid ${on ? 'var(--color-primary)' : 'var(--color-border)'}`,
         background: on ? 'var(--color-accent-soft)' : 'var(--color-surface-2)',
-        color: 'var(--color-text)', cursor: 'pointer',
+        color: 'var(--color-text)', cursor: locked ? 'not-allowed' : 'pointer',
+        opacity: locked ? 0.45 : 1,
       }}
     >
       <span className="t-body-lg" style={{ fontWeight: 600 }}>{card.korean}</span>
@@ -49,12 +51,16 @@ function Card({ card, on, onClick }: { card: ValueCard; on: boolean; onClick: ()
   );
 }
 
-function Grid({ ids, picked, toggle }: { ids: readonly number[]; picked: Set<number>; toggle: (id: number) => void }) {
+/** `lockUnpicked` — 이 화면의 몫을 다 썼다. 고른 것은 눌러서 뺄 수 있어야 하므로 그것만 살린다. */
+function Grid({ ids, picked, toggle, lockUnpicked }: {
+  ids: readonly number[]; picked: Set<number>; toggle: (id: number) => void; lockUnpicked?: boolean;
+}) {
   return (
     <div style={{ display: 'grid', gap: 'var(--space-2)' }}>
       {ids.map((id) => {
         const c = CARD_BY_ID.get(id);
-        return c ? <Card key={id} card={c} on={picked.has(id)} onClick={() => toggle(id)} /> : null;
+        const on = picked.has(id);
+        return c ? <Card key={id} card={c} on={on} onClick={() => toggle(id)} locked={lockUnpicked && !on} /> : null;
       })}
     </div>
   );
@@ -114,6 +120,11 @@ export function ValuesClient({ cohortId, initial }: { cohortId: string | null; i
   if (screen === 'explore') {
     const ids = CARD_PAGES[page];
     const last = page === TOTAL_PAGES - 1;
+    // 몫은 **화면 안에서만** 센다. 앞 화면에서 고른 것은 여기에 영향을 주지 않는다.
+    const onPage = ids.reduce((n, id) => (picked.has(id) ? n + 1 : n), 0);
+    const capped = onPage >= COUNT_RULES.explore.perPage;
+    // 비활성 버튼이라 클릭이 오지 않지만, 규칙을 화면 밖에서도 지키게 한 겹 더 둔다.
+    const pick = (id: number) => { if (picked.has(id) || !capped) toggle(id); };
     const go = (nextPage: number, to: Screen) =>
       run(() => saveValueProgressAction(cohortId, 'exploring', { picks: pickedIds, page: nextPage }), () => { setPage(nextPage); setScreen(to); });
     return (
@@ -121,8 +132,10 @@ export function ValuesClient({ cohortId, initial }: { cohortId: string | null; i
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{EXPLORE.page(page + 1, TOTAL_PAGES)}</p>
         <p className="t-body">{EXPLORE.lead}</p>
         <p className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{EXPLORE.help}</p>
-        <p className="t-caption" style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>{EXPLORE.free}</p>
-        <Grid ids={ids} picked={picked} toggle={toggle} />
+        <p className="t-caption" style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
+          {capped ? EXPLORE.capped : EXPLORE.quota}
+        </p>
+        <Grid ids={ids} picked={picked} toggle={pick} lockUnpicked={capped} />
         {Err}
         <div style={row}>
           {page > 0 && <button className="ui-btn ui-btn--ghost" disabled={busy} onClick={() => go(page - 1, 'explore')}>{EXPLORE.prev}</button>}

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import * as COPY from './copy';
 import { REFLECTION_QUESTIONS } from './reflection';
 import { VALUE_CARDS } from './cards';
+import { COUNT_RULES } from './stages';
 
 // 기존 `copyRegression.test.ts` 는 `checkin/session{1..4}.ts` 만 스캔한다 — 이 파일들을 보지 않는다.
 //   그래서 잠금을 **여기에 새로 건다**(3차 검토: V-10 검증란의 'copyRegression 통과'는 공회전이었다).
@@ -125,5 +126,66 @@ describe('성찰 질문', () => {
 
   it('한 문항이 한 가지만 묻는다 — 예/아니오로 끝나지 않는다 (원칙 §2-3)', () => {
     for (const q of REFLECTION_QUESTIONS) expect(/(있나요|없나요)\?$/.test(q), q).toBe(false);
+  });
+});
+
+// ── 탐색 화면이 실제로 압축하는가 (ADR-186) ─────────────────────────────────
+//
+// 이 화면의 실패는 조용하다. 문구가 다정하고 화면이 잘 뜨는데 **참여자가 72장을 다 고른다.**
+//   그러면 정리 화면이 60장을 앞에 두고, 8~12로 줄이는 일이 사람이 할 수 없는 크기가 된다.
+//   그래서 「무엇을 묻는가」와 「몇 장을 받는가」를 둘 다 잠근다.
+describe('탐색 화면 — 좋은 낱말도 아니오를 받을 수 있는 질문인가 (ADR-186)', () => {
+  it('부재로 묻는다 — 끌림·소망으로 묻지 않는다', () => {
+    const 지문 = [COPY.EXPLORE.lead, COPY.EXPLORE.help].join(' ');
+
+    // 72장이 전부 좋은 낱말이라 '끌리는가'·'지키고 싶은가'는 전부 예를 받는다.
+    expect(지문, '끌림으로 물으면 전부 통과한다').not.toContain('끌리는 카드');
+    expect(지문).not.toContain('지키고 싶은');
+    // 부재 형태여야 같은 낱말이 아니오를 받을 수 있다.
+    expect(지문).toContain('없으면');
+  });
+
+  // 1차를 증거로 물으면 2차 대조가 성립하지 않는다 —
+  //   `JUDGE_REPLY.different` 가 "머리로 고른 가치와 삶이 증명한 가치가 다르다"고 말한다.
+  //   양쪽이 같은 질문이 되면 그 문장이 가리킬 어긋남 자체가 사라진다.
+  it('1차는 증거로 묻지 않는다 — 그 자리는 2차 대조가 쓴다', () => {
+    const 지문 = [COPY.EXPLORE.lead, COPY.EXPLORE.help].join(' ');
+    for (const w of ['살아 본', '해 본 적', '포기해', '증명']) {
+      expect(지문, w).not.toContain(w);
+    }
+    // 대조가 실재하는지를 **구조로** 확인한다. 판정 문구는 바뀔 수 있으나
+    //   '두 출처를 맞대어 본다'는 사실이 사라지면 1차를 증거로 물어도 되는 상태가 된다.
+    expect(COPY.COMPARE.colWorkbook).toContain('1회차에서');
+    expect(COPY.COMPARE.colCards).toContain('가치 카드에서');
+    expect(COPY.COMPARE.judgeLead).toMatch(/요\?$/);
+  });
+
+  it('분량 지시가 허용형이 아니라 명령형이다 (원칙 §39)', () => {
+    expect(COPY.EXPLORE.quota).toContain('십시오');
+    // 옛 문구는 남은 마찰까지 없앴다 — 되살아나면 압축이 다시 0 이 된다.
+    const 전체 = Object.values(COPY.EXPLORE).filter((v) => typeof v === 'string').join(' ');
+    expect(전체).not.toContain('모두 고르세요');
+    expect(전체).not.toContain('장수를 세지 않습니다');
+  });
+
+  // 낱말과 상수가 따로 놀면 화면이 거짓말을 한다.
+  it("문구의 '셋' 과 규칙의 perPage 가 같다", () => {
+    expect(COUNT_RULES.explore.perPage).toBe(3);
+    expect(COPY.EXPLORE.quota).toContain('셋');
+    expect(COPY.EXPLORE.capped).toContain('셋');
+  });
+
+  // 화면당 상한 × 화면 수가 정리 화면의 목표 구간에 닿아야 한다.
+  //   닿지 않으면 참여자가 아무리 성실해도 다음 화면으로 갈 수 없다.
+  it('화면당 몫을 다 써도 정리 화면 하한을 넘는다', () => {
+    const 최대 = COUNT_RULES.explore.perPage * 5; // 5화면
+    expect(최대).toBeGreaterThanOrEqual(COUNT_RULES.candidates.min);
+    expect(최대).toBeGreaterThan(COUNT_RULES.candidates.max - COUNT_RULES.candidates.min);
+  });
+
+  it('정리 화면이 개수만이 아니라 잣대를 준다', () => {
+    // 전에는 '8~12장으로 좁혀 주세요' 뿐이라 무엇을 근거로 자를지 한 줄도 없었다.
+    expect(COPY.TIDY.help).toContain('견주');
+    expect(COPY.TIDY.help, '못 고른 카드를 되찾는 길이 상한의 전제다').toContain('더하시면');
   });
 });
