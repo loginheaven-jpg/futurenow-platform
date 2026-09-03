@@ -193,6 +193,11 @@ describe('★★ 회기 선택과 회기 0 (ADR-182 · 지휘부 확정 2026-09-
   });
 
   it('★ 가독성 — **열린 회차가 잠금과 구분된다**(지휘부 승인 2026-09-03)', () => {
+    // ★★ **CSS 만 보고 초록이었다.** 부품이 그 클래스를 **안 내보내고** 있었는데
+    //   잠금이 CSS 쪽만 봐서 못 잡았고 **배포해서 값으로** 잡았다(계열 ⑦ — 물 것이 없었다).
+    //   그래서 **양쪽을 함께** 잰다: 부품이 내보내는가 · CSS 가 받는가.
+    const chip = readFileSync('src/app/_screens/site/SessionChipStrip.tsx', 'utf8');
+    expect(chip, '부품이 열림 표시를 안 내보낸다 — CSS 만 있으면 헛돈다').toContain("open: 'site-chip is-open'");
     const css = readFileSync('src/app/_screens/site/site.css', 'utf8');
     expect(css, '열린 회차에 표시가 없다 — 잠금과 구분되지 않는다').toContain('.site-chip.is-open');
     // 의미색을 쓰지 않는다(불변식 9) — 네 단이 전부 네이비/골드/회색이다.
