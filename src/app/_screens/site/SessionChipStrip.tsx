@@ -1,6 +1,6 @@
 // 부품 8 · SessionChipStrip — 시안 E `.sess-chip` (4차 F-1 · 발주 §3-8).
 //
-// 6칸 가로. 완료=네이비 면+체크 · 진행=골드 면 · **잠금=점선 테두리+회색이고 감추지 않는다**
+// 6칸 가로. 완료=네이비 면+체크 · 진행=골드 면 · **열림=네이비 테두리·글자** · **잠금=점선 테두리+회색이고 감추지 않는다**
 //   (여정의 전체 길이가 보여야 한다 — IA §3).
 //
 // **부품은 계산하지 않는다**(불변식 10 계열 · 지휘부 강조 ①).
@@ -21,7 +21,9 @@ export interface SessionChip {
 const CLASS: Record<SessionState, string> = {
   done: 'site-chip is-done',
   current: 'site-chip is-current',
-  open: 'site-chip',
+  // ★ 전에는 수식 클래스가 없어 **잠금과 구분이 약했다**(지휘부 가독성 승인 2026-09-03 · ADR-182).
+  //   CSS 에만 `.is-open` 을 쓰고 여기서 안 내보내 **한 번 헛돌았다** — 배포해서 값으로 잡았다.
+  open: 'site-chip is-open',
   locked: 'site-chip is-locked',
 };
 const LABEL: Record<SessionState, string> = {
