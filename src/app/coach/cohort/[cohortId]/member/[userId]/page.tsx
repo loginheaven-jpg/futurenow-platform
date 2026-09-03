@@ -5,7 +5,7 @@
 //
 // 게이트는 회차 현황(`../checkin/page.tsx`)과 같다 — 코치/운영자 전용, 멤버는 자기 집으로.
 //   데이터 접근은 그 뒤에 온다(게이트-데이터 순서 · CLAUDE §9).
-import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
+import { docTitle } from '@/app/_screens/console/docTitle';
 import { redirect } from 'next/navigation';
 import { requestCohort, requestContext, requestUser } from '@/app/_lib/requestScope';
 import { ReportPrintButton } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintButton';
@@ -60,11 +60,15 @@ export default async function CoachMemberJourneyPage({ params }: { params: Promi
           <ReportPrintButton />
         </div>
       </div>
-      {/* ★ **화면 이름이 인쇄 전용이었다**(U-6 실측 — `ReportPrintHeader` 는 `screen` 없이 불리면
-          `.print-only` 다). 화면에는 이름이 한 글자도 없었다. */}
-      <ConsoleTitle />
+      {/* ★★ **이 화면은 «문서»다** — 이름의 자리가 `ConsoleTitle` 이 아니라 **문서 머리**다(U-6).
+          실측: `ReportPrintHeader` 의 `wrap` 이 인라인 `display:flex` 라 `.print-only` 를 이겨
+          **이 머리는 화면에도 서 있다**(그래서 ADR-188 의 `screen` 소품은 아무 일도 하지 않는다 — 보고 항목).
+          그 머리가 이미 «퓨처나우 · 문서 이름 · 대상자 · 회기 · 회차 · 날짜» 를 한 덩어리로 든다.
+          위에 `ConsoleTitle` 을 또 세우면 **한 화면에 같은 이름이 둘**이다(배포해서 눈으로 잡았다).
+          **이름은 표에서 읽어 넘긴다** — 부품 기본값을 쓰면 표와 갈라진다(`/report` 가 실제로 그랬다:
+          표 「개인 리포트」 vs 기본값 「개인 체크 리포트」). */}
       <ReportPrintHeader
-        title="갈무리 기록"
+        title={docTitle('/coach/cohort/[cohortId]/member/[userId]')}
         participantName={member.name ?? '이름 미입력'}
         cohortName={cohort?.name ?? ''}
         waveLabel="인도자 전용"

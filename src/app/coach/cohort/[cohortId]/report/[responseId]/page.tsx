@@ -1,7 +1,7 @@
 // 개인 리포트(코치/운영자 전용). getResponse→B② score→기존 ReportScreen 재사용(신규 리포트 0).
 // 접근 제어: responses RLS(회기 코치+운영자+본인만 SELECT). 차단/부재 → 404. 참여자는 이 임상 리포트 UI 경로 없음(§7.5 거울만).
 // wave 비교(prev)는 후속 — MVP 는 단일 wave 로 충분(ReportScreen 이 prev optional 처리).
-import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
+import { docTitle } from '@/app/_screens/console/docTitle';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
@@ -71,8 +71,7 @@ export default async function CoachReportPage({
     <div className="report-print-root" style={{ maxWidth: 720, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
       {/* 앱 크롬(헤더·PDF 버튼) — 화면 전용(인쇄 제외) */}
       <div className="no-print">
-        {/* ★ **화면 이름이 인쇄 전용이었다**(U-6 실측). 이름은 표가 들고 자리는 본문이 든다. */}
-        <ConsoleTitle />
+
         {/* 툴바 — 신상정보(팝업)·PDF. 신상정보는 홈→멤버관리 왕복 없이 리포트에서 바로(ADR-78). */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
           {/* 갈무리 왕복(ADR-118) — 나침반 점수를 보다가 '이 사람이 실제로 무엇을 하고 있지'를 물으면
@@ -91,7 +90,14 @@ export default async function CoachReportPage({
         </div>
       </div>
       {/* PDF 전용 브랜드 문서 헤더(화면 미노출) */}
-      <ReportPrintHeader participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />
+      {/* ★★ **이 화면은 «문서»다** — 이름의 자리가 `ConsoleTitle` 이 아니라 **문서 머리**다(U-6).
+          실측: `ReportPrintHeader` 의 `wrap` 이 인라인 `display:flex` 라 `.print-only` 를 이겨
+          **이 머리는 화면에도 서 있다**(그래서 ADR-188 의 `screen` 소품은 아무 일도 하지 않는다 — 보고 항목).
+          그 머리가 이미 «퓨처나우 · 문서 이름 · 대상자 · 회기 · 회차 · 날짜» 를 한 덩어리로 든다.
+          위에 `ConsoleTitle` 을 또 세우면 **한 화면에 같은 이름이 둘**이다(배포해서 눈으로 잡았다).
+          **이름은 표에서 읽어 넘긴다** — 부품 기본값을 쓰면 표와 갈라진다(`/report` 가 실제로 그랬다:
+          표 「개인 리포트」 vs 기본값 「개인 체크 리포트」). */}
+      <ReportPrintHeader title={docTitle('/coach/cohort/[cohortId]/report/[responseId]')} participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />
       {/* 화면 순서: 해석(위) → 차트(아래). PDF 인쇄에서만 order 로 차트=1페이지·해석=2페이지로 재배치(ADR-69). */}
       <div className="report-interp-block">
         {/* **key 가 정확성이다**(3차 T-2 · 발현 확인 2026-08-27).

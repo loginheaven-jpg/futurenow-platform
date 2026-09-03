@@ -6,7 +6,6 @@
 // **복제본이 아니라 실제 CheckinCardClient 를 그대로 렌더한다** — 회람용 HTML 처럼 따로 그리면 드리프트가 생긴다.
 // **서버 쓰기 0**: preview 플래그가 자동저장·제출·최초진입 표식·사진 위젯을 전부 막는다(ADR-86 제1원칙).
 // 회차 목록은 레지스트리에서 뽑으므로 4~7회차가 등록되면 이 파일은 그대로 따라온다.
-import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
 import { useState } from 'react';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { CheckinCardClient } from '@/app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
@@ -48,8 +47,6 @@ export function CheckinPreviewClient({ cohortId, initialSession }: { cohortId: s
 
   return (
     <div>
-      {/* ★ **이 화면은 이름이 어디에도 없었다**(U-6 실측) — 탭에도 본문에도 없었다. */}
-      <ConsoleTitle />
       <div
         style={{
           padding: 'var(--space-4)',
