@@ -36,6 +36,19 @@ export async function finalizeValueAction(cohortId: string | null, ids: [number,
   }
 }
 
+/**
+ * 처음부터 다시. **되돌릴 수 없다** — 화면이 먼저 무엇이 지워지는지 말하고 확인을 받는다.
+ */
+export async function restartValueAction(cohortId: string | null): Promise<Ok> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.restartMyValue(cohortId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e, '다시 시작');
+  }
+}
+
 /** 라벨·대조·정합 판정 증분 갱신. 넘기지 않은 값은 서버가 보존한다. */
 export async function patchValueAction(
   cohortId: string | null,

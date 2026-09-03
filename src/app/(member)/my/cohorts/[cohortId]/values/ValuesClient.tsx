@@ -10,17 +10,18 @@ import {
   CARD_BY_ID, CARD_PAGES, COUNT_RULES, TOTAL_PAGES, VALUE_CARDS, type ValueCard,
 } from '@/instruments/futurenow/values';
 import {
-  COMPARE, EXPLORE, FIRST_DONE, INTRO, JUDGE_REPLY, LABEL, RESULT, SECOND, TIDY,
+  COMPARE, EXPLORE, FIRST_DONE, GATE, INTRO, JUDGE_REPLY, LABEL, RESULT, SECOND, TIDY,
 } from '@/instruments/futurenow/values/copy';
 import {
   buildPairs, choose, groupByWins, initPairwise, isComplete, matchesIds, nextIndex, undo,
   type PairwiseState,
 } from '@/instruments/futurenow/values/pairwise';
 import { reflectionFor } from '@/instruments/futurenow/values/reflection';
-import { finalizeValueAction, patchValueAction, saveValueProgressAction } from './actions';
+import { finalizeValueAction, patchValueAction, restartValueAction, saveValueProgressAction } from './actions';
 
 type Screen =
-  | 'intro' | 'explore' | 'tidy' | 'firstDone'
+  | 'intro' | 'gate' | 'confirmRestart'
+  | 'explore' | 'tidy' | 'firstDone'
   | 'resume' | 'pickFive' | 'pairwise' | 'final' | 'label' | 'compare' | 'judge' | 'result';
 
 const box = { padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-3)' } as const;
@@ -71,13 +72,10 @@ function Grid({ ids, picked, toggle, lockUnpicked }: {
 export function ValuesClient({ cohortId, initial }: { cohortId: string | null; initial: ValueAssessment | null }) {
   const saved = initial?.progress as { picks?: number[]; page?: number; pairwise?: PairwiseState } | undefined;
 
-  const [screen, setScreen] = useState<Screen>(() => {
-    if (!initial) return 'intro';
-    if (initial.stage === 'final') return 'result';
-    if (initial.stage === 'finalists') return 'pairwise';
-    if (initial.stage === 'candidates') return 'resume';
-    return 'intro';
-  });
+  // **하던 것이 있으면 언제나 갈림길을 먼저 지난다**(ADR-187).
+  //   전에는 stage 로 곧장 뛰었다 — finalists 면 안내 없이 비교 화면 한가운데로 떨어져
+  //   참여자가 자기가 어디에 있는지 모르는 채 "둘 중 하나만 남긴다면?"을 받았다.
+  const [screen, setScreen] = useState<Screen>(() => (initial ? 'gate' : 'intro'));
   const [page, setPage] = useState(saved?.page ?? 0);
   const [picked, setPicked] = useState<Set<number>>(new Set(saved?.picks ?? []));
   const [candidates, setCandidates] = useState<number[]>(initial?.candidates ?? []);
@@ -92,6 +90,34 @@ export function ValuesClient({ cohortId, initial }: { cohortId: string | null; i
   const [busy, start] = useTransition();
 
   const toggle = (id: number) => setPicked((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+
+  /** 갈림길에서 '이어서 하기' 가 데려갈 곳. 저장된 단계가 그대로 화면이 된다. */
+  const resumeScreen = (): Screen => {
+    switch (initial?.stage) {
+      case 'final': return 'result';
+      case 'finalists': return 'pairwise';
+      case 'candidates': return 'resume';
+      default: return 'explore';
+    }
+  };
+
+  /**
+   * 처음부터 다시. 서버가 행을 비우고 나면 **화면 상태도 같이 비워야 한다** —
+   * 하나라도 남으면 빈 서버와 채워진 화면이 어긋난 채로 다음 저장이 나간다.
+   */
+  const restart = () => run(() => restartValueAction(cohortId), () => {
+    setPicked(new Set());
+    setPage(0);
+    setCandidates([]);
+    setFive([]);
+    setPw(null);
+    setFinalIds([]);
+    setLabels({ v1: '', v2: '', v3: '' });
+    setWb({ peak: '', strength: '', longing: '' });
+    setAlign(null);
+    setShowRest(false);
+    setScreen('intro');
+  });
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, then: () => void) =>
     start(async () => { const r = await fn(); if (r.ok) { setErr(null); then(); } else setErr(r.error ?? '저장에 실패했습니다.'); });
 
@@ -99,6 +125,63 @@ export function ValuesClient({ cohortId, initial }: { cohortId: string | null; i
   const rest = useMemo(() => VALUE_CARDS.map((c) => c.id).filter((id) => !picked.has(id)), [picked]);
 
   const Err = err ? <p className="t-caption" style={{ color: 'var(--color-danger)' }}>{err}</p> : null;
+
+  // ── 갈림길 ─────────────────────────────────────────────────
+  //   하던 것이 있을 때 여기를 먼저 지난다. 되돌리기는 보조 버튼이다 —
+  //   쉽게 닿되 먼저 눌리지는 않아야 한다.
+  if (screen === 'gate') {
+    const done = initial?.stage === 'final';
+    const where = done ? null
+      : initial?.stage === 'finalists' ? GATE.atFinalists
+      : initial?.stage === 'candidates' ? GATE.atCandidates(candidates.length)
+      : GATE.atExplore(page + 1, TOTAL_PAGES, picked.size);
+
+    return (
+      <div>
+        <p className="t-body-lg" style={{ fontWeight: 600 }}>{done ? GATE.doneTitle : GATE.resumeTitle}</p>
+        {where && <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>{where}</p>}
+        {done && (
+          <div style={box}>
+            {finalIds.map((id) => <div key={id} className="t-body">{CARD_BY_ID.get(id)?.korean}</div>)}
+          </div>
+        )}
+        {Err}
+        <div style={row}>
+          <button className="ui-btn ui-btn--primary" style={{ width: '100%' }} disabled={busy}
+            onClick={() => setScreen(resumeScreen())}>
+            {done ? GATE.see : GATE.resume}
+          </button>
+        </div>
+        <div style={{ marginTop: 'var(--space-2)' }}>
+          <button className="ui-btn ui-btn--ghost" style={{ width: '100%' }} disabled={busy}
+            onClick={() => setScreen('confirmRestart')}>
+            {GATE.restart}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 확인 — 단계마다 잃는 것이 다르므로 다르게 말한다(층3).
+  if (screen === 'confirmRestart') {
+    const lose = initial?.stage === 'final' ? GATE.loseFinal
+      : initial?.stage === 'exploring' || !initial ? GATE.loseExploring
+      : GATE.loseCandidates;
+
+    return (
+      <div>
+        <p className="t-body-lg" style={{ fontWeight: 600 }}>{GATE.confirmTitle}</p>
+        <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>{lose}</p>
+        {Err}
+        <div style={row}>
+          <button className="ui-btn ui-btn--ghost" style={{ flex: 1 }} disabled={busy}
+            onClick={() => setScreen('gate')}>{GATE.cancel}</button>
+          <button className="ui-btn ui-btn--primary" style={{ flex: 1 }} disabled={busy}
+            onClick={restart}>{GATE.confirm}</button>
+        </div>
+      </div>
+    );
+  }
 
   // ── 1차 ────────────────────────────────────────────────────
   if (screen === 'intro') {
@@ -109,8 +192,9 @@ export function ValuesClient({ cohortId, initial }: { cohortId: string | null; i
         <p className="t-caption" style={{ color: 'var(--color-text-muted)' }}>{INTRO.time}</p>
         {Err}
         <div style={row}>
+          {/* 이어서 하기는 갈림길이 맡는다. 여기 닿았다는 것은 새로 시작한다는 뜻이다. */}
           <button className="ui-btn ui-btn--primary" style={{ width: '100%' }} onClick={() => setScreen('explore')}>
-            {initial ? INTRO.resume : INTRO.start}
+            {INTRO.start}
           </button>
         </div>
       </div>

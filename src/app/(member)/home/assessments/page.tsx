@@ -19,6 +19,7 @@ import { AssessmentsScreen, type AssessSection } from './AssessmentsScreen';
 import { assessmentAccess } from '@/app/_lib/assessmentAccess';
 import { TOOL } from '@/app/_vocab/tool';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
+import { CARD_BY_ID } from '@/instruments/futurenow/values';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,15 @@ export default async function AssessmentsPage() {
   const valueCohort = active[0] ?? null;
   const valueHref = valueCohort ? `/my/cohorts/${valueCohort.cohortId}/values` : '/my/values';
   const canStanding = assessmentAccess(state, 'standing');
+
+  // **상태를 말한다**(ADR-187 층1). 전에는 늘 '시작' 이라 진행 중인지 끝냈는지 들어가 봐야 알았다.
+  //   조회 실패는 무해하다 — 상태 표시를 못 할 뿐 문은 그대로 열린다.
+  const valueState = canStanding
+    ? await ctx.getMyValueAssessment(valueCohort?.cohortId ?? null).catch(() => null)
+    : null;
+  const valueStep = valueState
+    ? { exploring: '고르는 중', candidates: '후보까지', finalists: '견주는 중', final: null }[valueState.stage]
+    : null;
   const canJourney = assessmentAccess(state, 'journey');
 
   // ── F-4 표시 자료 — 위 게이트·판정에는 손대지 않았다. ─────────────────────
@@ -94,8 +104,16 @@ export default async function AssessmentsPage() {
           key: 'value',
           icon: 'value',
           title: VALUE_TOOL,
-          note: canStanding ? (valueCohort ? valueCohort.name : '나 혼자 합니다.') : '승인이 끝나면 열립니다.',
-          status: canStanding ? '시작' : '대기',
+          // 어디까지 왔는지 · 무엇을 골랐는지를 문 앞에서 말한다.
+          note: !canStanding ? '승인이 끝나면 열립니다.'
+            : valueState?.stage === 'final'
+              ? (valueState.finalIds ?? []).map((id) => CARD_BY_ID.get(id)?.korean).filter(Boolean).join(' · ') || '마치셨습니다.'
+              : valueStep ? `${valueCohort ? `${valueCohort.name} · ` : ''}${valueStep}`
+              : (valueCohort ? valueCohort.name : '나 혼자 합니다.'),
+          status: !canStanding ? '대기'
+            : valueState?.stage === 'final' ? '완료'
+            : valueState ? '이어서'
+            : '시작',
           href: canStanding ? valueHref : undefined,
         },
         // 그림자 = SAIL. **연결만 한다** — 스키마·데이터·코드 무접촉(CLAUDE §4 · IA §4.5).
