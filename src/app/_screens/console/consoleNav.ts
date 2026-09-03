@@ -4,6 +4,11 @@
 //   ⓐ 내비가 데이터를 기다리면 화면이 늦게 서고, ⓑ 레이아웃이 차수를 조회하면
 //   모든 콘솔 화면에 왕복이 하나씩 는다. 경로가 이미 문맥을 담고 있으므로 그것만 읽는다.
 //
+// ★ **ⓑ 는 U-5 에서 실측으로 뒤집혔다** — `/coach/cohort/[cohortId]` 아래 **여덟 중 일곱이
+//   이미 `getCohort` 를 부른다**(예외는 `checkin/preview` 하나). 회기 이름은 서버 손에 이미
+//   있었고 **없던 것은 조회가 아니라 넘길 길**이었다. 그래도 **이 함수는 여전히 순수하다** —
+//   이름은 `useSetCohortName` 통로가 나르고, 여기는 경로만 읽는다(기각 근거 ⓐ 는 유효하다).
+//
 // `loginOutcome`·`safeReturn`·`rosterModel` 과 같은 관행이다 — 판정을 순수 함수로 떼어
 //   테스트가 닿게 한다.
 
@@ -18,6 +23,30 @@ export interface ConsoleNavItem {
 export interface ConsoleNavGroup {
   title: string | null;
   items: ConsoleNavItem[];
+}
+
+/**
+ * 회기 띠가 드는 묶음의 이름. **띠와 시트가 같은 낱말을 읽는다**(불변식 23).
+ */
+export const TAB_GROUP = '이 회기';
+
+/**
+ * 한 회기 안에서 오가는 항목 다섯 — **띠의 탭**이 그대로 이것이다(U-5).
+ *
+ * 역할을 받지 않는다: 인도자와 운영자가 **같은 다섯**을 본다(ADR-51 · ADR-74).
+ * 그래서 서버(회기 레이아웃)도 이 함수 하나만 부르면 된다.
+ *
+ * **이름에서 「회기」를 뺐다**(지휘부 결재 2026-09-03) — 띠 왼쪽 칩이 이미 *어느 회기인가*를
+ *   말하므로 「회기 대시보드」는 같은 말을 두 번이다.
+ */
+export function cohortTabs(cohortId: string): ConsoleNavItem[] {
+  return [
+    { href: `/coach/cohort/${cohortId}`, label: '대시보드' },
+    { href: `/coach/cohort/${cohortId}/checkin`, label: '회차 갈무리' },
+    { href: `/coach/cohort/${cohortId}/matrix`, label: '진단 결과' },
+    { href: `/coach/cohort/${cohortId}/values`, label: '가치 카드' },
+    { href: `/feed?cohort=${cohortId}`, label: '동행' },
+  ];
 }
 
 /** `/coach/cohort/{uuid}/…` 에서 차수 id 를 꺼낸다. 아니면 null. */
@@ -51,18 +80,7 @@ export function consoleNav(input: { role: 'user' | 'coach' | 'admin'; pathname: 
   });
 
   const cohortId = cohortIdOf(pathname);
-  if (cohortId) {
-    groups.push({
-      title: '이 회기',
-      items: [
-        { href: `/coach/cohort/${cohortId}`, label: '회기 대시보드' },
-        { href: `/coach/cohort/${cohortId}/checkin`, label: '회차 갈무리' },
-        { href: `/coach/cohort/${cohortId}/matrix`, label: '진단 결과' },
-        { href: `/coach/cohort/${cohortId}/values`, label: '가치 카드' },
-        { href: `/feed?cohort=${cohortId}`, label: '동행' },
-      ],
-    });
-  }
+  if (cohortId) groups.push({ title: TAB_GROUP, items: cohortTabs(cohortId) });
 
   if (role === 'admin') {
     groups.push({

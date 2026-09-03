@@ -69,9 +69,10 @@ export function ApprovalsClient({
     });
   }
 
+  // **화면 이름은 껍데기가 든다**(U-5) — 표(`SCREEN_CHROME`)의 「가입 승인」을 그린다.
+  //   여기서 또 그리면 한 화면에 같은 이름이 둘이고, 표와 화면이 어긋나는 날 둘이 달라진다.
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-      <h1 className="t-h1">가입 승인</h1>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'var(--space-3) var(--space-4) var(--space-6)' }}>
       <p className="t-body" style={{ ...muted, marginTop: 'var(--space-2)' }}>
         일반 가입 신청의 <b>가입 경위</b>를 보고 자격을 확인합니다. 포럼 정보가 함께 오면 명단과 대조합니다.
         승인하면 상시 체크가 열립니다.

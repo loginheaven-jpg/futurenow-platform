@@ -82,7 +82,10 @@ export async function buildMemberSheet(
   //   생김새는 같은데 하나만 다르게 동작한다. `/account` 안에 이미 있다(F-3 판정 · 지휘부 승인).
   const isStaff = opts.role === 'coach' || opts.role === 'admin';
   const many = (opts.cohortCount ?? 0) > 1;
-  const noCohort = (opts.cohortCount ?? 0) === 0;
+  // ★ **자격이 있는 사람에게만 권한다**(U-5 실측 — 인도자의 `/home` 시트에 「참여 신청」이 떴다).
+  //   `noCohort` 가 역할을 안 봤다: 회기 0 인 **인도자**는 «신청을 안 한 사람» 이 아니라
+  //   «자기 회기를 아직 안 연 사람» 이다(지휘부 정의 2026-09-03 은 참여자에 대한 것이었다).
+  const noCohort = (opts.cohortCount ?? 0) === 0 && !isStaff;
 
   const groups: MenuGroup[] = [
     // ★ **출구 구획**(ADR-181 · 지휘부 지시 2026-09-02 「서비스홈으로, 사용자홈으로 언제든 갈 수 있어야 한다」).
@@ -108,13 +111,17 @@ export async function buildMemberSheet(
         //   문안은 짓지 않았다 — 벨트 메뉴의 「참여 신청」을 그대로 읽는다(불변식 23).
         ...(noCohort
           ? [RECRUIT_DOOR]
-          // ★ **홈이 곧 그 회기면 문을 두 번 두지 않는다**(ADR-181). 위 「내 자리」 구획의
-          //   「내 홈」이 이미 그 화면이다 — 배포해서 눈으로 보고 잡았다.
-          : opts.homeIsDashboard
+          // ★ **회기 0 인 인도자에게는 아무 문도 두지 않는다**(U-5). 「참여 신청」은 그의 것이
+          //   아니고(위 `noCohort`), 「내 회기」는 **빈 목록**으로 보낸다 — 없는 곳으로 보내지 않는다.
+          : (opts.cohortCount ?? 0) === 0
             ? []
-            : [primary
-                ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 회기' }
-                : { href: '/my/cohorts', label: '내 회기' }]),
+            // ★ **홈이 곧 그 회기면 문을 두 번 두지 않는다**(ADR-181). 위 「내 자리」 구획의
+            //   「내 홈」이 이미 그 화면이다 — 배포해서 눈으로 보고 잡았다.
+            : opts.homeIsDashboard
+              ? []
+              : [primary
+                  ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 회기' }
+                  : { href: '/my/cohorts', label: '내 회기' }]),
         ...(opts.hasFeed ? [{ href: '/feed', label: '동행' }] : []),
         // 회기가 둘 이상일 때만 목록 문을 낸다 — 하나면 위 항목이 곧 그 회기다(없는 곳으로 보내지 않는다).
         ...(many ? [{ href: '/my/cohorts', label: MY_SEMINARS }] : []),
@@ -136,5 +143,6 @@ export async function buildMemberSheet(
     { title: ACCOUNT_GROUP, items: [ACCOUNT_DOOR, { href: '/join', label: JOIN_BY_CODE }] },
   ];
 
-  return { groups, chips, cohortName: primary?.name };
+  // **빈 구획을 넘기지 않는다** — `MenuSheet` 는 걸러 주지 않아서(실측) 제목만 남은 줄이 선다.
+  return { groups: groups.filter((g) => g.items.length > 0), chips, cohortName: primary?.name };
 }
