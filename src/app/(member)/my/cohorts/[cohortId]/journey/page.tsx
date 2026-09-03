@@ -7,7 +7,7 @@
 // 조회가 회차별인 이유: `listCohortCheckins` 는 담당 인도자·운영자 RLS 다. 참여자는 `getMyCheckin` 으로만 읽는다.
 //   회차 수만큼 부르되 `Promise.all` 로 묶는다 — 직렬이면 응답 시간이 그만큼 는다.
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { ReportPrintButton } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintButton';
 import { ReportPrintHeader } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintHeader';
 import { MyJourney } from './MyJourney';
@@ -16,8 +16,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function MyJourneyPage({ params }: { params: Promise<{ cohortId: string }> }) {
   const { cohortId } = await params;
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   const mine = await ctx.listMyCohorts();
@@ -46,6 +47,8 @@ export default async function MyJourneyPage({ params }: { params: Promise<{ coho
           <ReportPrintButton />
         </div>
       </div>
+      {/* ★ 이 머리는 **인쇄 전용**이다(U-6 — `.print-only` 가 이제 인라인 스타일을 이긴다).
+          전에는 화면에도 서서 제목바의 「나의 기록」과 **같은 이름이 둘**이었다. 회원 쪽에도 같은 결함이 있었다. */}
       <ReportPrintHeader
         title="나의 기록"
         participantName={me.name ?? ''}

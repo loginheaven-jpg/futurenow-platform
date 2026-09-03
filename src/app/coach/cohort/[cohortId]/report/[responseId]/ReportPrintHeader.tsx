@@ -19,6 +19,7 @@ export function ReportPrintHeader({
   dateStr,
   title = '개인 체크 리포트',
   screen = false,
+  cohortOnScreen = true,
 }: {
   participantName: string;
   cohortName: string;
@@ -32,6 +33,13 @@ export function ReportPrintHeader({
    * **사본을 만들지 않는다** — 같은 머리를 두 벌 두면 한쪽만 고쳐지는 날 두 문서가 달라진다.
    */
   screen?: boolean;
+  /**
+   * 화면에서도 회기 이름을 보일 것인가(U-6). **인쇄에는 언제나 남는다** —
+   * 종이 위에 «어느 회기의 언제 자료인지» 가 없으면 문서가 아니다(ADR-69 계열).
+   * 콘솔 화면은 껍데기의 **회기 칩**이 이미 그것을 말하므로 `false` 로 접는다(중복 없이).
+   * 회원 화면에는 칩이 없으므로 기본값 `true` 그대로다.
+   */
+  cohortOnScreen?: boolean;
 }) {
   return (
     <header className={screen ? undefined : 'print-only'} style={wrap}>
@@ -41,7 +49,10 @@ export function ReportPrintHeader({
       </div>
       <div className="t-caption" style={{ textAlign: 'right', lineHeight: 1.7 }}>
         <div style={{ color: 'var(--color-text)', fontWeight: 600 }}>{participantName}</div>
-        <div style={{ color: 'var(--color-text-secondary)' }}>{cohortName} · {waveLabel}</div>
+        <div style={{ color: 'var(--color-text-secondary)' }}>
+          <span className={cohortOnScreen ? undefined : 'print-only'}>{cohortName} · </span>
+          {waveLabel}
+        </div>
         <div style={{ color: 'var(--color-text-muted)' }}>{dateStr}</div>
       </div>
     </header>

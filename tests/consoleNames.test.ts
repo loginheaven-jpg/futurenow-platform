@@ -66,7 +66,10 @@ describe('콘솔 화면 이름 — 정확히 한 번', () => {
   //   그 머리가 이미 «퓨처나우 · 문서 이름 · 대상자 · 회기 · 회차 · 날짜» 를 한 덩어리로 들므로
   //   위에 `ConsoleTitle` 을 또 세우면 한 화면에 같은 이름이 둘이다 — 실제로 그랬다.
   //   **예외를 여기 한 줄로 적어 둔다**(§12.1 — 별도 문서에 두면 다음 사람이 본문만 읽고 판단한다).
-  const DOC_ROUTES = ['/coach/cohort/[cohortId]/member/[userId]', '/coach/cohort/[cohortId]/report/[responseId]'];
+  //   ★ **`/member` 는 U-6 후반에 이 예외에서 빠졌다** — `.print-only` 를 이름대로 굴게 고치자
+  //     그 화면의 머리가 인쇄 전용으로 돌아갔고, 본문이 대상자 이름을 이미 들고 있어 잃는 것이 없다.
+  //     `/report` 만 남는다 — **그 화면에서 대상자 이름을 드는 곳은 머리뿐이다**(실측).
+  const DOC_ROUTES = ['/coach/cohort/[cohortId]/report/[responseId]'];
 
   it('★★ **탭이 없는 화면은 반드시 이름을 든다** — 무제 화면을 만들지 않는다', () => {
     const nameless: string[] = [];

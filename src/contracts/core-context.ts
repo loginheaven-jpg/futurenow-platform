@@ -78,17 +78,17 @@ export interface CoreContext {
   getMyCoachKpc(): Promise<string | null>; // 본인 coach_applications.kpc_number(코치 정보 게이트 판정·보완 프리필). 행 없으면 null
   setMyCoachKpc(kpcNumber: string): Promise<void>; // 코치 본인 KPC 저장/갱신(S4 보완 — self-scoped DEFINER, role=coach·형식검증·status 무오염)
 
-  // 차수·참여
+  // 회기·참여
   previewCohortByCode(code: string): Promise<CohortPreviewMeta | null>; // 가입 결정용 공개 메타(coachName·memberCount). 승인 2026-06-28
-  resolveCohortByCode(code: string): Promise<Cohort | null>; // 차수 도메인 본체(가입-후/코치·운영자 경로)
-  enrollByCode(code: string): Promise<Enrollment>; // 코드로 현재 사용자를 차수에 가입(코어 소유 — 승인 2026-06-26)
+  resolveCohortByCode(code: string): Promise<Cohort | null>; // 회기 도메인 본체(가입-후/코치·운영자 경로)
+  enrollByCode(code: string): Promise<Enrollment>; // 코드로 현재 사용자를 회기에 가입(코어 소유 — 승인 2026-06-26)
   createCohort(input: {
     name: string;
     instrumentId: InstrumentId;
     maxMembers?: number; // 미지정 시 생략 → DB 기본 100
     description?: string;
     expiresAt?: string | null;
-  }): Promise<Cohort>; // 차수 개설(코치/운영자). 앱측 코드 생성+충돌 재시도, DDL 0. 승인 2026-06-28
+  }): Promise<Cohort>; // 회기 개설(코치/운영자). 앱측 코드 생성+충돌 재시도, DDL 0. 승인 2026-06-28
   updateCohort(
     cohortId: string,
     patch: {
@@ -98,33 +98,33 @@ export interface CoreContext {
       status?: 'active' | 'archived'; // 마감 = 'archived'
       expiresAt?: string | null;
     },
-  ): Promise<Cohort>; // 차수 부분수정(코치/운영자). coach_id·instrument_id·code·id 는 불변(patch 제외). 승인 2026-06-28
+  ): Promise<Cohort>; // 회기 부분수정(코치/운영자). coach_id·instrument_id·code·id 는 불변(patch 제외). 승인 2026-06-28
   getCohort(cohortId: string): Promise<Cohort>;
-  openPostWave(cohortId: string): Promise<void>; // 코치 사후 진단 개시(open_post_wave DEFINER RPC — 자기 차수·NULL→now() 멱등). ADR-55
-  // 차수 하드삭제(파괴적). RLS(cohorts_delete: 소유 코치 OR 운영자) 이중. **운영자=임의 차수 / 코치=빈 차수만**(참여·응답 0 — 데이터 파괴 방지, 데이터 있으면 마감).
-  //   예약 general 차수(체험) 보호는 앱 액션이 강제(코어는 진단어휘 무지). FK: enrollments/response_drafts CASCADE·responses/alerts/해석 SET NULL. ADR-67
+  openPostWave(cohortId: string): Promise<void>; // 코치 사후 진단 개시(open_post_wave DEFINER RPC — 자기 회기·NULL→now() 멱등). ADR-55
+  // 회기 하드삭제(파괴적). RLS(cohorts_delete: 소유 코치 OR 운영자) 이중. **운영자=임의 회기 / 코치=빈 회기만**(참여·응답 0 — 데이터 파괴 방지, 데이터 있으면 마감).
+  //   예약 general 회기(체험) 보호는 앱 액션이 강제(코어는 진단어휘 무지). FK: enrollments/response_drafts CASCADE·responses/alerts/해석 SET NULL. ADR-67
   deleteCohort(cohortId: string): Promise<void>;
-  // 차수에서 참여자 제거(휴지통) — 해당 차수 코치 또는 운영자만(remove_cohort_member DEFINER: is_cohort_coach OR is_admin).
-  //   이 차수 한정 삭제: responses(→alerts·해석 CASCADE)·response_drafts·enrollments. 계정·타 차수 불변. ADR-73
+  // 회기에서 참여자 제거(휴지통) — 해당 회기 코치 또는 운영자만(remove_cohort_member DEFINER: is_cohort_coach OR is_admin).
+  //   이 회기 한정 삭제: responses(→alerts·해석 CASCADE)·response_drafts·enrollments. 계정·타 회기 불변. ADR-73
   removeCohortMember(cohortId: string, userId: string): Promise<void>;
   moveCohortMember(userId: string, fromCohortId: string, toCohortId: string): Promise<void>; // 운영자 전용 · 등록만 이동(응답·갈무리 불변). 삭제=휴지통으로 이동. ADR-84
 
-  listMyCohorts(): Promise<MyCohortSummary[]>; // 멤버 본인 차수+진행(RPC my_cohorts, DEFINER 비민감 메타). 코치 시점 listEnrollments 와 분리. 승인 2026-06-29
-  listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 차수 목록(콘솔 홈). RLS: 본인 차수/운영자 전체.
-  listAllCohorts(): Promise<Cohort[]>; // 전체 차수(운영자 수퍼바이저 뷰 — 모든 인도자 차수 감독). RLS(cohorts_select is_admin)가 운영자만 전체 반환. ADR-74 승인 2026-06-28
-  // 차수 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28
+  listMyCohorts(): Promise<MyCohortSummary[]>; // 멤버 본인 회기+진행(RPC my_cohorts, DEFINER 비민감 메타). 코치 시점 listEnrollments 와 분리. 승인 2026-06-29
+  listCohortsByCoach(coachId: string): Promise<Cohort[]>; // 코치 회기 목록(콘솔 홈). RLS: 본인 회기/운영자 전체.
+  listAllCohorts(): Promise<Cohort[]>; // 전체 회기(운영자 수퍼바이저 뷰 — 모든 인도자 회기 감독). RLS(cohorts_select is_admin)가 운영자만 전체 반환. ADR-74 승인 2026-06-28
+  // 회기 멤버 id+name(코치/운영자, RPC cohort_member_directory). 승인 2026-06-28
   //   onlyParticipants=true 면 role='user' 만(ADR-118). **기본값은 기존 동작이다** — 이 함수는 두 목적을 겸한다:
   //   ⓐ 코칭 대상 명단(회차 현황·격자 — 운영자가 섞이면 신호가 인도자 자신에게 켜진다)
   //   ⓑ userId → name 이름 조회(리포트 PDF 헤더·rosterModel — 운영자가 응답한 리포트도 이름이 나와야 한다).
   //   ⓐ만 true 로 부른다. 기본값을 바꾸면 ⓑ가 '참여자' 로 폴백된다.
   /**
-   * 차수 명단. **`maskUnnamed` 는 옵트인이다**(ORDER ② · 2026-08-30) —
+   * 회기 명단. **`maskUnnamed` 는 옵트인이다**(ORDER ② · 2026-08-30) —
    *   기본값이 기존 동작이라 **호출처 일곱 중 여섯은 코드 변경 없이** 종전대로 산다.
    *   켜면 이름이 없는 사람의 `name` 자리에 **DB 가 마스킹한 문자열**이 담겨 온다.
    *   **이메일 원문은 앱에 오지 않는다** — 가리는 일이 DB 안에서 끝난다.
    */
   listCohortMembers(cohortId: string, onlyParticipants?: boolean, maskUnnamed?: boolean): Promise<MemberRef[]>;
-  getCohortMemberDetail(cohortId: string, userId: string): Promise<CohortMemberDetail>; // 차수 멤버 신상(코치=자기 조원만·운영자=전체, cohort_member_detail DEFINER). 전화·이메일 포함. ADR-75
+  getCohortMemberDetail(cohortId: string, userId: string): Promise<CohortMemberDetail>; // 회기 멤버 신상(코치=자기 조원만·운영자=전체, cohort_member_detail DEFINER). 전화·이메일 포함. ADR-75
   listEnrollments(cohortId: string): Promise<Enrollment[]>;
 
   // 진행 중 응답 보존(중간저장) — 본인 한정(RLS user_id=auth.uid()). 제출 전 작성본.
@@ -156,7 +156,7 @@ export interface CoreContext {
 
   // 알림 (진단이 트리거, 코어가 전달)
   raiseAlert(input: AlertInput): Promise<void>;
-  listAlerts(cohortId: string): Promise<Alert[]>; // 차수 알림 읽기(콘솔 '먼저 챙길 분'의 저장된 출처). RLS: 차수 코치/운영자. 승인 2026-06-28
+  listAlerts(cohortId: string): Promise<Alert[]>; // 회기 알림 읽기(콘솔 '먼저 챙길 분'의 저장된 출처). RLS: 회기 코치/운영자. 승인 2026-06-28
 
   // 본부 — 코치 신청 승인/거절(USER→COACH 승격). 운영자 전용.
   listCoachApplications(status?: 'pending' | 'approved' | 'rejected'): Promise<CoachApplication[]>; // 운영자 전용(coach_apps_select=admin) + users 조인. 승인 2026-06-28
@@ -167,7 +167,7 @@ export interface CoreContext {
   setUserRole(userId: string, role: Role): Promise<void>; // 운영자 전용, RPC set_user_role(가드: admin·화이트리스트·자기강등 방지).
 
   // 본부 — 멤버 세부(활동)·삭제. 운영자 전용(DEFINER RPC 내부 is_admin 게이트). ADR-70·71
-  getMemberActivity(userId: string): Promise<MemberActivity>; // 소유/참여 차수·응답 수(admin_member_activity). 신원은 getPhone·getProfile.
+  getMemberActivity(userId: string): Promise<MemberActivity>; // 소유/참여 회기·응답 수(admin_member_activity). 신원은 getPhone·getProfile.
   deleteMember(userId: string): Promise<void>; // 임의 멤버 계정 하드삭제(delete_user — auth.users 삭제·전체 연쇄). 가드: admin·자기삭제 금지.
   setMemberPassword(userId: string, password: string): Promise<void>; // 운영자 임시 비번 설정(admin_set_temp_password DEFINER, is_admin·최소 8자). 계정 복구용. ADR-79
 
@@ -185,14 +185,14 @@ export interface CoreContext {
   submitMyCheckin(cohortId: string, sessionNo: number): Promise<void>; // 본인 · 최초 submitted_at 고정, 재제출 edit_count+1(checkin_submit)
   markCheckinPrompted(cohortId: string, sessionNo: number): Promise<void>; // 본인 · 전면 안내 노출 기록(checkin_mark 'prompt', 상한 2)
   markCheckinOpened(cohortId: string, sessionNo: number): Promise<void>; // 본인 · first_opened_at 최초 1회(checkin_mark 'open')
-  // 담당 인도자·운영자(checkins SELECT RLS). sessionNo 를 생략하면 그 차수 **전체**를 한 번에(ADR-118) —
+  // 담당 인도자·운영자(checkins SELECT RLS). sessionNo 를 생략하면 그 회기 **전체**를 한 번에(ADR-118) —
   //   세로 보기·격자가 회차 수만큼 왕복하는 것을 막는다(7회차면 7회 → 1회). 기존 호출부는 그대로 산다.
   listCohortCheckins(cohortId: string, sessionNo?: number): Promise<CheckinRecord[]>;
 
   // 가치 카드(ADR-121) — 별도 테이블 value_assessments. 쓰기는 전량 DEFINER RPC(D1 선례).
   //   Q8 승인은 '3종'이었으나 RPC 가 셋(save_progress·finalize·patch)이라 쓰기 진입점이 셋 필요하고,
   //   여기에 본인 조회·인도자 열람을 더해 **5종**이 됐다. 승인 델타를 완료 보고에 명시한다.
-  // **cohortId: null = 개인 응시**(차수 미소속 · S-2). 차수분과 개인분은 부분 유니크 인덱스로
+  // **cohortId: null = 개인 응시**(회기 미소속 · S-2). 회기분과 개인분은 부분 유니크 인덱스로
   //   각각 한 행씩 따로 산다. NULL 행은 인도자에게 보이지 않는다(RLS 가 is_cohort_coach(NULL,…)=false).
   getMyValueAssessment(cohortId: string | null): Promise<ValueAssessment | null>; // 본인(value_assessments SELECT RLS)
   saveMyValueProgress(input: { // 본인 · 증분 저장(value_save_progress DEFINER · 전이·개수 서버 강제)
@@ -212,7 +212,7 @@ export interface CoreContext {
   listCohortValueAssessments(cohortId: string): Promise<ValueAssessmentRow[]>; // 담당 인도자·운영자(SELECT RLS)
 
   // 편지 사진 첨부(ADR-83) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
-  listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/차수 코치/운영자(storage RLS) · signed URL 포함
+  listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/회기 코치/운영자(storage RLS) · signed URL 포함
   deleteCheckinPhoto(path: string): Promise<void>; // 본인/운영자(storage RLS)
 
   // 회원 상태·승인(S-1 · ADR-122) — role 과 별도 축. 상태가 가르는 것은 **새 응시 하나**이고
@@ -255,7 +255,7 @@ export interface CoreContext {
   openLibraryItem(id: string): Promise<LibrarySource | null>;
   /** 올릴 자격이 있는가(§7). 화면은 이 값으로 구획을 켜고 끈다 — 등급 이름을 직접 보지 않는다. */
   canUploadLibrary(): Promise<boolean>;
-  /** 올리기. 자격·등급·기수 판정은 전부 DB 가 한다(`library_add`). */
+  /** 올리기. 자격·등급·회기 판정은 전부 DB 가 한다(`library_add`). */
   addLibraryItem(input: LibraryAddInput): Promise<string>;
   /** 가리기·되돌리기 — **본인만**(확정 ⑥). 삭제가 아니라 표시다. */
   hideLibraryItem(id: string, hidden: boolean): Promise<void>;
@@ -290,10 +290,10 @@ export interface CoreContext {
   listContactMessages(onlyOpen?: boolean): Promise<ContactMessage[]>; // 운영자 전용
   markContactHandled(id: string): Promise<void>; // 운영자 전용
 
-  // 동행 피드(2차 · ADR-124) — 기수 스코프. **판정은 SQL 한 곳**(`feed_can_access`)이고
+  // 동행 피드(2차 · ADR-124) — 회기 스코프. **판정은 SQL 한 곳**(`feed_can_access`)이고
   //   여기 메서드는 그 결과를 나르기만 한다. 화면이 자격을 다시 계산하지 않는다(IA §5.8).
   //   읽기 자격과 쓰기 자격은 같은 집합이며, 가르는 것은 `held` 하나다(발주 §9.1).
-  listFeedCohorts(): Promise<FeedCohortRef[]>; // 피드를 가진 내 기수(활성 우선·최신순). 첫 행이 기본 선택
+  listFeedCohorts(): Promise<FeedCohortRef[]>; // 피드를 가진 내 회기(활성 우선·최신순). 첫 행이 기본 선택
 
   /**
    * 내가 그 회기 동행 피드에 **마지막으로 쓴 날**. 쓴 적이 없으면 `null`.
@@ -311,7 +311,7 @@ export interface CoreContext {
     mine?: boolean; // '내 걸음만'
   }): Promise<FeedPost[]>;
   createFeedPost(input: { cohortId: string; body?: string; photoPath?: string | null }): Promise<string>; // 사진만 올려도 게시된다
-  deleteFeedPost(id: string): Promise<void>; // 본인 · 그 기수 인도자 · 운영자 → soft. **바이트는 호출 전에 지운다**
+  deleteFeedPost(id: string): Promise<void>; // 본인 · 그 회기 인도자 · 운영자 → soft. **바이트는 호출 전에 지운다**
   listFeedComments(postId: string): Promise<FeedComment[]>;
   createFeedComment(postId: string, body: string): Promise<string>;
   deleteFeedComment(id: string): Promise<void>;
@@ -320,7 +320,7 @@ export interface CoreContext {
   // 사진 — 갈무리 선례(ADR-83)와 같은 구조. 업로드 바이트는 클라이언트 직접(리사이즈 후).
   signFeedPhotos(paths: string[], expiresInSec?: number): Promise<Record<string, string>>; // 경로→만료형 URL
   deleteFeedPhoto(path: string): Promise<void>; // Storage API 경유만(ADR-87 — DB 로는 지울 수 없다)
-  // 차수 하드삭제 전 회수 대상(발주 §4.2). **DB 가 경로를 안다** — 스토리지를 접두어로 훑지 않는다.
+  // 회기 하드삭제 전 회수 대상(발주 §4.2). **DB 가 경로를 안다** — 스토리지를 접두어로 훑지 않는다.
   //   삭제된 글은 photo_path 가 이미 비어 있으므로 살아 있는 글만 세면 남은 바이트 전부다.
   listFeedPhotoPaths(cohortId: string): Promise<string[]>;
   // 인도자 콘솔 전용 둘. **참여자가 불러도 RPC 가 거부한다** — 화면이 감추는 것은 표시일 뿐이다.

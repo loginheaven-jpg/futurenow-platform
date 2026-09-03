@@ -2,7 +2,7 @@
 //   일정 미등록('준비 중')은 정상 상태(R1) — 결함 탐지는 인도자 콘솔(Phase 7)이 맡는다.
 //   진단 러너(ResponseRunner) 미재사용 — 갈무리는 순서 고정·제출 후에도 열린다.
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { neededBacks, priorSessionNos, type Priors } from '@/instruments/futurenow/checkin/slots';
 import { CheckinCardClient } from './CheckinCardClient';
@@ -43,8 +43,9 @@ export default async function CheckinCardPage({
   const sessionNo = Number(session);
   const self = `/my/cohorts/${cohortId}/checkin/${session}`;
 
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect(`/login?returnTo=${encodeURIComponent(self)}`);
 
   const mine = await ctx.listMyCohorts();

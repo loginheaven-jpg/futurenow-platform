@@ -14,7 +14,7 @@
 // **4차 F-4 에서 보이는 층을 시안 F 로 교체했다.** 게이트·항목 판정·고지 분기는 그대로다 —
 //   바뀐 것은 그릇뿐이고, 시안의 `완료`·`대기` 도 **색이 아니라 낱말**로 든다.
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { AssessmentsScreen, type AssessSection } from './AssessmentsScreen';
 import { assessmentAccess } from '@/app/_lib/assessmentAccess';
 import { TOOL } from '@/app/_vocab/tool';
@@ -24,8 +24,9 @@ import { CARD_BY_ID } from '@/instruments/futurenow/values';
 export const dynamic = 'force-dynamic';
 
 export default async function AssessmentsPage() {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   // **화면 게이트를 걷었다**(최박사 확정 2026-08-30).

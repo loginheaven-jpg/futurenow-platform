@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { MirrorView } from '@/app/_screens/MirrorView';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { participantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring, type FuturenowScores } from '@/instruments/futurenow/scoring';
 import { latestPerUser } from '@/app/_lib/latestPerUser';
@@ -43,8 +43,9 @@ function ymd(iso: string): string {
 
 export default async function MyReportPage({ params }: { params: Promise<{ cohortId: string }> }) {
   const { cohortId } = await params;
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login'); // 전 역할 개방(A′-1 정합) — 본인 참여분만. RLS 가 본인 스코프.
 
   // 본인 사전·사후 각 wave 최신 1건(재진단 dedup). **한 번 채점해 차트와 거울이 같은 산출을 쓴다** —

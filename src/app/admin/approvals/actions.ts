@@ -5,6 +5,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServerContext } from '@/core/supabase/server';
 import type { MembershipDecision } from '@/contracts/domain';
+import { safeActionError } from '@/app/_lib/actionError';
 
 export type DecideResult = { ok: true } | { ok: false; error: string };
 
@@ -25,8 +26,11 @@ export async function decideMembershipAction(input: {
     });
     revalidatePath('/admin/approvals');
     return { ok: true };
-  } catch {
+  } catch (e) {
     // 실패 사유를 화면에 그대로 옮기지 않는다 — 내부 메시지가 운영자 화면을 통해 새지 않게.
-    return { ok: false, error: '처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요.' };
+    // ★ **그 결정을 더 정확히 이행한다**(U-6): 표적은 «내부» 메시지이지 **사람이 지어 쓴 문장**이 아니다.
+    //   전에는 권한·부재 안내까지 덮여 운영자가 왜 막혔는지 알 수 없었다(`자기 자신은 처리할 수 없습니다` 등).
+    //   가르는 기준은 문자열이 아니라 **타입**이다 — 문자열로 가르면 문안이 바뀌는 날 조용히 새기 시작한다.
+    return { ok: false, error: safeActionError(e, '처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요.') };
   }
 }

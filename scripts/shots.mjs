@@ -342,7 +342,9 @@ async function captureFixture(browser) {
 async function captureAuth(browser) {
   const e = env();
   const cohort = process.env.SHOT_COHORT ?? '';
-  const missing = ['QA_USER_EMAIL', 'QA_USER_PASSWORD', 'QA_COACH_EMAIL', 'QA_COACH_PASSWORD'].filter((k) => !e[k]);
+  // ★ 운영자 자격이 U-6 에서 늘었다 — 없으면 `/admin` 둘은 **못 본 것**이지 통과가 아니다.
+  const missing = ['QA_USER_EMAIL', 'QA_USER_PASSWORD', 'QA_COACH_EMAIL', 'QA_COACH_PASSWORD',
+                   'QA_ADMIN_EMAIL', 'QA_ADMIN_PASSWORD'].filter((k) => !e[k]);
   if (missing.length) {
     // **값을 찍지 않는다.** 없는 키 이름만 말한다.
     console.error(`.env.local 에 QA 자격이 없다: ${missing.join(', ')}\n  절차서 8단계를 먼저 마친다.`);
@@ -360,8 +362,15 @@ async function captureAuth(browser) {
     const page = await ctx.newPage();
     await page.goto(`${BASE}/login`, { waitUntil: 'commit' });
     await settle(page, `login(${role})`);
-    await page.getByLabel(/이메일/).fill(role === 'coach' ? e.QA_COACH_EMAIL : e.QA_USER_EMAIL);
-    await page.getByLabel(/비밀번호/).fill(role === 'coach' ? e.QA_COACH_PASSWORD : e.QA_USER_PASSWORD);
+    // 역할이 셋이다(U-6) — 삼항 둘을 겹치면 새 역할이 늘 때 **조용히 참여자로 떨어진다.**
+    const CRED = {
+      user: [e.QA_USER_EMAIL, e.QA_USER_PASSWORD],
+      coach: [e.QA_COACH_EMAIL, e.QA_COACH_PASSWORD],
+      admin: [e.QA_ADMIN_EMAIL, e.QA_ADMIN_PASSWORD],
+    };
+    const [id, pw] = CRED[role] ?? CRED.user;
+    await page.getByLabel(/이메일/).fill(id);
+    await page.getByLabel(/비밀번호/).fill(pw);
     await page.getByRole('button', { name: /로그인/ }).click();
     await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20_000 });
     await page.close();
