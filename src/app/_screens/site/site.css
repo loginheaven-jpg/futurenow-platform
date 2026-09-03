@@ -151,7 +151,7 @@
   font-size: 14.5px; font-weight: 600; color: var(--color-text); text-decoration: none;
   min-height: var(--tap-min);
 }
-/* 시트의 **동작** — 링크가 아니라는 것이 보여야 한다(ADR-185).
+/* 시트의 **동작** — 링크가 아니라는 것이 보여야 한다(ADR-188).
    구분선으로 목록에서 떼고 글자를 한 단 낮춘다. 경고색은 쓰지 않는다(불변식 9). */
 .site-sheet__action { margin-top: var(--space-2); padding-top: var(--space-2); border-top: var(--border-hair) solid var(--color-border); }
 .site-sheet__action button {

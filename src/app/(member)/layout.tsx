@@ -74,7 +74,7 @@ export default async function MemberLayout({ children }: { children: React.React
         name: me.name?.trim() || me.email.split('@')[0] || '회원',
         role: me.role === 'coach' ? COHORT_ROLE_LABEL.coach : COHORT_ROLE_LABEL.participant,
         cohort: sheetData.cohortName,
-        // ★ **로그아웃을 계정 구획에 붙인다**(ADR-185 · 지휘부 결재 2026-09-03 「가」).
+        // ★ **로그아웃을 계정 구획에 붙인다**(ADR-188 · 지휘부 결재 2026-09-03 「가」).
         //   자료(`buildMemberSheet`)는 순수하게 두고 **동작만 여기서** 얹는다 —
         //   링크 목록에 섞지 않고 구분선 아래에 세운다(F-3 의 우려를 그대로 지킨다).
         groups: sheetData.groups.map((g) =>
