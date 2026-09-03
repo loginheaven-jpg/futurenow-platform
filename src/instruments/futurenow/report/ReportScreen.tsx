@@ -35,7 +35,7 @@ export function ReportScreen({ scores, prev }: { scores: FuturenowScores; prev?:
         <Panel title="활력의 이동">
           <VitalityBand scores={scores} prev={prev} />
         </Panel>
-        <Panel title="나침반 — 바늘의 이동">
+        <Panel title="나침반 — 마음이 향하는 쪽">
           <CompassDumbbell scores={scores} prev={prev} />
         </Panel>
         {/* 준비도가 간격보다 **앞**이다 — 가이드 해석 순서(활력 → 나침반 → 준비도 → 간격)와

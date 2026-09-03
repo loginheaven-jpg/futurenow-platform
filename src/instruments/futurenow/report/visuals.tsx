@@ -128,8 +128,15 @@ export function CompassDumbbell({ scores, prev }: { scores: FuturenowScores; pre
         const pre = prev ? prev.compass[ax.code as keyof FuturenowScores['compass']] : null;
         return (
           <div key={ax.code}>
-            <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-1)' }}>
+            <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 2 }}>
               {ax.label}
+              {/* 언제의 이야기인가 — 항목명만으로는 무엇을 물었는지 알 수 없다(지휘부 지시 2026-09-03). */}
+              <span style={{ color: 'var(--color-text-muted)', marginLeft: 6 }}>{ax.note}</span>
+            </div>
+            {/* 선의 좌우 끝 — **점이 어느 쪽으로 갔는지**를 읽게 한다. 우열이 아니므로 양쪽이 같다. */}
+            <div className="t-micro" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-muted)', marginBottom: 2 }}>
+              <span>{ax.poles.left}</span>
+              <span>{ax.poles.right}</span>
             </div>
             <div style={{ position: 'relative', height: 16 }}>
               <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: 'var(--color-surface-sunken)', transform: 'translateY(-50%)' }} />
@@ -156,8 +163,10 @@ const radarPolygon = (values: number[]): string => values.map((v, i) => radarPoi
 export function GapRadar({ scores, prev }: { scores: FuturenowScores; prev?: FuturenowScores }) {
   const post = GAP_AXES.map((a) => scores.gap[a.code as keyof FuturenowScores['gap']]);
   const pre = prev ? GAP_AXES.map((a) => prev.gap[a.code as keyof FuturenowScores['gap']]) : null;
+  // 위쪽 라벨이 잘려 있었다 — 꼭짓점 라벨이 y≈4 에 놓이는데 글자 절반이 위로 나간다.
+  //   **좌표를 옮기지 않고 창을 넓힌다**(viewBox 위로 14). 점·선·면의 자리는 한 칸도 안 바뀐다.
   return (
-    <svg viewBox="0 0 220 220" width="100%" style={{ maxWidth: 260, display: 'block', margin: '0 auto' }} role="img" aria-label="다섯 영역의 간격 레이더">
+    <svg viewBox="0 -14 220 244" width="100%" style={{ maxWidth: 260, display: 'block', margin: '0 auto' }} role="img" aria-label="다섯 영역의 간격 레이더">
       {[2.5, 5, 7.5, 10].map((t, k) => (
         <polygon key={k} points={radarPolygon([t, t, t, t, t])} fill="none" stroke="var(--color-border)" strokeWidth={1} />
       ))}
@@ -169,9 +178,14 @@ export function GapRadar({ scores, prev }: { scores: FuturenowScores; prev?: Fut
       <polygon points={radarPolygon(post)} fill="var(--color-primary)" fillOpacity={0.13} stroke="var(--color-primary)" strokeWidth={2} />
       {GAP_AXES.map((a, i) => {
         const [x, y] = radarPoint(i, 12.6);
+        // 숫자를 병기한다(지휘부 지시 2026-09-03) — 면적만으로는 몇인지 읽을 수 없다.
+        //   사전만 있으면 값 하나, 사후가 있으면 `사전 → 사후`.
         return (
           <text key={a.code} x={x} y={y} fontSize={11} fill="var(--color-text-secondary)" textAnchor="middle" dominantBaseline="middle">
-            {a.label}
+            <tspan x={x} dy={-6}>{a.label}</tspan>
+            <tspan x={x} dy={13} fontWeight={700} fill="var(--color-text)">
+              {pre ? `${pre[i]} → ${post[i]}` : post[i]}
+            </tspan>
           </text>
         );
       })}
