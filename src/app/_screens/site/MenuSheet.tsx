@@ -21,6 +21,14 @@ export interface MenuItem {
 export interface MenuGroup {
   title: string;
   items: MenuItem[];
+  /**
+   * 구획 끝에 붙는 **동작**(ADR-185 · 지휘부 결재 2026-09-03).
+   *
+   * ★ 전에는 시트에 로그아웃을 **일부러 안 넣었다** — *「폼 액션이라 링크 목록에 섞으면
+   *   생김새는 같은데 하나만 다르게 동작한다」*(F-3 판정). **그 우려가 옳았고, 그래서 섞지 않는다** —
+   *   링크 목록 **아래**에 구분선을 두고 **회색**으로 세워 «다른 것» 임을 보이게 한다.
+   */
+  action?: React.ReactNode;
 }
 
 /** 시트 안에서 초점을 받을 수 있는 것들. `disabled`·`tabindex=-1` 은 뺀다. */
@@ -152,6 +160,8 @@ export function MenuSheet({
                   {it.label}
                 </Link>
               ))}
+              {/* 동작은 링크 **아래**에 선다 — 위 규약대로 목록에 섞지 않는다. */}
+              {g.action ? <div className="site-sheet__action">{g.action}</div> : null}
             </div>
           ))}
         </div>

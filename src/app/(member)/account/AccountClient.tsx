@@ -19,6 +19,7 @@ import {
 } from '@/core/supabase/cookiePolicy';
 
 export function AccountClient({
+  email,
   initialName,
   initialPhone,
   initialAddress,
@@ -28,6 +29,7 @@ export function AccountClient({
   allowKpc,
   membership,
 }: {
+  email: string;
   initialName: string;
   initialPhone: string;
   initialAddress: string;
@@ -159,6 +161,7 @@ export function AccountClient({
 
   return (
     <AccountForm
+      email={email}
       name={name}
       phone={phone}
       address={address}
