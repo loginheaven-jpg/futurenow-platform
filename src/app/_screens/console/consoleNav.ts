@@ -53,9 +53,9 @@ export function consoleNav(input: { role: 'user' | 'coach' | 'admin'; pathname: 
   const cohortId = cohortIdOf(pathname);
   if (cohortId) {
     groups.push({
-      title: '이 기수',
+      title: '이 회기',
       items: [
-        { href: `/coach/cohort/${cohortId}`, label: '기수 대시보드' },
+        { href: `/coach/cohort/${cohortId}`, label: '회기 대시보드' },
         { href: `/coach/cohort/${cohortId}/checkin`, label: '회차 갈무리' },
         { href: `/coach/cohort/${cohortId}/matrix`, label: '진단 결과' },
         { href: `/coach/cohort/${cohortId}/values`, label: '가치 카드' },

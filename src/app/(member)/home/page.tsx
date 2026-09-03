@@ -21,7 +21,7 @@ import type { NewsRowItem } from '@/app/_screens/site/NewsRow';
 import { HomeScreen } from './HomeScreen';
 import { recentNews } from '@/app/_lib/publicNews';
 import { shortDate } from '@/app/_lib/shortDate';
-import { roleTargets, homeIsCohortDashboard } from './roleTarget';
+import { roleTargets, homeIsCohortDashboard, primaryCohort } from './roleTarget';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
 
 export const dynamic = 'force-dynamic';
@@ -52,8 +52,9 @@ export default async function MemberHomePage() {
   //   **조립은 회기 홈과 같은 함수**를 쓴다(`renderCohortDashboard`) — 사본이 아니다(불변식 23).
   //   판정은 카드가 **표시한 칸**으로 한다(`participant`) — `href` 로 유추하면 U-4 형태다.
   if (homeIsCohortDashboard(targets)) {
-    const only = cohorts.filter((c) => c.status === 'active')[0];
-    if (only) return renderCohortDashboard(ctx, me, only);
+    // 「어느 회기인가」는 `primaryCohort` **한 곳**이 정한다(불변식 23).
+    const only = primaryCohort(cohorts);
+    if (only) return renderCohortDashboard(ctx, me, only, cohorts.filter((c) => c.status === 'active'));
   }
 
   // 동행 피드 바로가기(2차 · 발주 §6.3) — **탭바를 짓지 않기로 확정**했으므로 진입은 기존 표면으로 낸다.

@@ -19,13 +19,13 @@ export const HOME_COHORTS: MyCohortSummary[] = [
 
 export const HOME_FIXTURE: HomeScreenProps = {
   roles: [{
-    badge: '예봄 2기', who: '참여자', title: '내 기수로 가기',
-    sub: '2회차 갈무리가 열려 있습니다', href: '/my/cohorts/c1', ctaLabel: '기수 홈',
+    badge: '예봄 2기', who: '참여자', title: '내 회기로 가기',
+    sub: '2회차 갈무리가 열려 있습니다', href: '/my/cohorts/c1', ctaLabel: '회기 홈',
   }],
   tiles: [
     { icon: 'checkin', title: '오늘의 갈무리', hint: '2회차', href: '/my/cohorts/c1/checkin/2' },
     { icon: 'mirror', title: '되비추기', hint: '나의 기록', href: '/my/cohorts/c1/journey' },
-    { icon: 'feed', title: '동행', hint: '기수와 함께', href: '/feed' },
+    { icon: 'feed', title: '동행', hint: '회기와 함께', href: '/feed' },
     { icon: 'library', title: LIBRARY_NAME, hint: '배포 자료', href: '/library' },
   ],
   news: [
@@ -44,7 +44,7 @@ export const SHEET_FIXTURE: { name: string; role: string; cohort: string; groups
   role: '참여자',
   cohort: '예봄 2기',
   groups: [
-    { title: '여정', items: [{ href: '/my/cohorts/c1', label: '내 기수' }, { href: '/feed', label: '동행' }] },
+    { title: '여정', items: [{ href: '/my/cohorts/c1', label: '내 회기' }, { href: '/feed', label: '동행' }] },
     { title: '진단', items: [{ href: '/home/assessments', label: '체크 허브' }, { href: '/my/values', label: '가치 카드' }] },
     { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
     { title: '계정', items: [{ href: '/account', label: '내 정보' }] },

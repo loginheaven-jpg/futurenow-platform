@@ -35,7 +35,7 @@ import { SCREEN_CHROME, patternOf, resolveBack } from '@/app/_lib/screenChrome';
 import { useChrome } from '@/app/_screens/shell/chromeContext';
 
 /** 「이 기수」 묶음만 탭 줄이 든다. 나머지는 시트가 든다. */
-const TAB_GROUP = '이 기수';
+const TAB_GROUP = '이 회기';
 
 export function ConsoleShell({
   role,

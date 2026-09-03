@@ -27,9 +27,14 @@ describe('roleTarget — **목적지를 한 곳도 바꾸지 않았다**(기존 
     expect(roleTarget('user', [cohort()]).href).toBe('/my/cohorts/c1');
   });
 
-  it('참여자 · 활성 차수 둘 → 목록(하나를 임의로 고르지 않는다)', () => {
-    const t = roleTarget('user', [cohort(), cohort({ cohortId: 'c2' })]);
-    expect(t.href).toBe('/my/cohorts');
+  it('★★ 참여자 · 활성 회기 둘 → **가장 최근 가입한 회기**(ADR-182)', () => {
+    // 옛 사실: 목록으로 보냈다(「하나를 임의로 고르지 않는다」). **지휘부 확정 2026-09-03 로 뒤집혔다** —
+    //   「활성 회기가 둘 이상 참여자는 **회기를 선택하는 UI**가 필요합니다」.
+    //   그래서 **임의로 고르는 것이 아니라 규칙으로 고르고 그 위에서 바꾸게** 한다.
+    //   규칙은 새로 짓지 않았다 — `MemberHome` 이 이미 쓰던 `joinedAt` 내림차순이다.
+    const t = roleTarget('user', [cohort({ joinedAt: '2026-06-01' }), cohort({ cohortId: 'c2', joinedAt: '2026-08-01' })]);
+    expect(t.href, '가장 최근 가입한 회기가 아니다').toBe('/my/cohorts/c2');
+    expect(t.participant, '참여자 거점 표시가 없다 — 그러면 홈이 대시보드를 안 그린다').toBe(true);
   });
 
   it('**보관된 차수는 세지 않는다** — 활성만 거점이 된다', () => {
@@ -135,9 +140,9 @@ describe('roleTargets — 겸직자에게 카드가 둘 선다 (T-5)', () => {
     expect(t.map((x) => x.href)).toEqual(['/admin', '/coach', '/my/cohorts/c1']);
   });
 
-  it('회기가 여럿이면 두 번째 카드는 **목록**이다 — 하나를 임의로 고르지 않는다', () => {
+  it('★ 회기가 여럿이면 두 번째 카드는 **지금 볼 회기**다(ADR-182 — 옛 사실은 목록이었다)', () => {
     const t = roleTargets('coach', [cohort(), cohort({ cohortId: 'c2' })]);
-    expect(t.map((x) => x.href)).toEqual(['/coach', '/my/cohorts']);
+    expect(t.map((x) => x.href)).toEqual(['/coach', '/my/cohorts/c1']);
   });
 
   it('**빈손 카드를 덧붙이지 않는다** — 회기 없는 인도자에게 `체크 보기` 는 겸직이 아니라 노이즈다', () => {

@@ -49,7 +49,7 @@ export const ASSESS_FIXTURE: AssessmentsScreenProps = {
       ],
     },
   ],
-  privacy: <><b>이 결과는 우리 기수 인도자와 함께 봅니다.</b> 다음 만남의 질문과 실행을 정하는 데 사용합니다.</>,
+  privacy: <><b>이 결과는 우리 회기 인도자와 함께 봅니다.</b> 다음 만남의 질문과 실행을 정하는 데 사용합니다.</>,
 };
 
 /**

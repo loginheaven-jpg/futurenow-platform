@@ -140,7 +140,7 @@ export const SCREEN_CHROME: Record<string, ChromeKind> = {
   '/coach': { kind: 'bar', variant: 'root', title: '콘솔', menu: true },
   '/coach/cohorts': { kind: 'bar', variant: 'sub', title: '모든 차수', back: '/coach', menu: true },
   '/coach/new': { kind: 'bar', variant: 'sub', title: '차수 개설', back: '/coach/cohorts', menu: true },
-  '/coach/cohort/[cohortId]': { kind: 'bar', variant: 'sub', title: '기수 대시보드', back: '/coach/cohorts', menu: true },
+  '/coach/cohort/[cohortId]': { kind: 'bar', variant: 'sub', title: '회기 대시보드', back: '/coach/cohorts', menu: true },
   '/coach/cohort/[cohortId]/checkin': { kind: 'bar', variant: 'sub', title: '회차 갈무리 현황', menu: true },
   '/coach/cohort/[cohortId]/checkin/preview': { kind: 'bar', variant: 'sub', title: '갈무리 카드 미리보기', menu: true },
   '/coach/cohort/[cohortId]/group': { kind: 'bar', variant: 'sub', title: '그룹 리포트', menu: true },

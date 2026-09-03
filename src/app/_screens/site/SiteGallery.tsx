@@ -69,8 +69,8 @@ export function SiteGallery({ openSheet = false }: { openSheet?: boolean }) {
 
         <Item n={5} name="RoleCard(site)" note="네이비 면 + 우상단 골드 방사 원">
           <div style={{ maxWidth: 420 }}>
-            <SiteRoleCard badge="예봄 2기" who={<>참여자 · <b>2회차 진행 중</b></>} title="내 기수로 가기"
-                          sub="이번 주 갈무리가 열려 있습니다" cta={{ href: '/my/cohorts', label: '기수 홈' }} />
+            <SiteRoleCard badge="예봄 2기" who={<>참여자 · <b>2회차 진행 중</b></>} title="내 회기로 가기"
+                          sub="이번 주 갈무리가 열려 있습니다" cta={{ href: '/my/cohorts', label: '회기 홈' }} />
           </div>
         </Item>
 
@@ -97,7 +97,7 @@ export function SiteGallery({ openSheet = false }: { openSheet?: boolean }) {
 
         <Item n={12} name="RecruitCard" note="키커 · 제목 · 본문 · CTA(모집 개폐는 화면이 판정)">
           <div style={{ maxWidth: 360 }}>
-            <RecruitCard kicker="NEXT COHORT" title={<>다음 기수를<br />기다리시나요?</>}
+            <RecruitCard kicker="NEXT COHORT" title={<>다음 회기를<br />기다리시나요?</>}
                          body="모집이 열리면 가장 먼저 알려 드립니다." cta={{ href: '#', label: '알림 신청' }} />
           </div>
         </Item>

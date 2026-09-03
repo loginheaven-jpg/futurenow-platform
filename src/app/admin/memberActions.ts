@@ -25,7 +25,7 @@ export function memberStateLabel(state: MemberState): string {
       return HELD_ADMIN_LABEL;
     case 'cohort':
       // 차수 회원은 **산출**이라 자격 이름이 아니다 — 소속이 곧 상태다.
-      return '기수 참여 중';
+      return '회기 참여 중';
     case 'pending':
     default:
       return TIER_LABEL.visitor;

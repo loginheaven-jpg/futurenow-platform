@@ -31,6 +31,11 @@ export interface CohortHomeScreenProps {
   progress?: { label: string; cells: boolean[]; done: number; total: number; cohortName?: string } | null;
   /** 시안 C `.today-card` — 오늘의 갈무리. 열린 회차가 없으면 없다. */
   today?: { tag: string; title: string; line?: string; cta: { href: string; label: string } } | null;
+  /**
+   * **회기 선택 줄**(ADR-182). 활성 회기가 둘 이상일 때만 온다. 없으면 그리지 않는다.
+   * 머리 바로 아래·진행 표시 위 — *어느 회기의 진행인가* 를 먼저 말해야 하기 때문이다.
+   */
+  picker?: React.ReactNode;
   /** 사전진단 미완 등 **오늘보다 먼저 와야 하는 카드**(ADR-80 순서 규칙). */
   before?: React.ReactNode;
   /**
@@ -45,7 +50,7 @@ export interface CohortHomeScreenProps {
 }
 
 export function CohortHomeScreen({
-  head, progress, today, before, actions, children,
+  head, progress, picker, today, before, actions, children,
 }: CohortHomeScreenProps) {
   return (
     <>
@@ -64,6 +69,9 @@ export function CohortHomeScreen({
         </header>
 
         {/* 시안 `.progress` 의 자리 · 형태는 점이다(위 주석). `.p-meta` 의 두 값은 그대로 든다. */}
+        {/* 회기 선택은 진행 표시 **위**다 — «어느 회기의 진행인가» 를 먼저 말해야 한다(ADR-182). */}
+        {picker ? <div style={{ marginBottom: 'var(--space-4)' }}>{picker}</div> : null}
+
         {progress ? (
           <div className="cohort-progress">
             {/* **점이 무엇을 세는지 이름이 있어야 한다.** 라벨을 떨어뜨리면 점만 남아

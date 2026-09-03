@@ -10,6 +10,8 @@ import { buildMemberSheet } from './memberSheet';
 import { HOME_DOOR, CONSOLE_DOOR, ADMIN_DOOR, SITE_DOOR } from '@/app/_vocab/doors';
 import { JOIN_BY_CODE, MY_REPORT, MY_SEMINARS } from '@/app/_vocab/memberMenu';
 import { COHORT_WORD } from '@/core/membershipVocab';
+import { primaryCohort } from '@/app/(member)/home/roleTarget';
+import { PUBLIC_NAV } from '@/app/_screens/site/publicNav';
 
 const cohort = (over: Partial<MyCohortSummary> = {}): MyCohortSummary => ({
   cohortId: 'c1', name: '예봄 2기', coachName: null, status: 'active',
@@ -92,13 +94,27 @@ describe('★ 어휘 — 회기 (지휘부 확정 2026-09-02)', () => {
     expect(vocab, '왜 바꿨는지·어디까지 바꿨는지가 안 적혀 있다').toContain('회기 소속');
   });
 
-  it('★★ **바꾸지 않은 자리는 일부러 둔 것이다** — 결재 문안과 데이터', () => {
-    // 모집 랜딩과 갈무리 문항은 결재 문안이다. 한쪽만 바꾸면 신청 화면과 앱이 달라진다(ADR-171 ② 선례).
-    //   이 잠금은 «아직 안 바꿨다» 가 아니라 **«일부러 안 바꿨다»** 를 적어 두는 자리다.
-    for (const f of ['src/app/(public)/recruit/intake.ts', 'src/instruments/futurenow/checkin/session6.ts']) {
-      expect(readFileSync(f, 'utf8'), `${f} 가 결재 없이 바뀌었다`).toContain('기수');
+  it('★★ **전면으로 갔다**(지휘부 확정 2026-09-03 「회기 로 갑니다」)', () => {
+    // 옛 잠금은 「모집 랜딩·갈무리 문항은 일부러 안 바꿨다」를 적어 두는 자리였다.
+    //   **지휘부가 전면 확정했으므로 그 사실이 뒤집혔다** — 지우지 않고 옮겨 적는다.
+    //   갈무리 문항 잠금(`copyRegression`)이 이 변경을 **정확히 잡았고**(늘어남 1·사라짐 1)
+    //   `regenCopyBaseline --write` 로 스냅샷을 새 사실로 다시 뽑았다.
+    for (const f of ['src/app/(public)/recruit/intake.ts', 'src/instruments/futurenow/checkin/session6.ts',
+                     'src/app/_screens/console/consoleNav.ts', 'src/app/admin/memberActions.ts']) {
+      const src = readFileSync(f, 'utf8');
+      // 주석은 그대로 둔다 — 옛 낱말을 지우면 왜 바뀌었는지 자취가 사라진다. **문안만** 잰다.
+      const copy = src.split(String.fromCharCode(10)).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join(' ');
+      expect(copy, `${f} 에 옛 낱말이 남았다`).not.toContain('기수');
     }
   });
+
+  it('★ 회기명 데이터는 문안이 아니다 — 여기서 못 바꾼다', () => {
+    // `예봄 2기` 는 DB 의 값이고 `shortCohortName` 이 끝의 `n기` 를 뽑는다(최박사 확정 2026-08-29).
+    //   **낱말을 바꿔도 이름은 그대로**다 — 그 사실을 적어 둔다.
+    const vocab = readFileSync('src/core/membershipVocab.ts', 'utf8');
+    expect(vocab, '회기명 축약 규칙이 사라졌다').toContain('shortCohortName');
+  });
+
 });
 
 describe('★★ 홈이 곧 대시보드다 — 조립이 하나다', () => {
@@ -128,5 +144,61 @@ describe('★★ 홈이 곧 대시보드다 — 조립이 하나다', () => {
     const d = readFileSync('src/app/(member)/my/cohorts/[cohortId]/dashboard.tsx', 'utf8');
     // 진단 버튼은 «위로 올리거나 줄에 두거나» 둘 중 하나다. 둘 다면 한 화면에 두 번 선다.
     expect(d).toContain('diagnosisFirst ? null :');
+  });
+});
+
+describe('★★ 회기 선택과 회기 0 (ADR-182 · 지휘부 확정 2026-09-03)', () => {
+  it('★★ 「어느 회기인가」를 **한 곳**이 정한다 — 가장 최근 가입한 활성 회기', () => {
+    const a = cohort({ cohortId: 'a', joinedAt: '2026-06-01' });
+    const b = cohort({ cohortId: 'b', joinedAt: '2026-08-01' });
+    expect(primaryCohort([a, b])?.cohortId, '최근 가입이 아니다').toBe('b');
+    // 보관된 회기는 세지 않는다 — 그 규칙은 안 바뀌었다.
+    expect(primaryCohort([cohort({ status: 'archived' })]), '보관을 골랐다').toBeNull();
+    expect(primaryCohort([]), '없는데 골랐다').toBeNull();
+  });
+
+  it('★ 시트 칩이 **활성 둘 이상에서도** 선다 — 지금 보고 있을 회기의 것이다', async () => {
+    // 옛 사실: 활성이 하나일 때만 칩을 만들었다(「여럿이면 어느 회기인지 말할 수 없다」).
+    //   대시보드가 하나를 골라 그리므로 **말할 수 있게 됐다** — 뒤집힌 사실을 옮겨 적는다.
+    const src = readFileSync('src/app/_lib/memberSheet.ts', 'utf8');
+    expect(src, '시트가 판정을 따로 한다').toContain('primaryCohort(cohorts)');
+    expect(src, '옛 판정이 남았다').not.toContain("active.length === 1 ? active[0] : null");
+  });
+
+  it('★★ 회기가 0이면 **「참여 신청」**이 그 자리다 — 빈 목록으로 보내지 않는다', async () => {
+    const none = await buildMemberSheet(ctx(), [], { hasFeed: false, now: 0, role: 'user', cohortCount: 0 });
+    expect(hrefs(none.groups), '참여 신청 문이 없다').toContain('/recruit');
+    expect(hrefs(none.groups), '빈 목록으로 보낸다').not.toContain('/my/cohorts');
+    // 회기가 있으면 그 문을 내지 않는다 — 필요 없는 사람에게 권하지 않는다.
+    const some = await buildMemberSheet(ctx(), [cohort()], { hasFeed: false, now: 0, role: 'user', cohortCount: 1 });
+    expect(hrefs(some.groups), '회기가 있는데 참여 신청을 권한다').not.toContain('/recruit');
+  });
+
+  it('★ 참여 신청 이름을 **짓지 않았다** — 벨트 메뉴가 든 그 말이다', () => {
+    const src = readFileSync('src/app/_lib/memberSheet.ts', 'utf8');
+    expect(src, '이름을 손으로 적었다').toContain('PUBLIC_NAV.find');
+    expect(PUBLIC_NAV.some((i) => i.href === '/recruit' && i.label === '참여 신청'), '벨트에 그 문이 없다').toBe(true);
+  });
+
+  it('★★ 대시보드가 **회기 선택 줄**을 든다 — `/feed` 와 같은 관용구다(새 부품 0)', () => {
+    const d = readFileSync('src/app/(member)/my/cohorts/[cohortId]/dashboard.tsx', 'utf8');
+    const feed = readFileSync('src/app/(member)/feed/FeedClient.tsx', 'utf8');
+    for (const f of [d, feed]) {
+      expect(f, '회기 선택 줄이 없다').toContain("aria-label=\"회기 선택\"");
+      // 선택은 **면과 테두리**로 가른다 — 색만으로 말하지 않는다.
+      expect(f).toContain("'ui-btn--primary' : 'ui-btn--ghost'");
+    }
+    // 하나뿐이면 줄을 안 그린다 — 고를 것이 없는데 고르라 하지 않는다.
+    expect(d).toContain('choices.length > 1');
+  });
+
+  it('★ 가독성 — **열린 회차가 잠금과 구분된다**(지휘부 승인 2026-09-03)', () => {
+    const css = readFileSync('src/app/_screens/site/site.css', 'utf8');
+    expect(css, '열린 회차에 표시가 없다 — 잠금과 구분되지 않는다').toContain('.site-chip.is-open');
+    // 의미색을 쓰지 않는다(불변식 9) — 네 단이 전부 네이비/골드/회색이다.
+    const chipBlock = css.slice(css.indexOf('.site-chip {'), css.indexOf('.site-chip.is-locked'));
+    for (const bad of ['--color-danger', '--color-warn', 'red', 'orange']) {
+      expect(chipBlock, `회차 칩에 의미색을 썼다: ${bad}`).not.toContain(bad);
+    }
   });
 });

@@ -112,7 +112,7 @@ export default async function Home() {
             <NewsRow items={newsRows} />
             <RecruitCard
               kicker="NEXT COHORT"
-              title={<>다음 기수를<br />기다리시나요?</>}
+              title={<>다음 회기를<br />기다리시나요?</>}
               body="다음 모집 소식을 먼저 보내 드립니다. 교회 · 기관 단위 도입도 문의로 받습니다."
               cta={{ href: '/contact', label: '알림 신청' }}
             />
