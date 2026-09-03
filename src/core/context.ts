@@ -1266,6 +1266,17 @@ class SupabaseCoreContext implements CoreContext {
     if (error) throw new CoreError(`finalizeMyValue 실패: ${error.message}`);
   }
 
+  /**
+   * 처음부터 다시. **이전 결과를 남기지 않는다**(ADR-187 · (가)안).
+   *
+   * 되돌림을 `value_save_progress` 의 전이로 열지 않은 이유가 있다 — 전이표에 final→exploring
+   * 을 넣으면 **저장 경로로도 초기화가 가능해진다.** 지우는 일은 자기 이름을 가진 한 곳에서만.
+   */
+  async restartMyValue(cohortId: string | null): Promise<void> {
+    const { error } = await this.sb.rpc('value_restart', { p_cohort_id: cohortId });
+    if (error) throw new CoreError(`restartMyValue 실패: ${error.message}`);
+  }
+
   async patchMyValue(input: {
     cohortId: string | null;
     labels?: Partial<{ v1: string; v2: string; v3: string }>;

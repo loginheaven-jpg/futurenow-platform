@@ -202,6 +202,7 @@ export interface CoreContext {
     candidates?: number[];
   }): Promise<void>;
   finalizeMyValue(cohortId: string | null, ids: [number, number, number]): Promise<void>; // 본인 · 선저장(value_finalize)
+  restartMyValue(cohortId: string | null): Promise<void>; // 본인 · 처음부터 다시(value_restart DEFINER · **이전 결과를 덮어쓴다**)
   patchMyValue(input: { // 본인 · 확정 후 라벨·대조 증분(value_patch · 안 넘긴 값은 보존)
     cohortId: string | null;
     labels?: Partial<{ v1: string; v2: string; v3: string }>;
