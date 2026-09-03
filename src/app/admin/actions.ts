@@ -2,6 +2,9 @@
 // 본부 멤버 역할 변경 — 기존 setUserRole(set_user_role RPC) 위 배선. 권한·가드는 RPC 내부에서 강제.
 import type { ContactDetail, MemberActivity, Role, UserProfile } from '@/contracts';
 import { createServerContext } from '@/core/supabase/server';
+// ★ **내부 메시지가 화면으로 새지 않게**(U-6) — 정책은 `_lib/actionError` 한 곳이 든다.
+//   전에는 이 파일 여섯 액션이 `e.message` 를 그대로 올렸고, 그것은 «판단된 적 없는 관행» 이었다.
+import { safeActionError } from '@/app/_lib/actionError';
 
 export async function setUserRoleAction(userId: string, role: Role): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -9,7 +12,7 @@ export async function setUserRoleAction(userId: string, role: Role): Promise<{ o
     await ctx.setUserRole(userId, role);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : '역할 변경에 실패했습니다.' };
+    return { ok: false, error: safeActionError(e, '역할 변경에 실패했습니다.') };
   }
 }
 
@@ -23,7 +26,7 @@ export async function decideCoachApplicationAction(
     await ctx.decideCoachApplication({ applicationId, decision });
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : '신청 처리에 실패했습니다.' };
+    return { ok: false, error: safeActionError(e, '신청 처리에 실패했습니다.') };
   }
 }
 
@@ -42,7 +45,7 @@ export async function memberDetailAction(
     ]);
     return { ok: true, detail: { contact, profile, activity } };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : '세부정보 조회에 실패했습니다.' };
+    return { ok: false, error: safeActionError(e, '세부정보 조회에 실패했습니다.') };
   }
 }
 
@@ -53,7 +56,7 @@ export async function deleteMemberAction(userId: string): Promise<{ ok: boolean;
     await ctx.deleteMember(userId);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : '멤버 삭제에 실패했습니다.' };
+    return { ok: false, error: safeActionError(e, '멤버 삭제에 실패했습니다.') };
   }
 }
 
@@ -64,7 +67,7 @@ export async function setMemberPasswordAction(userId: string, password: string):
     await ctx.setMemberPassword(userId, password);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : '비밀번호 설정에 실패했습니다.' };
+    return { ok: false, error: safeActionError(e, '비밀번호 설정에 실패했습니다.') };
   }
 }
 
@@ -87,6 +90,6 @@ export async function decideMembershipAction(
     await ctx.decideMembership({ userId, decision, note: note.trim() || null });
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : '회원 자격 변경에 실패했습니다.' };
+    return { ok: false, error: safeActionError(e, '회원 자격 변경에 실패했습니다.') };
   }
 }

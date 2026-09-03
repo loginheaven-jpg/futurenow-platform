@@ -38,7 +38,7 @@ export interface Cohort {
   coachId: string;
   instrumentId: InstrumentId;
   name: string;
-  description: string | null; // 코치 작성 차수 소개(컬럼 기존). getCohort 가 채움 — 그 외 select 는 null. 승인 2026-06-30
+  description: string | null; // 코치 작성 회기 소개(컬럼 기존). getCohort 가 채움 — 그 외 select 는 null. 승인 2026-06-30
   code: string;
   status: 'active' | 'archived';
   maxMembers: number;
@@ -52,14 +52,14 @@ export interface Enrollment {
   joinedAt: string;
 }
 
-// 차수 멤버 최소 참조(id+name만) — 코치/운영자가 명단·돌봄에 이름을 붙일 때. ADR-24
+// 회기 멤버 최소 참조(id+name만) — 코치/운영자가 명단·돌봄에 이름을 붙일 때. ADR-24
 // 출처: cohort_member_directory(SECURITY DEFINER) RPC. users RLS 를 넓히지 않고 id+name만 노출(ADR-04).
 export interface MemberRef {
   userId: string;
   name: string | null;
 }
 
-// 멤버 본인 차수 요약(비민감 메타). my_cohorts(DEFINER) RPC — cohorts RLS 멤버 미개방. ADR-29
+// 멤버 본인 회기 요약(비민감 메타). my_cohorts(DEFINER) RPC — cohorts RLS 멤버 미개방. ADR-29
 // 진행: 해당 wave의 responses row 존재 = 완료(responses 불변). 코치 시점 listEnrollments 와 목적 분리.
 export interface MyCohortSummary {
   cohortId: string;
@@ -130,8 +130,8 @@ export interface MemberSummary {
   isSuperAdmin: boolean;
 }
 
-// 차수 멤버 신상정보(코치 조원 열람 — §10 완화, 자기 차수 한정). cohort_member_detail(DEFINER) RPC. ADR-75
-//   전화·이메일 포함. 코치는 자기 차수 조원만·참여 이력은 호출자 가시 범위로 스코프(운영자=전체·코치=자기 차수).
+// 회기 멤버 신상정보(코치 조원 열람 — §10 완화, 자기 회기 한정). cohort_member_detail(DEFINER) RPC. ADR-75
+//   전화·이메일 포함. 코치는 자기 회기 조원만·참여 이력은 호출자 가시 범위로 스코프(운영자=전체·코치=자기 회기).
 export interface CohortMemberDetail {
   name: string | null;
   email: string;
@@ -148,8 +148,8 @@ export interface CohortMemberDetail {
 // 본부 멤버 세부(활동) — 운영자 화면. admin_member_activity(DEFINER) RPC 집계. ADR-71
 //   신원(전화=getPhone·프로필=getProfile)은 별도 게터로 조회하고, 여기선 참여 '활동'만 담는다.
 export interface MemberActivity {
-  ownedCohorts: string[]; // 소유(인도) 차수 이름 — 삭제 시 함께 사라지는 대상(영향 표시)
-  enrolledCohorts: string[]; // 참여(가입) 차수 이름
+  ownedCohorts: string[]; // 소유(인도) 회기 이름 — 삭제 시 함께 사라지는 대상(영향 표시)
+  enrolledCohorts: string[]; // 참여(가입) 회기 이름
   responseCount: number; // 응답 수
 }
 
@@ -167,13 +167,13 @@ export interface CoachApplication {
   createdAt: string;
 }
 
-// 가입 결정용 차수 **공개 메타** (Cohort 도메인 밖 — coachName·memberCount 포함, 민감정보 미포함).
+// 가입 결정용 회기 **공개 메타** (Cohort 도메인 밖 — coachName·memberCount 포함, 민감정보 미포함).
 // 출처: resolve_cohort_by_code 정의자 RPC. 미가입자·비로그인도 코드만 알면 조회 가능.
 // resolveCohortByCode(Cohort 본체)와 목적이 다르다: 이쪽은 "들어갈지 결정"을 위한 표시용.
 export interface CohortPreviewMeta {
   id: string;
   name: string;
-  description: string | null; // 코치 작성 차수 소개(비민감 공개 메타 — resolve_cohort_by_code). 진입-2
+  description: string | null; // 코치 작성 회기 소개(비민감 공개 메타 — resolve_cohort_by_code). 진입-2
   coachName: string | null;
   instrumentId: InstrumentId;
   memberCount: number;
@@ -210,7 +210,7 @@ export interface AlertInput {
 }
 
 // 읽기용 알림(인도자 콘솔). AlertInput(쓰기)에 id·createdAt 부가. ADR-23
-// cohortId 는 읽기에선 null 가능(차수 삭제 시 set null). 돌봄 신호의 **저장된 출처**(재채점 금지).
+// cohortId 는 읽기에선 null 가능(회기 삭제 시 set null). 돌봄 신호의 **저장된 출처**(재채점 금지).
 export interface Alert {
   id: string;
   responseId: string;
@@ -263,7 +263,7 @@ export interface ValueAssessment {
   updatedAt: string;
 }
 
-// 인도자·운영자 열람용 — 본인 것에 사람 이름이 붙는다(같은 차수 코치·운영자만, RLS).
+// 인도자·운영자 열람용 — 본인 것에 사람 이름이 붙는다(같은 회기 코치·운영자만, RLS).
 export interface ValueAssessmentRow extends ValueAssessment {
   userId: string;
   userName: string | null;
@@ -286,8 +286,8 @@ export type MemberState = 'pending' | 'individual' | 'cohort' | 'expired' | 'hel
 //   **한 줄도 바뀌지 않았고 마이그레이션은 0** 이다.
 //
 // **왜 축을 나눴나 — `participant` 를 tier 값으로 두지 않는다.**
-//   참여는 **기수마다 하나씩 여럿**이라 택일 필드에 들어갈 수 없다. 실측이 그렇다(2026-08-29):
-//   기수를 이끌면서 참여도 하는 사람 **2명**(`cohorts.coach_id` 기준), 포럼회원이면서 참여자 **3명**.
+//   참여는 **회기마다 하나씩 여럿**이라 택일 필드에 들어갈 수 없다. 실측이 그렇다(2026-08-29):
+//   회기를 이끌면서 참여도 하는 사람 **2명**(`cohorts.coach_id` 기준), 포럼회원이면서 참여자 **3명**.
 //   최박사 지시가 그것을 문장으로 못 박았다 — *"포럼회원, 00기참여자, 00기인도자는
 //   택일이 아니라 병행표현되어야 한다."*
 
@@ -305,11 +305,11 @@ export type MembershipStatus = 'pending' | 'individual' | 'expired' | 'held';
 /** 자격 — **늘 하나**. 택일 축이다. */
 export type MemberTier = 'visitor' | 'forum' | 'suspended';
 
-/** 소속에서의 역할 — 기수마다 붙는다. */
+/** 소속에서의 역할 — 회기마다 붙는다. */
 export type CohortRoleKind = 'participant' | 'coach';
 
 /**
- * 소속 한 칸. **기수와 역할을 한 항목으로 묶는다** — 화면 표기가 늘 붙어 다니기 때문이다
+ * 소속 한 칸. **회기와 역할을 한 항목으로 묶는다** — 화면 표기가 늘 붙어 다니기 때문이다
  * (`2기 참여자` · `1기 인도자`). 따로 두면 조립할 때 다시 짝지어야 한다(최박사 지시).
  */
 export interface CohortRole {
@@ -317,11 +317,11 @@ export interface CohortRole {
   cohortName: string;
   kind: CohortRoleKind;
   /**
-   * 첫 회차일(ISO date) — **최근 기수를 재는 기준**(최박사 확정 2026-08-30).
+   * 첫 회차일(ISO date) — **최근 회기를 재는 기준**(최박사 확정 2026-08-30).
    *
-   * 좁은 자리에 하나만 들어갈 때 *가장 최근 기수의 포지션* 을 고르는 데 쓴다.
-   * **이름 끝의 숫자로 재지 않는다** — 끝이 `n기` 가 아닌 기수가 섞이면 못 가린다.
-   * 회차가 없는 기수는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
+   * 좁은 자리에 하나만 들어갈 때 *가장 최근 회기의 포지션* 을 고르는 데 쓴다.
+   * **이름 끝의 숫자로 재지 않는다** — 끝이 `n기` 가 아닌 회기가 섞이면 못 가린다.
+   * 회차가 없는 회기는 `null` 이고 **가장 오래된 것으로 친다**(시작한 적이 없다).
    */
   firstSessionAt: string | null;
 }
@@ -345,7 +345,7 @@ export interface MembershipView {
   /**
    * 운영자 — **넷째 축**(최박사가 표시 대상에 넣으셨다 · 2026-08-29).
    *
-   * `cohortRoles` 에 넣을 수 없다 — 운영자는 **기수에 매이지 않아** `cohortId` 가 없다.
+   * `cohortRoles` 에 넣을 수 없다 — 운영자는 **회기에 매이지 않아** `cohortId` 가 없다.
    * 값은 `users.role` 에서 온다(권한 축). 자격(`tier`)·소속(`cohortRoles`)과 **또 다른 축**이라
    * 별도 칸이다. 실측(2026-08-29): `users.role='admin'` **2명**.
    */
@@ -397,7 +397,7 @@ export interface NewsPost {
 // 서가 — **축이 둘이다**(서가 A · 지휘부 판정 ① 2026-08-29).
 //
 //   `tier`     누구까지 보는가 — `public`(익명 포함 전원) · `forum`(포럼회원 이상) · `coach`(인도자·운영자)
-//   `cohortId` 어느 기수의 것인가 — `null` 이면 기수 무관
+//   `cohortId` 어느 회기의 것인가 — `null` 이면 회기 무관
 //
 // **3단만으로는 «본인 회기 자료» 를 담을 수 없다.** 회기는 등급이 아니라 소속이고,
 //   `forum` 으로 두면 **회기가 끝난 참여자가 못 본다**(최박사 확정 ③ 위반).
@@ -567,7 +567,7 @@ export interface FeedComment {
   createdAt: string;
 }
 
-// 피드를 가진 내 기수. 여럿일 때만 화면에 전환이 뜬다. 기본은 목록 첫 행(활성 우선·최신순).
+// 피드를 가진 내 회기. 여럿일 때만 화면에 전환이 뜬다. 기본은 목록 첫 행(활성 우선·최신순).
 export interface FeedCohortRef {
   cohortId: string;
   name: string;

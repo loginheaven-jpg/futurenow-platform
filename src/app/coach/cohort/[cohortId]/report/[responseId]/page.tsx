@@ -96,8 +96,11 @@ export default async function CoachReportPage({
           그 머리가 이미 «퓨처나우 · 문서 이름 · 대상자 · 회기 · 회차 · 날짜» 를 한 덩어리로 든다.
           위에 `ConsoleTitle` 을 또 세우면 **한 화면에 같은 이름이 둘**이다(배포해서 눈으로 잡았다).
           **이름은 표에서 읽어 넘긴다** — 부품 기본값을 쓰면 표와 갈라진다(`/report` 가 실제로 그랬다:
-          표 「개인 리포트」 vs 기본값 「개인 체크 리포트」). */}
-      <ReportPrintHeader title={docTitle('/coach/cohort/[cohortId]/report/[responseId]')} participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />
+          표 「개인 리포트」 vs 기본값 「개인 체크 리포트」).
+          ★ **`screen` 을 명시한다**(U-6) — `.print-only` 가 이제 이름대로 굴므로 안 주면 머리가 사라지고,
+            그러면 **대상자 이름이 화면에서 통째로 없어진다**(이 화면에서 이름을 드는 곳은 머리뿐이다 — 실측).
+          ★ **회기 이름만 접는다** — 띠의 칩이 이미 말한다. 인쇄에는 그대로 남는다. */}
+      <ReportPrintHeader screen cohortOnScreen={false} title={docTitle('/coach/cohort/[cohortId]/report/[responseId]')} participantName={participantName} cohortName={cohortName} waveLabel={waveLabel} dateStr={dateStr} />
       {/* 화면 순서: 해석(위) → 차트(아래). PDF 인쇄에서만 order 로 차트=1페이지·해석=2페이지로 재배치(ADR-69). */}
       <div className="report-interp-block">
         {/* **key 가 정확성이다**(3차 T-2 · 발현 확인 2026-08-27).

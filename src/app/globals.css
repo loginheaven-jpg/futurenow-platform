@@ -211,8 +211,13 @@ body {
 /* ── 인쇄(PDF 저장) — 개인 리포트 A4 ─────────────────────────────────
    window.print() 로 브라우저 "PDF로 저장". 벡터 텍스트·SVG 차트 그대로(래스터화 없음).
    .no-print = 앱 크롬(헤더·버튼) 인쇄 제외 · .print-only = 인쇄 전용 브랜드 문서 헤더. */
+/* ★★ **`!important` 가 있어야 이름대로 군다**(U-6 · 배포해서 눈으로 잡았다).
+   `ReportPrintHeader` 의 래퍼가 `display:'flex'` 를 **인라인**으로 들어 이 규칙을 이겼고,
+   그래서 「인쇄 전용」이라 적힌 머리가 **화면에도 계속 서 있었다** — ADR-188 이 그것을 화면에
+   세우려고 더한 `screen` 소품은 그동안 **아무 일도 하지 않았다.** 인라인을 이기는 길은 이것뿐이다.
+   (`@media print` 쪽도 `!important` 라 나중에 오는 그 규칙이 인쇄에서 이긴다 — 순서가 지킨다.) */
 .print-only {
-  display: none;
+  display: none !important;
 }
 @media print {
   @page {

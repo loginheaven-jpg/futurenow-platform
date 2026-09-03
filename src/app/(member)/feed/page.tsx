@@ -11,7 +11,7 @@
 // 피드를 가진 회기가 없으면 목록을 읽지 않고 안내로 끝낸다 — 빈 화면은 고장으로 읽힌다(IA §5.6).
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { FeedClient } from './FeedClient';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
 
@@ -22,8 +22,9 @@ export default async function FeedPage({
 }: {
   searchParams: Promise<{ cohort?: string }>;
 }) {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login?returnTo=/feed');
 
   const cohorts = await ctx.listFeedCohorts();

@@ -3,13 +3,14 @@
 // 데이터: listMyCohorts(my_cohorts DEFINER RPC, auth.uid() 스코프). 앱은 cohorts·responses 직접 select 안 함.
 import { redirect } from 'next/navigation';
 import { MyCohorts } from '@/app/_screens/MyCohorts';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MyCohortsPage() {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   const cohorts = await ctx.listMyCohorts();

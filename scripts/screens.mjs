@@ -56,7 +56,12 @@ export const AUTH_SCREENS = [
   { name: 'feed',          path: '/feed',                                                  role: 'user',  note: '동행 피드 — QA 차수 kind=seminar 라 열린다(A안)' },
   { name: 'account',       path: '/account',                                               role: 'user',  note: '내 정보 · 로그아웃' },
   { name: 'coach-console', path: '/coach',                                                 role: 'coach', note: '인도자 콘솔 홈 — **사이드바 lg↑/미만**(3차 T-4)' },
-  { name: 'coach-cohort',  path: '/coach/cohort/{cohort}',                                 role: 'coach', note: '차수 상세 — 명단·회차' },
+  { name: 'coach-cohort',  path: '/coach/cohort/{cohort}',                                 role: 'coach', note: '회기 상세 — 명단·회차' },
+  // ★★ **운영자 둘이 U-6 에서 늘었다**(지휘부가 QA 운영자 계정을 만들어 주었다 — 2026-09-03).
+  //   전에는 이 목록에 `/admin` 행이 **아예 없었고**, `admin` 픽스처는 `AdminMembers` 를 껍데기 없이
+  //   단독 렌더한 것이라 `.console-title`·벨트·시트가 그림에 없었다 — **재는 창이 결함이 사는 층을 안 덮었다**(⑨-c).
+  { name: 'admin-home',      path: '/admin',           fixture: 'admin', role: 'admin', note: '본부 — 인도자 신청 · 멤버 관리' },
+  { name: 'admin-approvals', path: '/admin/approvals',                   role: 'admin', note: '가입 승인 큐 — U-6 이전에는 픽스처조차 없었다' },
 ];
 
 /**
@@ -72,7 +77,9 @@ export const FIXTURE_FILES = {
   'home-sheet': { body: 'home-sheet.html', full: false },
   cohort: { body: 'cohort.html', full: true },
   assess: { body: 'assess.html', full: true },
-  // `/admin` 은 QA 계정이 코치라 실라우트로 못 본다 — 게이트는 U-3 에서 검증됐고 레이아웃만 남았다.
+  // ★ **이제 실라우트로 본다**(U-6 — `QA_ADMIN_*` 가 생겼다). 픽스처는 표시 층 대조군으로 남긴다.
+  //   ⚠ 이 픽스처는 `AdminMembers` **단독 렌더**라 껍데기(`.console-title`·벨트·시트)를 담지 않는다.
+  //   그 한계를 적어 두지 않으면 다음 사람이 「봤다」고 읽는다.
   admin: { body: 'admin.html', full: true },
 };
 

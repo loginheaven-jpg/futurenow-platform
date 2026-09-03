@@ -4,7 +4,7 @@
 //   ② 그것은 *인증*만 본다. **회기 소속**은 여기서 본다 — 남의 cohortId 를 URL 에 넣어도 자기 회기가 아니면 못 들어간다.
 //   회기 홈(`../page.tsx`)이 쓰는 것과 같은 방식이고, 게이트를 데이터보다 **먼저** 통과시킨다(CLAUDE §9).
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { ValuesClient } from './ValuesClient';
 
 export const dynamic = 'force-dynamic';
@@ -12,8 +12,9 @@ export const dynamic = 'force-dynamic';
 export default async function ValuesPage({ params }: { params: Promise<{ cohortId: string }> }) {
   const { cohortId } = await params;
 
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   const mine = await ctx.listMyCohorts();

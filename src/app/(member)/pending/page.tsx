@@ -11,7 +11,7 @@
 //   보관하고, 승인 뒤 그 자리로 돌아간다.
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { safeReturnTo } from '@/app/_lib/safeReturn';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
 
@@ -42,8 +42,9 @@ export default async function PendingPage({
 }: {
   searchParams: Promise<{ returnTo?: string }>;
 }) {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   // 게이트를 데이터보다 **먼저** 통과시킨다(CLAUDE §9). 응시 자격이 있으면 여기 머물 이유가 없다.

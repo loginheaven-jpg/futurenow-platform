@@ -12,14 +12,15 @@
 //
 // **게이트를 데이터보다 먼저** 통과시킨다(CLAUDE §9) — 자격 판정 뒤에야 응시 데이터를 읽는다.
 import { redirect } from 'next/navigation';
-import { createServerContext } from '@/core/supabase/server';
+import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { ValuesClient } from '@/app/(member)/my/cohorts/[cohortId]/values/ValuesClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PersonalValuesPage() {
-  const ctx = await createServerContext();
-  const me = await ctx.currentUser();
+  // ★ **한 렌더에 한 번만 묻는다**(ADR-178 · U-6 이 나머지 회원 화면으로 넓혐다).
+  const ctx = await requestContext();
+  const me = await requestUser();
   if (!me) redirect('/login');
 
   // **화면 게이트를 걷었다**(최박사 확정 2026-08-30 · 진단 홈과 같은 근거).
