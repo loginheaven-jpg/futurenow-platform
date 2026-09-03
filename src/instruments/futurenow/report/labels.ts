@@ -22,11 +22,14 @@ export function vitalityZone(score: number): VitalityZone {
 }
 
 // 나침반 4축(NAV1~4) — 좌1~우5. 우측이 접근·자기기준·미래·제로베이스(바람직 방향).
+// `note` = 언제의 이야기인가 · `poles` = 선의 좌우 끝 (지휘부 확정 2026-09-03).
+//   양극 이름은 새로 지은 것이 아니라 `copy.ts` 의 `bipolarLabels` 문장을 **압축한 것**이다.
+//   좌우를 우열로 읽히지 않게 **같은 크기·같은 색**으로 둔다(화살표·강조 없음 · ADR-114).
 export const COMPASS_AXES = [
-  { code: 'NAV1', label: '동기' },
-  { code: 'NAV2', label: '기준' },
-  { code: 'NAV3', label: '시선' },
-  { code: 'NAV4', label: '리셋' },
+  { code: 'NAV1', label: '동기', note: '새 일을 시작할 때', poles: { left: '회피', right: '접근' } },
+  { code: 'NAV2', label: '기준', note: '나를 평가할 때', poles: { left: '비교', right: '자기' } },
+  { code: 'NAV3', label: '시선', note: '나를 설명할 때', poles: { left: '결정론', right: '목적론' } },
+  { code: 'NAV4', label: '리셋', note: '방향을 바꿔야 할 때', poles: { left: '유지', right: '변혁' } },
 ] as const;
 
 // 준비도 GROW+F — 각 1~5
