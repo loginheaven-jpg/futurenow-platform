@@ -152,10 +152,16 @@ describe('roleTargets — 겸직자에게 카드가 둘 선다 (T-5)', () => {
     expect(roleTargets('coach', [cohort({ status: 'archived' })]).map((x) => x.href)).toEqual(['/coach']);
   });
 
-  it('참여자는 언제나 하나다 — 늘어나는 것은 겸직자뿐이다', () => {
-    expect(roleTargets('user', [cohort()])).toHaveLength(1);
-    expect(roleTargets('user', [])).toHaveLength(1);
-    expect(roleTargets('user', [cohort(), cohort({ cohortId: 'c2' })])).toHaveLength(1);
+  it('★ 참여자 거점은 언제나 하나다 — 늘어나는 것은 겸직자와 **참여 신청 안내**뿐이다(ADR-183)', () => {
+    // 회기 0 이면 「참여 신청」 카드가 한 장 더 선다(지휘부 정의 2026-09-03 · ADR-183).
+    //   **참여자 거점 자체는 여전히 하나다** — 그 성질을 이 줄이 지킨다.
+    const base = (t: ReturnType<typeof roleTargets>) => t.filter((x) => x.href !== '/recruit');
+    expect(base(roleTargets('user', [cohort()]))).toHaveLength(1);
+    expect(base(roleTargets('user', []))).toHaveLength(1);
+    expect(base(roleTargets('user', [cohort(), cohort({ cohortId: 'c2' })]))).toHaveLength(1);
+    // 회기가 있으면 신청 안내를 하지 않는다 — 이미 하신 분께 권하지 않는다.
+    expect(roleTargets('user', [cohort()]).some((x) => x.href === '/recruit')).toBe(false);
+    expect(roleTargets('user', []).some((x) => x.href === '/recruit'), '회기 0 인데 안내가 없다').toBe(true);
   });
 
   it('순서가 규칙으로 고정된다 — 역할 카드가 먼저, 참여자 카드가 **맨 뒤**', () => {

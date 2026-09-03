@@ -90,9 +90,15 @@ describe('★★ 착지 — 거점이 하나뿐일 때만 홈을 건너뛴다', 
     expect(landingFor(roleTargets('admin', NONE))).toBeNull();
   });
 
-  it('★ 기수 없는 참여자는 **건너뛰지 않는다** — 폴백은 거점이 아니다', () => {
+  it('★ 회기 없는 참여자는 **건너뛰지 않는다** — 폴백은 거점이 아니다', () => {
     const t = roleTargets('user', NONE);
-    expect(t).toHaveLength(1);
+    // ★ 옛 사실은 「카드 한 장」이었다. **ADR-183 으로 「참여 신청」이 한 장 더 선다** —
+    //   지휘부 정의(「가입은 했지만 세미나 참여신청을 하지 않은 사람들」)가 그 카드를 요구한다.
+    //   **폴백이 첫 장인 것은 그대로다** — 지금 할 수 있는 일이 먼저고 신청은 다음 걸음이다.
+    expect(t).toHaveLength(2);
+    expect(t[1].href, '참여 신청 카드가 없다').toBe('/recruit');
+    expect(t[1].title, '결재 문안이 아니다').toBe('세미나에 참여하시려면');
+    expect(t[1].sub).toBe('참여 신청을 하시면 회기가 열립니다.');
     expect(t[0].fallback, '폴백 표시가 없다 — 그러면 착지 규칙이 유추를 하게 된다').toBe(true);
     // 여기서 건너뛰면 자기 자리가 아닌 곳에 떨어지고 홈의 소식·서가를 영영 못 본다.
     expect(landingFor(t), '폴백으로 건너뛰었다').toBeNull();
