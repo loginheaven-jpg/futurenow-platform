@@ -163,10 +163,15 @@ const radarPolygon = (values: number[]): string => values.map((v, i) => radarPoi
 export function GapRadar({ scores, prev }: { scores: FuturenowScores; prev?: FuturenowScores }) {
   const post = GAP_AXES.map((a) => scores.gap[a.code as keyof FuturenowScores['gap']]);
   const pre = prev ? GAP_AXES.map((a) => prev.gap[a.code as keyof FuturenowScores['gap']]) : null;
-  // 위쪽 라벨이 잘려 있었다 — 꼭짓점 라벨이 y≈4 에 놓이는데 글자 절반이 위로 나간다.
-  //   **좌표를 옮기지 않고 창을 넓힌다**(viewBox 위로 14). 점·선·면의 자리는 한 칸도 안 바뀐다.
+  // 라벨이 위·좌·우로 잘려 있었다 — 위 꼭짓점은 글자 절반이 위로 나가고, 숫자를 병기하자
+  //   좌우 꼭짓점의 글자가 창 밖으로 나갔다(배포해서 눈으로 잡았다 — 「재정 3 → 5」가 「3 → !」로 보였다).
+  //   **좌표를 옮기지 않고 창을 넓힌다.** 점·선·면의 자리는 한 칸도 안 바뀐다.
+  //
+  // 그룹 화면은 **평균**이라 소수가 나온다 — 반올림하지 않으면 `5.333333333333333` 이 그대로 찍힌다.
+  //   정수면 정수로, 아니면 소수 첫째 자리까지.
+  const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
   return (
-    <svg viewBox="0 -14 220 244" width="100%" style={{ maxWidth: 260, display: 'block', margin: '0 auto' }} role="img" aria-label="다섯 영역의 간격 레이더">
+    <svg viewBox="-26 -14 272 244" width="100%" style={{ maxWidth: 260, display: 'block', margin: '0 auto' }} role="img" aria-label="다섯 영역의 간격 레이더">
       {[2.5, 5, 7.5, 10].map((t, k) => (
         <polygon key={k} points={radarPolygon([t, t, t, t, t])} fill="none" stroke="var(--color-border)" strokeWidth={1} />
       ))}
@@ -184,7 +189,7 @@ export function GapRadar({ scores, prev }: { scores: FuturenowScores; prev?: Fut
           <text key={a.code} x={x} y={y} fontSize={11} fill="var(--color-text-secondary)" textAnchor="middle" dominantBaseline="middle">
             <tspan x={x} dy={-6}>{a.label}</tspan>
             <tspan x={x} dy={13} fontWeight={700} fill="var(--color-text)">
-              {pre ? `${pre[i]} → ${post[i]}` : post[i]}
+              {pre ? `${fmt(pre[i])} → ${fmt(post[i])}` : fmt(post[i])}
             </tspan>
           </text>
         );
