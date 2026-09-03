@@ -119,13 +119,13 @@ export const STATUS_COPY: Record<IntakeStatus, { badge: string | null; cta: stri
   closed: {
     badge: '마감되었습니다',
     cta: '모집이 마감되었습니다',
-    note: '다음 기수 소식을 준비하고 있습니다.',
+    note: '다음 회기 소식을 준비하고 있습니다.',
     enabled: false,
   },
   ended: {
     badge: null,
-    cta: '이번 기수는 끝났습니다',
-    note: '다음 기수 소식을 준비하고 있습니다.',
+    cta: '이번 회기는 끝났습니다',
+    note: '다음 회기 소식을 준비하고 있습니다.',
     enabled: false,
   },
 };

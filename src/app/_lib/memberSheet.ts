@@ -10,11 +10,15 @@ import type { CoreContext, MyCohortSummary } from '@/contracts';
 import type { MenuGroup } from '@/app/_screens/site/MenuSheet';
 import type { SessionChip } from '@/app/_screens/site/SessionChipStrip';
 import { buildSessionChips } from '@/app/(member)/home/sessionChips';
+import { primaryCohort } from '@/app/(member)/home/roleTarget';
+
+/** 참여 신청 문 — **벨트 메뉴가 든 그 항목을 그대로 읽는다.** 이름을 여기서 짓지 않는다(불변식 23). */
+const RECRUIT_DOOR = PUBLIC_NAV.find((i) => i.href === '/recruit') ?? { href: '/recruit', label: '참여 신청' };
 import { openedSessionNos } from '@/app/(member)/my/cohorts/[cohortId]/progress';
 import { VALUE_TOOL } from '@/instruments/futurenow/values/copy';
 import { LIBRARY_NAME } from '@/app/_vocab/library';
 import { HOME_DOOR, CONSOLE_DOOR, ADMIN_DOOR, SITE_DOOR } from '@/app/_vocab/doors';
-import { PUBLIC_SHEET_MINE } from '@/app/_screens/site/publicNav';
+import { PUBLIC_NAV, PUBLIC_SHEET_MINE } from '@/app/_screens/site/publicNav';
 import { JOIN_BY_CODE, MY_REPORT, MY_SEMINARS } from '@/app/_vocab/memberMenu';
 
 export interface MemberSheet {
@@ -41,8 +45,9 @@ export async function buildMemberSheet(
   cohorts: MyCohortSummary[],
   opts: { hasFeed: boolean; now: number; role?: 'user' | 'coach' | 'admin'; cohortCount?: number; reportCohortId?: string | null; homeIsDashboard?: boolean },
 ): Promise<MemberSheet> {
-  const active = cohorts.filter((c) => c.status === 'active');
-  const primary = active.length === 1 ? active[0] : null;
+  // ★ 「어느 회기인가」를 여기서 따로 정하지 않는다(ADR-182) — 화면마다 다르게 세던 것이
+  //   지난 회차가 드러낸 결함이다. **활성이 둘 이상이어도** 지금 보고 있을 회기의 칩을 보인다.
+  const primary = primaryCohort(cohorts);
 
   let chips: SessionChip[] = [];
   if (primary) {
@@ -70,6 +75,7 @@ export async function buildMemberSheet(
   //   생김새는 같은데 하나만 다르게 동작한다. `/account` 안에 이미 있다(F-3 판정 · 지휘부 승인).
   const isStaff = opts.role === 'coach' || opts.role === 'admin';
   const many = (opts.cohortCount ?? 0) > 1;
+  const noCohort = (opts.cohortCount ?? 0) === 0;
 
   const groups: MenuGroup[] = [
     // ★ **출구 구획**(ADR-181 · 지휘부 지시 2026-09-02 「서비스홈으로, 사용자홈으로 언제든 갈 수 있어야 한다」).
@@ -89,13 +95,19 @@ export async function buildMemberSheet(
     {
       title: '여정',
       items: [
-        // ★ **홈이 곧 그 회기면 문을 두 번 두지 않는다**(ADR-181). 위 「내 자리」 구획의
-        //   「내 홈」이 이미 그 화면이다 — 배포해서 눈으로 보고 잡았다.
-        ...(opts.homeIsDashboard
-          ? []
-          : [primary
-              ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 회기' }
-              : { href: '/my/cohorts', label: '내 회기' }]),
+        // ★★ **회기가 하나도 없으면 「참여 신청」이 그 자리다**(ADR-182 · 지휘부 정의 2026-09-03
+        //   「회기 0 인 사람들은 **가입은 했지만 세미나 참여신청을 하지 않은 사람들**입니다」).
+        //   전에는 「내 회기」가 **빈 목록**으로 보냈다 — 없는 곳으로 보내는 것에 가깝다.
+        //   문안은 짓지 않았다 — 벨트 메뉴의 「참여 신청」을 그대로 읽는다(불변식 23).
+        ...(noCohort
+          ? [RECRUIT_DOOR]
+          // ★ **홈이 곧 그 회기면 문을 두 번 두지 않는다**(ADR-181). 위 「내 자리」 구획의
+          //   「내 홈」이 이미 그 화면이다 — 배포해서 눈으로 보고 잡았다.
+          : opts.homeIsDashboard
+            ? []
+            : [primary
+                ? { href: `/my/cohorts/${primary.cohortId}`, label: '내 회기' }
+                : { href: '/my/cohorts', label: '내 회기' }]),
         ...(opts.hasFeed ? [{ href: '/feed', label: '동행' }] : []),
         // 회기가 둘 이상일 때만 목록 문을 낸다 — 하나면 위 항목이 곧 그 회기다(없는 곳으로 보내지 않는다).
         ...(many ? [{ href: '/my/cohorts', label: MY_SEMINARS }] : []),

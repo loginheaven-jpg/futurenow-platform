@@ -34,7 +34,7 @@ export default async function PersonalValuesPage() {
       {/* **헤더는 껍데기가 그린다**(U-2 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다 —
           제목은 라우트의 성질이지 화면의 사정이 아니다. */}
       {/* 열람 고지(IA §4.2 ①) — 허락을 구하는 문장이 아니라 알려 주는 문장이다.
-          차수 경로는 "우리 기수 인도자와 함께 봅니다", 개인 경로는 이것이다. */}
+          차수 경로는 "우리 회기 인도자와 함께 봅니다", 개인 경로는 이것이다. */}
       <p className="t-caption" style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-3)' }}>
         이 결과는 나만 봅니다.
       </p>

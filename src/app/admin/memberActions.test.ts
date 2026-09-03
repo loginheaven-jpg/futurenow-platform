@@ -23,7 +23,7 @@ describe('회원 상태 이름 — **단일 출처 어휘를 그대로 쓴다**'
   });
 
   it('`cohort` 는 자격이 아니라 **소속**이다 — 산출값이라 자격 이름을 붙이지 않는다', () => {
-    expect(memberStateLabel('cohort')).toBe('기수 참여 중');
+    expect(memberStateLabel('cohort')).toBe('회기 참여 중');
     expect(memberStateLabel('cohort')).not.toBe(TIER_LABEL.forum);
   });
 });

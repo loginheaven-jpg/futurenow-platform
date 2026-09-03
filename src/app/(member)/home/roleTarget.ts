@@ -127,11 +127,30 @@ export function roleTarget(role: Role, cohorts: MyCohortSummary[]): RoleTarget {
   return roleTargets(role, cohorts)[0];
 }
 
-function participantTarget(cohorts: MyCohortSummary[], who: string): RoleTarget {
-  // 참여자의 거점은 '차수 홈'이다. 차수가 여럿이면 목록이 거점이 된다 — 하나를 임의로 고르지 않는다.
+/**
+ * **지금 보고 있을 회기** — 활성 중 **가장 최근 가입**. 없으면 `null` (ADR-182).
+ *
+ * ★ **판정을 한 곳에 둔다**(불변식 23). 「어느 회기인가」를 화면마다 다르게 세던 것이
+ *   지난 회차가 드러낸 결함이다 — `/my/cohorts` 는 **전체**, 역할 카드는 **활성**,
+ *   `MemberHome` 은 **전체**로 셌다. 이제 셋이 이것을 부른다.
+ *
+ * ★ **정렬 기준은 새로 지은 것이 아니다** — `MemberHome` 의 「진행 중 진단」·「마무리 체크」가
+ *   이미 `joinedAt` 내림차순으로 하나를 고른다. 같은 규칙을 쓴다.
+ */
+export function primaryCohort(cohorts: MyCohortSummary[]): MyCohortSummary | null {
   const active = cohorts.filter((c) => c.status === 'active');
-  if (active.length === 1) {
-    const c = active[0];
+  if (active.length === 0) return null;
+  return [...active].sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))[0];
+}
+
+function participantTarget(cohorts: MyCohortSummary[], who: string): RoleTarget {
+  // 참여자의 거점은 **지금 보고 있을 회기**다(ADR-182).
+  //   ★ 전에는 활성이 둘 이상이면 **목록**이 거점이었다. 지휘부 확정 2026-09-03 —
+  //   「활성 회기가 둘 이상 참여자는 회기를 **선택하는 UI**가 필요합니다」.
+  //   그래서 **하나를 그리고 그 위에서 고르게** 한다(`/feed` 가 이미 그 모양이다).
+  const c = primaryCohort(cohorts);
+  if (c) {
+    const many = cohorts.filter((x) => x.status === 'active').length > 1;
     return {
       href: `/my/cohorts/${c.cohortId}`,
       cohort: c.name,
@@ -141,12 +160,9 @@ function participantTarget(cohorts: MyCohortSummary[], who: string): RoleTarget 
       // 열린 회차가 있으면 그것을 말한다. **판정이 아니라 사실이다** — 재촉하지 않는다.
       sub: c.openSessionNo != null && !c.openSessionSubmitted
         ? `${c.openSessionNo}회차 갈무리가 열려 있습니다`
-        : '내 회기로 바로 갑니다.',
+        : many ? '참여 중인 회기를 봅니다.' : '내 회기로 바로 갑니다.',
       ctaLabel: '회기 홈',
     };
-  }
-  if (active.length > 1) {
-    return { href: '/my/cohorts', who, title: '내 회기', sub: '참여 중인 회기를 봅니다.', ctaLabel: '회기 목록' };
   }
   return { href: '/home/assessments', who, title: '체크', sub: '지금 하실 수 있는 체크를 봅니다.', ctaLabel: '체크 보기', fallback: true };
 }

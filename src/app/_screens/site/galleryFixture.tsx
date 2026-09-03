@@ -32,7 +32,7 @@ export const GROW_ROWS: GrowAxisRow[] = [
 export const BAND_CARDS: BandCard[] = [
   { kicker: '무엇을', title: '설명하지 않고 쓰게 한다', body: '여섯 번의 자리에서 매번 손으로 남긴다.' },
   { kicker: '어떻게', title: '여섯 주의 궤적이 남는다', body: '갈무리가 쌓여 스스로 읽을 수 있는 기록이 된다.' },
-  { kicker: '누구와', title: '같은 기수가 함께 걷는다', body: '매일의 걸음을 서로 본다. 순위는 없다.' },
+  { kicker: '누구와', title: '같은 회기가 함께 걷는다', body: '매일의 걸음을 서로 본다. 순위는 없다.' },
 ];
 
 export const WEEK_CELLS: WeekCell[] = [
@@ -47,7 +47,7 @@ export const WEEK_CELLS: WeekCell[] = [
 export const QUICK_TILES: QuickTile[] = [
   { icon: 'checkin', title: '오늘의 갈무리', hint: '2회차', href: '/my/cohorts/demo/checkin/2' },
   { icon: 'mirror', title: '되비추기', hint: '나의 기록', href: '/my/cohorts/demo/journey' },
-  { icon: 'feed', title: '동행', hint: '기수와 함께', href: '/feed' },
+  { icon: 'feed', title: '동행', hint: '회기와 함께', href: '/feed' },
   { icon: 'library', title: LIBRARY_NAME, hint: '배포 자료', href: '/library' },
 ];
 
@@ -62,7 +62,7 @@ export const CHIPS: SessionChip[] = [
 ];
 
 export const MENU_GROUPS: MenuGroup[] = [
-  { title: '여정', items: [{ href: '/my/cohorts', label: '내 기수' }, { href: '/feed', label: '동행' }] },
+  { title: '여정', items: [{ href: '/my/cohorts', label: '내 회기' }, { href: '/feed', label: '동행' }] },
   { title: '진단', items: [{ href: '/home/assessments', label: '체크 허브' }, { href: '/my/values', label: '가치 카드' }] },
   { title: '자료', items: [{ href: '/library', label: LIBRARY_NAME }, { href: '/news', label: '소식' }] },
   { title: '계정', items: [{ href: '/account', label: '내 정보' }] },

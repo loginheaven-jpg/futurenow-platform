@@ -49,8 +49,10 @@ function RecordButton({ href, title, note }: { href: string; title: string; note
       className="ui-btn ui-btn--ghost"
       style={{ width: '100%', textDecoration: 'none', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}
     >
-      <span>{title}</span>
-      {note ? <span className="t-caption" style={{ color: 'var(--color-text-secondary)', fontWeight: 400 }}>{note}</span> : null}
+      {/* 제목은 본문 굵기로 세우고 곁말은 한 단 낮춘다 — 전에는 곁말이 너무 옅어 안 읽혔다
+          (지휘부 승인 2026-09-03 — 가독성). **색이 아니라 굵기와 크기로** 위계를 만든다. */}
+      <span style={{ fontWeight: 700 }}>{title}</span>
+      {note ? <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>{note}</span> : null}
     </Link>
   );
 }
@@ -61,7 +63,13 @@ function RecordButton({ href, title, note }: { href: string; title: string; note
  * **호출부가 게이트를 먼저 지난다**(불변식 19) — 여기서는 인증·소속을 다시 판정하지 않는다.
  * `c` 는 **이미 내 것으로 확인된** 회기다.
  */
-export async function renderCohortDashboard(ctx: CoreContext, me: CoreUser, c: MyCohortSummary): Promise<ReactNode> {
+export async function renderCohortDashboard(
+  ctx: CoreContext,
+  me: CoreUser,
+  c: MyCohortSummary,
+  /** 고를 수 있는 회기들. 둘 이상이면 머리에 선택 줄이 선다(ADR-182). 안 주면 안 그린다. */
+  choices: MyCohortSummary[] = [],
+): Promise<ReactNode> {
   const cohortId = c.cohortId;
   const sessions = await ctx.listCohortSessions(cohortId);
   // 서버 컴포넌트(force-dynamic)의 요청 시점 벽시계 — 지난 회차 계산에 필수.
@@ -166,6 +174,24 @@ export async function renderCohortDashboard(ctx: CoreContext, me: CoreUser, c: M
     <CohortHomeScreen
       head={{ hello: `${me.name?.trim() || '회원'} 님의 여정`, part: partLabel, title: sessionTitle }}
       progress={progress ? { label: '7주 기록', ...progress, cohortName: c.name } : null}
+      // ★ **회기 선택**(ADR-182 · 지휘부 확정 2026-09-03). 활성이 둘 이상일 때만 선다.
+      //   `/feed` 가 이미 쓰는 **같은 관용구**다 — 그 파일 주석이 *「부품을 새로 만들지 않는 편이
+      //   불변식 20 에도 맞다」* 라고 적었고 여기서도 그대로다. 선택은 **면과 테두리**로 가른다(색 아님).
+      picker={choices.length > 1 ? (
+        <nav aria-label="회기 선택" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+          {choices.map((x) => (
+            <Link
+              key={x.cohortId}
+              href={`/my/cohorts/${x.cohortId}`}
+              aria-current={x.cohortId === cohortId ? 'page' : undefined}
+              className={`ui-btn ${x.cohortId === cohortId ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+              style={{ textDecoration: 'none' }}
+            >
+              {x.name}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
       before={diagnosisFirst ? (
         <div style={neutralCard}>
           <div className="t-body" style={{ color: 'var(--color-text)', marginBottom: 'var(--space-2)' }}>{TOOL.short}</div>

@@ -194,7 +194,7 @@ export const CHECKIN_SESSION_6 = {
       rightLabel: '완전 성공',
     },
     // 5회차와 같되 둘이 다르다 — defaultOpen 과 suggestion.help.
-    //   **마지막 참여자 회차라 펼쳐 둔다** — 여기 적히는 것이 다음 기수 설계에 그대로 들어간다.
+    //   **마지막 참여자 회차라 펼쳐 둔다** — 여기 적히는 것이 다음 회기 설계에 그대로 들어간다.
     facilitatorBox: {
       title: '인도자에게 하고 싶은 말',
       summary: '부탁 · 세미나 제안 · 연락 요청',
@@ -203,7 +203,7 @@ export const CHECKIN_SESSION_6 = {
       suggestion: {
         key: 'suggestion',
         label: '세미나에 대해 바라는 점이 있나요?',
-        help: '이번이 마지막입니다. 여기 적히는 것이 다음 기수 설계에 그대로 들어갑니다.',
+        help: '이번이 마지막입니다. 여기 적히는 것이 다음 회기 설계에 그대로 들어갑니다.',
       },
       suggestionAnon: { key: 'suggestion_anon', label: '이름 없이 전달합니다. 다만 인원이 적은 차수에서는 글의 결로 짐작될 수 있습니다.' },
       contactRequest: {

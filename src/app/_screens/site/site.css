@@ -174,7 +174,12 @@
 }
 .site-chip.is-done { background: var(--color-primary); color: var(--color-text-on-accent); border-color: var(--color-primary); }
 .site-chip.is-current { background: var(--color-accent); color: var(--color-text-on-gold); border-color: var(--color-accent); }
-.site-chip.is-locked { color: var(--color-text-muted); background: var(--color-surface-sunken); border-style: dashed; }
+/* **열린 회차(지난 주)** — 지휘부 승인 2026-09-03 「디자인 변경을 승인합니다. 가독성을 올리세요」.
+   전에는 기본 면 그대로라 **잠금과 구분이 약했다** — 지시(「참여한 회차 색깔변화」)가 이 자리다.
+   면을 채우지 않고 **테두리와 글자만** 본문색으로 올린다: 완료(면)보다 낮고 잠금(회색 점선)보다 높다.
+   네 단이 «면 → 면 → 테두리 → 점선» 으로 내려가므로 **색만이 아니라 형태로도** 읽힌다. */
+.site-chip.is-open { color: var(--color-primary); border-color: var(--color-primary); font-weight: 800; }
+.site-chip.is-locked { color: var(--color-text-muted); background: var(--color-surface-sunken); border-style: dashed; border-color: var(--color-border); }
 
 /* ── 9. SiteGnb ──────────────────────────────────────────────── */
 .site-gnb {
@@ -455,11 +460,14 @@
    캡션급 위계를 지킨다: 카드도 테두리도 두지 않는다(ADR-81 3단에 넷째를 끼우지 않는다). */
 .cohort-progress {
   display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
-  font-size: 12px; color: var(--color-text-secondary); margin-bottom: var(--space-5);
+  /* 12px 은 **읽으라고 있는 줄에 비해 작았다**(지휘부 승인 2026-09-03 — 가독성).
+     13px 로 올리고 라벨을 본문색으로 세운다. 점의 자간도 넓혀 셀 수 있게 한다. */
+  font-size: 13px; color: var(--color-text-secondary); margin-bottom: var(--space-5);
 }
+.cohort-progress > span:first-child { color: var(--color-text); font-weight: 600; }
 /* 색은 채움=본문색 / 비움=muted 뿐이다. 경고색을 쓰지 않는다 —
    안 쓴 회차는 결핍이 아니라 아직 안 온 주다. */
-.cohort-progress__dots { letter-spacing: .15em; color: var(--color-text-muted); }
+.cohort-progress__dots { letter-spacing: .22em; font-size: 15px; color: var(--color-text-muted); }
 .cohort-progress__dots .is-on { color: var(--color-text); }
 .cohort-progress__who { margin-left: auto; color: var(--color-text-muted); }
 

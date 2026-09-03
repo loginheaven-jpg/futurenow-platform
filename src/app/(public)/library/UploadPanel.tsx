@@ -187,7 +187,7 @@ export function UploadPanel({
               어느 기수의 자료인가요 (선택)
               <select className="ui-input" value={cohortId} onChange={(e) => setCohortId(e.target.value)}
                 style={{ display: 'block', width: '100%' }}>
-                <option value="">기수 무관</option>
+                <option value="">회기 무관</option>
                 {cohorts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </label>

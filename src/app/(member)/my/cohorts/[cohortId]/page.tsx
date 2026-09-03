@@ -22,5 +22,6 @@ export default async function CohortHomePage({ params }: { params: Promise<{ coh
   const c = mine.find((x) => x.cohortId === cohortId);
   if (!c) redirect('/my/cohorts');
 
-  return renderCohortDashboard(ctx, me, c);
+  // 활성 회기 전부를 넘긴다 — 둘 이상이면 대시보드 머리에 선택 줄이 선다(ADR-182).
+  return renderCohortDashboard(ctx, me, c, mine.filter((x) => x.status === 'active'));
 }
