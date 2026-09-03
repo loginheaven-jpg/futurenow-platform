@@ -338,20 +338,39 @@ body {
    두 단계를 만들지 않는다 — 넘치는 항목은 상단바 메뉴 시트가 든다.
    현재 항목은 **색만으로 말하지 않는다**(§10 v4): 골드 + 아래 띠 + aria-current 셋을 함께 쓴다. */
 .console-tabs {
-  display: flex; gap: var(--space-1); overflow-x: auto;
-  padding: 0 var(--space-3) var(--space-2); background: var(--navy-900);
+  display: flex; align-items: stretch; min-height: var(--tap-min);
+  padding-left: var(--space-3); background: var(--navy-900);
 }
+/* **회기 칩** — 띠 왼쪽에 고정된다(폰에서도 안 흐른다). 탭만 가로로 흐른다. */
+.console-cohort {
+  display: flex; align-items: center; flex: 0 0 auto;
+  padding-right: var(--space-3); margin-right: var(--space-3);
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff; font-size: 13.5px; font-weight: 800;
+  text-decoration: none; white-space: nowrap;
+  max-width: 42vw; overflow: hidden; text-overflow: ellipsis;
+}
+.console-cohort:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.console-tabs__scroll { display: flex; gap: var(--space-1); overflow-x: auto; }
 .console-tab {
-  display: flex; align-items: center; min-height: var(--tap-min);
-  padding: 0 var(--space-3); border-radius: var(--radius);
-  font-size: 13.5px; font-weight: 600; color: var(--navy-300);
-  text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent;
+  display: flex; align-items: center;
+  padding: 0 var(--space-3);
+  font-size: 13.5px; font-weight: 600; color: rgba(255, 255, 255, 0.66);
+  text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent;
 }
-.console-tab.is-current {
-  background: rgba(219, 176, 90, 0.16); color: var(--gold-300);
-  border-bottom-color: var(--gold-300);
-}
+/* 현재 항목은 **색만으로 말하지 않는다**(§10 v4): 흰 글자 + 아래 띠 + `aria-current` 셋을 함께 쓴다.
+   **골드 면을 걷었다**(지휘부 결재 2026-09-03) — 골드는 §1.5 에서 참여자의 흔적이라
+   인도자 탭이 그것을 쓰면 같은 색이 두 뜻을 갖는다. */
+.console-tab.is-current { color: #fff; border-bottom-color: #fff; }
 .console-tab:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* **화면 이름을 본문이 든다**(결재 2026-09-03 물음 2) — 탭이 없는 콘솔 화면의 첫 줄이다.
+   껍데기가 그리므로 화면마다 이름을 적지 않는다. 폭은 가장 넓은 본문(1200)에 맞췄다. */
+.console-title {
+  max-width: 1200px; margin: 0 auto;
+  padding: var(--space-6) var(--space-4) 0;
+  color: var(--color-primary);
+}
 
 /* 인쇄에는 내비를 싣지 않는다 — 리포트 인쇄(ADR-69)가 문서여야 한다. */
 @media print { .console-tabs { display: none; } .console-shell { display: block; } }

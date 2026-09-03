@@ -53,7 +53,9 @@ describe('껍데기 — 본문의 자리가 하나다', () => {
     //   비상 상황에 콘솔 레이아웃까지 손대지 않기로 한 판단이고, **조건이 그 판단을 지킨다.**
     const src = strip(readFileSync('src/app/_screens/console/ConsoleShell.tsx', 'utf8'));
     const early = src.match(/^\s*if \(.*\) return <>\{children\}<\/>;/m)?.[0] ?? '';
-    expect(early, '콘솔의 조기 반환이 사라졌거나 모양이 바뀌었다').toContain('groups.length === 0');
+    // U-5 에서 `consoleNav` 를 거치지 않고 **역할을 직접** 본다 — 띠가 회기 레이아웃으로 가며
+    //   껍데기가 내비를 부를 이유가 없어졌다. **재는 것은 그대로다**: 갈래가 역할로만 갈리는가.
+    expect(early, '콘솔의 조기 반환이 사라졌거나 모양이 바뀌었다').toContain("role === 'user'");
     expect(early, '조기 반환이 크롬을 보면 갈래가 흔들린다').not.toMatch(/override|chrome/);
   });
 

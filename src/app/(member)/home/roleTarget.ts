@@ -42,7 +42,9 @@ export interface RoleTarget {
 //   *"사본이 될 수 있는 자리는 어휘뿐이다. 기수명 표기와 역할 이름이 그것이고,
 //    그래서 그 둘을 단일 출처에 두고 양쪽이 읽게 하라. 그러면 세 번째로 데지 않는다."*
 //   `운영자` 만 여기 남는다 — 그것은 소속 역할이 아니라 시스템 권한이라 `COHORT_ROLE_LABEL` 에 없다.
-const ROLE_WORD: Record<Role, string> = {
+//   ★ **콘솔 시트 머리도 이것을 읽는다**(U-5) — 그래서 `export` 한다.
+//     내보내지 않으면 그쪽이 '운영자'·'인도자'를 손으로 다시 적게 되고, 그것이 세 번째 사본이다.
+export const ROLE_WORD: Record<Role, string> = {
   admin: '운영자',
   coach: COHORT_ROLE_LABEL.coach,
   user: COHORT_ROLE_LABEL.participant,
