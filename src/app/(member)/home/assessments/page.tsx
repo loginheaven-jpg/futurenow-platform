@@ -13,6 +13,7 @@
 //
 // **4차 F-4 에서 보이는 층을 시안 F 로 교체했다.** 게이트·항목 판정·고지 분기는 그대로다 —
 //   바뀐 것은 그릇뿐이고, 시안의 `완료`·`대기` 도 **색이 아니라 낱말**로 든다.
+import { postJoinHref } from '@/app/_vocab/postNudge';
 import { redirect } from 'next/navigation';
 import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { AssessmentsScreen, type AssessSection } from './AssessmentsScreen';
@@ -93,7 +94,7 @@ export default async function AssessmentsPage() {
           // 아직 열리지 않은 것과 없는 것은 다르므로 **언제 열리는지**를 말한다.
           note: post ? `${post.name} · 지금 하실 수 있어요.` : '6회차를 마친 뒤 열립니다.',
           status: post ? '시작' : '대기',
-          href: post ? `/join?cohort=${post.cohortId}&wave=post` : undefined,
+          href: post ? postJoinHref(post.cohortId) : undefined,
         },
       ],
     },

@@ -1,6 +1,7 @@
 // 내 회기 목록 본문(프레젠테이션 — 부수효과 없음). 멤버 시점: 내가 속한 회기 + 진행 상태.
 // 참여자 팔레트·중립. danger/warning/care 의미색 0(§0.4). 완료 배지만 accent(골드=진행 흔적).
 // 다음 행동: 사전 미완→[진단 시작하기] · 사후 개시·미완→[사후 진단하기](B-2) · 그 외→[내 리포트](순화 뷰, 라우트 구현 완료).
+import { postJoinHref } from '@/app/_vocab/postNudge';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import type { MyCohortSummary } from '@/contracts';
@@ -76,7 +77,7 @@ export function MyCohorts({ cohorts }: { cohorts: MyCohortSummary[] }) {
               // 이 분기는 미제출일 때만 걸리므로 작성 의도가 확정이다 → 편집으로 직행(ADR-86)
               <Link className="ui-btn ui-btn--primary" href={`/my/cohorts/${c.cohortId}/checkin/${c.openSessionNo}?edit=1`} style={full}>이번 주 갈무리</Link>
             ) : c.postOpened && !c.postDone ? (
-              <Link className="ui-btn ui-btn--primary" href={`/join?cohort=${c.cohortId}&wave=post`} style={full}>{TOOL.post} 하기</Link>
+              <Link className="ui-btn ui-btn--primary" href={postJoinHref(c.cohortId)} style={full}>{TOOL.post} 하기</Link>
             ) : (
               <Link className="ui-btn ui-btn--ghost" href={`/my/cohorts/${c.cohortId}`} style={full}>회기 열기</Link>
             )}

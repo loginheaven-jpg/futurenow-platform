@@ -2,7 +2,8 @@
 // 참여 진입 오케스트레이션 — 코드 → 미리보기(실데이터) → 가입/로그인(통합 폼) → 시작 → 프로필/계기 → 응답 → 저장+채점+알림.
 // UX통합가입 S3: 가입 시 프로필(성별·생년…)을 metadata 로 트리거 저장. 프로필 단계는 계정값 프리필 후 motivation(계기)만.
 //   subjectProfile 박제 = saveResponse 직전 계정(getProfile) 값 복사 + motivation(사전). 참여자 화면 경고색 배제.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { resumeStep } from './resumeStep';
 import { useSetChrome } from '@/app/_screens/shell/chromeContext';
 import { joinChrome } from './joinChrome';
 import { useRouter } from 'next/navigation';
@@ -55,23 +56,41 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
   const [mirror, setMirror] = useState<ParticipantMirrorView | null>(null);
   const [busy, setBusy] = useState(false); // 이중 제출 가드. try/finally 로 해제 — 실패 후 재시도 가능.
 
+  /**
+   * 재진입 딥링크를 푼다 — 이미 가입한 사람이면 코드·미리보기를 건너뛰고 시작으로.
+   *
+   * ★★ **로그인 뒤에도 다시 부른다**(U-8). 전에는 이 판정이 `useEffect` 한 번뿐이라
+   *   **비로그인으로 링크를 열면 조용히 코드 입력으로 떨어졌다** — `getCohortMeta` 가
+   *   RLS 로 `null` 을 내는데 그것을 「가입자가 아니다」로만 읽었기 때문이다.
+   *   마무리 체크 안내는 **카톡으로 온다.** 그 사람이 로그인돼 있을 이유가 없다.
+   */
+  const resumeCohort = useCallback(async (): Promise<boolean> => {
+    if (!initialCohortId) return false;
+    const m = await getCohortMeta(initialCohortId); // RLS 미달/비로그인 → null
+    if (!m) return false;
+    setMeta(m);
+    setStep('start'); // 이미 가입자 — 코드·미리보기 생략
+    return true;
+  }, [initialCohortId]);
+
   useEffect(() => {
     if (!initialCohortId) return;
     let cancelled = false;
     (async () => {
-      const m = await getCohortMeta(initialCohortId); // RLS 미달/비로그인 → null
       if (cancelled) return;
-      if (m) {
-        setMeta(m);
-        setStep('start'); // 이미 가입자 — 코드·미리보기 생략
-      } else {
-        setStep('code'); // 안전 폴백
-      }
+      if (await resumeCohort()) return;
+      // 판정은 순수 함수가 한다(`resumeStep`) — `null` 의 뜻 둘을 가르는 자리다.
+      const { data } = await supabase.auth.getUser();
+      if (cancelled) return;
+      setStep(resumeStep({ hasMeta: false, signedIn: !!data.user })); // 로그인 뒤 `onLogin` 이 다시 푼다
     })();
     return () => {
       cancelled = true;
     };
-  }, [initialCohortId]);
+    // `supabase` 는 `useMemo` 로 한 번 만들어 이 컴포넌트 생애 동안 바뀌지 않는다 —
+    //   의존성에 넣으면 참조가 매번 새로 보여 **딥링크 해석이 반복된다.**
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCohortId, resumeCohort]);
 
   // 초대 링크 deep-link(A5): ?code= 있으면 코드 입력을 건너뛰고 미리보기로 자동 진입(cohort= 재진입이 우선).
   useEffect(() => {
@@ -150,6 +169,11 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
       await context.setContact({ phone: p.phone ?? null, address: p.address ?? null, bankAccount: p.bankAccount ?? null }).catch(() => {});
       await context.recordConsent('privacy_use', CONSENT_VERSION).catch(() => {});
       if (p.consentSensitive) await context.recordConsent('sensitive_use', CONSENT_VERSION).catch(() => {});
+      // 새 계정은 그 회기 사람이 아니다 — 재진입 딥링크로 왔어도 코드 입력으로 간다(U-8).
+      if (initialCohortId && !(await resumeCohort())) {
+        setStep('code');
+        return;
+      }
       await enrollThenStart();
     } finally {
       setBusy(false);
@@ -168,6 +192,14 @@ export function JoinClient({ initialCohortId = null, initialCode = null, initial
       }
       if (!res.data.session) {
         setError('이메일 확인이 필요할 수 있어요.');
+        return;
+      }
+      // ★ 재진입 딥링크면 **가입 절차를 타지 않는다** — 이미 그 회기 사람이다(U-8).
+      //   `enrollThenStart` 는 코드를 쓰는데 이 경로에는 코드가 없다.
+      if (await resumeCohort()) return;
+      if (initialCohortId) {
+        // 로그인은 됐는데 그 회기 사람이 아니다 — 여기서 비로소 ⑴ 이다.
+        setStep('code');
         return;
       }
       await enrollThenStart();

@@ -52,6 +52,7 @@ export function CohortDetailClient({
   status,
   maxMembers,
   postOpened,
+  postStatus,
   backHref,
   isAdmin,
   canManageMembers,
@@ -64,6 +65,8 @@ export function CohortDetailClient({
   status: 'active' | 'archived';
   maxMembers: number;
   postOpened: boolean; // 사후 진단 개시 여부(cohort.post_opened_at != null). ADR-55
+  /** 마무리 체크 진행(U-8) — 서버가 `responses` 를 wave 로 갈라 센다. 추가 조회 0. */
+  postStatus: { done: number; total: number; pending: string[] };
   backHref: string; // 진입 출처 기반(A′-4) — 서버가 ?from= 로 산출(콘솔/목록)
   isAdmin: boolean; // 운영자면 데이터 있는 회기도 삭제 가능(코치는 빈 회기만). ADR-67
   canManageMembers: boolean; // 참여자 휴지통 노출 — 해당 회기 코치 또는 운영자만(서버 판정). ADR-73
@@ -152,6 +155,7 @@ export function CohortDetailClient({
         status={status}
         maxMembers={maxMembers}
         postOpened={postOpened}
+        postStatus={postStatus}
         backHref={backHref}
         isAdmin={isAdmin}
         canManageMembers={canManageMembers}

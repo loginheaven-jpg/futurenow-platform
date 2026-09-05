@@ -59,6 +59,19 @@ export default async function CohortDetailPage({
     }
   }
 
+  // ★★ **마무리 체크는 따로 센다**(U-8 · 지휘부 지시 2026-09-03 「여러 방식으로 마무리를 독려」).
+  //   `buildCohortRoster` 는 **wave 를 안 가른다** — 사전만 낸 사람도 「응답 완료」로 들어간다.
+  //   그래서 마무리가 열려도 **누가 아직 안 했는지 인도자가 볼 길이 없었다**(U-8 실측).
+  //   독려는 그 명단이 없으면 시작조차 못 한다. **추가 조회 0** — 이미 손에 있는 `responses` 를 가른다.
+  const postDoneIds = new Set(responses.filter((r) => r.wave === 'post' && r.userId).map((r) => r.userId!));
+  const nameOf = new Map(members.map((m) => [m.userId, m.name] as const));
+  const postStatus = {
+    done: enrollments.filter((e) => postDoneIds.has(e.userId)).length,
+    total: enrollments.length,
+    // **이름만 낸다** — 리포트로 가는 문이 아니다(마무리 리포트는 응답이 있어야 선다).
+    pending: enrollments.filter((e) => !postDoneIds.has(e.userId)).map((e) => nameOf.get(e.userId) ?? '참여자'),
+  };
+
   const { roster, responded, waiting, careCount } = buildCohortRoster({ enrollments, responses, alerts, members, trapByUserId });
   const summary: CohortSummary = {
     id: cohort.id,
@@ -90,6 +103,7 @@ export default async function CohortDetailPage({
         status={cohort.status}
         maxMembers={cohort.maxMembers}
         postOpened={cohort.postOpenedAt != null}
+        postStatus={postStatus}
         backHref={backHref}
         isAdmin={me.role === 'admin'}
         canManageMembers={canManageMembers}

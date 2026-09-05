@@ -9,6 +9,7 @@ import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import type { MyCohortSummary } from '@/contracts';
 import { TOOL } from '@/app/_vocab/tool';
+import { POST_OPEN_HEAD, postJoinHref, postOpenBody } from '@/app/_vocab/postNudge';
 
 const cta: CSSProperties = { width: '100%', textDecoration: 'none' };
 
@@ -44,11 +45,11 @@ export function MemberHome({ greetingName, cohorts }: { greetingName: string; co
         </section>
       ) : postPending ? (
         <section style={{ background: 'var(--color-accent-soft)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)', marginBottom: 'var(--space-6)' }}>
-          <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>{TOOL.post}가 열렸어요</p>
+          <p className="t-caption" style={{ color: 'var(--color-primary)', fontWeight: 600, margin: '0 0 var(--space-1)' }}>{POST_OPEN_HEAD}</p>
           <p className="t-body" style={{ color: 'var(--color-text)', margin: '0 0 var(--space-4)' }}>
-            {postPending.name} · 세미나를 마친 지금의 나를 담아 주세요.
+            {postOpenBody(postPending.name)}
           </p>
-          <Link className="ui-btn" href={`/join?cohort=${postPending.cohortId}&wave=post`} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
+          <Link className="ui-btn" href={postJoinHref(postPending.cohortId)} style={{ ...cta, background: 'var(--color-accent)', color: 'var(--color-text-on-gold)' }}>
             {TOOL.post} 하기
           </Link>
         </section>

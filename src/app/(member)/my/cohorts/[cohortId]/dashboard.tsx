@@ -17,6 +17,7 @@
 //   ⑵ 동행 피드에 **내가 마지막으로 쓴 날**을 병기한다(ADR-180 · 새 RPC).
 //   ⑶ 옛 「진단 카드」를 없앴다 — 그 안의 세 링크가 전부 버튼 셋과 **중복**이었다.
 //      다만 **ADR-80 의 순서 규칙은 지킨다**: 사전 미완이면 진단 버튼만 오늘 카드 **위로** 올린다.
+import { postJoinHref } from '@/app/_vocab/postNudge';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { CoreContext, CoreUser, MyCohortSummary } from '@/contracts';
@@ -143,7 +144,7 @@ export async function renderCohortDashboard(
   const diagnosis = !c.preDone
     ? { title: TOOL.pre, note: '이어 하기', href: `/join?cohort=${cohortId}` }
     : c.postOpened && !c.postDone
-      ? { title: TOOL.post, note: '이어 하기', href: `/join?cohort=${cohortId}&wave=post` }
+      ? { title: TOOL.post, note: '이어 하기', href: postJoinHref(cohortId) }
       : { title: `${TOOL.pre} 완료`, note: '리포트 보기', href: `/my/cohorts/${cohortId}/report` };
 
   const valueState = valueRow == null ? 'none'
