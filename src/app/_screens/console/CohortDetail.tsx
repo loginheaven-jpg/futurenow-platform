@@ -7,6 +7,7 @@ import { GENERAL_CODE } from '../entry/general';
 import type { CohortSummary, RosterMember } from '../types';
 import { RosterRow } from './RosterRow';
 import { TOOL } from '@/app/_vocab/tool';
+import { POST_OPEN_HEAD, postJoinHref, postNudgeText } from '@/app/_vocab/postNudge';
 
 const nameInputStyle: CSSProperties = {
   flex: 1,
@@ -54,6 +55,7 @@ export function CohortDetail({
   status = 'active',
   maxMembers = 100,
   postOpened = false,
+  postStatus,
   onOpenMember,
   onArchive,
   actionPending = false,
@@ -75,6 +77,8 @@ export function CohortDetail({
   status?: 'active' | 'archived';
   maxMembers?: number;
   postOpened?: boolean; // 사후 진단 개시 여부(개시 컨트롤 상태). ADR-55
+  /** 마무리 체크 진행(U-8) — 없으면 독려 구획을 그리지 않는다(갤러리·픽스처가 그 자리다). */
+  postStatus?: { done: number; total: number; pending: string[] };
   backHref?: string; // 셸 sub 뒤로 경로(→/coach). X2a 모드 셸 전환
   onOpenMember?: (id: string) => void;
   onArchive?: () => void | Promise<void>;
@@ -106,7 +110,7 @@ export function CohortDetail({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const busyAny = busy || actionPending; // 자체 액션 + 부모 refresh 구간
-  const [shared, setShared] = useState<'link' | null>(null); // 재공유 피드백(토스트 미의존)
+  const [shared, setShared] = useState<'link' | 'post' | null>(null); // 재공유 피드백(토스트 미의존)
   const archived = status === 'archived';
 
   // 삭제 가능 판정(ADR-67): 예약 general 회기(체험)는 불가(인프라). 운영자=임의 / 코치=빈 회기만(참여·응답 0).
@@ -182,6 +186,32 @@ export function CohortDetail({
       // 클립보드 불가(비보안 컨텍스트) — 화면의 코드를 직접 전달.
     }
   }
+  /**
+   * 마무리 안내 — **참여자 홈이 쓰는 확정 문안 두 줄 + 주소**를 그대로 보낸다(`_vocab/postNudge`).
+   *   문구를 여기서 짓지 않는 이유: 참여자가 **카톡에서 읽는 말과 로그인해서 보는 말이 같아야** 한다.
+   *   다르면 «다른 것을 말하나» 하고 멈춘다. 관용구는 위 `shareInvite` 와 같다(Web Share → 클립보드).
+   */
+  async function sharePostNudge() {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const text = postNudgeText(cohort.name, cohort.id, origin);
+    const url = `${origin}${postJoinHref(cohort.id)}`;
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: POST_OPEN_HEAD, text, url });
+      } catch {
+        // 사용자 취소·공유 실패 — 조용히(아래 복사로 다시 시도할 수 있다).
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setShared('post');
+      setTimeout(() => setShared(null), 1500);
+    } catch {
+      // 클립보드 불가(비보안 컨텍스트) — 화면의 주소를 직접 전달.
+    }
+  }
+
   async function doArchive() {
     setBusy(true);
     try {
@@ -317,6 +347,28 @@ export function CohortDetail({
         <Button onClick={onGroupReport} style={{ width: '100%', marginBottom: 'var(--space-3)' }}>
           그룹 리포트 보기
         </Button>
+      ) : null}
+
+      {/* ★★ **마무리 체크 독려**(U-8 · 지휘부 지시 2026-09-03). 개시된 회기에만 선다.
+          **위 3숫자는 wave 를 안 가른다** — 사전만 낸 사람도 「응답 완료」다. 그래서 마무리는 따로 센다.
+          **새 부품 0** — 이 화면이 이미 쓰는 `Group`·`Button` 이고, 문구는 참여자 홈의 확정 문안을 읽는다.
+          미완료가 0이면 명단도 버튼도 그리지 않는다(빈 상태 문장을 새로 짓지 않는다). */}
+      {postOpened && postStatus ? (
+        <Group title={TOOL.post}>
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
+            <span className="tnum">{postStatus.done}</span> / <span className="tnum">{postStatus.total}</span> 완료
+          </p>
+          {postStatus.pending.length > 0 ? (
+            <>
+              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>
+                아직 안 함 — {postStatus.pending.join(' · ')}
+              </p>
+              <Button variant="ghost" onClick={sharePostNudge} style={{ width: '100%' }}>
+                {shared === 'post' ? '링크 복사됨 ✓' : '안내 보내기'}
+              </Button>
+            </>
+          ) : null}
+        </Group>
       ) : null}
 
       {/* ★ **「회차 갈무리」로 가는 문은 띠의 탭이 든다**(U-6 · 「중복없이, 일관된 위치」).
