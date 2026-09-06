@@ -2,7 +2,7 @@
 // §8.3 회기 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
 // 덜 쓰는 관리(마감·정원)는 헤더 메뉴. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Button, Stepper } from '@/core/ui';
+import { Button, Disclosure, Stepper } from '@/core/ui';
 import { GENERAL_CODE } from '../entry/general';
 import type { CohortSummary, RosterMember } from '../types';
 import { RosterRow } from './RosterRow';
@@ -102,7 +102,6 @@ export function CohortDetail({
   const done = roster.filter((m) => m.status === 'done');
   const pending = roster.filter((m) => m.status === 'pending');
 
-  const [manageOpen, setManageOpen] = useState(false);
   const [cap, setCap] = useState(maxMembers);
   const [name, setName] = useState(cohort.name);
   const [description, setDescription] = useState(cohort.description ?? '');
@@ -235,19 +234,23 @@ export function CohortDetail({
     <div>
       {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
-      {/* 관리(마감·정원) — 헤더 메뉴. 인도자 화면이라 의미색 허용 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-3)' }}>
-        <button
-          type="button"
-          onClick={() => setManageOpen((o) => !o)}
-          className="t-caption"
-          style={{ minHeight: 'var(--tap-min)', padding: '0 var(--space-3)', border: '1px solid var(--color-border-strong)', borderRadius: 'var(--radius)', background: 'transparent', color: 'var(--color-primary)', cursor: 'pointer' }}
-        >
-          관리
-        </button>
-      </div>
-      {manageOpen ? (
-        <section style={{ padding: 'var(--space-4)', background: 'var(--color-surface-1)', borderRadius: 'var(--radius)', marginBottom: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      {/* ★★ **접힘이라는 사실이 줄 자체에서 읽혀야 한다**(U-10 · 지휘부 지시 2026-09-03
+          「펼침, 접힘 기능인가? 그렇다면 (관리 버튼 대신) 접힘 느낌이 들도록 UI 를 고치자」).
+
+          전에는 **오른쪽 끝 작은 버튼** 하나였고, 열려도 라벨이 그대로에 `aria-expanded` 도 없었다.
+          그래서 누르면 «위에 다른 것이 생기고 원래 것이 아래로 내려간» 것처럼 보여
+          **「두 화면」으로 읽혔다** — 지휘부 관찰이 정확히 그것이었다.
+
+          ★ **새로 그리지 않았다** — `core/ui/Disclosure` 가 이미 있고 **ADR-88 이 규격을 확정**해 뒀다.
+            그 부품 자체가 *같은 실패를 두 번 겪고* 나온 것이다(ADR-88: 「화살표를 두 차례 고쳤는데도
+            여전히 '누를 수 있는 줄'로 분간되지 않았다 — 아이콘 하나로 풀리지 않는 문제라 구조를 바꾼다」).
+            **핵심은 아이콘이 아니라 글자다** — 오른쪽 「펼치기」/「접기」가 지금 열려 있는지까지 말한다.
+
+          ★ 요약 줄은 **낱말을 새로 짓지 않았다** — 안에 있는 항목 이름을 그대로 잇는다.
+          ★ 콘솔에서 `.ui-disc` 를 쓰는 **첫 자리**다(실측 0건). 부품은 인스트루먼트 중립이라 제약이 없다.
+          ★ 본문은 접혀도 DOM 에 남는다(CSS 가 감춘다) — 전에는 조건부 마운트라 열 때마다 입력이 초기화됐다. */}
+      <Disclosure title="관리" summary="이름 · 소개 · 정원 · 마감">
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <div>
             <span className="t-body" style={{ color: 'var(--color-text)' }}>이름</span>
             <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', marginTop: 'var(--space-1)' }}>
@@ -334,7 +337,7 @@ export function CohortDetail({
             </div>
           )}
         </section>
-      ) : null}
+      </Disclosure>
 
       <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <Stat n={done.length} label="응답 완료" color="var(--color-primary)" />
