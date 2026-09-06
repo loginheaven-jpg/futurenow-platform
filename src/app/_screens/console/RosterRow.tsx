@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Button, ListRow } from '@/core/ui';
 import type { RosterMember } from '../types';
+import { toolName } from '@/app/_vocab/tool';
 
 export function RosterRow({
   member,
@@ -21,7 +22,18 @@ export function RosterRow({
 
   const responded = member.status !== 'pending';
   const tone = member.status === 'care' ? 'care' : 'default';
-  const subtitle = member.status === 'care' ? member.note : member.status === 'pending' ? '미응답' : undefined;
+  // ★ **이 행이 여는 문서가 무엇인지 행에서 읽힌다**(U-11 · 지휘부 결재 ADR-193 권고 ㈐).
+  //   명단은 그 사람의 «돌봄 표시 응답, 없으면 최신 응답» 을 싣는다 — **마무리가 열린 뒤에는 최신이 사후다.**
+  //   그 전에는 전부 사전이라 말할 것이 없으므로 `post` 일 때만 붙인다(없는 구분을 지어내지 않는다).
+  //   **새 문안 0** — `toolName` 이 확정 어휘를 든다. 돌봄 사유는 그대로 우선한다(그것이 더 급하다).
+  const subtitle =
+    member.status === 'care'
+      ? member.note
+      : member.status === 'pending'
+        ? '미응답'
+        : member.wave === 'post'
+          ? toolName('post')
+          : undefined;
 
   async function doRemove() {
     setBusy(true);

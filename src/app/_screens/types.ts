@@ -2,6 +2,7 @@
 // CohortPreviewMeta 는 계약으로 승격됨(/contracts, 승인 2026-06-28) — 여기서 재정의하지 않는다.
 
 // 인스트루먼트 표시 정보(진단명·예상 시간) — instrumentId → 표시용. 앱 프레젠테이션.
+import type { Wave } from '@/contracts';
 import { TOOL } from '@/app/_vocab/tool';
 
 export function instrumentDisplay(instrumentId: string): { label: string; minutes: number } {
@@ -17,6 +18,13 @@ export interface RosterMember {
   status: 'care' | 'done' | 'pending';
   note?: string; // 먼저 챙길 분 사유(인도자 화면)
   trap?: string; // 주 함정 라벨(관성/준비/안주 — 소그룹 편성 참고). 응답자만·인스트루먼트가 계산·주입. ADR-77 Phase 3
+  /**
+   * 이 행이 여는 응답의 wave(U-11). **마무리가 열린 뒤에는 같은 행이 다른 문서를 연다** —
+   * 명단은 그 사람의 «돌봄 표시 응답, 없으면 최신 응답» 을 실으므로 개시 뒤에는 사후가 최신이다.
+   * 그 사실이 행에서 읽히지 않으면 인도자는 사전 리포트인 줄 알고 누른다.
+   * 미응답 행에는 없다. `'pre'` 일 때는 표시하지 않는다 — 개시 전에는 전부 사전이라 말할 것이 없다.
+   */
+  wave?: Wave;
 }
 
 export interface CohortSummary {

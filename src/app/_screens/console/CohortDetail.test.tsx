@@ -129,3 +129,37 @@ describe('관리 — 펼침·접힘', () => {
     expect(src, '토글을 손으로 다시 만들었다').not.toContain('setManageOpen');
   });
 });
+
+// ★★ 자리 — **관리는 맨 아래다**(U-11 · ADR-193 권고 ㈎ 결재).
+//   전에는 본문 머리에 있어 펼치면 3숫자·명단이 통째로 아래로 밀렸다.
+//   이 잠금은 **DOM 순서**를 재므로, 다시 위로 올리면 붉어진다.
+describe('관리 — 자리', () => {
+  it('★★ **본문보다 뒤에 온다** — 열어도 위가 밀리지 않는다', () => {
+    const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} onGroupReport={noop} />);
+    const disc = html.indexOf('ui-disc');
+    const stat = html.indexOf('응답 완료');
+    const code = html.indexOf('참여 코드');
+    expect(disc, '접힘 블록이 없다').toBeGreaterThan(-1);
+    expect(stat, '3숫자가 없다').toBeGreaterThan(-1);
+    expect(disc, '관리가 3숫자보다 앞에 있다 — 펼치면 본문이 밀린다').toBeGreaterThan(stat);
+    expect(disc, '관리가 참여 코드보다 앞에 있다').toBeGreaterThan(code);
+  });
+});
+
+// ★ 명단 행 — **여는 문서가 무엇인지 읽힌다**(U-11 · ADR-193 권고 ㈐ 결재).
+describe('명단 행 — 여는 문서', () => {
+  const row = (wave?: 'pre' | 'post'): RosterMember[] => [{ id: 'r1', userId: 'u1', name: '이응답', status: 'done', wave }];
+
+  // ⑬ **「있는가」로 묻지 않는다** — 관리 패널이 「마무리 체크 개시」를 들고 있어
+  //   화면 전체에서 낱말을 세면 그것까지 걸린다. **차이로** 잰다.
+  const count = (roster: RosterMember[]) =>
+    renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} onGroupReport={noop} />).split(TOOL.post).length - 1;
+
+  it('★★ **마무리 응답이면 행이 그렇게 말한다** — 개시 뒤 같은 행이 다른 문서를 연다', () => {
+    expect(count(row('post')), '사후 리포트로 가는데 행이 아무 말도 안 한다').toBe(count(row('pre')) + 1);
+  });
+
+  it('★ **사전에는 붙이지 않는다** — 개시 전에는 전부 사전이라 말할 것이 없다', () => {
+    expect(count(row('pre')), '없는 구분을 지어냈다').toBe(count(row(undefined)));
+  });
+});

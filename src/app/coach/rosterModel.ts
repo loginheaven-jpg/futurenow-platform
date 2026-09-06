@@ -1,11 +1,14 @@
 // 회기 명단 모델(앱층 순수 함수 — 계약 아님). 코치 콘솔 §8.3 의 3숫자·3묶음을 기존 메서드 산출에서 조립.
 // 이름 = listCohortMembers(responseId→userId→name), null 폴백 '참여자'. 돌봄 = listAlerts care/red_flag.
+import type { Wave } from '@/contracts';
 import type { RosterMember } from '@/app/_screens/types';
 
 interface RespLike {
   id: string;
   userId: string | null;
   createdAt: string;
+  /** 이 행이 열 문서의 wave(U-11) — 마무리 개시 뒤에는 최신이 사후다. */
+  wave?: Wave;
 }
 interface AlertLike {
   responseId: string;
@@ -54,10 +57,10 @@ export function buildCohortRoster(input: {
     const careResp = rs.find((r) => careByResp.has(r.id));
     if (careResp) {
       careCount += 1;
-      roster.push({ id: careResp.id, userId: uid, name: name(uid), status: 'care', note: careByResp.get(careResp.id)!.join(' · '), trap: trapOf(uid) });
+      roster.push({ id: careResp.id, userId: uid, name: name(uid), status: 'care', note: careByResp.get(careResp.id)!.join(' · '), trap: trapOf(uid), wave: careResp.wave });
     } else {
       const latest = rs.reduce((a, b) => (b.createdAt > a.createdAt ? b : a));
-      roster.push({ id: latest.id, userId: uid, name: name(uid), status: 'done', trap: trapOf(uid) });
+      roster.push({ id: latest.id, userId: uid, name: name(uid), status: 'done', trap: trapOf(uid), wave: latest.wave });
     }
   }
 

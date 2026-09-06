@@ -234,6 +234,105 @@ export function CohortDetail({
     <div>
       {/* **헤더는 껍데기가 그린다**(U-3 · §12.3 규칙 1). 제목·뒤로는 `_lib/screenChrome` 표가 든다. */}
 
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <Stat n={done.length} label="응답 완료" color="var(--color-primary)" />
+        <Stat n={pending.length} label="대기" color="var(--color-text-muted)" />
+        <Stat n={care.length} label="돌봄" color="var(--care-text)" />
+      </div>
+
+      {/* 회기 단위 집계 — 1주차 오프닝 핵심(그룹 평균·분포). 코치 전용 리얼 리포트. */}
+      {onGroupReport ? (
+        <Button onClick={onGroupReport} style={{ width: '100%', marginBottom: 'var(--space-3)' }}>
+          그룹 리포트 보기
+        </Button>
+      ) : null}
+
+      {/* ★★ **마무리 체크 독려**(U-8 · 지휘부 지시 2026-09-03). 개시된 회기에만 선다.
+          **위 3숫자는 wave 를 안 가른다** — 사전만 낸 사람도 「응답 완료」다. 그래서 마무리는 따로 센다.
+          **새 부품 0** — 이 화면이 이미 쓰는 `Group`·`Button` 이고, 문구는 참여자 홈의 확정 문안을 읽는다.
+          미완료가 0이면 명단도 버튼도 그리지 않는다(빈 상태 문장을 새로 짓지 않는다). */}
+      {postOpened && postStatus ? (
+        <Group title={TOOL.post}>
+          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
+            <span className="tnum">{postStatus.done}</span> / <span className="tnum">{postStatus.total}</span> 완료
+          </p>
+          {postStatus.pending.length > 0 ? (
+            <>
+              {/* ★ **「아직 안 함」을 쓰지 않는다**(지휘부 지적 2026-09-03) — 아래 명단 묶음에
+                  같은 낱말이 **다른 뜻**(응답이 0건인 사람)으로 서 있어 한 화면에 두 뜻이 됐다.
+                  **새 문안이 아니다** — 갈무리 인도자 화면이 이미 쓰는 어휘다
+                  (`checkin/page.tsx:62` — 제출 / 작성 중 / **미작성**).
+                  ⚠ **「작성 중」은 여기에 없다** — 진단 응답에는 그 상태가 존재하지 않는다.
+                  `responses` 에 미제출 상태가 없고(제출 = 행 생성), 서버 초안은 **인도자에게 0행**이며
+                  (`response_drafts` 정책 넷이 전부 `user_id = auth.uid()`), 자동 저장은 localStorage 뿐이라
+                  서버에 닿지도 않는다. 갈무리가 3단계인 것은 `checkin_save` 가 **자동으로 서버에 쓰기** 때문이다. */}
+              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>
+                미작성 — {postStatus.pending.join(' · ')}
+              </p>
+              <Button variant="ghost" onClick={sharePostNudge} style={{ width: '100%' }}>
+                {shared === 'post' ? '링크 복사됨 ✓' : '안내 보내기'}
+              </Button>
+            </>
+          ) : null}
+        </Group>
+      ) : null}
+
+      {/* ★ **「회차 갈무리」로 가는 문은 띠의 탭이 든다**(U-6 · 「중복없이, 일관된 위치」).
+          바로 위 탭과 같은 목적지를 본문이 또 내면 한 화면에 문이 둘이고, 이름도 둘이 된다
+          (탭 「회차 갈무리」 vs 본문 「회차 갈무리 현황」).
+          **「그룹 리포트 보기」는 남긴다** — 그것은 탭에 없는 화면이라 본문이 유일한 문이다. */}
+
+      {care.length > 0 && (
+        <Group title="먼저 챙길 분" color="var(--care-text)">
+          {care.map((m) => (
+            <RosterRow key={m.userId} member={m} onOpen={onOpenMember} onRemove={onRemoveMember} canRemove={canManageMembers} />
+          ))}
+        </Group>
+      )}
+
+      <Group title="응답 완료">
+        {done.length ? (
+          done.map((m) => <RosterRow key={m.userId} member={m} onOpen={onOpenMember} onRemove={onRemoveMember} canRemove={canManageMembers} />)
+        ) : (
+          <p className="t-caption" style={{ color: 'var(--color-text-muted)' }}>아직 없어요.</p>
+        )}
+      </Group>
+
+      <Group title="아직 안 함">
+        {pending.map((m) => (
+          <RosterRow key={m.userId} member={m} onRemove={onRemoveMember} canRemove={canManageMembers} />
+        ))}
+      </Group>
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: 'var(--space-4)',
+          background: 'var(--color-surface-1)',
+          borderRadius: 'var(--radius)',
+        }}
+      >
+        <span className="t-body" style={{ color: 'var(--color-text-secondary)' }}>
+          참여 코드 <strong className="tnum" style={{ color: 'var(--color-primary)', letterSpacing: 2 }}>{cohort.code}</strong>
+        </span>
+        <button
+          type="button"
+          onClick={shareInvite}
+          className="t-caption"
+          style={{ minHeight: 'var(--tap-min)', padding: '0 var(--space-4)', borderRadius: 'var(--radius)', border: '1px solid var(--color-border-strong)', background: 'transparent', color: 'var(--color-primary)', cursor: 'pointer' }}
+        >
+          {shared === 'link' ? '링크 복사됨 ✓' : '다시 공유'}
+        </button>
+      </div>
+
+      {/* ★ **관리는 맨 아래에 둔다**(U-11 · 지휘부 결재 2026-09-03 ADR-193 권고 ㈎).
+          전에는 본문 **머리**에 있어 펼치면 3숫자·명단이 통째로 아래로 밀렸고, 그것이
+          「다른 화면으로 갔다」는 오독의 남은 절반이었다(앞 절반은 U-10 이 접힘 부품으로 고쳤다).
+          맨 아래에서는 **열어도 위가 밀리지 않는다.** 그리고 여기 있는 것들(이름·소개·정원·마감·삭제)은
+          **자주 쓰지 않는 설정**이라 대시보드의 주 내용(3숫자·명단) 뒤가 제자리다 —
+          바로 위 「참여 코드」 카드와도 성격이 같다(회기 자체를 다루는 것). */}
       {/* ★★ **접힘이라는 사실이 줄 자체에서 읽혀야 한다**(U-10 · 지휘부 지시 2026-09-03
           「펼침, 접힘 기능인가? 그렇다면 (관리 버튼 대신) 접힘 느낌이 들도록 UI 를 고치자」).
 
@@ -339,98 +438,6 @@ export function CohortDetail({
         </section>
       </Disclosure>
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-        <Stat n={done.length} label="응답 완료" color="var(--color-primary)" />
-        <Stat n={pending.length} label="대기" color="var(--color-text-muted)" />
-        <Stat n={care.length} label="돌봄" color="var(--care-text)" />
-      </div>
-
-      {/* 회기 단위 집계 — 1주차 오프닝 핵심(그룹 평균·분포). 코치 전용 리얼 리포트. */}
-      {onGroupReport ? (
-        <Button onClick={onGroupReport} style={{ width: '100%', marginBottom: 'var(--space-3)' }}>
-          그룹 리포트 보기
-        </Button>
-      ) : null}
-
-      {/* ★★ **마무리 체크 독려**(U-8 · 지휘부 지시 2026-09-03). 개시된 회기에만 선다.
-          **위 3숫자는 wave 를 안 가른다** — 사전만 낸 사람도 「응답 완료」다. 그래서 마무리는 따로 센다.
-          **새 부품 0** — 이 화면이 이미 쓰는 `Group`·`Button` 이고, 문구는 참여자 홈의 확정 문안을 읽는다.
-          미완료가 0이면 명단도 버튼도 그리지 않는다(빈 상태 문장을 새로 짓지 않는다). */}
-      {postOpened && postStatus ? (
-        <Group title={TOOL.post}>
-          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
-            <span className="tnum">{postStatus.done}</span> / <span className="tnum">{postStatus.total}</span> 완료
-          </p>
-          {postStatus.pending.length > 0 ? (
-            <>
-              {/* ★ **「아직 안 함」을 쓰지 않는다**(지휘부 지적 2026-09-03) — 아래 명단 묶음에
-                  같은 낱말이 **다른 뜻**(응답이 0건인 사람)으로 서 있어 한 화면에 두 뜻이 됐다.
-                  **새 문안이 아니다** — 갈무리 인도자 화면이 이미 쓰는 어휘다
-                  (`checkin/page.tsx:62` — 제출 / 작성 중 / **미작성**).
-                  ⚠ **「작성 중」은 여기에 없다** — 진단 응답에는 그 상태가 존재하지 않는다.
-                  `responses` 에 미제출 상태가 없고(제출 = 행 생성), 서버 초안은 **인도자에게 0행**이며
-                  (`response_drafts` 정책 넷이 전부 `user_id = auth.uid()`), 자동 저장은 localStorage 뿐이라
-                  서버에 닿지도 않는다. 갈무리가 3단계인 것은 `checkin_save` 가 **자동으로 서버에 쓰기** 때문이다. */}
-              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>
-                미작성 — {postStatus.pending.join(' · ')}
-              </p>
-              <Button variant="ghost" onClick={sharePostNudge} style={{ width: '100%' }}>
-                {shared === 'post' ? '링크 복사됨 ✓' : '안내 보내기'}
-              </Button>
-            </>
-          ) : null}
-        </Group>
-      ) : null}
-
-      {/* ★ **「회차 갈무리」로 가는 문은 띠의 탭이 든다**(U-6 · 「중복없이, 일관된 위치」).
-          바로 위 탭과 같은 목적지를 본문이 또 내면 한 화면에 문이 둘이고, 이름도 둘이 된다
-          (탭 「회차 갈무리」 vs 본문 「회차 갈무리 현황」).
-          **「그룹 리포트 보기」는 남긴다** — 그것은 탭에 없는 화면이라 본문이 유일한 문이다. */}
-
-      {care.length > 0 && (
-        <Group title="먼저 챙길 분" color="var(--care-text)">
-          {care.map((m) => (
-            <RosterRow key={m.userId} member={m} onOpen={onOpenMember} onRemove={onRemoveMember} canRemove={canManageMembers} />
-          ))}
-        </Group>
-      )}
-
-      <Group title="응답 완료">
-        {done.length ? (
-          done.map((m) => <RosterRow key={m.userId} member={m} onOpen={onOpenMember} onRemove={onRemoveMember} canRemove={canManageMembers} />)
-        ) : (
-          <p className="t-caption" style={{ color: 'var(--color-text-muted)' }}>아직 없어요.</p>
-        )}
-      </Group>
-
-      <Group title="아직 안 함">
-        {pending.map((m) => (
-          <RosterRow key={m.userId} member={m} onRemove={onRemoveMember} canRemove={canManageMembers} />
-        ))}
-      </Group>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: 'var(--space-4)',
-          background: 'var(--color-surface-1)',
-          borderRadius: 'var(--radius)',
-        }}
-      >
-        <span className="t-body" style={{ color: 'var(--color-text-secondary)' }}>
-          참여 코드 <strong className="tnum" style={{ color: 'var(--color-primary)', letterSpacing: 2 }}>{cohort.code}</strong>
-        </span>
-        <button
-          type="button"
-          onClick={shareInvite}
-          className="t-caption"
-          style={{ minHeight: 'var(--tap-min)', padding: '0 var(--space-4)', borderRadius: 'var(--radius)', border: '1px solid var(--color-border-strong)', background: 'transparent', color: 'var(--color-primary)', cursor: 'pointer' }}
-        >
-          {shared === 'link' ? '링크 복사됨 ✓' : '다시 공유'}
-        </button>
-      </div>
     </div>
   );
 }
