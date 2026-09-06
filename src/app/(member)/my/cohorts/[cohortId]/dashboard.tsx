@@ -141,10 +141,16 @@ export async function renderCohortDashboard(
 
   // 진단 버튼 — 옛 「진단 카드」의 **첫 칸만** 남았다. 나머지 둘(나의 기록·동행)은 아래 버튼과 중복이었다.
   //   문안은 지휘부가 정했다 — 미완이면 「이어 하기」, 마쳤으면 「리포트 보기」(지시 2026-09-02).
+  //
+  //   ★ **마무리는 「시작」이다**(지휘부 지시 2026-09-03 「사후체크 시작 이라고 보여줘야 한다」).
+  //     사전은 «풀다 만 것을 이어서» 라 「이어 하기」가 맞지만, 마무리는 **방금 열린 것**이라
+  //     한 번도 시작하지 않은 사람에게 「이어 하기」라고 하면 **없던 일을 있었다고 말하는 것**이다.
+  //     **새 문안이 아니다** — 체크 허브가 마무리에 이미 「시작」을 쓴다(`assessments/page.tsx:96`).
+  //     같은 대상을 두 화면이 다르게 부르던 것이 함께 풀린다.
   const diagnosis = !c.preDone
     ? { title: TOOL.pre, note: '이어 하기', href: `/join?cohort=${cohortId}` }
     : c.postOpened && !c.postDone
-      ? { title: TOOL.post, note: '이어 하기', href: postJoinHref(cohortId) }
+      ? { title: TOOL.post, note: '시작', href: postJoinHref(cohortId) }
       : { title: `${TOOL.pre} 완료`, note: '리포트 보기', href: `/my/cohorts/${cohortId}/report` };
 
   const valueState = valueRow == null ? 'none'

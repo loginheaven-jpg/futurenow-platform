@@ -283,20 +283,20 @@ export function CohortDetail({
               <Button variant="ghost" onClick={saveCap} disabled={busyAny || cap === maxMembers}>저장</Button>
             </div>
           </div>
-          {/* 마무리 체크 개시 — 세미나 종료 후 코치가 수동 개시(단방향·멱등). 참여자 홈에 '마무리 체크 하기' 노출(B-2). ADR-55 */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
-            <div style={{ minWidth: 0 }}>
-              <span className="t-body" style={{ color: 'var(--color-text)' }}>{TOOL.post}</span>
-              <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>
-                {postOpened ? `개시됨 — 참여자가 ${TOOL.post}에 참여할 수 있어요` : '세미나를 마친 뒤 열어 주세요'}
+          {/* 마무리 체크 개시 — 세미나 종료 후 코치가 수동 개시(단방향·멱등). 참여자 홈에 '마무리 체크 하기' 노출(B-2). ADR-55
+              ★★ **개시된 뒤에는 이 줄을 걷는다**(U-9 · 반증자가 잡았다). U-8 이 본문에 독려 구획을 세우면서
+                「마무리 체크」가 **한 화면에 둘**이 됐다 — 위(관리)는 「개시됨」 뱃지, 아래(본문)는 「n/m 완료」.
+                개시는 **단방향**이라 열린 뒤 이 자리에 남는 것은 **아무 동작도 없는 뱃지**뿐이고,
+                「열렸다」는 사실은 본문 구획이 **서 있는 것 자체로** 말한다(지휘부 목표 「중복없이」). */}
+          {!postOpened ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div style={{ minWidth: 0 }}>
+                <span className="t-body" style={{ color: 'var(--color-text)' }}>{TOOL.post}</span>
+                <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>세미나를 마친 뒤 열어 주세요</div>
               </div>
-            </div>
-            {postOpened ? (
-              <span className="t-caption" style={{ color: 'var(--color-accent)', whiteSpace: 'nowrap', fontWeight: 600 }}>개시됨</span>
-            ) : (
               <Button variant="ghost" onClick={doOpenPost} disabled={busyAny}>{TOOL.post} 개시</Button>
-            )}
-          </div>
+            </div>
+          ) : null}
           {archived ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 회기예요.</p>
@@ -360,8 +360,16 @@ export function CohortDetail({
           </p>
           {postStatus.pending.length > 0 ? (
             <>
+              {/* ★ **「아직 안 함」을 쓰지 않는다**(지휘부 지적 2026-09-03) — 아래 명단 묶음에
+                  같은 낱말이 **다른 뜻**(응답이 0건인 사람)으로 서 있어 한 화면에 두 뜻이 됐다.
+                  **새 문안이 아니다** — 갈무리 인도자 화면이 이미 쓰는 어휘다
+                  (`checkin/page.tsx:62` — 제출 / 작성 중 / **미작성**).
+                  ⚠ **「작성 중」은 여기에 없다** — 진단 응답에는 그 상태가 존재하지 않는다.
+                  `responses` 에 미제출 상태가 없고(제출 = 행 생성), 서버 초안은 **인도자에게 0행**이며
+                  (`response_drafts` 정책 넷이 전부 `user_id = auth.uid()`), 자동 저장은 localStorage 뿐이라
+                  서버에 닿지도 않는다. 갈무리가 3단계인 것은 `checkin_save` 가 **자동으로 서버에 쓰기** 때문이다. */}
               <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>
-                아직 안 함 — {postStatus.pending.join(' · ')}
+                미작성 — {postStatus.pending.join(' · ')}
               </p>
               <Button variant="ghost" onClick={sharePostNudge} style={{ width: '100%' }}>
                 {shared === 'post' ? '링크 복사됨 ✓' : '안내 보내기'}

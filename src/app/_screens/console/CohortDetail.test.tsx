@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
 import { CohortDetail } from './CohortDetail';
 import type { CohortSummary, RosterMember } from '../types';
 import { TOOL } from '@/app/_vocab/tool';
@@ -57,6 +58,9 @@ describe('마무리 체크 독려 구획', () => {
     expect(html).toContain(TOOL.post);
     expect(html, '완료 수를 안 보인다').toContain('1');
     expect(html, '미완료자 이름이 없다 — 독려할 대상을 모른다').toContain('김참여 · 이참여');
+    // ★ **「아직 안 함」을 쓰지 않는다**(지휘부 지적 2026-09-03) — 아래 명단 묶음이 같은 낱말을
+    //   **다른 뜻**(응답 0건)으로 쓴다. 갈무리 화면이 이미 쓰는 「미작성」으로 갈랐다(새 문안 0).
+    expect(html, '미완료를 「미작성」이라 부르지 않는다').toContain('미작성 — 김참여 · 이참여');
     expect(html, '보낼 길이 없다').toContain('안내 보내기');
   });
 
@@ -70,5 +74,22 @@ describe('마무리 체크 독려 구획', () => {
   it('★ 자료가 없으면 그리지 않는다 — 갤러리·픽스처가 그 자리다', () => {
     const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} postOpened />);
     expect(html).not.toContain('안내 보내기');
+  });
+
+  // ★★ **한 화면에 「마무리 체크」가 둘이 아니다**(U-9 · 반증자가 U-8 의 중복을 잡았다).
+  //   개시는 단방향이라 열린 뒤 관리 패널에 남는 것은 **아무 동작도 없는 뱃지**뿐이었고,
+  //   본문 독려 구획과 제목이 같아 한 화면에 같은 이름이 둘이 됐다.
+  it('★★ **개시 뒤 관리 패널의 마무리 줄이 걷힌다** — 이름이 한 번만 선다', () => {
+    const src = readFileSync('src/app/_screens/console/CohortDetail.tsx', 'utf8');
+    // 렌더로 재려면 관리 패널을 눌러야 하는데 정적 렌더에는 클릭이 없다 —
+    //   그래서 **조건이 실재하는지**를 잰다(⑦: 물 것이 있는가).
+    expect(src, '개시 뒤에도 관리 패널이 마무리 줄을 그린다').toContain('{!postOpened ? (');
+    // 그리고 본문 구획은 개시 뒤에만 선다 — 둘이 동시에 서는 조합이 없어야 한다.
+    expect(src).toContain('{postOpened && postStatus ? (');
+  });
+
+  it('★ **개시 전에는 개시 버튼이 살아 있다** — 걷은 것은 뱃지뿐이다', () => {
+    const src = readFileSync('src/app/_screens/console/CohortDetail.tsx', 'utf8');
+    expect(src, '개시 버튼이 사라졌다').toContain('개시</Button>');
   });
 });
