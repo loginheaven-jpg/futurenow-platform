@@ -396,12 +396,17 @@ export const viewport: Viewport = { colorScheme: 'only light', themeColor: '#1A3
 | Card | surface-2 + border-hair + radius-lg |
 | ProgressBar | 트랙 surface-sunken, 채움 accent |
 | SegmentBar · DotScale · NumberSlider · TextArea · CheckRow · StickyScaleHeader | 응답 위젯 §4 |
+| MultiChoiceChips | 다지선다 칩(응답 위젯) |
 | OtpInput | §7.1 코드 5칸 |
 | Stepper | §8.2 정원 −/+ |
 | ListRow | §8 명단 행(이름+상태+화살표/액션). 코치·본부 공용 |
-| StatTriple | §8.3·§8.6 3숫자 요약 |
+| Disclosure | 접힘 블록 — 줄 전체가 버튼 + 오른쪽 「펼치기」/「접기」 **글자** + 꺾쇠(180° 회전) · 최소 52px. **ADR-88** |
 
 - **코어는 인스트루먼트 중립 부품만.** 퓨처나우 전용 색·문구·구조 비포함.
+- ⚠ **이 표는 U-11 에서 사실에 맞췄다.** 드리프트가 **양방향**이었다(실측):
+  코드에 있는데 표에 없던 것 둘(`MultiChoiceChips`·`Disclosure`) · **표에 있는데 코드에 없던 것 하나**(`StatTriple` —
+  `grep -rn StatTriple src` 0건. §8.3 의 3숫자는 공용 부품이 아니라 콘솔 화면이 직접 그린다).
+  **잠금이 없어 양쪽 다 조용했다** — 이제 `tests/coreUiParts.test.ts` 가 `core/ui/index.ts` 의 export 와 이 표를 대조한다.
 
 ### 9.1 리포트 차트군 — **인스트루먼트 소유** (정정)
 - Dumbbell·Radar·ChargeBars·VitalityBand·CareBanner는 **퓨처나우 전용**이므로 `/src/instruments/futurenow/report/`에 둔다. **코어에 두지 않는다.**
@@ -856,8 +861,14 @@ ADR-167 이 같은 3단계를 이미 기각했다(ADR-193 에 근거 전부).
 + 꺾쇠(열리면 180° 회전) · 최소 52px · `--color-surface-2` · focus 2px accent · `prefers-reduced-motion` 존중.
 **핵심은 아이콘이 아니라 글자다.**
 
-⚠ **§9 공용 컴포넌트 표에 `Disclosure` 가 없다**(실측 — 코드 `core/ui/index.ts` 에는 있다).
-표가 코드보다 좁다. 콘솔이 `.ui-disc` 를 쓰는 첫 자리가 되면서 드러났다 — **표 갱신이 필요하다.**
+✅ **§9 표는 U-11 에서 사실에 맞췄고 이제 `tests/coreUiParts.test.ts` 가 양방향으로 잠근다**
+(드리프트가 양쪽에 있었다 — §9 머리의 주석 참조).
+
+**관리 접힘 블록은 화면 맨 아래에 선다**(U-11 · ADR-195). 본문 머리에 있으면 펼칠 때 3숫자·명단이
+통째로 밀려 「다른 화면」으로 읽힌다 — 오독의 나머지 절반이 자리였다. DOM 순서를 잠갔다.
+
+**명단 행은 자기가 여는 문서를 말한다** — 마무리 개시 뒤에는 같은 행이 사후 리포트를 연다.
+`post` 일 때만 부제에 `toolName('post')` 를 붙인다(사전에는 말할 것이 없다).
 
 **개시 뒤 관리 패널의 마무리 줄은 걷힌다** — 개시는 단방향이라 남는 것이 뱃지뿐이고,
 「열렸다」는 사실은 본문 구획이 **서 있는 것 자체로** 말한다(U-8 이 만든 중복을 U-9 가 걷었다).
