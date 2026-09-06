@@ -93,3 +93,39 @@ describe('마무리 체크 독려 구획', () => {
     expect(src, '개시 버튼이 사라졌다').toContain('개시</Button>');
   });
 });
+
+// ★★★ 관리 — **펼침·접힘이라는 사실이 화면에서 읽혀야 한다** (U-10 · 지휘부 지시 2026-09-03
+//   「펼침, 접힘 기능인가? 그렇다면 (관리 버튼 대신) 접힘 느낌이 들도록 UI 를 고치자」).
+//
+//   **이 자리에는 잠금이 하나도 없었다.** `manageOpen`·DOM 순서를 재는 케이스가 0이었고,
+//   그래서 「열림 표시가 없다」는 결함이 오래 살아 있었다 — 아무도 재지 않으면 아무도 모른다.
+//   **먼저 붉게 만들고 고친다**(⑪ — 물 것이 실재하는가 → 물려 본다 → 잠근다).
+describe('관리 — 펼침·접힘', () => {
+  const html = () => renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} onGroupReport={noop} />);
+
+  it('★★ **접힘이라는 사실이 마크업에 있다** — `aria-expanded`', () => {
+    // 없으면 보조기술은 「그냥 버튼」으로 읽고, 눈으로도 열렸는지 알 수 없다.
+    expect(html(), '관리 토글에 aria-expanded 가 없다').toContain('aria-expanded="false"');
+  });
+
+  it('★★ **열림 여부를 «글자»가 말한다** — ADR-88 의 핵심', () => {
+    // ADR-88: 「화살표를 두 차례 고쳤는데도 '누를 수 있는 줄'로 분간되지 않았다 …
+    //   **핵심은 아이콘이 아니라 글자다** — '펼치기'/'접기'가 지금 열려 있는지까지 말해 준다.」
+    expect(html(), '열림 상태를 글자로 말하지 않는다').toContain('펼치기');
+  });
+
+  it('★ **접힘 표시가 눈에도 있다** — 꺾쇠(열리면 180° 회전)', () => {
+    expect(html(), '접힘 표시가 없다').toContain('ui-disc__caret');
+  });
+
+  it('★ **줄 전체가 버튼이다** — 오른쪽 끝 작은 버튼은 「딸린 것」으로 안 읽힌다', () => {
+    expect(html(), '전폭 머리가 아니다').toContain('ui-disc__head');
+  });
+
+  it('★★★ **새로 그리지 않았다** — 확정 부품을 쓴다(불변식 20 · ADR-88)', () => {
+    const src = readFileSync('src/app/_screens/console/CohortDetail.tsx', 'utf8');
+    expect(src, '공용 접힘 부품을 안 쓴다').toContain('Disclosure');
+    // 손으로 만든 토글이 되살아나면 규격이 다시 갈린다.
+    expect(src, '토글을 손으로 다시 만들었다').not.toContain('setManageOpen');
+  });
+});
