@@ -11,6 +11,8 @@ import { CHECKIN_SESSION_5 } from './session5';
 import { CHECKIN_SESSION_6 } from './session6';
 import { getCheckinSession } from './index';
 import { neededBacks, resolveMirrorSet } from './slots';
+import { AXIS_INDEX } from './journey';
+import { readFileSync } from 'node:fs';
 
 const c = CHECKIN_SESSION_6;
 
@@ -25,9 +27,10 @@ describe('6회차 — 등록과 뼈대', () => {
   });
 
   it('묶음이 둘이고 mood 는 묶음 밖이다', () => {
-    expect(c.today.question?.group).toBe('남는 것을 가리고');
-    expect(c.today.purpose?.group).toBe('남는 것을 가리고');
-    expect(c.today.identity?.group).toBe('한 층을 얹다');
+    // v3 문안 보정 — 어휘만 개정된 활동에 맞췄다. STEP 경계와 일치하는 것은 그대로다.
+    expect(c.today.question?.group).toBe('마지막 자리에서 보고');
+    expect(c.today.purpose?.group).toBe('마지막 자리에서 보고');
+    expect(c.today.identity?.group).toBe('소망을 받아 들고');
     // 회차 전체에 대한 물음이라 묶음에 넣지 않는다.
     // ★ **타입이 이미 잠근다** — `group` 을 선언하지 않아 `satisfies` 가 그 속성을 좁혀 냈고,
     //   여기서 `c.today.mood.group` 을 쓰면 **tsc 가 먼저 운다.** 런타임 단언보다 강하다.
@@ -39,7 +42,7 @@ describe('★ 필수 6칸 — 세는 것과 세지 않는 것', () => {
   it('여섯이고, 쌍 문항은 두 칸이 다 차야 한 칸이다', () => {
     expect(c.requiredTotal).toBe(6);
     const full = {
-      lasting_one: 'a', top_identity: 'b', mood: ['뭉클함'],
+      carry_today: 'a', hope_statement: 'b', mood: ['뭉클함'],
       last_step_result: '했습니다', step_what: 'w', step_when: 'n', self_note: 's',
     };
     expect(c.filledCount(full)).toBe(6);
@@ -47,10 +50,10 @@ describe('★ 필수 6칸 — 세는 것과 세지 않는 것', () => {
     expect(c.filledCount({ ...full, step_when: '' })).toBe(5);
   });
 
-  it('★ `worldview_seen` 과 `step_companion` 을 세지 않는다', () => {
+  it('★ `biggest_regret` 과 `step_companion` 을 세지 않는다', () => {
     const keys = JSON.stringify(c.missingKeys({}));
     // 보이는 선택이라 세지 않는다.
-    expect(keys).not.toContain('worldview_seen');
+    expect(keys).not.toContain('biggest_regret');
     // **이 회차 설계상 가장 지키고 싶은 칸이지만** 이름을 못 대는 참여자가 반드시 있고
     //   그때 제출이 막힌다 — 마지막 회차에서 제출을 막는 대가가 얻는 것보다 크다.
     expect(keys).not.toContain('step_companion');
@@ -158,19 +161,23 @@ describe('★ 마음 낱말이 1~5회차와 문자열로 겹치지 않는다', (
 });
 
 describe('★ 문항 교체가 되돌아가지 않는다 (CC_MEMO §4)', () => {
-  it('문항 1 이 **활동을 지목한다**', () => {
-    // 원안은 워크북 어느 칸인지 카드만 봐서는 몰랐다.
-    expect(c.today.question!.label).toContain('오늘 남은 시간을 헤아려 보고');
-    expect(c.today.question!.label, '원안이 되살아났다').not.toContain('마지막까지 남는다고');
+  it('문항 1 이 **오늘로 가져올 한 가지**를 받는다', () => {
+    // 인도자가 즉석에서 두 번 만든 전환이고, 관통 프레임이 실제로 착지하는 유일한 칸이다.
+    expect(c.today.question!.label).toContain('오늘로 가져오기로 하신 한 가지');
+    expect(c.today.question!.label, '원안이 되살아났다').not.toContain('남은 시간을 헤아려');
+    // ★ **비워 둔 사람이 막히지 않는다** — 옮길 것이 없어도 지금 떠오른 것을 적을 수 있다.
+    expect(c.today.question!.help, '필수 칸인데 옮길 것이 없으면 막힌다').toContain('지금 떠오른 것');
   });
 
   it('문항 2 가 **강의 구조를 걷어냈다** — 보조 문구 없음 · 선택 표기 있음', () => {
     const f = c.today.purpose!.fields[0];
-    expect(f.label).toContain('만약 3일 후에 죽음 앞에 선다면');
+    expect(f.label).toContain('무엇을 가장 후회할 것 같았습니까');
     // 현장 칠판을 전제한 문장이었다. 카드에는 그 그림이 없다.
     expect(f.label, '원안이 되살아났다').not.toContain('두 세계관');
-    // ★ 무거운 질문에 안심 문구를 달면 "이건 무거운 질문입니다"라고 알리는 꼴이 되어 방어를 부른다.
-    expect('help' in f, '보조 문구가 붙었다').toBe(false);
+    // ★★ **꺼질 수 있는 활동을 묻지 않는다**(v3 §2) — 세계관 비교는 차수 구성에 따라 생략된다.
+    expect(f.label, '꺼질 수 있는 활동이 되살아났다').not.toContain('세계관');
+    // 보조 문구는 v3 가 **붙이라고** 정했다 — 무거운 칸에 비워 둘 권리를 말로 준다.
+    expect(c.today.purpose!.help, '비워 둘 권리를 말하지 않는다').toContain('비워 두고');
     // 답하기 어려운 사람에게 침묵할 권리를 남긴다.
     expect(c.today.purpose!.badge).toBe('선택');
   });
@@ -182,6 +189,52 @@ describe('나눔 후보 열 — 제3자 이름을 올리지 않는다', () => {
     expect(keys).not.toContain('love_person');
     expect(keys).not.toContain('step_companion');
     // 선택 칸이라 비는 자리가 있으나 **비어 있을 가능성은 배제 사유가 아니다**(ADR-99).
-    expect(keys).toContain('worldview_seen');
+    expect(keys).toContain('biggest_regret');
+  });
+});
+
+// ★★★ v3 §7 수용 기준 — **문안 보정이 되돌아가지 않는다.**
+describe('★ v3 문안 보정 (실제 진행 반영)', () => {
+  const DEAD = ['lasting_one', 'still_matters', 'top_identity', 'worldview_seen'];
+  const src = () => readFileSync('src/instruments/futurenow/checkin/session6.ts', 'utf8');
+
+  it('★★ **폐기 키가 문안에 0건이다** — 주석은 세지 않는다', () => {
+    // 주석에는 남을 수 있다(왜 바꿨는지가 사라지면 안 된다). **코드만** 센다.
+    const body = src()
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split(String.fromCharCode(10))
+      .filter((l) => !l.trim().startsWith('//'))
+      .join(String.fromCharCode(10));
+    for (const k of DEAD) expect(body, `폐기 키 ${k} 가 남았다`).not.toContain(k);
+  });
+
+  it('★ 책 페이지가 v3 정본과 같다', () => {
+    expect(c.today.question!.label).toContain('246~251쪽');
+    expect(c.today.identity!.label).toContain('278~279쪽');
+  });
+
+  it('★★ `mood` 다섯이 1~5회차와 **문자열로 겹치지 않는다**', () => {
+    const mine = c.today.mood.options.filter((o) => o !== c.today.mood.exclusive);
+    const others = [1, 2, 3, 4, 5].flatMap((n) => getCheckinSession(n)?.today.mood.options ?? []);
+    expect(mine.filter((o) => others.includes(o)), '앞 회차와 같은 낱말이 있다').toEqual([]);
+    // v3 가 바꾼 한 낱말.
+    expect(mine, '예상한 정서가 되살아났다').not.toContain('숙연함');
+    expect(mine, '실측이 낸 낱말이 없다').toContain('기대감');
+  });
+
+  it('★ 1면에 「선택」 배지가 `purpose` 하나뿐이다', () => {
+    expect(c.today.purpose!.badge).toBe('선택');
+    expect('badge' in c.today.question!, 'question 에 배지가 붙었다').toBe(false);
+    expect('badge' in c.today.identity!, 'identity 에 배지가 붙었다').toBe(false);
+  });
+
+  it('★ `hope_statement` 의 placeholder 가 정본 그대로다', () => {
+    expect(c.today.identity!.placeholder).toBe('나는 ______ 사람으로 살아가기를 소망합니다');
+  });
+
+  it('★★ **종단 축에 6회차가 선다** — 여섯 달 동안 비어 있던 줄이다', () => {
+    expect(AXIS_INDEX[6], '6회차가 축에 없다').toBe(1);
+    const f = c.summaryFields[AXIS_INDEX[6]];
+    expect('key' in f && f.key, '축이 소망 선언을 가리키지 않는다').toBe('hope_statement');
   });
 });

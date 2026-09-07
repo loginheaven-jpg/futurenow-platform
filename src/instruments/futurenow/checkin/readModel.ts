@@ -8,6 +8,7 @@
 //   (3) 한국어 문자열 리터럴 0 — 라벨·보조문구는 전부 sessionN.ts 원문. 문안 이중진실을 만들지 않는다.
 //       (표시 전용 신규 문안이 필요하면 뷰 컴포넌트가 갖는다. 이 파일은 갖지 않는다.)
 import { getCheckinSession } from './index';
+import { withLegacyKeys } from './legacyKeys';
 
 // 누가 보는가. 'self'=작성자 본인 · 'facilitator'=인도자(코치·운영자).
 export type ReadAudience = 'self' | 'facilitator';
@@ -71,6 +72,8 @@ export function buildCheckinRead(
   audience: ReadAudience,
 ): ReadBlock[] {
   const copy = getCheckinSession(sessionNo);
+  // 옛 키로 저장된 답도 읽는다(6회차 문안 보정 · `legacyKeys`). 저장은 언제나 새 키다.
+  answers = withLegacyKeys(sessionNo, answers);
   if (!copy) return [];
 
   const out: ReadBlock[] = [];

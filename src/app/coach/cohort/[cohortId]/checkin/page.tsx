@@ -10,6 +10,7 @@ import { ScheduleSeedClient } from './ScheduleSeedClient';
 import { CoachPhotos } from './CoachPhotos';
 import { RosterDetail, type RosterEntry } from './RosterDetail';
 import { defaultSessionNo } from './defaultSession';
+import { withLegacyKeys } from '@/instruments/futurenow/checkin/legacyKeys';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,7 +108,12 @@ export default async function CoachCheckinPage({
   // 문장 모아 보기(C2 §4.4) — 실명 + 회차별 요약 열(§5-6) + 편지 사진(ADR-83). 나눔 전 인도자가 개별 대면 동의.
   //   열 정의는 세션 레지스트리 summaryFields 에서(1회차 갈망·존재가치·기억 / 2회차 영역·인생의 한 문장·장면). 회차 키 하드코딩 제거(ADR-85).
   //   ADR-86: 이 섹션은 '나눔 도구'로 성격을 유지한다 — 명단 펼침(목양 도구)과 합치지 않는다.
-  const sstr = (c: (typeof checkins)[number], k: string) => (typeof c.answers?.[k] === 'string' ? (c.answers[k] as string) : '');
+  // 옛 키로 저장된 답도 읽는다(6회차 문안 보정 · `legacyKeys`). 저장은 언제나 새 키다 —
+  //   실측에서 이 화면이 `top_identity`·`worldview_seen`·`lasting_one` 을 들고 있었다.
+  const sstr = (c: (typeof checkins)[number], k: string) => {
+    const a = withLegacyKeys(sessionNo, c.answers as Record<string, unknown> | null | undefined);
+    return typeof a[k] === 'string' ? (a[k] as string) : '';
+  };
   const isAdmin = me.role === 'admin';
   const summaryFields = getCheckinSession(sessionNo)?.summaryFields ?? [];
   const perMember = enrolled.map((c) => ({
