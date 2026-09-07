@@ -5,6 +5,7 @@
 //   코어는 회차를 몰라야 한다(ADR-90). 계약(`/contracts`)만 바라본다 — 코어를 import 하지 않는다.
 import type { CheckinRecord, CohortSession } from '@/contracts';
 import { getCheckinSession } from './index';
+import { withLegacyKeys } from './legacyKeys';
 
 // ── 칸 상태 ────────────────────────────────────────────────────────────────
 // **행이 없어도 '미착수'와 '아직 안 열림'은 다르다** — 전자는 연락할 사람이고 후자는 아니다.
@@ -33,9 +34,14 @@ export function cellState(row: CheckinRecord | null, session: CohortSession, now
  * 3회차가 `gap_want`('지금 가장 바라는 것')인 이유: 칩으로 고른 `gap_area` 는 `summaryFields` 에 없고,
  * 종단 축의 나머지 넷이 전부 문장인데 `gap_area` 는 낱말 하나다. `index.ts` 의 축 주석도 그에 맞췄다.
  *
- * 6회차는 발주 시 한 줄 더한다. **7회차는 인도자 세션이라 참여자 카드가 없다.**
+ * **6회차는 `1`(「나에게 주어진 소망」)이다** — 이 줄이 여섯 달 동안 비어 있었다.
+ *   주석이 「발주 시 한 줄 더한다」고 예약했는데 6회차가 착수·배포될 때 채워지지 않았고,
+ *   그래서 **종단 축에 6회차가 아예 서지 않았다**(미등록 회차는 `label: null`).
+ *   `[0]`(「오늘로 가져올 한 가지」)이 아닌 이유는 나머지 넷과 같다 — 축은 **정체성 계열**이고,
+ *   1회차 존재가치 → 2회차 인생의 한 문장 → 6회차 소망 선언이 한 줄로 이어진다.
+ *   **7회차는 인도자 세션이라 참여자 카드가 없다.**
  */
-export const AXIS_INDEX: Record<number, number> = { 1: 0, 2: 1, 3: 0, 4: 3, 5: 0 };
+export const AXIS_INDEX: Record<number, number> = { 1: 0, 2: 1, 3: 0, 4: 3, 5: 0, 6: 1 };
 
 /** 축 값 — `summaryFields` 가 단일 키와 한 쌍(1회차 갈망) 두 변형을 갖는다. */
 export type AxisValue = { kind: 'text'; text: string } | { kind: 'pair'; from: string; to: string };
@@ -67,7 +73,8 @@ export function longitudinalAxis(rows: CheckinRecord[], sessions: CohortSession[
       const copy = getCheckinSession(s.sessionNo);
       const field = copy ? copy.summaryFields[AXIS_INDEX[s.sessionNo] ?? 0] : undefined;
       if (!copy || !field) return { sessionNo: s.sessionNo, label: null, value: null, state };
-      const a = row?.answers ?? {};
+      // 옛 키로 저장된 답도 읽는다(v3 문안 보정 · `legacyKeys`). 저장은 언제나 새 키다.
+      const a = withLegacyKeys(s.sessionNo, row?.answers);
       if ('from' in field) {
         const from = str(a, field.from);
         const to = str(a, field.to);
