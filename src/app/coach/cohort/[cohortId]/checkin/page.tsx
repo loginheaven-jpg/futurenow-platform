@@ -9,6 +9,7 @@ import { anonNoticeText, buildCheckinRead, readAnonSuggestion } from '@/instrume
 import { ScheduleSeedClient } from './ScheduleSeedClient';
 import { RosterDetail, type RosterEntry } from './RosterDetail';
 import { defaultSessionNo } from './defaultSession';
+import { rosterExpandable } from './rosterExpand';
 import { withLegacyKeys } from '@/instruments/futurenow/checkin/legacyKeys';
 
 export const dynamic = 'force-dynamic';
@@ -70,7 +71,8 @@ export default async function CoachCheckinPage({
       contact: !!ck?.contactRequest,
       // ADR-91 B4: 복귀 안내(checkin_mark 'prompt')가 행을 만들 수 있으므로 '행 존재'로 판정하면
       //   배너만 본 '미작성' 참여자에게 빈 펼침 화살표가 생긴다. 실제 내용이 있을 때만 펼친다.
-      hasRow: !!ck && (ck.hasContent || ck.submittedAt != null),
+      //   ADR-197: **보이는 사진도 내용이다** — 판정은 rosterExpand.ts 한 곳(사유와 부채널 검토는 거기).
+      hasRow: rosterExpandable(ck, (photosByUser.get(m.userId) ?? []).length),
       // 순수 데이터만 경계를 넘긴다 — copy 객체(함수 포함)는 절대 prop 에 싣지 않는다(ADR-85 직렬화 사고).
       blocks: ck
         ? buildCheckinRead(
