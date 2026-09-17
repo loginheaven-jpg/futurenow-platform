@@ -70,7 +70,8 @@ const browser = await chromium.launch();
 async function login(email, password, viewport) {
   const ctx = await browser.newContext({ viewport });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
+  // 하이드레이션 전에 채우면 입력이 상태에 안 들어가 로그인 단추가 비활성으로 남는다(실측).
+  await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
   await page.getByLabel(/이메일/).fill(email);
   await page.getByLabel(/비밀번호/).fill(password);
   await page.getByRole('button', { name: /로그인/ }).click();
@@ -90,6 +91,9 @@ async function fakeImage(name, text) {
 }
 
 const staffImgs = async (page) => page.locator(`img[alt="${TITLE}"]`).count();
+// 운영자 삭제 표시 — **CSS 로 정확히 잰다.** 처음엔 getByRole(name) 으로 쟀는데 실화면에 단추가 있는데도 0 을 냈다
+//   (HTML 덤프로 확인). 그러면 인도자 쪽 「없음」 통과도 **자를 안 물린 0** 이었다 — 운영자 쪽 ≥ 2 가 이 자가 무는 증거다.
+const adminDeletes = async (page) => page.locator('button[aria-label="사진 삭제(운영자)"]').count();
 const ROSTER = `${BASE}/coach/cohort/${cohortId}/checkin?session=${S}&open=${userId}`;
 
 let exitCode = 0;
@@ -101,7 +105,7 @@ async function deleteDownTo(page, target) {
   const start = await staffImgs(page);
   for (let i = 0; i < start - target + 2 && (await staffImgs(page)) > target; i++) {
     const n = await staffImgs(page);
-    await page.getByRole('button', { name: '사진 삭제' }).last().click();
+    await page.locator('button[aria-label="사진 삭제"]').last().click();
     await until('삭제가 화면에', () => staffImgs(page), (m) => m === n - 1);
   }
   return staffImgs(page);
@@ -113,6 +117,9 @@ try {
   user = await login(env.QA_USER_EMAIL, env.QA_USER_PASSWORD, { width: 390, height: 844 });
   await user.goto(`${BASE}/my/cohorts/${cohortId}/checkin/${S}?edit=1`, { waitUntil: 'domcontentloaded' });
   await user.getByText(TITLE, { exact: true }).first().waitFor({ timeout: LIMIT });
+  // **하이드레이션 전에 누르면 클릭이 사라진다**(실측 — 서버가 그린 단추는 보이지만 아직 손이 없다).
+  //   글자가 보인다는 것은 손이 붙었다는 뜻이 아니다. 네트워크가 가라앉을 때까지 기다린다(상한 있음).
+  await user.waitForLoadState('networkidle', { timeout: LIMIT });
   if (CLEAN) {
     const left = await deleteDownTo(user, 0);
     await until('--clean 저장소 0', objCount, (n) => n === 0);
@@ -138,23 +145,27 @@ try {
   await until('참여자 화면에 두 장', () => staffImgs(user), (n) => n >= shown0 + 2);
   const after = await until('저장소에 원본 둘 + 미리보기 둘', objCount, (n) => n >= before + 4);
   check(after - before === 4, '저장소 원본 2 + 미리보기 2', `${before} → ${after}`);
+  // 미리보기 그림이 **실제로 로드된 뒤** 찍는다 — 장수만 세고 찍었더니 빈 칸이 찍혔다(실측).
+  const loaded = () => user.locator(`img[alt="${TITLE}"]`).evaluateAll((els) => els.filter((e) => e.complete && e.naturalWidth > 0).length);
+  check((await until('미리보기 로드', loaded, (n) => n >= shown0 + 2)) >= 2, '미리보기가 그려진다', '');
   await user.screenshot({ path: `${OUT}/2_card_uploaded.png` });
 
   // ⑶ 인도자 · 운영자
   const coach = await login(env.QA_COACH_EMAIL, env.QA_COACH_PASSWORD, { width: 1280, height: 900 });
-  await coach.goto(ROSTER, { waitUntil: 'domcontentloaded' });
+  await coach.goto(ROSTER, { waitUntil: 'networkidle' });
   const coachSeen = await until('인도자 명단 펼침에 사진', () => staffImgs(coach), (n) => n >= 2);
   check(coachSeen >= 2, '인도자 — 체크 상태에서 보인다', `img ${coachSeen}`);
-  check(await coach.getByRole('button', { name: '사진 삭제(운영자)' }).count() === 0, '인도자 — 삭제 표시 없음');
+  check(await adminDeletes(coach) === 0, '인도자 — 삭제 표시 없음', `${await adminDeletes(coach)}`);
   const collect = coach.locator('section', { has: coach.getByRole('heading', { name: '문장 모아 보기' }) });
-  check(await collect.locator('img').count() === 0, '모아 보기 — 사진 0');
+  // ⑦ 잴 구간이 실재해야 「0」이 뜻을 갖는다 — 구간을 못 찾으면 img 도 0 으로 센다.
+  check(await collect.count() === 1 && await collect.locator('img').count() === 0, '모아 보기 — 사진 0', `구간 ${await collect.count()} · img ${await collect.locator('img').count()}`);
   await coach.screenshot({ path: `${OUT}/3_coach_visible.png`, fullPage: true });
 
   const admin = await login(env.QA_ADMIN_EMAIL, env.QA_ADMIN_PASSWORD, { width: 1280, height: 900 });
-  await admin.goto(ROSTER, { waitUntil: 'domcontentloaded' });
+  await admin.goto(ROSTER, { waitUntil: 'networkidle' });
   const adminSeen = await until('운영자 명단 펼침에 사진', () => staffImgs(admin), (n) => n >= 2);
   check(adminSeen >= 2, '운영자 — 체크 상태에서 보인다', `img ${adminSeen}`);
-  check(await admin.getByRole('button', { name: '사진 삭제(운영자)' }).count() >= 2, '운영자 — 삭제 표시 있음');
+  check(await adminDeletes(admin) >= 2, '운영자 — 삭제 표시 있음', `${await adminDeletes(admin)}`);
 
   // ⑷ 해제 → 사라진다
   await box.click();
@@ -187,7 +198,7 @@ try {
 } finally {
   if (user && shownBefore !== null) {
     // 중단돼도 이 도구가 올린 것은 치운다 — 남기면 다음 회차의 기준선이 틀린다.
-    await user.reload({ waitUntil: 'domcontentloaded' }).catch(() => undefined);
+    await user.reload({ waitUntil: 'networkidle' }).catch(() => undefined);
     const left = await deleteDownTo(user, shownBefore).catch(() => null);
     console.log(`  ${left === shownBefore ? 'O' : 'X'} 중단 뒤처리                            화면 ${left} (목표 ${shownBefore})`);
   }
