@@ -76,6 +76,7 @@ import {
   type UserRow,
 } from './mappers';
 import { validateWith, type InstrumentValidators } from './response/validation';
+import { CHECKIN_PHOTO_BUCKET, pairCheckinPhotoPaths, thumbPathOf } from './checkinPhotos';
 
 // 해석 문구 row → 읽기 뷰. effective = coach_content ?? ai_content(유효 문구). 구조화 형상은 진단 소유라 unknown.
 interface InterpretationRow {
@@ -135,7 +136,6 @@ interface CohortMeta {
 // ── 회차 갈무리 매퍼·경계 스키마(ADR-80) ─────────────────────
 const CHECKIN_COLS =
   'id,cohort_id,user_id,session_no,answers,step_private,share_consent,suggestion_anon,contact_request,prompted_at,prompt_count,has_content,first_opened_at,deep_opened,submitted_at,edit_count,updated_at';
-const CHECKIN_PHOTO_BUCKET = 'checkin-photos';
 
 interface CohortSessionRow {
   cohort_id: string;
@@ -1203,10 +1203,12 @@ class SupabaseCoreContext implements CoreContext {
     return (data ?? []).map((r) => rowToCheckin(r as CheckinRow));
   }
 
-  // 편지 사진(ADR-83) — storage RLS(본인/코치/운영자)로 게이트. 만료 signed URL 반환.
+  // 갈무리 사진(ADR-83 → ADR-197) — storage RLS 로 게이트. 만료 signed URL 반환.
   // 경로 접두어로 훑지 않는다(ADR-87) — 갈무리가 다른 회기로 이동해도 사진 파일은 업로드 시점 회기 경로에
   // 그대로 남기 때문이다(Storage 는 실제 저장 키에 name 을 포함해 DB 만 고치면 파일이 깨진다).
-  // checkin_photo_paths RPC 가 '그 회차 갈무리가 지금 이 회기에 있는가'로 게이트하고 이름을 돌려준다.
+  // checkin_photo_paths RPC 가 '그 회차 갈무리가 지금 이 회기에 있는가'와 참여자의 「인도자 열람」 선택으로
+  //   게이트하고 이름을 **올린 순서로** 돌려준다(ADR-197). 판정은 SQL 한 함수(checkin_photos_staff_view)에만 있다.
+  // 서명은 **한 번에** 한다 — 장수 제한이 없어져(ADR-197) 장마다 왕복하면 명단 펼침이 사진 수만큼 느려진다.
   async listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]> {
     const { data, error } = await this.sb.rpc('checkin_photo_paths', {
       p_cohort: cohortId,
@@ -1214,18 +1216,45 @@ class SupabaseCoreContext implements CoreContext {
       p_session: sessionNo,
     });
     if (error) throw new CoreError(`listCheckinPhotos 실패: ${error.message}`);
+    const pairs = pairCheckinPhotoPaths(((data ?? []) as { name: string }[]).map((r) => r.name));
+    if (pairs.length === 0) return [];
+    const toSign = pairs.flatMap((p) => (p.thumb ? [p.path, p.thumb] : [p.path]));
+    const { data: signed, error: signError } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).createSignedUrls(toSign, 3600);
+    if (signError) throw new CoreError(`listCheckinPhotos 서명 실패: ${signError.message}`);
+    const urlOf = new Map<string, string>();
+    for (const s of signed ?? []) if (s.path && s.signedUrl && !s.error) urlOf.set(s.path, s.signedUrl);
     const out: CheckinPhoto[] = [];
-    for (const row of (data ?? []) as { name: string }[]) {
-      const path = row.name;
-      const { data: signed } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).createSignedUrl(path, 3600);
-      if (signed?.signedUrl) out.push({ path, url: signed.signedUrl });
+    for (const p of pairs) {
+      const url = urlOf.get(p.path);
+      if (!url) continue; // 서명이 거부된 원본은 내지 않는다(권한은 정책이 정한다)
+      const thumbUrl = p.thumb ? urlOf.get(p.thumb) : undefined;
+      out.push(thumbUrl ? { path: p.path, url, thumbUrl } : { path: p.path, url });
     }
     return out;
   }
 
+  // 미리보기를 함께 지운다 — 원본만 지우면 누를 것 없는 조각이 남는다. 없는 이름은 저장소가 조용히 지나간다.
   async deleteCheckinPhoto(path: string): Promise<void> {
-    const { error } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).remove([path]);
+    const targets = path === thumbPathOf(path) ? [path] : [path, thumbPathOf(path)];
+    const { error } = await this.sb.storage.from(CHECKIN_PHOTO_BUCKET).remove(targets);
     if (error) throw new CoreError(`deleteCheckinPhoto 실패: ${error.message}`);
+  }
+
+  // 「인도자 열람」 — 회차 단위 본인 선택(ADR-197). 행이 없으면 열람(기본 체크).
+  //   (사람, 회차) 단위다 — 사진 묶음이 그 단위이기 때문이다(마이그레이션 20260918090001 머리 참조).
+  async getMyCheckinPhotoCoachView(sessionNo: number): Promise<boolean> {
+    const { data, error } = await this.sb
+      .from('checkin_photo_prefs')
+      .select('coach_view')
+      .eq('session_no', sessionNo)
+      .maybeSingle();
+    if (error) throw new CoreError(`getMyCheckinPhotoCoachView 실패: ${error.message}`);
+    return data == null ? true : (data as { coach_view: boolean }).coach_view;
+  }
+
+  async setMyCheckinPhotoCoachView(sessionNo: number, coachView: boolean): Promise<void> {
+    const { error } = await this.sb.rpc('checkin_photo_prefs_set', { p_session: sessionNo, p_coach_view: coachView });
+    if (error) throw new CoreError(`setMyCheckinPhotoCoachView 실패: ${error.message}`);
   }
 
   // ── 가치 카드(ADR-121) ─────────────────────────────────────

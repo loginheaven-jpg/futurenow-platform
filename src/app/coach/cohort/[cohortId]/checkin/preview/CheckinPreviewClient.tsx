@@ -103,6 +103,7 @@ export function CheckinPreviewClient({ cohortId, initialSession }: { cohortId: s
         priors={withPrior ? { 1: SAMPLE_BACK1, 2: SAMPLE_BACK2 } : {}}
         initialMode="edit"
         photos={[]}
+        photoCoachView
         preview
       />
     </div>

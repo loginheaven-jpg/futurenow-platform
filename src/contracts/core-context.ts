@@ -211,9 +211,12 @@ export interface CoreContext {
   }): Promise<void>;
   listCohortValueAssessments(cohortId: string): Promise<ValueAssessmentRow[]>; // 담당 인도자·운영자(SELECT RLS)
 
-  // 편지 사진 첨부(ADR-83) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
-  listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인/회기 코치/운영자(storage RLS) · signed URL 포함
-  deleteCheckinPhoto(path: string): Promise<void>; // 본인/운영자(storage RLS)
+  // 갈무리 사진(ADR-83 → ADR-197 워크북 사진) — 비공개 버킷 checkin-photos. 업로드 바이트는 클라이언트 직접(EXIF 제거·리사이즈 후).
+  //   인도자·운영자 열람은 참여자의 회차 단위 「인도자 열람」 선택을 따른다(불변식 16 — 운영자도 인도자와 같다).
+  listCheckinPhotos(cohortId: string, sessionNo: number, userId: string): Promise<CheckinPhoto[]>; // 본인 늘 · 회기 코치/운영자는 열람 선택 시(storage RLS) · 올린 순서 · 원본+미리보기 signed URL
+  deleteCheckinPhoto(path: string): Promise<void>; // 본인/운영자(storage RLS) · 미리보기도 함께 지운다
+  getMyCheckinPhotoCoachView(sessionNo: number): Promise<boolean>; // 본인 — 선택이 없으면 true(기본 열람)
+  setMyCheckinPhotoCoachView(sessionNo: number, coachView: boolean): Promise<void>; // 본인 — checkin_photo_prefs_set DEFINER
 
   // 회원 상태·승인(S-1 · ADR-122) — role 과 별도 축. 상태가 가르는 것은 **새 응시 하나**이고
   //   자기 결과 열람은 상태와 무관하다(메모 §2-가 · IA v2.1 §5.4). 그래서 열람 게이트 메서드가 없다.

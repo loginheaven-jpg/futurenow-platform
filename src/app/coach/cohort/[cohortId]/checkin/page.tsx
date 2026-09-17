@@ -7,7 +7,6 @@ import { requestCohort, requestContext, requestUser } from '@/app/_lib/requestSc
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
 import { anonNoticeText, buildCheckinRead, readAnonSuggestion } from '@/instruments/futurenow/checkin/readModel';
 import { ScheduleSeedClient } from './ScheduleSeedClient';
-import { CoachPhotos } from './CoachPhotos';
 import { RosterDetail, type RosterEntry } from './RosterDetail';
 import { defaultSessionNo } from './defaultSession';
 import { withLegacyKeys } from '@/instruments/futurenow/checkin/legacyKeys';
@@ -51,7 +50,8 @@ export default async function CoachCheckinPage({
   const memberIds = new Set(members.map((m) => m.userId));
   const enrolled = checkins.filter((c) => memberIds.has(c.userId));
 
-  // 편지 사진 — 회차당 1회 조회해 명단 펼침·문장 모아 보기가 함께 쓴다(추가 왕복 0).
+  // 워크북 사진(ADR-197) — 회차당 1회 조회해 **명단 펼침만** 쓴다. 모아 보기는 사진을 싣지 않는다(2026-09-18 결정).
+  //   참여자가 「인도자 열람」을 해제한 사람은 빈 목록이 온다(저장소 정책 · 불변식 16).
   const photoPairs = await Promise.all(
     enrolled.map(async (c) => [c.userId, await ctx.listCheckinPhotos(cohortId, sessionNo, c.userId).catch(() => [])] as const),
   );
@@ -105,7 +105,8 @@ export default async function CoachCheckinPage({
     .filter((c) => !c.stepPrivate)
     .map((c) => ({ name: nameOf(c.userId), what: c.answers.step_what as string, when: (c.answers.step_when as string) ?? '' }));
 
-  // 문장 모아 보기(C2 §4.4) — 실명 + 회차별 요약 열(§5-6) + 편지 사진(ADR-83). 나눔 전 인도자가 개별 대면 동의.
+  // 문장 모아 보기(C2 §4.4) — 실명 + 회차별 요약 열(§5-6). 나눔 전 인도자가 개별 대면 동의.
+  //   **사진은 싣지 않는다**(ADR-197 · 2026-09-18 결정) — 사진과 운영자 삭제는 명단 펼침에 있다.
   //   열 정의는 세션 레지스트리 summaryFields 에서(1회차 갈망·존재가치·기억 / 2회차 영역·인생의 한 문장·장면). 회차 키 하드코딩 제거(ADR-85).
   //   ADR-86: 이 섹션은 '나눔 도구'로 성격을 유지한다 — 명단 펼침(목양 도구)과 합치지 않는다.
   // 옛 키로 저장된 답도 읽는다(6회차 문안 보정 · `legacyKeys`). 저장은 언제나 새 키다 —
@@ -123,9 +124,8 @@ export default async function CoachCheckinPage({
         ? { label: f.label, text: `${sstr(c, f.from)} → ${sstr(c, f.to)}`, has: !!(sstr(c, f.from) || sstr(c, f.to)) }
         : { label: f.label, text: sstr(c, f.key), has: !!sstr(c, f.key) },
     ),
-    photos: photosByUser.get(c.userId) ?? [],
   }));
-  const sentences = perMember.filter((s) => s.cells.some((c) => c.has) || s.photos.length > 0);
+  const sentences = perMember.filter((s) => s.cells.some((c) => c.has));
 
   const sectionTitle = { color: 'var(--color-primary)', fontSize: 16, margin: '0 0 var(--space-2)' } as const;
   const card = { padding: 'var(--space-4)', background: 'var(--color-surface-1)', border: 'var(--border-hair) solid var(--color-border)', borderRadius: 'var(--radius)' } as const;
@@ -182,6 +182,7 @@ export default async function CoachCheckinPage({
                 sessionNos={sessions.map((s) => s.sessionNo)}
                 currentSession={sessionNo}
                 tabsLabel="다른 회차"
+                canDeletePhotos={isAdmin}
               />
             </div>
           </section>
@@ -219,7 +220,6 @@ export default async function CoachCheckinPage({
                     {s.cells.map((c, j) => (c.has ? (
                       <div key={j} className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{c.label} · {c.text}</div>
                     ) : null))}
-                    <CoachPhotos photos={s.photos} canDelete={isAdmin} />
                   </div>
                 ))
               )}

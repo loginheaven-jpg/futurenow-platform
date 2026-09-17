@@ -1,7 +1,8 @@
 'use client';
 // 회차 갈무리 카드(ADR-80·85). getCheckinSession(sessionNo)로 회차 문안을 직접 로드 — 회차번호로 분기하지 않고 '블록 존재'로 렌더.
 //   copy 를 prop 으로 받지 않는다: copy 에 함수(filledCount·counter)가 있어 서버→클라 직렬화가 깨진다(레지스트리는 순수 모듈이라 클라 import 가능).
-//   자동저장(디바운스 2s/blur)·단일버튼(save→submit)·완료상태. 판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출·워크북' 미사용.
+//   자동저장(디바운스 2s/blur)·단일버튼(save→submit)·완료상태. 판정·경고색 없음(참여자 화면). '설문·진단·지각·미제출' 미사용.
+//   '워크북' 은 맨 위 사진 블록 제목 한 자리만(`checkin/workbook.ts` · ADR-197).
 //   되비추기(priors): 지난 회차 답을 읽기전용 회색으로 되비춘다(§6). 깊이별 봉투(ADR-103). 공유 동의 UI 없음(나눔 동의는 인도자 개별 대면 — C2-d).
 //   ADR-86: 모드 둘(read/edit)·URL 하나. read 는 적은 것 전부를 읽는 화면 — 서버 쓰기 0(계측 컬럼을 건드리지 않는다).
 import Link from 'next/link';
@@ -9,12 +10,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CheckinPhoto } from '@/contracts';
 import { Button, CheckRow, Disclosure, MultiChoiceChips, TextArea } from '@/core/ui';
-import { getCheckinSession, type Mirror as MirrorSpec, type MirrorSet as MirrorSetSpec, type SlotName } from '@/instruments/futurenow/checkin';
+import { getCheckinSession, WORKBOOK_TITLE, type Mirror as MirrorSpec, type MirrorSet as MirrorSetSpec, type SlotName } from '@/instruments/futurenow/checkin';
 import { orderedSlots, resolveMirror, resolveMirrorSet, slotBoundaries, type Boundary, type Priors } from '@/instruments/futurenow/checkin/slots';
 import { buildCheckinRead, readSelfHighlights } from '@/instruments/futurenow/checkin/readModel';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
-import { LetterPhotos } from './LetterPhotos';
+import { WorkbookPhotos } from './WorkbookPhotos';
 
 type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean; stepPrivate: boolean };
 // 되비추기 재료 — page 가 **깊이별 봉투**로 넘긴다(§6·ADR-90·103). 키가 '몇 회차 전'이고 값이 그 회차 answers.
@@ -171,6 +172,7 @@ export function CheckinCardClient({
   priors,
   initialMode,
   photos,
+  photoCoachView,
   preview = false,
 }: {
   cohortId: string;
@@ -184,6 +186,8 @@ export function CheckinCardClient({
   priors: Priors;
   initialMode: 'read' | 'edit';
   photos: CheckinPhoto[];
+  /** 워크북 사진 「인도자 열람」 현재 선택(ADR-197). 선택이 없으면 true. */
+  photoCoachView: boolean;
   /** 미리보기(인도자 콘솔 /coach/cohort/[cohortId]/checkin/preview·ADR-92) — 서버 쓰기를 전부 막는다. 계측·저장·제출 어느 것도 일어나지 않는다. */
   preview?: boolean;
 }) {
@@ -288,7 +292,7 @@ export function CheckinCardClient({
       if (res.ok) {
         setJustSubmitted(true);
         setMode('read');
-        router.refresh(); // 방금 올린 편지 사진이 read 화면에 바로 보이도록(서버 signed URL 재생성)
+        router.refresh(); // 방금 올린 워크북 사진이 read 화면에 바로 보이도록(서버 signed URL 재생성)
       } else setSaveFailed(true);
     } catch {
       setSaveFailed(true); // 조용히 삼키지 않는다 — 화면이 '저장하지 못했습니다 · 다시 시도'를 띄운다
@@ -511,6 +515,21 @@ export function CheckinCardClient({
         {closed ? <p className="t-caption" style={help}>마감이 지났지만 지금 적으셔도 됩니다.</p> : null}
       </div>
 
+      {/* 워크북 사진(ADR-197) — **모든 회차 맨 위 한 자리.** 세미나 중에 손으로 쓴 쪽을 찍어 올린다.
+          필수가 아니다 — missingKeys·filledCount 가 이 블록을 모른다(사진이 없어도 제출된다). 선택 뱃지도 달지 않는다.
+          제목은 회차마다 같아 한 곳(workbook.ts)에, 회차마다 다른 안내 한 줄은 문안의 `workbook.help` 에 있다(ADR-90 블록 속성).
+          편지 사진은 여기로 합쳤다 — 한 회차에 사진 올리는 곳이 둘이면 어디에 올릴지부터 고민하게 된다. */}
+      <Field label={WORKBOOK_TITLE} helpText={copy.workbook?.help}>
+        <WorkbookPhotos
+          cohortId={cohortId}
+          sessionNo={sessionNo}
+          userId={userId}
+          initialPhotos={photos}
+          initialCoachView={photoCoachView}
+          preview={preview}
+        />
+      </Field>
+
       {/* 1면 · 오늘 — order 가 정한 순서대로. 슬롯 사이 경계는 group 전이가 정한다(ADR-90). */}
       {slots.map((s, i) => (
         <div key={s.name}>
@@ -551,8 +570,6 @@ export function CheckinCardClient({
                   1~4회차 심화에 선언이 0건이라 필요한 적이 없었고 **5회차 심화 ②가 처음 값을 선언하면서 드러났다**(ADR-109).
                   회차 번호로 분기하지 않는다 — 문안이 선언한 회차에만 뜬다(ADR-90). 선언이 없는 회차는 출력이 바이트 동일하다. */}
               <TextArea value={str(f.key)} onChange={(v) => setAnswer(f.key, v)} placeholder={f.placeholder} rows={f.key === 'letter_line' ? 4 : 2} ariaLabel={f.label} />
-              {/* 미리보기에서는 사진 위젯을 띄우지 않는다 — 실제 Storage 를 호출하는 부품이라 서버 쓰기 0 규율을 깬다. */}
-              {f.key === 'letter_line' && !preview ? <LetterPhotos cohortId={cohortId} sessionNo={sessionNo} userId={userId} /> : null}
             </div>
           ))}
         </div>

@@ -8,6 +8,8 @@ import { CHECKIN_SESSION_4 } from './session4';
 import { CHECKIN_SESSION_5 } from './session5';
 import { CHECKIN_SESSION_6 } from './session6';
 
+export { WORKBOOK_COACH_VIEW_LABEL, WORKBOOK_TITLE } from './workbook';
+
 // 단일행/여러행 공통 필드. help·placeholder 는 회차·필드마다 선택.
 export type CheckinField = { key: string; label: string; help?: string; placeholder?: string };
 
@@ -109,6 +111,9 @@ export type CheckinSession = {
   // summary = 접힌 상태에서 안에 무엇이 있는지 보여 주는 한 줄. 문안이므로 레지스트리가 소유한다(컴포넌트에 박지 않는다).
   // help 는 선택이다(ADR-100) — 라벨이 이미 두 가지를 묻는 문항에는 보조 문구가 군더더기가 된다.
   deepen: { title: string; summary: string; fields: (CheckinField & { help?: string; mirror?: Mirror })[] };
+  // 워크북 사진 블록(ADR-197) — 블록은 **모든 회차 맨 위에 늘 선다**(제목은 `workbook.ts` 한 곳).
+  //   여기에는 회차마다 다른 안내 한 줄만 둔다. 없으면 제목만 — 3~6회차가 그렇다.
+  workbook?: { help: string };
   step: {
     // ⑤ 지난 한 걸음 결산 — 2회차부터. 이 블록 위에 지난 회차 한 걸음을 되비춘다(§6).
     lastStep?: { key: string; label: string; options: readonly string[]; note: CheckinField; mirror: Mirror };
