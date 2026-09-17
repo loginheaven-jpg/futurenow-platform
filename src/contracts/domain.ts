@@ -84,10 +84,12 @@ export interface CohortSession {
   closesAt: string;
 }
 
-// 편지 사진 첨부(ADR-83). 비공개 버킷 checkin-photos · signed URL(만료). 열람 본인/코치/운영자.
+// 갈무리 사진(ADR-83 → ADR-197 워크북 사진). 비공개 버킷 checkin-photos · signed URL(만료).
+//   열람: 본인은 늘 · 인도자/운영자는 **참여자가 그 회차에 「인도자 열람」을 해제하지 않았을 때만**(불변식 16).
 export interface CheckinPhoto {
-  path: string; // {cohort}/{user}/{session}/{uuid}.jpg
-  url: string; // 만료 signed URL
+  path: string; // {cohort}/{user}/{session}/{uuid}.jpg — 원본
+  url: string; // 원본 만료 signed URL
+  thumbUrl?: string; // 작은 미리보기(`{uuid}.thumb.jpg`) 만료 URL. ADR-197 이전 업로드는 없다 — 원본을 쓴다
 }
 
 export interface CheckinRecord {

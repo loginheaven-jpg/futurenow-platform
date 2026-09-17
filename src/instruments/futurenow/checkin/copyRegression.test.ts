@@ -178,17 +178,24 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
     }
   });
 
+  // 편지 첨부 안내는 **편지 칸에서 맨 위 워크북 사진 자리로 옮겨 갔다**(ADR-197). 잠금도 따라 옮긴다 —
+  //   지키던 것은 「첨부하셔도 됩니다 → 첨부하십시오」(허락 → 지시)였고, 옮겨 간 한 줄이 그 어미를 그대로 쓴다.
+  //   편지 칸에는 옮겨 적기 안내만 남는다 — 같은 안내가 두 곳에 서면 이 잠금이 운다.
   it('1회차 — 표지 띠와 편지 첨부', () => {
     const l = koreanLiterals('session1');
     expect(l.has('오늘 꺼낸 갈망을 여기에 적어 둡니다. 7주 기록의 첫 장입니다.')).toBe(true);
-    expect([...l].some((s) => s.includes('촬영해 첨부하십시오. (책 59쪽)'))).toBe(true);
+    expect(l.has('종이에 쓴 편지도 여기에 촬영해 첨부하십시오.')).toBe(true);
+    expect(l.has('만약 종이에 이미 썼다면 그 내용 중 가장 해 주고 싶었던 말 한 줄만 옮겨 주세요. (책 59쪽)')).toBe(true);
+    expect([...l].filter((s) => s.includes('촬영해 첨부')), '첨부 안내가 두 곳에 섰다').toHaveLength(1);
   });
 
   it('2회차 — 영역·지난 걸음·편지 첨부', () => {
     const l = koreanLiterals('session2');
     expect(l.has('다섯 중 가장 가슴이 뛴 하나만 고르십시오. 이 선택이 4회차 원씽의 재료가 됩니다.')).toBe(true);
     expect(l.has('정직한 기록만이 다음 한 주를 바꿉니다.')).toBe(true);
-    expect([...l].some((s) => s.includes('촬영해 첨부하십시오. (책 85~87쪽)'))).toBe(true);
+    expect(l.has('종이에 쓴 편지도 여기에 촬영해 첨부하십시오.')).toBe(true);
+    expect(l.has('만약 종이에 이미 썼다면 그 내용 중 가장 마음에 남는 한 줄만 옮겨 주세요. (책 85~87쪽)')).toBe(true);
+    expect([...l].filter((s) => s.includes('촬영해 첨부')), '첨부 안내가 두 곳에 섰다').toHaveLength(1);
   });
 
   it('3회차 — 우당탕탕·오늘의 질문·습관 짝', () => {
@@ -273,7 +280,8 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
     // 전에는 「고지가 있는가」를 쟀다. 그 고지를 걷었으므로 **잠금을 뒤집는다** —
     //   없어서 빠진 것이 아니라 일부러 뺐고, 다음 사람이 결손으로 보고 되살리면 안 된다.
     //   ★ **위치정보 제거는 그대로 돈다** — 말을 걷었지 동작을 걷은 것이 아니다.
-    const s = src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/LetterPhotos.tsx');
+    // 파일이 `LetterPhotos` → `WorkbookPhotos` 로 바뀌었다(ADR-197). 재는 것은 같다.
+    const s = src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/WorkbookPhotos.tsx');
     for (const bad of ['인도자와 운영자가 볼 수 있습니다', '위치정보는 자동으로 지워져요']) {
       // 주석에는 남아 있어도 된다 — 화면에 뜨는 것만 잰다.
       const shown = s.split(String.fromCharCode(10))
@@ -284,8 +292,12 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
     //   처음엔 `/canvas|drawImage|toBlob/` 로 쟀는데 **셋 중 하나만 있어도 통과**했다 —
     //   물려 보니 `drawImage`·`toBlob` 을 지워도 `canvas` 가 남아 초록이었다(⑨-b 창이 넓다).
     //   재디코드는 **넷이 이어져야** 성립하므로 넷을 다 요구한다.
+    //   ADR-197 로 재디코드가 공용 모듈(`_lib/resizeImage`)로 합쳐졌다 — **단언을 지우지 않고 옮긴다**(U-1).
+    //   그래서 둘을 잰다: 갈무리가 그 모듈의 함수를 **부르는가**, 그 모듈에 넷이 **이어져 있는가**.
+    expect(s, '갈무리 사진이 공용 재인코딩을 부르지 않는다 — EXIF 가 안 지워진 채 올라간다').toMatch(/await resizeToJpeg\(file\)/);
+    const r = src('../../../app/_lib/resizeImage.ts');
     for (const step of ['createImageBitmap', 'canvas', 'drawImage', 'toBlob']) {
-      expect(s, `EXIF 제거 단계가 사라졌다: ${step}`).toContain(step);
+      expect(r, `EXIF 제거 단계가 사라졌다: ${step}`).toContain(step);
     }
   });
 

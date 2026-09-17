@@ -8,6 +8,7 @@ import { useState } from 'react';
 import type { CheckinPhoto } from '@/contracts';
 import type { ReadBlock } from '@/instruments/futurenow/checkin/readModel';
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
+import { CoachPhotos } from './CoachPhotos';
 
 export type RosterEntry = {
   userId: string;
@@ -44,7 +45,7 @@ function SessionTabs({ cohortId, sessionNos, current, userId, label }: { cohortI
   );
 }
 
-function Row({ entry, initialOpen, tabs, cohortId }: { entry: RosterEntry; initialOpen: boolean; tabs: React.ReactNode; cohortId: string }) {
+function Row({ entry, initialOpen, tabs, cohortId, canDeletePhotos }: { entry: RosterEntry; initialOpen: boolean; tabs: React.ReactNode; cohortId: string; canDeletePhotos: boolean }) {
   const [open, setOpen] = useState(initialOpen);
   // 펼침 가능 여부는 '갈무리 행이 있는가'로만 판정한다 — 내용 유무로 갈리면 부채널이 된다.
   //   익명 '바라는 점'만 쓴 사람은 개인 상세가 비므로(익명분은 여기 싣지 않는다),
@@ -93,7 +94,9 @@ function Row({ entry, initialOpen, tabs, cohortId }: { entry: RosterEntry; initi
       </div>
       {open ? (
         <div style={{ padding: 'var(--space-2) 0 var(--space-4)' }}>
-          <CheckinReadView blocks={entry.blocks} photos={entry.photos} />
+          {/* 워크북 사진은 맨 위(ADR-197) — 읽는 화면과 같은 줄에 운영자 삭제 표시만 얹는다. */}
+          <CoachPhotos photos={entry.photos} canDelete={canDeletePhotos} />
+          <CheckinReadView blocks={entry.blocks} />
           {tabs}
         </div>
       ) : null}
@@ -110,6 +113,7 @@ export function RosterDetail({
   sessionNos,
   currentSession,
   tabsLabel,
+  canDeletePhotos,
 }: {
   entries: RosterEntry[];
   openUserId: string | null;
@@ -117,6 +121,8 @@ export function RosterDetail({
   sessionNos: number[];
   currentSession: number;
   tabsLabel: string;
+  /** 운영자만 true — 사진 삭제 표시(ADR-83). 모아 보기에서 이 자리로 옮겨 왔다(ADR-197). */
+  canDeletePhotos: boolean;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -126,6 +132,7 @@ export function RosterDetail({
           entry={e}
           initialOpen={e.userId === openUserId}
           cohortId={cohortId}
+          canDeletePhotos={canDeletePhotos}
           tabs={<SessionTabs cohortId={cohortId} sessionNos={sessionNos} current={currentSession} userId={e.userId} label={tabsLabel} />}
         />
       ))}

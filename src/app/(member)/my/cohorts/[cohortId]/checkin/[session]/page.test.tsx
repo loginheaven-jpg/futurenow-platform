@@ -31,6 +31,7 @@ vi.mock('@/core/supabase/server', () => ({
     }],
     getMyCheckin: async () => SUBMITTED,
     listCheckinPhotos: async () => [],
+    getMyCheckinPhotoCoachView: async () => true,
   }),
 }));
 vi.mock('next/navigation', () => ({ redirect: (to: string) => { throw new Error(`REDIRECT:${to}`); } }));

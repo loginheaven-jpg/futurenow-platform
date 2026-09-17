@@ -73,9 +73,14 @@ export default async function CheckinCardPage({
   // 모드 판정(ADR-86) — 규칙은 mode.ts 순수 함수에(단위테스트로 고정).
   const initialMode = resolveCheckinMode({ wantsEdit, closed, existing });
 
-  // 편지 사진 — 열람에 필요하므로 서버에서 signed URL 로 만든다(브라우저 supabase 재구현 없음).
+  // 워크북 사진(ADR-197) — 서버에서 signed URL 로 만든다(브라우저 supabase 재구현 없음).
   //   행이 없으면 사진도 있을 수 없다(업로드는 카드 안에서만 가능하고 그 시점에 행이 생긴다).
-  const photos = existing == null ? [] : await ctx.listCheckinPhotos(cohortId, sessionNo, me.id).catch(() => []);
+  //   「인도자 열람」 선택은 **작성 화면에서만** 읽는다 — 읽기 화면은 선택을 고치는 자리가 아니다(서버 쓰기 0 · ADR-86).
+  //   읽기에 실패하면 기본(열람)으로 그린다 — 실제보다 **더 열려 있다고** 보이는 쪽이라 참여자를 속이지 않는다.
+  const [photos, photoCoachView] = await Promise.all([
+    existing == null ? Promise.resolve([]) : ctx.listCheckinPhotos(cohortId, sessionNo, me.id).catch(() => []),
+    initialMode === 'edit' ? ctx.getMyCheckinPhotoCoachView(sessionNo).catch(() => true) : Promise.resolve(true),
+  ]);
 
   // 되비추기(§6·Phase 4) — 지난 회차 답을 읽기전용으로 되비춘다. 새 코어 메서드 없음.
   //   ADR-90: 되비출 자리가 회차마다 달라(3회차는 세 곳) 3필드 다이제스트로는 표현할 수 없다.
@@ -123,6 +128,7 @@ export default async function CheckinCardPage({
         priors={priors}
         initialMode={initialMode}
         photos={photos}
+        photoCoachView={photoCoachView}
       />
     </Shell>
   );

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CheckinCardClient } from '@/app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
-import { getCheckinSession } from '@/instruments/futurenow/checkin';
+import { getCheckinSession, WORKBOOK_TITLE } from '@/instruments/futurenow/checkin';
 import { orderedSlots } from '@/instruments/futurenow/checkin/slots';
 import { SAMPLE_BACK1, SAMPLE_BACK2 } from './CheckinPreviewClient';
 
@@ -30,6 +30,7 @@ function card(sessionNo: number, withPrior: boolean): string {
       priors={withPrior ? { 1: SAMPLE_BACK1, 2: SAMPLE_BACK2 } : {}}
       initialMode="edit"
       photos={[]}
+      photoCoachView
       preview
     />,
   );
@@ -101,5 +102,52 @@ describe('심화 placeholder 가 화면에 닿는다 (ADR-109)', () => {
         if (f.placeholder) expect(html, `${n}회차 ${f.key}`).toContain(f.placeholder);
       }
     }
+  });
+});
+
+describe('워크북 사진 블록이 화면에 닿는다 (ADR-197)', () => {
+  // 선언(workbook.ts·workbook.help)이 아니라 **그려진 카드**를 잰다 — ADR-109 가 배달 검증을 여기 둔 이유와 같다.
+  const firstSlotLabel = (n: number): string => {
+    const b = orderedSlots(getCheckinSession(n)!)[0].block as { label?: string; title?: string };
+    return (b.label ?? b.title)!;
+  };
+
+  it('⑦ 등록 회차가 실재한다 — 0 이면 아래 반복이 공허하다', () => {
+    expect(REGISTERED.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('모든 회차에 제목이 **한 번**, 표지 아래 · 첫 칸 위에 선다', () => {
+    for (const n of REGISTERED) {
+      const html = card(n, false);
+      const at = html.indexOf(WORKBOOK_TITLE);
+      expect(html.split(WORKBOOK_TITLE).length - 1, `${n}회차 제목 수`).toBe(1);
+      expect(at, `${n}회차 표지 아래`).toBeGreaterThan(html.indexOf(getCheckinSession(n)!.cover.title));
+      expect(at, `${n}회차 첫 칸 위`).toBeLessThan(html.indexOf(firstSlotLabel(n)));
+      expect(at, `${n}회차 심화 위`).toBeLessThan(html.indexOf(getCheckinSession(n)!.deepen.title));
+    }
+  });
+
+  it('안내 한 줄은 1·2회차에만 그려진다', () => {
+    const HELP = '종이에 쓴 편지도 여기에 촬영해 첨부하십시오.';
+    for (const n of REGISTERED) expect(card(n, false).includes(HELP), `${n}회차`).toBe(n === 1 || n === 2);
+  });
+
+  it('올리기 칸은 회차마다 하나 — 편지 칸 안의 사진 칸은 걷혔다', () => {
+    for (const n of REGISTERED) expect(card(n, false).split('＋ 사진').length - 1, `${n}회차`).toBe(1);
+  });
+
+  it('여러 장을 한꺼번에 고르고 · 카메라로 강제하지 않는다(장수 제한 없음)', () => {
+    const html = card(1, false);
+    const input = html.match(/<input[^>]*type="file"[^>]*>/)?.[0] ?? '';
+    expect(input, '파일 입력이 없다').not.toBe('');
+    expect(input).toContain('multiple');
+    expect(input).not.toContain('capture');
+  });
+
+  it('「인도자 열람」 은 기본 체크로 그려진다', () => {
+    const html = card(3, false);
+    const row = html.match(/<button[^>]*role="checkbox"[^>]*>(?:(?!<\/button>).)*인도자 열람(?:(?!<\/button>).)*<\/button>/)?.[0] ?? '';
+    expect(row, '체크 줄이 없다').not.toBe('');
+    expect(row).toContain('aria-checked="true"');
   });
 });

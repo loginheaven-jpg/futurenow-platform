@@ -1,5 +1,6 @@
 'use server';
 // 회차 갈무리 카드 서버 액션(ADR-80). 코어 경유 — 쓰기는 전량 DEFINER RPC(checkin_*). 권한·게이트는 RPC 내부.
+import type { CheckinPhoto } from '@/contracts';
 import { createServerContext } from '@/core/supabase/server';
 
 type Flags = { suggestionAnon?: boolean; contactRequest?: boolean; deepOpened?: boolean; stepPrivate?: boolean };
@@ -44,5 +45,46 @@ export async function markCheckinOpenedAction(cohortId: string, sessionNo: numbe
     await ctx.markCheckinOpened(cohortId, sessionNo);
   } catch {
     /* 계측 실패 무해 */
+  }
+}
+
+// ── 워크북 사진(ADR-197) — 목록·삭제·「인도자 열람」. 올리기 바이트는 브라우저가 저장소로 직접 보낸다. ──
+// 목록 — 올린 뒤 새 signed URL 을 받는다(서버가 서명한다 · 브라우저 supabase 재구현 없음).
+export async function listMyCheckinPhotosAction(
+  cohortId: string,
+  sessionNo: number,
+): Promise<{ ok: true; photos: CheckinPhoto[] } | { ok: false }> {
+  try {
+    const ctx = await createServerContext();
+    const me = await ctx.currentUser();
+    if (!me) return { ok: false };
+    return { ok: true, photos: await ctx.listCheckinPhotos(cohortId, sessionNo, me.id) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+// 삭제 — **본인 경로만**(경로 [2] = 본인). 운영자 삭제는 인도자 화면의 별도 액션이다.
+//   저장소 정책이 한 번 더 막는다 — 이 확인은 참여자 화면이 남의 경로를 지우는 통로가 되지 않게 하는 것이다.
+export async function deleteMyCheckinPhotoAction(path: string): Promise<{ ok: boolean }> {
+  try {
+    const ctx = await createServerContext();
+    const me = await ctx.currentUser();
+    if (!me || path.split('/')[1] !== me.id) return { ok: false };
+    await ctx.deleteCheckinPhoto(path);
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}
+
+// 「인도자 열람」 — 본인 것만 쓴다(checkin_photo_prefs_set 이 auth.uid() 로만 쓴다).
+export async function setCheckinPhotoCoachViewAction(sessionNo: number, coachView: boolean): Promise<{ ok: boolean }> {
+  try {
+    const ctx = await createServerContext();
+    await ctx.setMyCheckinPhotoCoachView(sessionNo, coachView);
+    return { ok: true };
+  } catch {
+    return { ok: false };
   }
 }
