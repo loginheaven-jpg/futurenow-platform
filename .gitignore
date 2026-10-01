@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ★ 예시만 연다 — **값이 아니라 키 이름과 설명만** 들어 있다(`.env.example`).
+#   이것이 막혀 있으면 새 PC 가 클론해도 「무엇을 받아야 하는지」를 알 길이 없다(실측 2026-10-01: 추적 0건이었다).
+#   negation 은 바로 이 한 파일만 연다 — `.env.local` 등 값이 든 파일은 그대로 막힌다.
+!.env.example
 
 # vercel
 .vercel
