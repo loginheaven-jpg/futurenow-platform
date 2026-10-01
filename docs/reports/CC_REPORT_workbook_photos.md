@@ -253,3 +253,34 @@ push 증거(이 보고를 쓰기 직전 원격 조회 — 이 보고 커밋은 �
 1b9755e866428459c23cb683886b8e1754b908c3	refs/heads/feat/workbook-photos
 3d5d5a3ddd5570eef40289d1edb61b3376bf62eb	refs/heads/main
 ```
+
+---
+
+## 8. 덧붙임 — 배포 2주 뒤 운영 실측 (2026-10-01)
+
+**개수만 쟀다**(참여자 원문 접근 0 · 읽기 전용 질의). 다시 재는 법은 아래 질의 그대로다.
+
+| 무엇 | 값 |
+|---|---|
+| 2기(ZR4KB) 1회차 워크북 사진 | **사진 6장 · 올린 사람 3명**(처음 2026-09-23) |
+| 1기(HMT7Z) 편지 사진(ADR-83 시절) | 1회차 1장 · 2회차 1장 — **회차당 한 사람** |
+| 미리보기(`.thumb.jpg`) | 6 — **새로 올라온 원본 전부에 생성됐다**(클라이언트 생성이 실기기에서 돈다) |
+| 「인도자 열람」 선택 행 | 3행 · **해제 0** |
+
+읽는 법 둘:
+
+- **쓰임이 늘었다.** 접힌 심화 블록 안의 편지 칸이었을 때는 회차당 한 사람이었고, 맨 위로 올린 뒤
+  한 회차에 세 사람이 올렸다. 「안 찍는다」가 아니라 **「안 보였다」** 쪽이었다는 가설을 지지한다.
+- **실기기에서 올라간다.** `capture` 를 뺀 뒤에도 실제 참여자 셋이 올렸고 미리보기도 전부 생성됐다 —
+  §6-2 의 기기 확인 요청은 **「막혀 있는가」가 아니라 「카메라가 바로 열리는가」** 로 좁혀진다.
+
+```sql
+-- 사진(원본만) · 회기·회차별
+select co.code, (storage.foldername(o.name))[3] sess, count(*) n,
+       count(distinct (storage.foldername(o.name))[2]) people, min(o.created_at)::date first
+  from storage.objects o left join public.cohorts co on co.id::text = (storage.foldername(o.name))[1]
+ where o.bucket_id = 'checkin-photos' and o.name not like '%.thumb.jpg'
+ group by 1,2 order by 1,2;
+-- 선택 행
+select count(*) rows, count(*) filter (where not coach_view) off from public.checkin_photo_prefs;
+```
