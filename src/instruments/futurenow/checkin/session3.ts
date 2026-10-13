@@ -6,27 +6,67 @@
 //     '확정된 값만 카드에 오른다' 조건이 이로써 해소됐다. 표기는 1·2회차 관례와 동일 —
 //     **문장부호 뒤 + 반각 공백 1칸 + 문자열 맨 끝**. gap_area 94~95 · stuck_named 96~104 ·
 //     pairText(습관 짝) 117~118 · speech_habit 126~133. (identity_gap 108~111 은 ADR-100 삭제로 사라져 참조는 넷이다.)
+//     ADR-198: pairText·심화는 작성에서 숨겼다. 해당 참조 둘은 과거 답 열람에만 남는다. 새 SEED에는 미확정 쪽수를 붙이지 않는다.
 //     **gap_area 는 두 곳**(REQUIRED_3 선언 + areaPick.label)이다 — 결측 안내가 화면 문구를 그대로 읽으므로
 //     양쪽이 같아야 한다(ADR-91 일반화 테스트가 어긋남을 잡는다). 결측 패널에 쪽수가 함께 나오는 것은 의도다.
-import type { CheckinSession } from './index';
+import type { CheckinSession, SeedBlock } from './index';
 import { countFilled, missingIn, missingKeys, type RequiredGroup } from './required';
 
-// 필수 6칸 — 영역쌍 · 습관짝 · 마음 · 지난걸음 · 다음걸음쌍 · 나에게.
-//   stuck_named(서술)·confidence·last_step_note·심화 한 칸(ADR-100 이후)은 세지 않는다.
-//   이중 STEP 이라 옮겨 적기가 둘이어서 필수가 하나 늘 자리인데, 그 증가분을 서술 질문에서 회수한다 —
-//   옮겨 적기는 이미 쓴 것의 이관이라 값이 싸고, 서술은 비싸기 때문이다.
+// 확정 HTML 시안(2026-10-13). 열두 키를 기존 answers JSONB에 저장한다. 옛 키는 이관하거나 지우지 않는다.
+const SEED_3 = {
+  group: '습관을 다시 짜다',
+  title: '생각·말·행동을 SEED로 다시 짜십시오.',
+  help: '각 영역에서 새로 시작할 것, 더 늘릴 것, 없앨 것, 줄일 것을 하나씩 적으십시오. 총 12개입니다.',
+  guide: '생각은 떠올릴 문장과 상황을, 말은 사용할 표현과 상대를, 행동은 할 일과 횟수를 적으십시오. ‘긍정적으로 생각하기’, ‘말을 잘하기’, ‘열심히 하기’ 대신 실제로 실행할 문장을 쓰십시오.',
+  selectLabel: '이번 주 한 걸음으로 선택',
+  counterLabel: 'SEED 액션아이템 기입',
+  terms: [
+    { title: 'S · Start — 새로 시작', help: '지금 하지 않는 실천을 시작합니다.' },
+    { title: 'E · Expand — 더 늘리기', help: '이미 하는 실천의 횟수나 시간을 늘립니다.' },
+    { title: 'E · Eliminate — 없애기', help: '반복하던 생각·말·행동 하나를 끊습니다.' },
+    { title: 'D · Downsize — 줄이기', help: '횟수·시간·분량의 줄일 기준을 정합니다.' },
+  ],
+  layers: [
+    {
+      id: 'think', title: '생각', help: '스스로 떠올리고 되뇌는 생각',
+      fields: [
+        { key: 'seed_start_think', label: '생각 · S Start — 새로 시작할 것', help: '어떤 상황에서 어떤 생각을 새로 떠올리겠습니까?', placeholder: '어려운 일을 시작하기 전 “첫 단계부터 해 보자”를 한 번 되뇌기' },
+        { key: 'seed_expand_think', label: '생각 · E Expand — 더 늘릴 것', help: '이미 도움이 되는 생각을 언제, 얼마나 더 떠올리겠습니까?', placeholder: '잠들기 전 잘한 일을 한 가지에서 세 가지로 늘려 떠올리기' },
+        { key: 'seed_elim_think', label: '생각 · E Eliminate — 없앨 것', help: '반복하던 어떤 결론을 더 이상 되뇌지 않겠습니까?', placeholder: '실수한 뒤 “나는 늘 실패한다”는 결론을 되뇌지 않기' },
+        { key: 'seed_down_think', label: '생각 · D Downsize — 줄일 것', help: '어떤 생각에 쓰는 시간을 얼마나 줄이겠습니까?', placeholder: '지난 실수를 되짚는 시간을 하루 20분에서 5분으로 줄이기' },
+      ],
+    },
+    {
+      id: 'speak', title: '말', help: '상대에게 사용하는 표현과 말버릇',
+      fields: [
+        { key: 'seed_start_speak', label: '말 · S Start — 새로 시작할 것', help: '누구에게 어떤 표현을 새로 말하겠습니까?', placeholder: '퇴근 후 배우자에게 “오늘 가장 좋았던 일은 뭐야?”라고 묻기' },
+        { key: 'seed_expand_speak', label: '말 · E Expand — 더 늘릴 것', help: '어떤 말을 누구에게 얼마나 더 자주 하겠습니까?', placeholder: '동료에게 구체적으로 고맙다고 말하는 횟수를 주 1회에서 3회로 늘리기' },
+        { key: 'seed_elim_speak', label: '말 · E Eliminate — 없앨 것', help: '어떤 표현을 더 이상 사용하지 않겠습니까?', placeholder: '부탁을 받았을 때 “어차피 안 돼”라고 말하지 않기' },
+        { key: 'seed_down_speak', label: '말 · D Downsize — 줄일 것', help: '어떤 말버릇을 얼마나 줄이겠습니까?', placeholder: '회의에서 상대의 말을 끊는 횟수를 회의당 3회에서 1회 이하로 줄이기' },
+      ],
+    },
+    {
+      id: 'act', title: '행동', help: '몸으로 하는 일과 시간 사용',
+      fields: [
+        { key: 'seed_start_act', label: '행동 · S Start — 새로 시작할 것', help: '무엇을 언제, 어디서 새로 하겠습니까?', placeholder: '월·수·금 오전 7시에 집 앞 공원에서 10분 걷기' },
+        { key: 'seed_expand_act', label: '행동 · E Expand — 더 늘릴 것', help: '어떤 행동의 횟수나 시간을 얼마나 늘리겠습니까?', placeholder: '평일 저녁 독서 시간을 10분에서 20분으로 늘리기' },
+        { key: 'seed_elim_act', label: '행동 · E Eliminate — 없앨 것', help: '어떤 행동을 언제부터 완전히 끊겠습니까?', placeholder: '오늘부터 침대에서 휴대폰으로 영상을 보지 않기' },
+        { key: 'seed_down_act', label: '행동 · D Downsize — 줄일 것', help: '어떤 행동의 횟수나 시간을 얼마나 줄이겠습니까?', placeholder: '평일 퇴근 후 영상 시청을 60분에서 20분으로 줄이기' },
+      ],
+    },
+  ],
+} satisfies SeedBlock;
+
+// 필수 8묶음 — 영역쌍 · SEED 세 영역(각 네 칸) · 마음 · 지난걸음 · 다음걸음쌍 · 나에게.
+//   숨긴 habit_start/stop·speech_habit은 필수에서 제외하되 과거 답은 그대로 저장·열람한다.
 //   ADR-91: filledCount·missingLabels·missingKeys 가 전부 이 선언에서 파생된다.
 const REQUIRED_3: RequiredGroup[] = [
   { fields: [
     { key: 'gap_area', label: '오늘 다섯 영역에 점수를 매기셨지요. 그중 지금 가장 간절한 영역 하나를 골라 주세요. (책 94~95쪽)' },
     { key: 'gap_want', label: '그 영역에서 지금 가장 바라는 것 한 가지는' },
   ] },
-  // ADR-98: 화면 기입 순서가 뒤집혔으므로 여기도 뒤집는다. 라벨 문자열도 함께 바뀐다 —
-  //   결측 안내가 화면 문구를 그대로 읽으므로 한쪽만 고치면 이중 진실이 된다(required.test 가 잡는다).
-  { fields: [
-    { key: 'habit_start', label: '이번 주에 새로 시작하거나 늘릴 것' },
-    { key: 'habit_stop', label: '줄이거나 없앨 것' },
-  ] },
+  // SEED 화면 선언에서 파생한다 — 필수 키·결측 라벨을 손으로 다시 적지 않는다.
+  ...SEED_3.layers.map((layer) => ({ fields: layer.fields.map(({ key, label }) => ({ key, label })) })),
   // ADR-101: 직접 쓰기(mood_custom)만 채워도 '마음'이 찬 것으로 본다. 칩과 직접 쓰기는 서로 다른 칸이라
   //   목록에 없는 감정을 상자에만 적은 사람이 제출에서 막혔다. 3회차부터만 — 1·2회차는 마감된 회차라
   //   판정을 바꾸면 이미 저장된 행의 '남은 칸 수'가 소급해서 달라진다(ADR-91 §2-4).
@@ -45,13 +85,14 @@ export const CHECKIN_SESSION_3 = {
     brand: 'FUTURE NOW · 3회차',
     title: '오늘의 갈무리',
     subtitle: '현재를 직면하고, 습관을 다시 짜다',
-    counter: (n: number) => `필수 6칸 중 ${n}칸 채움 · 약 5분`,
-    band: '오늘 확인한 거리와, 오늘 바꾸기로 한 하나를 적어 둡니다.',
+    counter: (n: number) => `필수 8묶음 중 ${n}묶음 채움`,
+    band: '오늘 발견한 변화의 걸림돌과, 생각·말·행동에서 바꿀 실천을 기록합니다.',
     // firstVisitOnce 없음 — 1회차에서 이미 안내.
   },
   today: {
-    // 1면 순서: 영역(직면) → 오늘의 질문(직면) → 습관 짝(재구성) → 마음(묶음 밖).
-    order: ['areaPick', 'question', 'pairText', 'mood'],
+    // 1면 작성: 영역 → 함정 질문 → SEED → 마음. pairText는 과거 답의 열람 순서만 보존한다.
+    order: ['areaPick', 'question', 'pairText', 'seed', 'mood'],
+    seed: SEED_3,
     // ① 간절한 영역 — 필수. future_area 를 재사용하지 않는다:
     //   2회차는 '가장 가슴 뛴 영역', 3회차는 '가장 간절한 영역'이다. 둘이 다를 때가 인도자에게 가장 값진
     //   정보인데 같은 키를 쓰면 그 차이가 덮인다.
@@ -82,10 +123,10 @@ export const CHECKIN_SESSION_3 = {
     question: {
       group: '현재를 직면하고',
       key: 'stuck_named',
-      label: '오늘 나를 제자리에 붙잡아 두고 있던 것은 무엇이었나요? (책 96~104쪽)',
+      label: "'변화를 막는 세가지 함정' 중 가장 나를 붙잡고 있는 것은 무엇인가요? (책 96~104쪽)",
       // ADR-102 Phase 2 축1 — 문장 셋을 둘로 줄였다. '정확한 분석이 아니어도 됩니다' 는 오해 방지처럼
       //   보이나 실은 완충이다 — 무엇을 적으라는 지시가 이미 앞에 있어 오답이 생기지 않는다.
-      help: '오늘 붙인 이름을 그대로 적으십시오. 알아본 순간의 느낌을 함께 적으면 더 좋습니다.',
+      help: '또는 다른 함정을 찾아서 이름을 붙이셔도 좋습니다. 떠오르는 장면을 함께 적으면 더욱 좋습니다.',
       badge: '선택',
     },
     // ③ 습관 짝 — 필수. 두 칸이 둘 다 채워져야 한 칸으로 센다.
@@ -96,6 +137,7 @@ export const CHECKIN_SESSION_3 = {
     //   배치가 아니라 순서가 만든 결과다. **키는 바꾸지 않는다** — 저장값·결측 판정·나눔 열이 그대로 산다.
     //   to.help 를 지운 것은 연결선 문구('그 자리를 만들려면')가 같은 논리를 이미 지기 때문이다.
     pairText: {
+      hidden: true, // 새 작성에서는 숨기고, 기존 habit_start/stop은 readModel에서 계속 읽는다.
       group: '습관을 다시 짜다',
       label: '이번 주에 실제로 바꿔 볼 짝 하나만 옮겨 주세요. (책 117~118쪽)',
       // ADR-102 Phase 2 축1·축2 — 분량 지시를 명령형으로 바꾸고, 왜 짝이어야 하는지를 말한다.
@@ -126,6 +168,7 @@ export const CHECKIN_SESSION_3 = {
     moodCustom: { key: 'mood_custom', placeholder: '직접 쓰기 (선택)', promptPlaceholder: '그럼, 지금 마음에 가까운 말을 한마디로 적어 주세요' },
   },
   deepen: {
+    hidden: true, // speech_habit의 과거 답은 열람에 보존한다.
     // 심화에는 묶음 이정표를 두지 않는다 — 한 칸뿐이라(ADR-100) 나눌 갈래가 없다.
     // ADR-102 축4 — 심화를 부록으로 두지 않는다. 8/11 이 펼쳤고, 이것은 부가가 아니라 값을 치른 이유에 가깝다.
     title: '여기서 한 겹 더 들어갑니다',
@@ -167,7 +210,7 @@ export const CHECKIN_SESSION_3 = {
     //   대체 대신 보조 문구로 잇는다. 이 문구는 위 rough_project 칸을 가리키므로 그것과 **묶음**이다.
     // ADR-102 — 앞은 요구로(하나면 됩니다 → 하나를 적으십시오), 뒤 '~여도 좋습니다'는 **범위 예시**라 남긴다.
     //   우당탕탕을 한 걸음으로 써도 된다는 경로 안내이지 안 해도 된다는 허락이 아니다(ADR-98 의 두 칸 연결).
-    help: '오늘 정하신 것 하나를 적으십시오. 위에 우당탕탕 프로젝트를 적으셨다면, 그 첫 걸음이어도 좋습니다.',
+    help: '위 SEED 12개 중 이번 주에 먼저 실행할 하나를 고르십시오. 각 액션아이템 아래 ‘이번 주 한 걸음으로 선택’을 누르면 옮겨집니다.',
     what: { key: 'step_what', label: '무엇을 하시겠어요?' },
     when: {
       key: 'step_when',
@@ -182,6 +225,7 @@ export const CHECKIN_SESSION_3 = {
       help: '흐트러지는 날이 오면, 그날부터 다시 이어 가면 됩니다.',
     },
     share: {
+      hidden: true, // 새 토글만 숨긴다. 기존 step_private 플래그와 열람 차단은 유지한다.
       toggleLabel: '이번 한 걸음은 나만 볼게요',
     },
   },
@@ -249,19 +293,15 @@ export const CHECKIN_SESSION_3 = {
   // 나눔 후보 열(지휘부 확정 2026-08-03) — **나눌 수 있는 문장만** 넣는다.
   //   범주 낱말(gap_area)과 자기개시가 깊은 문항(stuck_named)은 제외한다.
   //   비어 있을 가능성은 배제 사유가 아니다 — 인도자가 훑어 고르는 도구이므로 빈 칸은 그냥 빈 칸이다.
-  //   speech_habit 은 관찰 가능한 습관이라 얕고, 다음 회차를 가볍게 여는 재료가 된다
-  //   (세 번 자기를 낮게 보고 나온 주간이라 '어긋난 하루'로 열면 무거움이 두 주 연속이 된다).
-  //   쌍(from→to)은 **교체·변환**을 뜻한다 — 습관 짝은 참이고, 영역+바람은 아니라 쓰지 않는다.
+  //   새로 시작할 행동은 SEED의 문장이다. 열두 답 전량은 명단 펼침·개인 기록에서 읽는다.
+  //   step_what은 비공개 약속에 걸리므로 이 나눔 열로 옮기지 않는다.
   // 나눔 열 — 4회차 오프닝에서 소리 내어 읽는 재료.
-  //   습관 짝은 화면 기입 순서가 뒤집혔어도 **의미 방향(없앤 것 → 들인 것)** 그대로 둔다. 둘은 별개다.
   //   **자리는 카드 순서를 따른다**(ADR-99). 우당탕탕은 카드에서 gap_want 바로 아래이므로 여기서도 두 번째다.
   //   열람이 카드를 되비추는 것이라는 원칙(ADR-98)을 나눔 열에도 같이 적용한 것이다.
-  //   ADR-98 은 이 자리를 마지막으로 뒀는데 근거가 코드와 어긋났다 — '빈 칸이 목록 한복판에 생긴다'고 봤으나
-  //   현황 화면은 `c.has` 로 **빈 칸을 아예 렌더하지 않는다**(page.tsx). 그 상황은 발생하지 않는다.
+  //   숨긴 습관 짝·말 심화는 신규 나눔 열에서 제외했다. 과거 값은 readModel이 계속 읽는다.
   summaryFields: [
     { label: '지금 가장 바라는 것', key: 'gap_want' },
     { label: '우당탕탕 프로젝트', key: 'rough_project' },
-    { label: '습관 바꾸기', from: 'habit_stop', to: 'habit_start' },
-    { label: '입에 붙은 말', key: 'speech_habit' },
+    { label: '새로 시작할 행동', key: 'seed_start_act' },
   ],
 } satisfies CheckinSession;

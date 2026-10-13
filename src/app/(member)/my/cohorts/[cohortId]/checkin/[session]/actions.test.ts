@@ -9,6 +9,8 @@ const OTHER = '22222222-2222-4222-8222-222222222222';
 const deleteCheckinPhoto = vi.fn(async () => undefined);
 const listCheckinPhotos = vi.fn(async () => []);
 const setMyCheckinPhotoCoachView = vi.fn(async () => undefined);
+const saveMyCheckin = vi.fn(async () => undefined);
+const submitMyCheckin = vi.fn(async () => undefined);
 
 vi.mock('@/core/supabase/server', () => ({
   createServerContext: async () => ({
@@ -16,15 +18,35 @@ vi.mock('@/core/supabase/server', () => ({
     deleteCheckinPhoto,
     listCheckinPhotos,
     setMyCheckinPhotoCoachView,
+    saveMyCheckin,
+    submitMyCheckin,
   }),
 }));
 
-import { deleteMyCheckinPhotoAction, listMyCheckinPhotosAction, setCheckinPhotoCoachViewAction } from './actions';
+import { deleteMyCheckinPhotoAction, listMyCheckinPhotosAction, setCheckinPhotoCoachViewAction, submitCheckinAction } from './actions';
+import { CHECKIN_SESSION_3 } from '@/instruments/futurenow/checkin/session3';
 
 beforeEach(() => {
   deleteCheckinPhoto.mockClear();
   listCheckinPhotos.mockClear();
   setMyCheckinPhotoCoachView.mockClear();
+  saveMyCheckin.mockClear();
+  submitMyCheckin.mockClear();
+});
+
+describe('SEED 서버 제출 경계', () => {
+  const full = Object.fromEntries(CHECKIN_SESSION_3.missingKeys({}).map((k) => [k, k === 'mood' ? ['담담함'] : '실천']));
+  it('SEED 한 칸이 비어도 초안은 저장하고 제출은 막는다', async () => {
+    const answers = { ...full, seed_start_think: ' ' };
+    expect((await submitCheckinAction('c', 3, answers, { stepPrivate: true })).ok).toBe(false);
+    expect(saveMyCheckin).toHaveBeenCalledWith({ cohortId: 'c', sessionNo: 3, answers, flags: { stepPrivate: true } });
+    expect(submitMyCheckin).not.toHaveBeenCalled();
+  });
+  it('전부 채우면 기존 비공개 플래그를 바꾸지 않고 제출한다', async () => {
+    expect((await submitCheckinAction('c', 3, full, { stepPrivate: true })).ok).toBe(true);
+    expect(saveMyCheckin).toHaveBeenCalledWith({ cohortId: 'c', sessionNo: 3, answers: full, flags: { stepPrivate: true } });
+    expect(submitMyCheckin).toHaveBeenCalledWith('c', 3);
+  });
 });
 
 describe('삭제 — 본인 경로만', () => {

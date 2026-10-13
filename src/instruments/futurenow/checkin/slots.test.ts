@@ -8,7 +8,7 @@ import { groupBoundary, neededBacks, orderedSlots, priorSessionNos, resolveMirro
 // SlotName 이 늘면 이 리터럴이 즉시 컴파일 에러가 난다(누락 속성).
 //   카드·readModel 의 never 가드와 함께 두면 슬롯 추가 시 세 곳이 동시에 빨개진다.
 const ALL_SLOTS: Record<SlotName, true> = {
-  pairText: true, areaPick: true, purpose: true, question: true, identity: true, mood: true,
+  pairText: true, areaPick: true, purpose: true, question: true, identity: true, mood: true, seed: true,
 };
 
 describe('resolveMirror — keys[0] 이 앵커다(ADR-85 현행 렌더 보존)', () => {
@@ -60,7 +60,7 @@ describe('resolveMirror — keys[0] 이 앵커다(ADR-85 현행 렌더 보존)',
 
 describe('슬롯 망라성', () => {
   it('SlotName 전체가 잠겨 있다', () => {
-    expect(Object.keys(ALL_SLOTS).sort()).toEqual(['areaPick', 'identity', 'mood', 'pairText', 'purpose', 'question']);
+    expect(Object.keys(ALL_SLOTS).sort()).toEqual(['areaPick', 'identity', 'mood', 'pairText', 'purpose', 'question', 'seed']);
   });
 });
 
@@ -93,7 +93,7 @@ describe('orderedSlots — order 가 화면 순서다', () => {
     expect(orderedSlots(CHECKIN_SESSION_2).map((s) => s.name)).toEqual(['areaPick', 'purpose', 'identity', 'mood']);
   });
   it('3회차: 영역 → 오늘의 질문 → 습관 짝 → 마음 (2회차와 순서가 다르다)', () => {
-    expect(orderedSlots(CHECKIN_SESSION_3).map((s) => s.name)).toEqual(['areaPick', 'question', 'pairText', 'mood']);
+    expect(orderedSlots(CHECKIN_SESSION_3).map((s) => s.name)).toEqual(['areaPick', 'question', 'seed', 'mood']);
   });
   it('order 에 없는 슬롯은 그리지 않는다 — 3회차에는 identity 가 없다', () => {
     expect(orderedSlots(CHECKIN_SESSION_3).map((s) => s.name)).not.toContain('identity');

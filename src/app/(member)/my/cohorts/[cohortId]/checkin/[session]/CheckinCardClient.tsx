@@ -16,6 +16,7 @@ import { buildCheckinRead, readSelfHighlights } from '@/instruments/futurenow/ch
 import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView';
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 import { WorkbookPhotos } from './WorkbookPhotos';
+import { SeedActions } from './SeedActions';
 
 type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean; stepPrivate: boolean };
 // 되비추기 재료 — page 가 **깊이별 봉투**로 넘긴다(§6·ADR-90·103). 키가 '몇 회차 전'이고 값이 그 회차 answers.
@@ -486,6 +487,7 @@ export function CheckinCardClient({
         ) : null;
 
       case 'mood':
+        // 아래 SEED와 같은 레지스트리 순회에 속한다.
         return (
           <Field label={t.mood.label} helpText={t.mood.help} fieldKey={t.mood.key} empty={isEmpty(t.mood.key)}>
             <MultiChoiceChips options={[...t.mood.options]} value={mood} max={t.mood.max} exclusive={t.mood.exclusive} onChange={(v) => pickMood(t.mood.key, t.mood.exclusive, v)} ariaLabel={t.mood.label} />
@@ -494,6 +496,12 @@ export function CheckinCardClient({
             <input ref={moodCustomRef} value={str(t.moodCustom.key)} onChange={(e) => setAnswer(t.moodCustom.key, e.target.value)} onBlur={flushSave} placeholder={moodCustomHint} aria-label={moodCustomHint} style={{ ...inputBox, marginTop: 'var(--space-2)' }} />
           </Field>
         );
+
+      case 'seed':
+        return t.seed ? (
+          <SeedActions block={t.seed} answers={answers} onChange={setAnswer} onBlur={flushSave} isEmpty={isEmpty}
+            onSelect={(value) => { setAnswer(copy!.step.what.key, value); goToField(copy!.step.what.key); }} />
+        ) : null;
 
       // 망라성 가드 — SlotName 에 슬롯이 늘면 여기서 컴파일이 깨진다(readModel 과 짝).
       default: {
@@ -556,7 +564,7 @@ export function CheckinCardClient({
           되살리면 타입·문안 3건·baseline 이 따라온다. 기본 펼침 + 뱃지 없음이 ADR-88 의 근거
           ('빈 칸이 펼쳐져 있으면 필수로 읽힌다')를 건드린다는 것은 알고 뺀다 — 이 개편이 요구를
           올리는 방향이라 그 오독이 이번엔 손해가 아니다. */}
-      <Disclosure title={copy.deepen.title} summary={copy.deepen.summary} defaultOpen last>
+      {!copy.deepen.hidden ? <Disclosure title={copy.deepen.title} summary={copy.deepen.summary} defaultOpen last>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {copy.deepen.fields.map((f) => (
             <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -573,7 +581,7 @@ export function CheckinCardClient({
             </div>
           ))}
         </div>
-      </Disclosure>
+      </Disclosure> : null}
 
       {/* 2면 · 한 걸음 (지난 걸음 결산 → 다음 걸음) */}
       <div style={{ paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>
@@ -622,7 +630,7 @@ export function CheckinCardClient({
           {/* ★ 토글은 **있을 때만** 그린다(ADR-116) — 마지막 회차에는 다음 시간이 없어 띄울 자리가 없다.
               **고지는 남는다** — 토글이 사라진다고 누가 읽는지까지 사라지면 안 된다.
               1~5회차는 값이 있으므로 출력 변화 0. */}
-          {share.toggleLabel ? (
+          {share.toggleLabel && !share.hidden ? (
             <CheckRow label={share.toggleLabel} checked={flags.stepPrivate} onChange={(v) => setFlag('stepPrivate', v)} />
           ) : null}
         </div>

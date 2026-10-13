@@ -1,0 +1,20 @@
+.seed { margin-bottom: var(--space-5); color: var(--color-text); }
+.seed h2, .seed h3 { margin: 0; }
+.seed p { color: var(--color-text-secondary); margin: var(--space-2) 0; }
+.count { margin: var(--space-4) 0; font-size: 13px; }
+.terms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.terms > div { border: var(--border-hair) solid var(--color-border); border-radius: var(--radius); padding: var(--space-3); font-size: 13px; }
+.layer { border: var(--border-hair) solid var(--color-border); border-radius: var(--radius); overflow: hidden; margin-top: var(--space-4); }
+.heading { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface-1); }
+.heading > span { white-space: nowrap; color: var(--color-text-secondary); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.field { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); border-top: var(--border-hair) solid var(--color-border); min-width: 0; scroll-margin-top: 80px; }
+.field:nth-child(even) { border-left: var(--border-hair) solid var(--color-border); }
+.field label { font-size: 15px; font-weight: 500; }
+.field > span { color: var(--color-text-muted); }
+.field textarea { width: 100%; min-height: 110px; flex: 1; }
+.field button { white-space: normal; height: auto; min-height: var(--tap-min); padding: var(--space-2); font-size: 13px; }
+@media (max-width: 540px) {
+  .grid, .terms { grid-template-columns: minmax(0, 1fr); }
+  .field:nth-child(even) { border-left: 0; }
+}

@@ -121,6 +121,18 @@ export function buildCheckinRead(
         if (b) pushText(out, b.label, text(answers, b.key));
         break;
       }
+      case 'seed': {
+        const b = t.seed;
+        if (!b) break;
+        const layers: ReadBlock[] = [];
+        for (const layer of b.layers) {
+          const fields: ReadBlock[] = [];
+          for (const f of layer.fields) pushText(fields, f.label, text(answers, f.key));
+          if (fields.length) layers.push({ kind: 'group', title: layer.title, blocks: fields });
+        }
+        if (layers.length) out.push({ kind: 'group', title: b.title, blocks: layers });
+        break;
+      }
       case 'mood': {
         // 선택 항목 + 직접 쓰기를 한 줄로. moodCustom 은 레지스트리에 라벨이 없어(placeholder 뿐)
         //   열람용 라벨을 새로 짓지 않고 mood 값에 이어 붙인다(카드도 같은 Field 안에 있다).

@@ -51,7 +51,7 @@ describe('4회차 등록·구조', () => {
   //   두 옮겨 적기(펼친 것 하나 · 고른 것 하나)가 붙어 있어야 묶음 경계가 화제 전환과 일치한다.
   it('1면 순서가 3회차와 다르다 — 옮겨 적기 둘이 붙어 있다', () => {
     expect(c.today.order).toEqual(['areaPick', 'pairText', 'question', 'mood']);
-    expect(CHECKIN_SESSION_3.today.order).toEqual(['areaPick', 'question', 'pairText', 'mood']);
+    expect(CHECKIN_SESSION_3.today.order).toEqual(['areaPick', 'question', 'pairText', 'seed', 'mood']);
   });
 
   it('표지 부제를 쪼갠 두 묶음 이름이 이정표로 쓰인다', () => {

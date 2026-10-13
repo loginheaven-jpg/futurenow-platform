@@ -123,7 +123,8 @@ describe('워크북 사진 블록이 화면에 닿는다 (ADR-197)', () => {
       expect(html.split(WORKBOOK_TITLE).length - 1, `${n}회차 제목 수`).toBe(1);
       expect(at, `${n}회차 표지 아래`).toBeGreaterThan(html.indexOf(getCheckinSession(n)!.cover.title));
       expect(at, `${n}회차 첫 칸 위`).toBeLessThan(html.indexOf(firstSlotLabel(n)));
-      expect(at, `${n}회차 심화 위`).toBeLessThan(html.indexOf(getCheckinSession(n)!.deepen.title));
+      const deepen = getCheckinSession(n)!.deepen;
+      if (!deepen.hidden) expect(at, `${n}회차 심화 위`).toBeLessThan(html.indexOf(deepen.title));
     }
   });
 
@@ -149,5 +150,21 @@ describe('워크북 사진 블록이 화면에 닿는다 (ADR-197)', () => {
     const row = html.match(/<button[^>]*role="checkbox"[^>]*>(?:(?!<\/button>).)*인도자 열람(?:(?!<\/button>).)*<\/button>/)?.[0] ?? '';
     expect(row, '체크 줄이 없다').not.toBe('');
     expect(row).toContain('aria-checked="true"');
+  });
+});
+
+describe('확정 3회차 SEED가 실제 카드에 닿는다', () => {
+  it('열두 입력칸·확정 띠 문구·한 걸음 선택 버튼이 있고 숨긴 챕터는 없다', () => {
+    const html = card(3, true);
+    const c = getCheckinSession(3)!;
+    expect(html).toContain(c.cover.band);
+    for (const layer of c.today.seed!.layers) for (const f of layer.fields) {
+      expect(html).toContain(`id="input-${f.key}"`);
+    }
+    expect(html.match(/aria-required="true"/g)).toHaveLength(12);
+    expect(html.match(/이번 주 한 걸음으로 선택<\/button>/g)).toHaveLength(12);
+    expect(html).not.toContain(c.today.pairText!.label);
+    expect(html).not.toContain(c.deepen.title);
+    expect(html).not.toContain('이번 한 걸음은 나만 볼게요');
   });
 });

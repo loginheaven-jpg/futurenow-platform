@@ -7,6 +7,7 @@ const OPEN: ReadFlags = { stepPrivate: false, suggestionAnon: false, contactRequ
 
 // 3회차 신규 7키 + 공통 키.
 const ANSWERS_3 = {
+  ...Object.fromEntries(c.today.seed.layers.flatMap((layer) => layer.fields.map((f) => [f.key, f.placeholder]))),
   gap_area: '관계',
   gap_want: '아버지와 다시 대화하기',
   stuck_named: '거절당할까 봐 먼저 연락하지 못하는 것',
@@ -70,24 +71,28 @@ describe('3회차 등록·구조', () => {
   // 결측 안내는 화면 문구를 그대로 읽는다 — REQUIRED_3 와 렌더가 어긋나면 이중 진실이 된다.
   it('결측 라벨 순서·문안이 화면과 같다', () => {
     const missing = c.missingLabels({});
-    expect(missing).toContain(c.today.pairText.from.label);
-    expect(missing).toContain(c.today.pairText.to.label);
-    expect(missing.indexOf(c.today.pairText.from.label)).toBeLessThan(missing.indexOf(c.today.pairText.to.label));
+    const seedLabels = c.today.seed.layers.flatMap((layer) => layer.fields.map((f) => f.label));
+    expect(missing.filter((l) => seedLabels.includes(l))).toEqual(seedLabels);
+    expect(missing).not.toContain(c.today.pairText.from.label);
+    expect(missing).not.toContain(c.today.pairText.to.label);
   });
 });
 
-describe('필수 6칸 — 짝은 둘 다 채워야 한 칸', () => {
-  it('전부 채우면 6', () => {
-    expect(c.filledCount(ANSWERS_3)).toBe(6);
-    expect(c.requiredTotal).toBe(6);
+describe('필수 8묶음 — SEED는 생각·말·행동 각 네 칸 전부', () => {
+  it('전부 채우면 8', () => {
+    expect(c.filledCount(ANSWERS_3)).toBe(8);
+    expect(c.requiredTotal).toBe(8);
   });
 
   it('영역 칩만 고르고 문장을 비우면 미충족', () => {
-    expect(c.filledCount({ ...ANSWERS_3, gap_want: '' })).toBe(5);
+    expect(c.filledCount({ ...ANSWERS_3, gap_want: '' })).toBe(7);
   });
 
-  it('없앨 것만 적고 들일 것을 비우면 미충족 — 제거는 창조와 짝을 이룬다', () => {
-    expect(c.filledCount({ ...ANSWERS_3, habit_start: '' })).toBe(5);
+  it('SEED 어느 한 칸이 비면 그 영역은 미충족이다', () => {
+    for (const layer of c.today.seed.layers) for (const f of layer.fields) {
+      expect(c.filledCount({ ...ANSWERS_3, [f.key]: '  ' })).toBe(7);
+      expect(c.missingKeys({ ...ANSWERS_3, [f.key]: '' })).toEqual([f.key]);
+    }
   });
 
   it('오늘의 질문·심화 한 칸·자신감은 세지 않는다', () => {
@@ -95,7 +100,7 @@ describe('필수 6칸 — 짝은 둘 다 채워야 한 칸', () => {
     for (const k of ['stuck_named', 'speech_habit', 'confidence', 'last_step_note']) {
       delete (without as Record<string, unknown>)[k];
     }
-    expect(c.filledCount(without)).toBe(6);
+    expect(c.filledCount(without)).toBe(8);
   });
 });
 
@@ -106,8 +111,9 @@ describe('문안 규율', () => {
     for (const w of ['설문', '진단', '지각', '미제출', '워크북']) expect(allCopy).not.toContain(w);
   });
 
-  it("'함정' 0건 — 사람을 판정하는 낱말을 카드에 쓰지 않는다", () => {
-    expect(allCopy).not.toContain('함정');
+  it('함정은 확정 질문과 도움말에만 쓴다 — 자동 판정은 없다', () => {
+    expect(c.today.question.label).toBe("'변화를 막는 세가지 함정' 중 가장 나를 붙잡고 있는 것은 무엇인가요? (책 96~104쪽)");
+    expect(c.today.question.help).toBe('또는 다른 함정을 찾아서 이름을 붙이셔도 좋습니다. 떠오르는 장면을 함께 적으면 더욱 좋습니다.');
   });
 
   // ADR-94(2026-08-07): 지휘부가 다섯 값을 최종 조판 확정치로 선언해 ADR-88·89 의 '확정된 값만 카드에 오른다'
@@ -149,12 +155,11 @@ describe('나눔 후보 열 — 나눌 수 있는 문장만(지휘부 확정 202
   //   ADR-98 이 마지막에 뒀던 근거('빈 칸이 목록 한복판에')는 코드와 어긋났다. 현황 화면은 `c.has` 로
   //   빈 칸을 아예 렌더하지 않으므로 그 상황이 없다. 열람이 카드를 되비춘다는 원칙을 나눔 열에도 적용한다.
   //   습관 짝의 from/to 는 화면 기입 순서가 뒤집혔어도 **의미 방향(없앤 것 → 들인 것)** 그대로다.
-  it('네 열: 지금 가장 바라는 것 · 우당탕탕 · 습관 바꾸기 · 입에 붙은 말', () => {
+  it('세 열: 지금 가장 바라는 것 · 우당탕탕 · 새로 시작할 행동', () => {
     expect(c.summaryFields).toEqual([
       { label: '지금 가장 바라는 것', key: 'gap_want' },
       { label: '우당탕탕 프로젝트', key: 'rough_project' },
-      { label: '습관 바꾸기', from: 'habit_stop', to: 'habit_start' },
-      { label: '입에 붙은 말', key: 'speech_habit' },
+      { label: '새로 시작할 행동', key: 'seed_start_act' },
     ]);
   });
 
@@ -258,7 +263,7 @@ describe('마음 낱말 — 목록의 한계를 가리키는 낱말로(3회차�
   it('고르면 직접 쓰기 안내가 바뀐다(강제하지 않는다 — 비워도 필수 충족)', () => {
     expect(c.today.moodCustom.promptPlaceholder).toBe('그럼, 지금 마음에 가까운 말을 한마디로 적어 주세요');
     // 마음은 칩 하나만 있어도 필수가 충족된다 — 직접 쓰기는 세지 않는다.
-    expect(c.filledCount({ ...ANSWERS_3, mood: ['딱 맞는 말이 없음'], mood_custom: '' })).toBe(6);
+    expect(c.filledCount({ ...ANSWERS_3, mood: ['딱 맞는 말이 없음'], mood_custom: '' })).toBe(8);
   });
 });
 
@@ -272,5 +277,26 @@ describe('완충 문구 — 3회차 지난 걸음', () => {
   });
   it('나에게 한마디 예시가 이 회차 것이다', () => {
     expect(c.wrap.selfNote.placeholder).toBe('오늘 본 게 아프긴 했는데, 안 봤으면 몰랐겠지');
+  });
+});
+
+describe('SEED 신규 답·과거 답 공존', () => {
+  it('본인과 인도자에게 열두 액션아이템이 빠짐없이 나온다', () => {
+    for (const audience of ['self', 'facilitator'] as const) {
+      const read = texts(buildCheckinRead(3, ANSWERS_3, OPEN, audience));
+      for (const layer of c.today.seed.layers) for (const f of layer.fields) expect(read).toContain(f.placeholder);
+    }
+  });
+
+  it('숨긴 챕터의 옛 값은 열람되며 새 필수 항목을 대신 채우지 않는다', () => {
+    const old = { habit_start: '예전 시작', habit_stop: '예전 중단', speech_habit: '예전 말' };
+    expect(c.filledCount(old)).toBe(0);
+    for (const audience of ['self', 'facilitator'] as const) {
+      const read = texts(buildCheckinRead(3, old, OPEN, audience));
+      for (const v of Object.values(old)) expect(read).toContain(v);
+    }
+    expect(c.today.pairText.hidden).toBe(true);
+    expect(c.deepen.hidden).toBe(true);
+    expect(c.step.share.hidden).toBe(true);
   });
 });

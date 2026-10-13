@@ -66,10 +66,21 @@ export type Mirror = {
  */
 export type MirrorSet = { caption?: string; items: Mirror[] };
 
-export type BlockBase = { group?: string; mirror?: Mirror; mirrors?: MirrorSet };
+export type BlockBase = { group?: string; mirror?: Mirror; mirrors?: MirrorSet; hidden?: boolean };
+
+/** SEED 문안과 응답 키는 회차가 소유한다. 작성·필수 판정·열람이 같은 필드를 순회한다. */
+export type SeedBlock = BlockBase & {
+  title: string;
+  help: string;
+  guide: string;
+  selectLabel: string;
+  counterLabel: string;
+  terms: { title: string; help: string }[];
+  layers: { id: string; title: string; help: string; fields: CheckinField[] }[];
+};
 
 // 1면 슬롯 이름 — **회차가 아니라 모양**이다(ADR-90). 이래야 4~7회차가 문안 파일만으로 조립된다.
-export type SlotName = 'pairText' | 'areaPick' | 'purpose' | 'question' | 'identity' | 'mood';
+export type SlotName = 'pairText' | 'areaPick' | 'purpose' | 'question' | 'identity' | 'mood' | 'seed';
 
 // 한 회차 카드의 전체 문안·판정. as const 대신 satisfies 로 형태를 강제하되 리터럴은 보존한다.
 export type CheckinSession = {
@@ -101,6 +112,7 @@ export type CheckinSession = {
     purpose?: BlockBase & { title: string; badge: string; help: string; fields: CheckinField[] };
     // 한 칸 서술 + badge. 3회차 '오늘의 질문' — 접힘으로 감싸지 않는다(그 회차의 핵심 경험을 받는 자리).
     question?: BlockBase & CheckinField & { badge?: string };
+    seed?: SeedBlock;
     // 정체성 문장 — 3회차에는 없다(ADR-90 에서 선택 슬롯으로).
     identity?: BlockBase & CheckinField;
     // 마음 — order 에 넣는다. '언제나 마지막'을 특례로 두면 묶음의 끝을 데이터로 말할 수 없다.
@@ -110,7 +122,7 @@ export type CheckinSession = {
   };
   // summary = 접힌 상태에서 안에 무엇이 있는지 보여 주는 한 줄. 문안이므로 레지스트리가 소유한다(컴포넌트에 박지 않는다).
   // help 는 선택이다(ADR-100) — 라벨이 이미 두 가지를 묻는 문항에는 보조 문구가 군더더기가 된다.
-  deepen: { title: string; summary: string; fields: (CheckinField & { help?: string; mirror?: Mirror })[] };
+  deepen: { title: string; summary: string; hidden?: boolean; fields: (CheckinField & { help?: string; mirror?: Mirror })[] };
   // 워크북 사진 블록(ADR-197) — 블록은 **모든 회차 맨 위에 늘 선다**(제목은 `workbook.ts` 한 곳).
   //   여기에는 회차마다 다른 안내 한 줄만 둔다. 없으면 제목만 — 3~6회차가 그렇다.
   workbook?: { help: string };
@@ -141,7 +153,7 @@ export type CheckinSession = {
      *   **타입을 넓힌 것이지 정책을 바꾼 것이 아니다** — 인도자·운영자는 전과 똑같이 읽는다.
      *   지금은 여섯 회차 전부 `notice` 가 **없다**. 되살리려면 판정을 다시 받는다.
      */
-    share?: { notice?: string; toggleLabel?: string };
+    share?: { notice?: string; toggleLabel?: string; hidden?: boolean };
   };
   wrap: {
     confidence: { key: string; label: string; help: string; min: number; max: number; leftLabel: string; rightLabel: string };

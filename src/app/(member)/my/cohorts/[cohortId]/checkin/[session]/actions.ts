@@ -2,6 +2,7 @@
 // 회차 갈무리 카드 서버 액션(ADR-80). 코어 경유 — 쓰기는 전량 DEFINER RPC(checkin_*). 권한·게이트는 RPC 내부.
 import type { CheckinPhoto } from '@/contracts';
 import { createServerContext } from '@/core/supabase/server';
+import { getCheckinSession } from '@/instruments/futurenow/checkin';
 
 type Flags = { suggestionAnon?: boolean; contactRequest?: boolean; deepOpened?: boolean; stepPrivate?: boolean };
 
@@ -31,6 +32,8 @@ export async function submitCheckinAction(
   try {
     const ctx = await createServerContext();
     await ctx.saveMyCheckin({ cohortId, sessionNo, answers, flags }); // R2: save → submit 순서 보장
+    const copy = getCheckinSession(sessionNo);
+    if (copy?.today.seed && copy.missingKeys(answers).length) return { ok: false, error: '필수 항목을 채워 주세요.' };
     await ctx.submitMyCheckin(cohortId, sessionNo);
     return { ok: true };
   } catch (e) {

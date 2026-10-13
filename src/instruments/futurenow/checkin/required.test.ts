@@ -45,10 +45,11 @@ describe('쌍 문항 — 비어 있는 쪽만 나온다', () => {
     expect(CHECKIN_SESSION_1.filledCount({ desire_from: '전' })).toBe(0);
   });
 
-  it('3회차 습관 짝: 없앨 것만 적으면 들일 것만 결측 — 제거는 창조와 짝을 이룬다', () => {
+  it('3회차 옛 습관 짝은 필수에서 빠지고 SEED를 채운다', () => {
     const m = CHECKIN_SESSION_3.missingKeys({ habit_stop: '휴대폰' });
-    expect(m).toContain('habit_start');
+    expect(m).not.toContain('habit_start');
     expect(m).not.toContain('habit_stop');
+    expect(m).toContain('seed_start_think');
   });
 
   it('2회차 영역: 칩만 고르고 문장을 비우면 문장만 결측', () => {
@@ -74,21 +75,22 @@ describe('빈 값 판정', () => {
 describe('마음 — 직접 쓰기만 채워도 충족한다 (ADR-101)', () => {
   const c = CHECKIN_SESSION_3;
   const 나머지 = {
+    ...Object.fromEntries(c.today.seed.layers.flatMap((layer) => layer.fields.map((f) => [f.key, '실천']))),
     gap_area: '관계', gap_want: '아버지와 다시 대화하기',
     habit_start: '자기 전 책 두 쪽', habit_stop: '자기 전 휴대폰',
     last_step_result: '했습니다', step_what: '저녁에 전화', step_when: '수요일 저녁',
     self_note: '오늘 도망가지 않았다',
   };
 
-  it('칩은 비었고 직접 쓰기만 적었다 → 6칸 충족·결측 0', () => {
+  it('칩은 비었고 직접 쓰기만 적었다 → 8묶음 충족·결측 0', () => {
     const a = { ...나머지, mood: [], mood_custom: '뭐라 해야 할지 모르겠는데, 후련하다' };
-    expect(c.filledCount(a)).toBe(6);
+    expect(c.filledCount(a)).toBe(8);
     expect(c.missingKeys(a)).not.toContain('mood');
   });
 
   it('둘 다 비면 여전히 결측이다 — 느슨해진 것이 아니다', () => {
     const a = { ...나머지, mood: [], mood_custom: '' };
-    expect(c.filledCount(a)).toBe(5);
+    expect(c.filledCount(a)).toBe(7);
     expect(c.missingKeys(a)).toContain('mood');
     // 결측 안내는 칩 라벨 하나만 가리킨다(상자는 바로 아래 있어 둘을 나열하면 오히려 헷갈린다).
     expect(c.missingLabels(a).filter((l) => l.includes('마음은 어떤가요'))).toHaveLength(1);
@@ -102,7 +104,7 @@ describe('마음 — 직접 쓰기만 채워도 충족한다 (ADR-101)', () => {
   //   판정만 인정하고 저장값은 건드리지 않는다는 사실을 못 박는다.
   it('판정만 인정한다 — 저장값에 칩을 만들어 넣지 않는다', () => {
     const a = { ...나머지, mood: [], mood_custom: '후련하다' };
-    expect(c.filledCount(a)).toBe(6);
+    expect(c.filledCount(a)).toBe(8);
     expect(a.mood).toEqual([]); // 판정을 물어봐도 답이 바뀌지 않는다
   });
 

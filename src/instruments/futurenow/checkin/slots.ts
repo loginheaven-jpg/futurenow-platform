@@ -8,7 +8,7 @@ export type OrderedSlot = { name: SlotName; block: BlockBase };
 export function orderedSlots(copy: CheckinSession): OrderedSlot[] {
   return copy.today.order
     .map((name) => ({ name, block: copy.today[name] as BlockBase | undefined }))
-    .filter((s): s is OrderedSlot => !!s.block);
+    .filter((s): s is OrderedSlot => !!s.block && !s.block.hidden);
 }
 
 /** 묶음 경계. null 이면 아무것도 그리지 않는다. */

@@ -76,12 +76,12 @@ describe('3회차 개정 1차가 되돌아가지 않는다 (ADR-98)', () => {
   // ADR-102 가 이 문장의 **어미만** 요구형으로 바꿨다(하나면 됩니다 → 하나를 적으십시오).
   //   ADR-98 이 세운 것은 '한 걸음을 우당탕탕으로 대체하지 않고 보조 문구로 잇는다'이고 그 연결은 그대로다.
   //   옛 문안 부재는 계속 지키고, 새 문안 존재는 '연결이 살아 있는가'로 확인한다.
-  it('우당탕탕 신설 + 한 걸음이 그것을 잇는다(두 개정은 묶음)', () => {
+  it('우당탕탕은 유지하고 한 걸음은 SEED에 연결한다(2026-10-13 확정)', () => {
     expect(lits.has("그 영역에서 시작할 '우당탕탕 프로젝트'의 이름")).toBe(true);
     expect(lits.has('오늘 마지막에 정하신 그 하나를 그대로 옮기시면 됩니다.')).toBe(false);
-    const stepHelp = [...lits].find((s) => s.includes('우당탕탕 프로젝트를 적으셨다면'));
-    expect(stepHelp, '한 걸음이 우당탕탕을 가리키는 연결이 끊겼다').toBeTruthy();
-    expect(stepHelp).toContain('그 첫 걸음이어도 좋습니다');
+    const stepHelp = [...lits].find((s) => s.includes('위 SEED 12개 중'));
+    expect(stepHelp, '한 걸음이 SEED를 가리키는 연결이 끊겼다').toBeTruthy();
+    expect(stepHelp).toContain('이번 주에 먼저 실행할 하나를 고르십시오');
   });
 
   // 1·2회차는 이 개정의 대상이 아니다 — 한 글자도 건드리지 않았음을 양방향으로 확인한다.
@@ -201,7 +201,7 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
   it('3회차 — 우당탕탕·오늘의 질문·습관 짝', () => {
     const l = koreanLiterals('session3');
     expect(l.has('완성이 아니라 시작이 목적입니다. 이름을 붙이는 순간 프로젝트가 됩니다.')).toBe(true);
-    expect(l.has('오늘 붙인 이름을 그대로 적으십시오. 알아본 순간의 느낌을 함께 적으면 더 좋습니다.')).toBe(true);
+    expect(l.has('또는 다른 함정을 찾아서 이름을 붙이셔도 좋습니다. 떠오르는 장면을 함께 적으면 더욱 좋습니다.')).toBe(true);
     expect(l.has('짝이 맞는 한 쌍만 고르십시오. 없앨 것과 들일 것이 함께 있어야 습관이 바뀝니다.')).toBe(true);
   });
 
@@ -211,8 +211,8 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
     const s1 = [...koreanLiterals('session1')].find((s) => s.includes('바꿔 쓰는 순간'));
     expect(s1).toContain('하나만 고르십시오');
     expect(s1).not.toContain('고르시면 됩니다');
-    const s3 = [...koreanLiterals('session3')].find((s) => s.includes('우당탕탕 프로젝트를 적으셨다면'));
-    expect(s3).toContain('하나를 적으십시오');
+    const s3 = [...koreanLiterals('session3')].find((s) => s.includes('위 SEED 12개 중'));
+    expect(s3).toContain('하나를 고르십시오');
     expect(s3).not.toContain('하나면 됩니다');
   });
 
@@ -222,7 +222,7 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
   it('범위 예시 셋과 실행 사실 하나는 그대로다', () => {
     expect(koreanLiterals('session1').has('노트에 찍은 점 하나여도 좋습니다.')).toBe(true);
     expect([...koreanLiterals('session2')].some((s) => s.includes('어떤 소리여도 좋습니다'))).toBe(true);
-    expect([...koreanLiterals('session3')].some((s) => s.includes('그 첫 걸음이어도 좋습니다'))).toBe(true);
+    expect([...koreanLiterals('session3')].some((s) => s.includes('다른 함정을 찾아서 이름을 붙이셔도 좋습니다'))).toBe(true);
     // 실행에 관한 사실 — 한 걸음 뒷문장과 같은 성격이다(위로가 아니라 정보).
     expect(koreanLiterals('session3').has('흐트러지는 날이 오면, 그날부터 다시 이어 가면 됩니다.')).toBe(true);
   });
@@ -232,7 +232,11 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
     for (const file of S) {
       const lits = [...koreanLiterals(file)];
       for (const w of ['반드시', '절대', '놓치지', '지각', '미제출', '함정']) {
-        expect(lits.some((s) => s.includes(w)), `${file}: ${w}`).toBe(false);
+        // 확정 질문의 교재 명칭과 다른 답을 허용하는 도움말만 예외다. 사람을 자동 판정하지 않는다.
+        const checked = file === 'session3' && w === '함정'
+          ? lits.filter((s) => !s.startsWith("'변화를 막는 세가지 함정'") && !s.startsWith('또는 다른 함정을 찾아서'))
+          : lits;
+        expect(checked.some((s) => s.includes(w)), `${file}: ${w}`).toBe(false);
       }
     }
   });
