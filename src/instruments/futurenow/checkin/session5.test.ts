@@ -74,13 +74,13 @@ describe('5회차 구조', () => {
     expect(b[3]).toEqual({ line: true });                             // 묶음 밖 — 선만
   });
 
-  // 3회차 '↓ 그 자리에'(교체) · 4회차 '↓ 그것이 넘어지면'(인과)과 달리 **조건**이라 가로 화살표다.
+  // 3회차 교체 · 4회차 우선순위→파급 효과(인과)와 달리 **조건**이라 가로 화살표다.
   it('트리거 짝의 연결선이 조건이라 가로 화살표다', () => {
     expect(c.today.pairText.connector).toBe('→ 그러면');
     expect(c.today.pairText.from.key).toBe('trigger_if');
     expect(c.today.pairText.to.key).toBe('trigger_then');
     expect(CHECKIN_SESSION_3.today.pairText.connector).toBe('↓ 그 자리를 만들려면');
-    expect(CHECKIN_SESSION_4.today.pairText.connector).toBe('↓ 그것이 넘어지면');
+    expect(CHECKIN_SESSION_4.today.pairText.connector).toBe('↓');
   });
 
   // 앞은 첫 도미노에 거는 트리거(심화), 뒤는 생활 습관 트리거(필수)다.

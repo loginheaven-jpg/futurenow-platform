@@ -153,6 +153,33 @@ describe('워크북 사진 블록이 화면에 닿는다 (ADR-197)', () => {
   });
 });
 
+describe('4회차 선택과 실천 약속의 배치 (ADR-199)', () => {
+  it('기존 응답 키를 유지하며 시점·장소와 행동을 한 묶음에 한 번씩 그린다', () => {
+    const html = card(4, false);
+    const plan = html.match(/<fieldset\b[^>]*>[\s\S]*?<\/fieldset>/)?.[0] ?? '';
+    expect(plan).not.toBe('');
+    expect(plan.indexOf('id="fld-step_when"')).toBeGreaterThan(-1);
+    expect(plan.indexOf('id="fld-step_what"')).toBeGreaterThan(plan.indexOf('id="fld-step_when"'));
+    for (const key of ['step_when', 'step_what', 'domino_what', 'domino_effect']) {
+      expect(html.split(`id="fld-${key}"`).length - 1).toBe(1);
+    }
+    expect(plan).toContain('placeholder="오늘 저녁 양치 후, 책상에서"');
+    expect(plan).toContain('placeholder="내일 글 쓸 5분을 달력에 넣기"');
+    const domino = html.slice(html.indexOf('id="fld-domino_what"'), html.indexOf('id="fld-domino_effect"'));
+    expect(domino).toContain('flex-direction:column');
+    expect(domino).not.toContain('width:60px');
+    expect(html).not.toContain('무엇을 하시겠어요?');
+  });
+
+  it('다른 회차의 한 걸음 배치는 유지한다', () => {
+    for (const n of REGISTERED.filter((n) => n !== 4)) {
+      const html = card(n, false);
+      expect(html).not.toContain('<fieldset');
+      expect(html.indexOf('id="fld-step_what"')).toBeLessThan(html.indexOf('id="fld-step_when"'));
+    }
+  });
+});
+
 describe('확정 3회차 SEED가 실제 카드에 닿는다', () => {
   it('열두 입력칸·확정 띠 문구·한 걸음 선택 버튼이 있고 숨긴 챕터는 없다', () => {
     const html = card(3, true);
