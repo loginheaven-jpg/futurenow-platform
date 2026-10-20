@@ -100,7 +100,7 @@ export type CheckinSession = {
     order: readonly SlotName[];
     // 라벨 + 두 칸(from → to). 1회차 갈망 한 쌍 · 3회차 ERRC 짝.
     //   connector = 두 칸 사이 문구(3회차 '↓ 그 자리에'). 없으면 그리지 않는다.
-    pairText?: BlockBase & { label: string; help: string; from: CheckinField; to: CheckinField; connector?: string };
+    pairText?: BlockBase & { label: string; help: string; from: CheckinField; to: CheckinField; connector?: string; layout?: 'stacked' };
     // 칩 단일선택(문자열 저장) + 한 줄. 2회차 가슴 뛴 영역 · 3회차 간절한 영역.
     // lines 는 칩 아래 붙는 줄들이다. 단수 `line` 이었으나 3회차가 둘을 요구해 배열로 승격했다(ADR-98).
     //   `line2` 같은 임시 필드를 더하지 않는 이유는 ADR-90 과 같다 — 슬롯을 회차마다 늘리면 7회차에 무너진다.
@@ -132,6 +132,8 @@ export type CheckinSession = {
     // ⑥ 다음 한 걸음 — 전 회차 공통.
     title: string;
     help: string;
+    /** 시점·장소 → 행동을 하나의 실천 약속으로 묶는다(ADR-199). 저장 키·필수 판정은 유지한다. */
+    layout?: 'plan';
     what: CheckinField;
     when: CheckinField;
     blocker: CheckinField;

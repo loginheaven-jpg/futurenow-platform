@@ -71,7 +71,7 @@ describe('4회차 등록·구조', () => {
   });
 
   it('첫 도미노 짝에 인과 연결선이 있다', () => {
-    expect(c.today.pairText.connector).toBe('↓ 그것이 넘어지면');
+    expect(c.today.pairText.connector).toBe('↓');
     expect(c.today.pairText.from.key).toBe('domino_what');
     expect(c.today.pairText.to.key).toBe('domino_effect');
   });
@@ -130,7 +130,7 @@ describe('필수 6칸 — 1번은 세 필드', () => {
   it('결측 라벨은 비어 있는 것만, 화면 문구와 바이트 동일', () => {
     const partial = { ...ANSWERS_4, project_due: '', domino_effect: '' };
     const missing = c.missingLabels(partial);
-    expect(missing).toEqual(['끝나는 날', '함께 넘어갈 것은']);
+    expect(missing).toEqual(['끝나는 날', '이것이 되면 이런 일이 쉬워집니다.']);
     expect(missing[0]).toBe(c.today.areaPick.lines[1].label);
     expect(missing[1]).toBe(c.today.pairText.to.label);
     expect(c.missingKeys(partial)).toEqual(['project_due', 'domino_effect']);

@@ -61,7 +61,7 @@ function Field({ label, helpText, badge, fieldKey, empty, children }: { label: s
     <div id={fieldKey ? fieldId(fieldKey) : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
         <span style={fieldLabel}>{label}</span>
-        {badge ? <span className="t-caption" style={gray}>{badge}</span> : null}
+        {badge ? <span className="t-caption" style={{ ...gray, flexShrink: 0 }}>{badge}</span> : null}
         {empty ? <span className="t-caption" style={gray}>{EMPTY_MARK}</span> : null}
       </div>
       {helpText ? <div className="t-caption" style={help}>{helpText}</div> : null}
@@ -415,18 +415,32 @@ export function CheckinCardClient({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
             <div style={fieldLabel}>{t.pairText.label}</div>
             <div className="t-caption" style={help}>{t.pairText.help}</div>
-            <div id={fieldId(t.pairText.from.key)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{t.pairText.from.label}{isEmpty(t.pairText.from.key) ? ' · ' + EMPTY_MARK : ''}</span>
-              {textInput(t.pairText.from.key, t.pairText.from.placeholder)}
-            </div>
-            {t.pairText.connector ? (
-              <div className="t-caption" style={{ ...gray, textAlign: 'center' }}>{t.pairText.connector}</div>
-            ) : null}
-            <div id={fieldId(t.pairText.to.key)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{t.pairText.to.label}{isEmpty(t.pairText.to.key) ? ' · ' + EMPTY_MARK : ''}</span>
-              {textInput(t.pairText.to.key, t.pairText.to.placeholder)}
-            </div>
-            {t.pairText.to.help ? <div className="t-caption" style={help}>{t.pairText.to.help}</div> : null}
+            {t.pairText.layout === 'stacked' ? (
+              <>
+                <Field label={t.pairText.from.label} fieldKey={t.pairText.from.key} empty={isEmpty(t.pairText.from.key)}>
+                  {textInput(t.pairText.from.key, t.pairText.from.placeholder)}
+                </Field>
+                {t.pairText.connector ? <div className="t-caption" style={{ ...gray, textAlign: 'center' }}>{t.pairText.connector}</div> : null}
+                <Field label={t.pairText.to.label} helpText={t.pairText.to.help} fieldKey={t.pairText.to.key} empty={isEmpty(t.pairText.to.key)}>
+                  {textInput(t.pairText.to.key, t.pairText.to.placeholder)}
+                </Field>
+              </>
+            ) : (
+              <>
+                <div id={fieldId(t.pairText.from.key)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{t.pairText.from.label}{isEmpty(t.pairText.from.key) ? ' · ' + EMPTY_MARK : ''}</span>
+                  {textInput(t.pairText.from.key, t.pairText.from.placeholder)}
+                </div>
+                {t.pairText.connector ? (
+                  <div className="t-caption" style={{ ...gray, textAlign: 'center' }}>{t.pairText.connector}</div>
+                ) : null}
+                <div id={fieldId(t.pairText.to.key)} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <span className="t-caption" style={{ width: 60, flexShrink: 0, color: 'var(--color-text-secondary)' }}>{t.pairText.to.label}{isEmpty(t.pairText.to.key) ? ' · ' + EMPTY_MARK : ''}</span>
+                  {textInput(t.pairText.to.key, t.pairText.to.placeholder)}
+                </div>
+                {t.pairText.to.help ? <div className="t-caption" style={help}>{t.pairText.to.help}</div> : null}
+              </>
+            )}
           </div>
         ) : null;
 
@@ -613,8 +627,17 @@ export function CheckinCardClient({
           <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line' }}>{copy.step.help}</div>
         </div>
       </div>
-      <Field label={copy.step.what.label} fieldKey={copy.step.what.key} empty={isEmpty(copy.step.what.key)}>{textInput(copy.step.what.key)}</Field>
-      <Field label={copy.step.when.label} helpText={copy.step.when.help} fieldKey={copy.step.when.key} empty={isEmpty(copy.step.when.key)}>{textInput(copy.step.when.key, copy.step.when.placeholder)}</Field>
+      {copy.step.layout === 'plan' ? (
+        <fieldset aria-label={copy.step.title} style={{ margin: 0, padding: 0, minWidth: 0, border: 0 }}>
+          <Field label={copy.step.when.label} helpText={copy.step.when.help} fieldKey={copy.step.when.key} empty={isEmpty(copy.step.when.key)}>{textInput(copy.step.when.key, copy.step.when.placeholder)}</Field>
+          <Field label={copy.step.what.label} helpText={copy.step.what.help} fieldKey={copy.step.what.key} empty={isEmpty(copy.step.what.key)}>{textInput(copy.step.what.key, copy.step.what.placeholder)}</Field>
+        </fieldset>
+      ) : (
+        <>
+          <Field label={copy.step.what.label} fieldKey={copy.step.what.key} empty={isEmpty(copy.step.what.key)}>{textInput(copy.step.what.key)}</Field>
+          <Field label={copy.step.when.label} helpText={copy.step.when.help} fieldKey={copy.step.when.key} empty={isEmpty(copy.step.when.key)}>{textInput(copy.step.when.key, copy.step.when.placeholder)}</Field>
+        </>
+      )}
       <Field label={copy.step.blocker.label} helpText={copy.step.blocker.help}>{textInput(copy.step.blocker.key, copy.step.blocker.placeholder)}</Field>
       {/* 마지막 회차 전용(ADR-116) — **다음 모임이 없는 자리를 사람 한 명이 대신한다.** `share` 앞에 그린다. */}
       {copy.step.companion ? (

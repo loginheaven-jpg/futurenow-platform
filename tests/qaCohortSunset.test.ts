@@ -12,8 +12,11 @@
 //   DB 조회를 넣으면 자격 없는 환경에서 **조용히 건너뛰고**, 그것이 이 조항이 막으려는 바로 그 모양이다.
 //   대신 **날짜**로 운다 — 자격이 필요 없고 어디서나 같은 값을 낸다.
 //   실제 0 확인은 `node scripts/qaCohort.mjs status` 가 한다(그 명령을 아래에 적어 둔다).
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
+
+// 순수한 코드 관문을 검사한다. 도구를 import할 때 관리자 키를 요구하지 않도록 외부 클라이언트만 격리한다.
+vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn(() => ({})) }));
 
 /**
  * **기한.** 이 값을 미루려면 **사람이 손으로 미뤄야 한다.** 그것이 이 잠금의 목적이다 —
