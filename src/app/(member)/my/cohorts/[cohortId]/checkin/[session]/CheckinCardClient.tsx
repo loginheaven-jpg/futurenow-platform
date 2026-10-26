@@ -17,6 +17,8 @@ import { CheckinReadView } from '@/instruments/futurenow/checkin/CheckinReadView
 import { markCheckinOpenedAction, saveCheckinAction, submitCheckinAction } from './actions';
 import { WorkbookPhotos } from './WorkbookPhotos';
 import { SeedActions } from './SeedActions';
+import { SignalPairs, SignalReview } from './SignalPairs';
+import { reviewPair } from '@/instruments/futurenow/checkin/pairs';
 
 type Flags = { suggestionAnon: boolean; contactRequest: boolean; deepOpened: boolean; stepPrivate: boolean };
 // 되비추기 재료 — page 가 **깊이별 봉투**로 넘긴다(§6·ADR-90·103). 키가 '몇 회차 전'이고 값이 그 회차 answers.
@@ -193,6 +195,9 @@ export function CheckinCardClient({
   preview?: boolean;
 }) {
   const copy = getCheckinSession(sessionNo); // 순수 모듈 — 클라 import 안전(직렬화 경계 넘지 않음)
+  const review = copy?.step.lastStep?.reviewPairs;
+  const reviewBlock = review ? getCheckinSession(review.sessionNo)?.today.pairText : undefined;
+  const reviewPrior = review ? priors[sessionNo - review.sessionNo] ?? {} : {};
   const [answers, setAnswers] = useState<Record<string, unknown>>(initialAnswers);
   const [flags, setFlags] = useState<Flags>(initialFlags);
   const router = useRouter();
@@ -239,6 +244,13 @@ export function CheckinCardClient({
       : (copy?.today.moodCustom.placeholder ?? '');
   const confidence = typeof answers.confidence === 'number' ? (answers.confidence as number) : null;
 
+  function withReviewSnapshot(a: Record<string, unknown>): Record<string, unknown> {
+    if (!review || !copy?.step.lastStep) return a;
+    if (!a[copy.step.lastStep.key] && !a[copy.step.lastStep.note.key]) return a;
+    const pair = reviewPair(review, reviewBlock, reviewPrior, a);
+    return pair ? { ...a, [review.from.key]: pair.from, [review.to.key]: pair.to } : a;
+  }
+
   function scheduleSave(nextAnswers: Record<string, unknown>, nextFlags: Flags) {
     if (preview) return; // 미리보기는 아무것도 저장하지 않는다
     if (timer.current) clearTimeout(timer.current);
@@ -246,7 +258,7 @@ export function CheckinCardClient({
   }
   async function doSave(a: Record<string, unknown>, f: Flags) {
     if (preview) return;
-    const res = await saveCheckinAction(cohortId, sessionNo, a, f);
+    const res = await saveCheckinAction(cohortId, sessionNo, withReviewSnapshot(a), f);
     if (res.ok) {
       setSaveFailed(false);
       const d = new Date();
@@ -267,7 +279,10 @@ export function CheckinCardClient({
   }
 
   function setAnswer(k: string, v: unknown) {
-    const next = { ...answers, [k]: v };
+    changeAnswers({ ...answers, [k]: v });
+  }
+  function changeAnswers(a: Record<string, unknown>) {
+    const next = withReviewSnapshot(a);
     setAnswers(next);
     scheduleSave(next, flags);
   }
@@ -289,8 +304,10 @@ export function CheckinCardClient({
     //   네트워크가 끊기면) setBusy(false) 에 도달하지 못하고, 참여자는 새로고침 전까지 제출을 못 한다.
     //   가드가 있는 것과 가드가 풀리는 것은 다른 문제다(성능 감사 2026-08-25).
     try {
-      const res = await submitCheckinAction(cohortId, sessionNo, answers, flags); // R2: save→submit 한 액션 내 순차
+      const finalAnswers = withReviewSnapshot(answers);
+      const res = await submitCheckinAction(cohortId, sessionNo, finalAnswers, flags); // R2: save→submit 한 액션 내 순차
       if (res.ok) {
+        setAnswers(finalAnswers);
         setJustSubmitted(true);
         setMode('read');
         router.refresh(); // 방금 올린 워크북 사진이 read 화면에 바로 보이도록(서버 signed URL 재생성)
@@ -411,6 +428,7 @@ export function CheckinCardClient({
   function renderSlot(name: SlotName): React.ReactNode {
     switch (name) {
       case 'pairText':
+        if (t.pairText?.repeat) return <SignalPairs block={t.pairText} answers={answers} onChange={changeAnswers} isEmpty={isEmpty} />;
         return t.pairText ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
             <div style={fieldLabel}>{t.pairText.label}</div>
@@ -488,7 +506,7 @@ export function CheckinCardClient({
       // 한 칸 서술. 접힘으로 감싸지 않는다 — 그 회차의 핵심 경험을 받는 자리라 눈에 보여야 한다.
       case 'question':
         return t.question ? (
-          <Field label={t.question.label} helpText={t.question.help} badge={t.question.badge}>
+          <Field label={t.question.label} helpText={t.question.help} badge={t.question.badge} fieldKey={t.question.key} empty={isEmpty(t.question.key)}>
             <TextArea value={str(t.question.key)} onChange={(v) => setAnswer(t.question!.key, v)} placeholder={t.question.placeholder} rows={3} ariaLabel={t.question.label} />
           </Field>
         ) : null;
@@ -602,7 +620,10 @@ export function CheckinCardClient({
         {/* ⑤ 지난 한 걸음(2회차부터) — 위에 지난 회차 한 걸음 되비추기(없으면 대체 문구) */}
         {lastStep ? (
           <div style={{ marginBottom: 'var(--space-5)' }}>
-            <MirrorOf mirror={lastStep.mirror} priors={priors} />
+            {review ? <SignalReview review={review} block={reviewBlock} prior={reviewPrior} answers={answers} onSelect={(from, to) => changeAnswers({
+              ...answers, [review.from.key]: from, [review.to.key]: to,
+              [lastStep.key]: '', [lastStep.note.key]: '',
+            })} /> : <MirrorOf mirror={lastStep.mirror} priors={priors} />}
             <div id={fieldId(lastStep.key)} style={fieldLabel}>{lastStep.label}{isEmpty(lastStep.key) ? <span className="t-caption" style={{ ...gray, marginLeft: 'var(--space-2)' }}>{EMPTY_MARK}</span> : null}</div>
             <div style={{ marginTop: 'var(--space-2)' }}>
               <MultiChoiceChips
@@ -622,11 +643,12 @@ export function CheckinCardClient({
         ) : null}
 
         {/* ⑥ 다음 한 걸음 */}
-        <div style={{ marginBottom: 'var(--space-4)' }}>
+        {!copy.step.hidden ? <div style={{ marginBottom: 'var(--space-4)' }}>
           <div className="t-body-lg" style={{ color: 'var(--color-text)' }}>{copy.step.title}</div>
           <div className="t-caption" style={{ ...help, whiteSpace: 'pre-line' }}>{copy.step.help}</div>
-        </div>
+        </div> : null}
       </div>
+      {!copy.step.hidden ? <>
       {copy.step.layout === 'plan' ? (
         <fieldset aria-label={copy.step.title} style={{ margin: 0, padding: 0, minWidth: 0, border: 0 }}>
           <Field label={copy.step.when.label} helpText={copy.step.when.help} fieldKey={copy.step.when.key} empty={isEmpty(copy.step.when.key)}>{textInput(copy.step.when.key, copy.step.when.placeholder)}</Field>
@@ -658,6 +680,7 @@ export function CheckinCardClient({
           ) : null}
         </div>
       ) : null}
+      </> : copy.step.reminder ? <p className="t-body" style={{ ...help, marginBottom: 'var(--space-5)' }}>{copy.step.reminder}</p> : null}
 
       {/* 3면 · 마무리 */}
       <div style={{ paddingTop: 'var(--space-4)', borderTop: 'var(--border-hair) solid var(--color-border)' }}>

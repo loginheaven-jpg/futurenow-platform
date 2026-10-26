@@ -25,6 +25,8 @@ vi.mock('@/core/supabase/server', () => ({
 
 import { deleteMyCheckinPhotoAction, listMyCheckinPhotosAction, setCheckinPhotoCoachViewAction, submitCheckinAction } from './actions';
 import { CHECKIN_SESSION_3 } from '@/instruments/futurenow/checkin/session3';
+import { CHECKIN_SESSION_5 } from '@/instruments/futurenow/checkin/session5';
+import { CHECKIN_SESSION_6 } from '@/instruments/futurenow/checkin/session6';
 
 beforeEach(() => {
   deleteCheckinPhoto.mockClear();
@@ -47,6 +49,20 @@ describe('SEED 서버 제출 경계', () => {
     expect(saveMyCheckin).toHaveBeenCalledWith({ cohortId: 'c', sessionNo: 3, answers: full, flags: { stepPrivate: true } });
     expect(submitMyCheckin).toHaveBeenCalledWith('c', 3);
   });
+});
+
+describe('5·6회차 서버 제출', () => {
+  for (const copy of [CHECKIN_SESSION_5, CHECKIN_SESSION_6]) {
+    it(`${copy.sessionNo}회차는 새 필수 문항으로 제출을 검증하고 초안은 보존한다`, async () => {
+      const full = Object.fromEntries(copy.missingKeys({}).map((key) => [key, key === 'mood' ? ['의욕'] : '응답']));
+      const incomplete = copy.sessionNo === 5 ? { ...full, trigger_if_2: '추가 신호' } : { ...full, trigger_experience: '' };
+      expect((await submitCheckinAction('c', copy.sessionNo, incomplete)).ok).toBe(false);
+      expect(saveMyCheckin).toHaveBeenCalled();
+      expect(submitMyCheckin).not.toHaveBeenCalled();
+      expect((await submitCheckinAction('c', copy.sessionNo, full)).ok).toBe(true);
+      expect(submitMyCheckin).toHaveBeenCalledWith('c', copy.sessionNo);
+    });
+  }
 });
 
 describe('삭제 — 본인 경로만', () => {

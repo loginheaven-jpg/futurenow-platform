@@ -1,4 +1,6 @@
 // 회차 갈무리 · 5회차 문안(ADR-108 · CC_ORDER_checkin_session5 §3 + 정정 메모 둘). 임의 윤문 금지 — 조사 하나 바꾸지 않는다.
+// ADR-200(2026-10-26 승인)이 아래 원안 중 단일 신호·사면 질문·별도 다음 실천을 대체한다.
+// 작성은 환경 → 복수 신호 → 마음, 필수 5묶음. 숨긴 문안·키는 기존 기록 열람을 위해 남긴다.
 //   STEP 7(환경을 설계하라) + STEP 8(신호를 만들라) · WILL 파트. **세 번째 이중 STEP 회차**다.
 //   4회차가 만든 구조(back · Priors · neededBacks · pairText · group · order)를 그대로 쓴다. 새 위젯 0.
 //
@@ -27,10 +29,24 @@
 //   어조는 ADR-102 진취 전환 — 허락 어휘를 쓰지 않는다(copyRegression 의 BANNED 가 잠근다).
 //   사진 첨부 없음 — letter_line 키를 쓰지 않으므로 LetterPhotos 가 자동으로 안 그려진다. 코드를 바꾸지 않는다.
 //   단톡방을 문안에 언급하지 않는다 — 채널이 카드 안에서 보이면 참여자가 어디에 쓸지 고민한다.
-import type { CheckinSession } from './index';
+import type { CheckinSession, PairTextBlock } from './index';
 import { countFilled, missingIn, missingKeys, type RequiredGroup } from './required';
+import { requiredPairFields } from './pairs';
 
-// 필수 6칸 — 환경 한 줄 · 트리거 짝 · 마음 · 지난걸음 · 다음걸음쌍 · 나에게.
+const SIGNALS = {
+  group: '신호를 만들다',
+  label: "오늘 만드신 '만약 → 나는' 문장을 옮겨 적어 주세요. (책 230~231쪽)",
+  help: '여러 개를 만드셨다면 신호와 행동을 추가하고, 먼저 해볼 한 가지를 표시해 주세요.',
+  from: { key: 'trigger_if', label: '만약', placeholder: '저녁 설거지를 끝내면' },
+  connector: '→ 그러면',
+  to: { key: 'trigger_then', label: '나는', placeholder: '스쿼트 스무 개를 한다' },
+  repeat: {
+    max: 8, countKey: 'trigger_count', focusKey: 'trigger_focus',
+    itemLabel: '신호', addLabel: '신호와 행동 추가하기', removeLabel: '삭제', focusLabel: '먼저 해볼 한 가지',
+  },
+} satisfies PairTextBlock;
+
+// 필수 5칸 — 환경 한 줄 · 트리거 묶음 · 마음 · 지난걸음 · 나에게.
 //   relief(서술)·ask_person·domino_*(심화)·last_step_note·step_blocker·confidence 는 세지 않는다.
 //   **트리거를 두 칸으로 가른 것은 구조 강제**다. 한 칸으로 받으면 상당수가 '밤에 폰 안 보기'처럼
 //   신호 없는 다짐을 쓴다. 트리거는 신호가 있어야 트리거이므로 칸을 갈라 신호를 못 건너뛰게 한다
@@ -38,19 +54,16 @@ import { countFilled, missingIn, missingKeys, type RequiredGroup } from './requi
 //   라벨은 아래 문안과 **같은 문자열**이다(결측 안내가 이걸 그대로 읽어 준다 · ADR-91).
 const REQUIRED_5: RequiredGroup[] = [
   { fields: [{ key: 'env_change', label: '오늘 바꾸기로 하신 환경 하나를 그대로 옮겨 적어 주세요. (책 210~213쪽)' }] },
-  { fields: [
-    { key: 'trigger_if', label: '만약' },
-    { key: 'trigger_then', label: '나는' },
-  ] },
   // ADR-101: 직접 쓰기(mood_custom)만 채워도 '마음'이 찬 것으로 본다. 3회차부터의 규칙을 그대로 잇는다.
   { kind: 'list', fields: [{ key: 'mood', label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?', altKey: 'mood_custom' }] },
   { fields: [{ key: 'last_step_result', label: '지난 한 걸음은 어떻게 되었나요?' }] },
-  { fields: [
-    { key: 'step_what', label: '무엇을 하시겠어요?' },
-    { key: 'step_when', label: '언제, 어디서 하시겠어요?' },
-  ] },
   { fields: [{ key: 'self_note', label: '이번 주를 살아낼 나에게, 한마디만 건네주세요.' }] },
 ];
+
+// ADR-200: 신호 묶음 하나 + 환경·마음·지난 실천·나에게 = 필수 5칸.
+function required5(answers: Record<string, unknown>): RequiredGroup[] {
+  return [REQUIRED_5[0], { fields: requiredPairFields(SIGNALS, answers) }, ...REQUIRED_5.slice(1)];
+}
 
 export const CHECKIN_SESSION_5 = {
   sessionNo: 5,
@@ -58,7 +71,7 @@ export const CHECKIN_SESSION_5 = {
     brand: 'FUTURE NOW · 5회차',
     title: '오늘의 갈무리',
     subtitle: '의지가 아니라 설계',
-    counter: (n: number) => `필수 6칸 중 ${n}칸 채움 · 약 5분`,
+    counter: (n: number) => `필수 5칸 중 ${n}칸 채움 · 약 5분`,
     band: '오늘 짠 설계를, 잊히기 전에 자리에 놓아 둡니다.',
     // firstVisitOnce 없음 — 1회차에서 이미 안내.
   },
@@ -79,19 +92,12 @@ export const CHECKIN_SESSION_5 = {
     },
     // ② 만약 → 나는 — 필수. connector 가 가로 화살표인 이유: 3회차 '↓ 그 자리에'(교체)·
     //   4회차 '↓ 그것이 넘어지면'(인과)과 달리 이것은 **조건**이라 방향 기호를 가로로 둔다.
-    pairText: {
-      group: '신호를 만들다',
-      label: "오늘 만드신 '만약 → 나는' 한 줄을 옮겨 적어 주세요. (책 230~231쪽)",
-      // 허락이 아니라 **값**으로 말한다 — 이렇게 적으면 무엇이 좋아지는지.
-      help: "시각이 아니라 '무엇을 하고 난 다음'으로 적으면 더 잘 켜집니다.",
-      from: { key: 'trigger_if', label: '만약', placeholder: '저녁 설거지를 끝내면' },
-      connector: '→ 그러면',
-      to: { key: 'trigger_then', label: '나는', placeholder: '스쿼트 스무 개를 한다' },
-    },
+    pairText: SIGNALS,
     // ③ 오늘의 질문 — 보이는 선택. 이 회차의 정서적 전환점(블록 1의 사면)은 **워크북에 기입란이 없다.**
     //   강의와 나눔으로만 지나가므로 종이에 안 남는다 — **카드가 유일한 회수 지점이다.**
     //   방향을 위로 둔다: 못 한 것을 묻지 않고 짐이 내려간 순간을 묻는다.
     question: {
+      hidden: true, // ADR-200: 작성에서는 삭제. 이미 받은 답은 열람에서 보존한다.
       group: '신호를 만들다',
       key: 'relief',
       label: "의지가 아니라 환경 때문이었구나 싶었던 순간이 오늘 있었다면, 하나만 적어 주세요. (책 202~207쪽)",
@@ -148,6 +154,8 @@ export const CHECKIN_SESSION_5 = {
     ],
   },
   step: {
+    hidden: true,
+    reminder: '먼저 해보기로 한 신호와 행동을 일상에서 시도해 보세요. 다음 시간에 그 경험을 함께 돌아봅니다.',
     // ⑤ 지난 한 걸음 결산 — **선택지 다섯.** 다섯째를 신설한다.
     //   1기에서 한 참여자가 몸 상태 때문에 프로젝트를 통째로 바꿨고 인도자가 그것을 성공으로 인정했다.
     //   다른 참여자는 목표 크기 자체가 처음부터 과했다. **넷 중에는 그 경우가 들어갈 자리가 없다.**
@@ -194,7 +202,7 @@ export const CHECKIN_SESSION_5 = {
     // confidence · facilitatorBox 는 4회차와 완전 동일. defaultOpen 을 두지 않는다(7회차만 true).
     confidence: {
       key: 'confidence',
-      label: '이 한 걸음, 다음 시간까지 어느 정도로 해내실까요?',
+      label: '먼저 해볼 신호와 행동, 다음 시간까지 어느 정도로 해내실까요?',
       help: '지금 느끼는 그대로 표시해 주세요. 숫자가 낮으면 인도자가 한 걸음을 더 잘게 나눠 드립니다.',
       min: 0,
       max: 10,
@@ -239,14 +247,14 @@ export const CHECKIN_SESSION_5 = {
   },
   done: {
     title: '갈무리를 저장했습니다.',
-    stepHeading: '다음 시간까지의 한 걸음',
+    stepHeading: '먼저 해볼 신호와 행동',
     toHome: '회기 홈으로',
     edit: '고쳐 쓰기',
   },
-  filledCount: (a) => countFilled(REQUIRED_5, a),
-  requiredTotal: REQUIRED_5.length,
-  missingLabels: (a) => missingIn(REQUIRED_5, a),
-  missingKeys: (a) => missingKeys(REQUIRED_5, a),
+  filledCount: (a) => countFilled(required5(a), a),
+  requiredTotal: REQUIRED_5.length + 1,
+  missingLabels: (a) => missingIn(required5(a), a),
+  missingKeys: (a) => missingKeys(required5(a), a),
   // 나눔 후보 열 — **나눌 수 있는 문장만.** domino_if·domino_then 은 심화 두 칸이고 첫 도미노에 걸리는
   //   개인 계획이라 나눔 재료로 약하다(개인 상세에는 남는다).
   //   relief 는 선택 칸이라 비는 자리가 있으나 **비어 있을 가능성은 배제 사유가 아니다**(ADR-99) —
@@ -255,7 +263,6 @@ export const CHECKIN_SESSION_5 = {
   summaryFields: [
     { label: '바꾼 환경', key: 'env_change' },
     { label: '만약 → 나는', from: 'trigger_if', to: 'trigger_then' },
-    { label: '내려놓은 자책', key: 'relief' },
     { label: '부탁할 한마디', key: 'ask_person' },
   ],
 } satisfies CheckinSession;

@@ -33,7 +33,7 @@ export async function submitCheckinAction(
     const ctx = await createServerContext();
     await ctx.saveMyCheckin({ cohortId, sessionNo, answers, flags }); // R2: save → submit 순서 보장
     const copy = getCheckinSession(sessionNo);
-    if (copy?.today.seed && copy.missingKeys(answers).length) return { ok: false, error: '필수 항목을 채워 주세요.' };
+    if ((copy?.today.seed || copy?.today.pairText?.repeat || copy?.step.lastStep?.reviewPairs) && copy.missingKeys(answers).length) return { ok: false, error: '필수 항목을 채워 주세요.' };
     await ctx.submitMyCheckin(cohortId, sessionNo);
     return { ok: true };
   } catch (e) {

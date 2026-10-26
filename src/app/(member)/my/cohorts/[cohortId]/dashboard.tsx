@@ -24,6 +24,7 @@ import type { CoreContext, CoreUser, MyCohortSummary } from '@/contracts';
 import { CohortHomeScreen } from './CohortHomeScreen';
 import { sessionPartLabel } from './sessionPart';
 import { getCheckinSession } from '@/instruments/futurenow/checkin';
+import { readSelfHighlights } from '@/instruments/futurenow/checkin/readModel';
 import { PastSessionsClient } from './PastSessionsClient';
 import { buildProgress, openedSessionNos } from './progress';
 import { TOOL } from '@/app/_vocab/tool';
@@ -91,8 +92,9 @@ export async function renderCohortDashboard(
     ctx.getMyValueAssessment(cohortId),
     ctx.feedMyLastPostAt(cohortId).catch(() => null),
   ]);
-  const stepWhat = typeof openCheckin?.answers?.step_what === 'string' ? (openCheckin.answers.step_what as string) : '';
-  const stepWhen = typeof openCheckin?.answers?.step_when === 'string' ? (openCheckin.answers.step_when as string) : '';
+  const highlights = c.openSessionNo != null ? readSelfHighlights(c.openSessionNo, openCheckin?.answers ?? {}) : null;
+  const stepWhat = highlights?.stepWhat ?? '';
+  const stepWhen = highlights?.stepWhen ?? '';
 
   // 이번 주 갈무리 상태 문구 — 버튼 문구와 목적지를 일치시킨다(ADR-86).
   let checkinLine = '';

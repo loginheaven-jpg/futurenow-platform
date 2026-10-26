@@ -68,6 +68,22 @@ export type MirrorSet = { caption?: string; items: Mirror[] };
 
 export type BlockBase = { group?: string; mirror?: Mirror; mirrors?: MirrorSet; hidden?: boolean };
 
+/** 반복 쌍은 첫 응답 키를 유지하고 두 번째부터 `_2`, `_3`을 붙인다. */
+export type PairTextBlock = BlockBase & {
+  label: string; help: string; from: CheckinField; to: CheckinField;
+  connector?: string; layout?: 'stacked';
+  repeat?: {
+    max: number; countKey: string; focusKey: string;
+    itemLabel: string; addLabel: string; removeLabel: string; focusLabel: string;
+  };
+};
+
+/** 경험은 선택한 과거 쌍의 원문과 함께 저장해 이후 수정에도 맥락을 보존한다. */
+export type PairReview = {
+  sessionNo: number; label: string; empty: string;
+  from: CheckinField; to: CheckinField;
+};
+
 /** SEED 문안과 응답 키는 회차가 소유한다. 작성·필수 판정·열람이 같은 필드를 순회한다. */
 export type SeedBlock = BlockBase & {
   title: string;
@@ -100,7 +116,7 @@ export type CheckinSession = {
     order: readonly SlotName[];
     // 라벨 + 두 칸(from → to). 1회차 갈망 한 쌍 · 3회차 ERRC 짝.
     //   connector = 두 칸 사이 문구(3회차 '↓ 그 자리에'). 없으면 그리지 않는다.
-    pairText?: BlockBase & { label: string; help: string; from: CheckinField; to: CheckinField; connector?: string; layout?: 'stacked' };
+    pairText?: PairTextBlock;
     // 칩 단일선택(문자열 저장) + 한 줄. 2회차 가슴 뛴 영역 · 3회차 간절한 영역.
     // lines 는 칩 아래 붙는 줄들이다. 단수 `line` 이었으나 3회차가 둘을 요구해 배열로 승격했다(ADR-98).
     //   `line2` 같은 임시 필드를 더하지 않는 이유는 ADR-90 과 같다 — 슬롯을 회차마다 늘리면 7회차에 무너진다.
@@ -128,7 +144,14 @@ export type CheckinSession = {
   workbook?: { help: string };
   step: {
     // ⑤ 지난 한 걸음 결산 — 2회차부터. 이 블록 위에 지난 회차 한 걸음을 되비춘다(§6).
-    lastStep?: { key: string; label: string; options: readonly string[]; note: CheckinField; mirror: Mirror };
+    lastStep?: {
+      key: string; label: string; options: readonly string[]; note: CheckinField; mirror: Mirror;
+      reviewPairs?: PairReview;
+      legacy?: { key: string; label: string; note: CheckinField };
+    };
+    /** 새 계획 입력만 생략한다. 과거 답변의 열람·비공개 약속은 유지한다. */
+    hidden?: boolean;
+    reminder?: string;
     // ⑥ 다음 한 걸음 — 전 회차 공통.
     title: string;
     help: string;
