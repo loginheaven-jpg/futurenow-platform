@@ -66,12 +66,12 @@ describe('5회차 구조', () => {
     expect('group' in c.today.mood).toBe(false); // 회차 전체에 대한 물음이라 묶음 밖
   });
 
-  it('묶음 경계 — 캡션만 · 선+캡션 · null · 선만', () => {
+  it('삭제한 질문을 제외하고 환경 · 신호 · 마음의 경계를 그린다', () => {
     const b = slotBoundaries(c);
     expect(b[0]).toEqual({ line: false, caption: '환경을 바꾸고' }); // 면 첫 블록 — 선 생략
     expect(b[1]).toEqual({ line: true, caption: '신호를 만들다' });  // 묶음 전환
-    expect(b[2]).toBeNull();                                          // 같은 묶음
-    expect(b[3]).toEqual({ line: true });                             // 묶음 밖 — 선만
+    expect(b[2]).toEqual({ line: true });
+    expect(b).toHaveLength(3);
   });
 
   // 3회차 교체 · 4회차 우선순위→파급 효과(인과)와 달리 **조건**이라 가로 화살표다.
@@ -97,31 +97,31 @@ describe('5회차 구조', () => {
   });
 });
 
-describe('필수 6칸', () => {
-  it('빈 답 → 0 · 전부 채우면 6', () => {
-    expect(c.requiredTotal).toBe(6);
+describe('필수 5칸', () => {
+  it('빈 답 → 0 · 전부 채우면 5', () => {
+    expect(c.requiredTotal).toBe(5);
     expect(c.filledCount({})).toBe(0);
-    expect(c.filledCount(ANSWERS_5)).toBe(6);
+    expect(c.filledCount(ANSWERS_5)).toBe(5);
   });
 
   // 한 칸으로 받으면 상당수가 '밤에 폰 안 보기'처럼 **신호 없는 다짐**을 쓴다.
   //   트리거는 신호가 있어야 트리거이므로 칸을 갈라 신호를 못 건너뛰게 한다.
   it('트리거는 두 칸이 다 있어야 1칸 — 신호를 건너뛸 수 없다', () => {
-    expect(c.filledCount({ ...ANSWERS_5, trigger_then: '' })).toBe(5);
-    expect(c.filledCount({ ...ANSWERS_5, trigger_if: '' })).toBe(5);
+    expect(c.filledCount({ ...ANSWERS_5, trigger_then: '' })).toBe(4);
+    expect(c.filledCount({ ...ANSWERS_5, trigger_if: '' })).toBe(4);
     // 한 칸만 채운 상태 — 이 묶음은 충족되지 않는다.
     expect(c.filledCount({ trigger_if: '저녁 설거지를 끝내면' })).toBe(0);
     expect(c.filledCount({ trigger_then: '스쿼트 스무 개를 한다' })).toBe(0);
   });
 
   it('환경 한 줄이 비면 1칸 준다', () => {
-    expect(c.filledCount({ ...ANSWERS_5, env_change: '   ' })).toBe(5);
+    expect(c.filledCount({ ...ANSWERS_5, env_change: '   ' })).toBe(4);
   });
 
   // ADR-101 — 칩이 비어도 직접 쓰기만으로 충족한다.
   it('마음 — 칩이 비어도 직접 쓰기만으로 충족한다', () => {
-    expect(c.filledCount({ ...ANSWERS_5, mood: [] })).toBe(6);
-    expect(c.filledCount({ ...ANSWERS_5, mood: [], mood_custom: '' })).toBe(5);
+    expect(c.filledCount({ ...ANSWERS_5, mood: [] })).toBe(5);
+    expect(c.filledCount({ ...ANSWERS_5, mood: [], mood_custom: '' })).toBe(4);
   });
 
   it('relief·ask_person·domino_*·last_step_note·step_blocker·confidence 는 세지 않는다', () => {
@@ -129,7 +129,7 @@ describe('필수 6칸', () => {
     for (const k of ['relief', 'ask_person', 'domino_if', 'domino_then', 'last_step_note', 'step_blocker', 'confidence']) {
       delete (without as Record<string, unknown>)[k];
     }
-    expect(c.filledCount(without)).toBe(6);
+    expect(c.filledCount(without)).toBe(5);
   });
 
   // 결측 안내는 화면 문구를 그대로 읽는다 — 선언과 렌더가 어긋나면 이중 진실이 된다.
@@ -288,11 +288,10 @@ describe('열람 — readModel 이 신규 7키를 모두 낸다', () => {
 });
 
 describe('나눔 후보 열 — 소리 내어 읽을 수 있는 것만', () => {
-  it('네 열 · 카드 순서를 따른다', () => {
+  it('삭제한 질문을 제외한 세 열 · 카드 순서를 따른다', () => {
     expect(c.summaryFields).toEqual([
       { label: '바꾼 환경', key: 'env_change' },
       { label: '만약 → 나는', from: 'trigger_if', to: 'trigger_then' },
-      { label: '내려놓은 자책', key: 'relief' },
       { label: '부탁할 한마디', key: 'ask_person' },
     ]);
   });

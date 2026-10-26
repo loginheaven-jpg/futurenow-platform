@@ -11,6 +11,7 @@ import { RosterDetail, type RosterEntry } from './RosterDetail';
 import { defaultSessionNo } from './defaultSession';
 import { rosterExpandable } from './rosterExpand';
 import { withLegacyKeys } from '@/instruments/futurenow/checkin/legacyKeys';
+import { pairRows } from '@/instruments/futurenow/checkin/pairs';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,11 +122,16 @@ export default async function CoachCheckinPage({
   const summaryFields = getCheckinSession(sessionNo)?.summaryFields ?? [];
   const perMember = enrolled.map((c) => ({
     name: nameOf(c.userId),
-    cells: summaryFields.map((f) =>
-      'from' in f
-        ? { label: f.label, text: `${sstr(c, f.from)} → ${sstr(c, f.to)}`, has: !!(sstr(c, f.from) || sstr(c, f.to)) }
-        : { label: f.label, text: sstr(c, f.key), has: !!sstr(c, f.key) },
-    ),
+    cells: summaryFields.map((f) => {
+      if ('from' in f) {
+        const pair = getCheckinSession(sessionNo)?.today.pairText;
+        const text = pair?.repeat && pair.from.key === f.from && pair.to.key === f.to
+          ? pairRows(pair, c.answers).filter((r) => r.from.trim() || r.to.trim()).map((r) => `${r.from} → ${r.to}`).join(' / ')
+          : `${sstr(c, f.from)} → ${sstr(c, f.to)}`;
+        return { label: f.label, text, has: text !== ' → ' && !!text };
+      }
+      return { label: f.label, text: sstr(c, f.key), has: !!sstr(c, f.key) };
+    }),
   }));
   const sentences = perMember.filter((s) => s.cells.some((c) => c.has));
 

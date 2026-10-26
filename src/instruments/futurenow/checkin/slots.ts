@@ -56,6 +56,8 @@ export function neededBacks(copy: CheckinSession): number[] {
   for (const s of orderedSlots(copy)) { take(s.block.mirror); takeSet(s.block.mirrors); }
   for (const f of copy.deepen.fields) take(f.mirror);
   take(copy.step.lastStep?.mirror);
+  const review = copy.step.lastStep?.reviewPairs;
+  if (review) out.add(copy.sessionNo - review.sessionNo);
   takeSet(copy.wrap.selfNote.mirrors);
   return [...out].sort((a, b) => a - b);
 }

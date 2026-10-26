@@ -43,7 +43,7 @@ describe('★ 필수 6칸 — 세는 것과 세지 않는 것', () => {
     expect(c.requiredTotal).toBe(6);
     const full = {
       carry_today: 'a', hope_statement: 'b', mood: ['뭉클함'],
-      last_step_result: '했습니다', step_what: 'w', step_when: 'n', self_note: 's',
+      trigger_experience: c.step.lastStep.options[0], step_what: 'w', step_when: 'n', self_note: 's',
     };
     expect(c.filledCount(full)).toBe(6);
     // step_when 만 비우면 그 묶음이 통째로 안 세어진다.

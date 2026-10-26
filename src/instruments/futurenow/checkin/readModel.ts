@@ -9,6 +9,7 @@
 //       (표시 전용 신규 문안이 필요하면 뷰 컴포넌트가 갖는다. 이 파일은 갖지 않는다.)
 import { getCheckinSession } from './index';
 import { withLegacyKeys } from './legacyKeys';
+import { pairRows, preferredPair } from './pairs';
 
 // 누가 보는가. 'self'=작성자 본인 · 'facilitator'=인도자(코치·운영자).
 export type ReadAudience = 'self' | 'facilitator';
@@ -88,10 +89,11 @@ export function buildCheckinRead(
       case 'pairText': {
         const b = t.pairText;
         if (!b) break;
-        const from = text(answers, b.from.key);
-        const to = text(answers, b.to.key);
-        if (from !== '' || to !== '') {
-          out.push({ kind: 'pair', label: b.label, fromLabel: b.from.label, fromValue: from, toLabel: b.to.label, toValue: to });
+        const focus = preferredPair(b, answers);
+        for (const row of pairRows(b, answers)) {
+          if (!row.from.trim() && !row.to.trim()) continue;
+          const label = b.repeat ? `${b.repeat.itemLabel} ${row.index + 1}${row.index === focus?.index ? ` · ${b.repeat.focusLabel}` : ''}` : b.label;
+          out.push({ kind: 'pair', label, fromLabel: b.from.label, fromValue: row.from.trim(), toLabel: b.to.label, toValue: row.to.trim() });
         }
         break;
       }
@@ -162,9 +164,18 @@ export function buildCheckinRead(
   // ⑤ 지난 한 걸음 결산(2회차~) — ⑥ 과 다른 블록이므로 stepPrivate 사정권 밖이다.
   const lastStep = copy.step.lastStep;
   if (lastStep) {
+    const review = lastStep.reviewPairs;
+    if (review) {
+      const from = text(answers, review.from.key), to = text(answers, review.to.key);
+      if (from || to) out.push({ kind: 'pair', label: review.label, fromLabel: review.from.label, fromValue: from, toLabel: review.to.label, toValue: to });
+    }
     pushText(out, lastStep.label, text(answers, lastStep.key));
     // note.help('지키지 못했어도 괜찮습니다…')는 값을 미이행 판정으로 읽지 않게 하는 장치라 열람에도 남긴다.
     pushText(out, lastStep.note.label, text(answers, lastStep.note.key), lastStep.note.help);
+    if (lastStep.legacy) {
+      pushText(out, lastStep.legacy.label, text(answers, lastStep.legacy.key));
+      pushText(out, lastStep.legacy.note.label, text(answers, lastStep.legacy.note.key));
+    }
   }
 
   // ⑥ 다음 한 걸음 — 참여자가 켠 비공개 토글은 '한 걸음' 블록 전체를 덮는다(지휘부 결정 2026-08-02).
@@ -239,11 +250,12 @@ export function readSelfHighlights(
 ): { selfNote: string; stepHeading: string; stepWhat: string; stepWhen: string } | null {
   const copy = getCheckinSession(sessionNo);
   if (!copy) return null;
+  const pair = copy.step.hidden && copy.today.pairText ? preferredPair(copy.today.pairText, answers) : undefined;
   return {
     selfNote: text(answers, copy.wrap.selfNote.key),
     stepHeading: copy.done.stepHeading,
-    stepWhat: text(answers, copy.step.what.key),
-    stepWhen: text(answers, copy.step.when.key),
+    stepWhat: pair?.to ?? text(answers, copy.step.what.key),
+    stepWhen: pair?.from ?? text(answers, copy.step.when.key),
   };
 }
 

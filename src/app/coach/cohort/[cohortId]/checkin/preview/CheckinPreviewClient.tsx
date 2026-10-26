@@ -17,6 +17,12 @@ import { CheckinCardClient } from '@/app/(member)/my/cohorts/[cohortId]/checkin/
 //   5회차가 4회차 step_blocker·domino_what 을 읽는데 표본에 없어 실제로 그 일이 났다(ADR-109).
 //   실측으로도 표본이 실제보다 빈약했다 — 4회차 10행 중 step_blocker 7행 · domino_what 8행(후자는 4회차 필수).
 export const SAMPLE_BACK1: Record<string, unknown> = {
+  trigger_if: '저녁 설거지를 끝내면',
+  trigger_then: '책을 한 문단 읽는다',
+  trigger_if_2: '점심을 먹고 돌아오면',
+  trigger_then_2: '계단을 한 층 오른다',
+  trigger_count: 2,
+  trigger_focus: 0,
   step_blocker: '야근이 늦게 끝나는 수요일',
   domino_what: '아버지와 매주 한 번 통화하기',
   identity_sentence: '나는 성장의 가치를 최우선으로 여기며, 사람을 세우는 삶을 살기를 갈망하는 사람이다',

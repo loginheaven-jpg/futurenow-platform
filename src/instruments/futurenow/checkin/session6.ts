@@ -1,4 +1,5 @@
 // 회차 갈무리 · 6회차 문안(ADR-117 · CC_ORDER_checkin_session6 §3 + CC_MEMO_session6_corrections).
+// ADR-200: 지난 걸음 결산을 5회차 신호의 경험으로 교체한다. 기존 결산은 legacy로 열람 보존한다.
 //   임의 윤문 금지 — 조사 하나 바꾸지 않는다.
 //
 //   STEP 9(끝에서부터 보라) + STEP 10(한 층을 얹으라) · **마지막 참여자 회차**다.
@@ -46,7 +47,7 @@ const REQUIRED_6: RequiredGroup[] = [
   { fields: [{ key: 'carry_today', label: '인생의 마지막 자리에서 보고, 오늘로 가져오기로 하신 한 가지를 옮겨 주세요. (책 246~251쪽)' }] },
   { fields: [{ key: 'hope_statement', label: '오늘 새로 쓰신 소망 한 문장을 그대로 옮겨 주세요. (책 278~279쪽)' }] },
   { kind: 'list', fields: [{ key: 'mood', label: '이 시간을 마치고 나온 지금, 마음은 어떤가요?', altKey: 'mood_custom' }] },
-  { fields: [{ key: 'last_step_result', label: '지난 한 걸음은 어떻게 되었나요?' }] },
+  { fields: [{ key: 'trigger_experience', label: '지난 시간에 만든 신호, 일상에서 만나보셨나요?' }] },
   {
     fields: [
       { key: 'step_what', label: '무엇을 하시겠어요?' },
@@ -154,11 +155,22 @@ export const CHECKIN_SESSION_6 = {
     //   empty 를 두지 않는다 — 6회차까지 온 참여자에게 "이번 회차부터 쌓입니다"는 틀린 말이고,
     //   값이 없으면 상자를 안 그리는 편이 낫다.
     lastStep: {
-      key: 'last_step_result',
-      label: '지난 한 걸음은 어떻게 되었나요?',
-      options: ['했습니다', '조금 했습니다', '잊고 지냈습니다', '하려다 막혔습니다', '크기나 내용을 바꿨습니다'],
-      note: { key: 'last_step_note', label: '한 줄만 덧붙여 주세요', help: '여기 정직하게 적는 것이 앞으로 90일을 바꿉니다.' },
-      mirror: { label: '지난 시간의 한 걸음', keys: ['step_what', 'step_when'] },
+      key: 'trigger_experience',
+      label: '지난 시간에 만든 신호, 일상에서 만나보셨나요?',
+      options: ['그 상황이 와서 행동을 해봤어요', '그 상황은 왔지만 행동으로 이어지지는 않았어요', '아직 그 상황이 오지 않았어요', '잘 기억나지 않아요'],
+      note: { key: 'trigger_experience_note', label: '그때 어땠는지 짧게 남겨주세요', help: '선택 · 기억나는 경험을 적어 주세요.' },
+      mirror: { label: '지난 시간에 만든 신호와 행동', keys: ['trigger_if', 'trigger_then'] },
+      reviewPairs: {
+        sessionNo: 5,
+        label: '경험을 돌아볼 신호와 행동',
+        empty: '지난 시간에 저장한 신호가 없습니다. 기억나는 신호와 행동이 있다면 아래에 적어 주세요.',
+        from: { key: 'review_trigger_if', label: '만약' },
+        to: { key: 'review_trigger_then', label: '나는' },
+      },
+      legacy: {
+        key: 'last_step_result', label: '지난 한 걸음은 어떻게 되었나요?',
+        note: { key: 'last_step_note', label: '한 줄만 덧붙여 주세요' },
+      },
     },
     // ⑥ 90일 한 걸음. **다음 시간이 없다** — 그래서 기한을 90일로 잡고 함께 볼 사람을 정한다(ADR-116).
     title: '앞으로 90일 동안 이어 갈 한 걸음을 정합니다.',

@@ -16,6 +16,31 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: 
 
 const REGISTERED = Array.from({ length: 12 }, (_, i) => i + 1).filter((n) => getCheckinSession(n) !== null);
 
+describe('5·6회차 신호와 경험 연결 (ADR-200)', () => {
+  it('5회차는 신호 추가를 제공하고 삭제한 질문·별도 실천 입력을 그리지 않는다', () => {
+    const html = card(5, true);
+    expect(html).toContain('신호와 행동 추가하기');
+    expect(html).toContain('먼저 해볼 한 가지');
+    expect(html).not.toContain('의지가 아니라 환경 때문이었구나');
+    expect(html).not.toContain('다음 시간까지 할 작은 실천');
+    for (const key of ['step_what', 'step_when', 'step_blocker']) expect(html).not.toContain(`id="fld-${key}"`);
+  });
+
+  it('6회차는 5회차의 두 신호를 보여주고 경험을 묻되 90일 실천은 유지한다', () => {
+    const html = card(6, true);
+    expect(html).toContain(SAMPLE_BACK1.trigger_if as string);
+    expect(html).toContain(SAMPLE_BACK1.trigger_if_2 as string);
+    expect(html).toContain('지난 시간에 만든 신호, 일상에서 만나보셨나요?');
+    expect(html).toContain('아직 그 상황이 오지 않았어요');
+    expect(html).not.toContain('지난 시간의 한 걸음');
+    expect(html).toContain('앞으로 90일 동안 이어 갈 한 걸음');
+  });
+
+  it('지난 기록이 없으면 빈 되비추기 대신 기억나는 신호를 선택 입력한다', () => {
+    expect(card(6, false)).toContain('지난 시간에 저장한 신호가 없습니다');
+  });
+});
+
 function card(sessionNo: number, withPrior: boolean): string {
   return renderToStaticMarkup(
     <CheckinCardClient
@@ -172,7 +197,7 @@ describe('4회차 선택과 실천 약속의 배치 (ADR-199)', () => {
   });
 
   it('다른 회차의 한 걸음 배치는 유지한다', () => {
-    for (const n of REGISTERED.filter((n) => n !== 4)) {
+    for (const n of REGISTERED.filter((n) => n !== 4 && n !== 5)) {
       const html = card(n, false);
       expect(html).not.toContain('<fieldset');
       expect(html.indexOf('id="fld-step_what"')).toBeLessThan(html.indexOf('id="fld-step_when"'));
