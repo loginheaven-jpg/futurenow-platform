@@ -49,7 +49,7 @@
 
 ## 동기화와 배포 확인
 
-출발점은 원격 `main`의 `262c985`이며 빈 `C:\dev\FUTUREnow`에 clone했다. `fix/session5-6-if-then`에서 작업한 후 검증한 변경을 `main`에 병합한다. 배포 대상은 기존 Vercel `futurenow-platform` 프로젝트의 production, 도메인은 `https://future.yebom.org`이다. 새 프로젝트·환경·스키마를 만들지 않는다.
+출발점은 원격 `main`의 `262c985`이며 빈 `C:\dev\FUTUREnow`에 clone했다. `fix/session5-6-if-then`에서 작업한 후 검증한 변경을 `main`에 병합·push했다. 배포 대상은 기존 Vercel `futurenow-platform` 프로젝트의 production, 도메인은 `https://future.yebom.org`이다. 새 프로젝트·환경·스키마는 만들지 않았다.
 
 Vercel 연결 도구의 팀 상세 조회는 403(팀 범위 권한 제한)이므로 기존 GitHub `main` 자동 배포를 사용한다. 배포를 증명하는 값은 고정하지 않고 아래의 원격 및 운영 신원을 대조한다.
 
@@ -60,6 +60,18 @@ node scripts/postdeploy.mjs
 ```
 
 `postdeploy.mjs`의 로그인 검사는 QA 자격이 없으면 실패로 보고한다. 이 제한을 배포 실패 또는 로그인 기능 결함과 혼동하지 않는다. 운영 반영 여부는 `/api/version`의 커밋·브랜치·production 신원을 원격 `main`과 맞춰 판정한다.
+
+2026-10-26 배포 실측(아래 값은 이 시점의 증거이며 현재 헤드 조회를 대신하지 않는다):
+
+- 구현 커밋: `dc73a2a` (`git log --oneline fix/session5-6-if-then`).
+- 최초 배포 병합 커밋: `723fef9818c2e7777fc9778224ad3cbc2e15be63` (`git ls-remote origin main`).
+- GitHub의 Vercel 상태: `success`.
+- 운영 `/api/version`: `commitShort=723fef9`, `ref=main`, `env=production`, `deploymentId=dpl_4W7qETPwunn7Ye6bNdvn9wbERzao`.
+- 빌드 시각: API가 반환한 `2026-10-26T01:49:19.116Z` (한국 시각 2026-10-26 10:49).
+- 공개 현관·소개·모집 캐시·가입 딥링크 정상, 가입 POST 1회/6초(상한 3), 미인증 `/feed`는 로그인으로 이동하고 본문 누출 0.
+- `postdeploy.mjs`에서 미실행으로 남은 것은 로그인 착지 3경로 한 항목이다. 이유는 `QA_USER_EMAIL/PASSWORD` 부재이며 통과로 표시하지 않았다.
+
+이 배포 증거를 추가하는 후속 커밋은 보고서만 바꾸며 기능 코드는 동일하다. 후속 커밋의 최종 운영 반영도 원격 `main`과 `/api/version`을 대조한다.
 
 ## 완주 검증 출력
 
