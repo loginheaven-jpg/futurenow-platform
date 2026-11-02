@@ -122,7 +122,7 @@ export function VitalityBand({ scores, prev, wave = 'pre' }: { scores: Futurenow
 }
 
 // ── 나침반 = 덤벨 (4축, 사전 회색→사후 네이비) ────────────
-export function CompassDumbbell({ scores, prev }: { scores: FuturenowScores; prev?: FuturenowScores }) {
+export function CompassDumbbell({ scores, prev }: { scores: Pick<FuturenowScores, 'compass'>; prev?: Pick<FuturenowScores, 'compass'> }) {
   const pct = (v: number) => ((v - 1) / 4) * 100; // 1~5
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -163,7 +163,7 @@ function radarPoint(i: number, value: number): [number, number] {
   return [CXY + r * Math.cos(angle), CXY + r * Math.sin(angle)];
 }
 const radarPolygon = (values: number[]): string => values.map((v, i) => radarPoint(i, v).join(',')).join(' ');
-export function GapRadar({ scores, prev }: { scores: FuturenowScores; prev?: FuturenowScores }) {
+export function GapRadar({ scores, prev }: { scores: Pick<FuturenowScores, 'gap'>; prev?: Pick<FuturenowScores, 'gap'> }) {
   const post = GAP_AXES.map((a) => scores.gap[a.code as keyof FuturenowScores['gap']]);
   const pre = prev ? GAP_AXES.map((a) => prev.gap[a.code as keyof FuturenowScores['gap']]) : null;
   // 라벨이 위·좌·우로 잘려 있었다 — 위 꼭짓점은 글자 절반이 위로 나가고, 숫자를 병기하자

@@ -1,7 +1,7 @@
 // 그룹 리포트 화면 잠금 — 인수 1·7·8·9(ORDER group_report v2 §4).
 //
-// **코드에 사는 사실만 잰다.** 렌더 정확성은 `groupModel.test.ts` 가 순수 함수로 잰다 —
-//   흉내 낸 페이지 렌더는 내가 만든 것을 내가 부르는 것이라 아무것도 증명하지 못한다(계열 ⑦).
+// 정적 경계와 인쇄 구조를 잠근다. 실제 페이지의 선택·채점·표시 연결은
+// `page.postcheck.test.tsx` 에서 합성 응답으로 실행해 확인한다.
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 
@@ -22,12 +22,14 @@ describe('★ 블록 순서 (인수 1)', () => {
     ]);
   });
 
-  it('★ 블록 5(함께 보는 자료)가 **페이지에서 마지막**이다', () => {
+  it('★ 블록 0~4 다음에 5(함께 보는 자료), 그 뒤에 6(추천의 말)이 선다', () => {
     const src = read(PAGE);
     const design = src.indexOf('<GroupDesign');
     const five = src.indexOf('함께 보는 자료 · 평균 지형');
+    const six = src.indexOf('<RecommendationList');
     expect(design, 'GroupDesign 이 없다').toBeGreaterThan(0);
     expect(five, '블록 5 가 없다').toBeGreaterThan(design);
+    expect(six, '블록 6 이 없다').toBeGreaterThan(five);
   });
 });
 
@@ -42,9 +44,10 @@ describe('★ 사후 범위 (인수 9)', () => {
   it('사후 비교는 **블록 5 안에서만** 산다', () => {
     const src = read(PAGE);
     const five = src.indexOf('함께 보는 자료 · 평균 지형');
-    // 비교 렌더(postScores)가 블록 5 뒤에 있어야 한다.
-    const post = src.indexOf('all={postScores}');
-    expect(post, 'postScores 렌더가 없다').toBeGreaterThan(five);
+    // 같은 참여자의 사전·사후 평균 비교만 블록 5에 연결한다.
+    const comparison = src.indexOf('<GroupComparison before={beforeAverage} after={afterAverage}');
+    expect(comparison, '대응 평균 비교가 없다').toBeGreaterThan(five);
+    expect(src, '대응하지 않는 사후 단독 평균이 남았다').not.toContain('all={postScores}');
   });
 
   it('비교가 있을 때 캡션이 그 사실을 말한다', () => {

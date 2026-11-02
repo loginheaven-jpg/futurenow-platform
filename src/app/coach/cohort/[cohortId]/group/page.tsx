@@ -1,16 +1,18 @@
 // 그룹 리포트(/coach/cohort/[id]/group, §B③ · Step 3.3) — 회기 집계(축 평균·분포). 코치 전용 리얼.
-// B-3: 사전·사후 각각 그룹 평균을 산출. 사후 응답이 있으면 사전/사후 두 평균을 라벨링해 비교, 없으면 사전 단독(폴백).
+// 사전·사후 비교는 현재 참여자의 대응 표본으로 산출한다. 짝이 없으면 최신 사전 평균을 유지한다.
 // 게이트: 미인증→/login · 멤버→/home · getCohort 소유 게이트 — 비소유·미존재 → 404. 멤버 순화(participantMirror)와 분리(ADR-30).
-// 데이터: listResponses(wave별) → latestPerUser(재진단 dedup, 각 wave 최신 1건) → futurenowScoring.score → GroupView. 계약·DB 변경 0.
+// 데이터: wave별 전체 이력 → 현재 참여자 필터·대표 응답·시점 짝 선택 → 앱에서 채점 → 표시 부품.
 import { ConsoleTitle } from '@/app/_screens/console/ConsoleTitle';
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { requestCohort, requestContext, requestUser } from '@/app/_lib/requestScope';
 import { GroupView } from '@/instruments/futurenow/report/GroupView';
 import { GroupDesign } from '@/instruments/futurenow/report/GroupDesign';
-import type { GroupMember } from '@/instruments/futurenow/report/groupModel';
+import { GroupComparison } from '@/instruments/futurenow/report/GroupComparison';
+import { RecommendationList } from '@/instruments/futurenow/report/RecommendationList';
+import { averageScores, type GroupMember } from '@/instruments/futurenow/report/groupModel';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
-import { latestPerUser } from '@/app/_lib/latestPerUser';
+import { collectRecommendations, selectPostcheckGroup } from '@/app/_lib/postcheckGroup';
 import { TOOL } from '@/app/_vocab/tool';
 import { ReportPrintButton } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintButton';
 
@@ -27,26 +29,29 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
   const cohort = await requestCohort(cohortId).catch(() => null);
   if (!cohort) notFound(); // 미존재/RLS 차단(비소유·비멤버) → 404 (회기 상세와 동일 게이트)
 
-  // 사전·사후 각각 user별 최신 1건(재진단 dedup) → 평균. 사후 있으면 비교(B-3).
+  // 사전 이력은 짝을 고르기 전에 줄이지 않는다. 블록 0~4의 최신 사전과 비교의 사전은 다를 수 있다.
   //
   // ★ **이름 조인은 여기서 한다**(ORDER v2 §0 보완 ⑴ — 경계 예외로 승인).
   //   `GroupView`·`GroupDesign` 은 **뷰모델을 주입받는 순수 컴포넌트**로 남는다 —
   //   컴포넌트가 스스로 조회하면 채점·집계가 화면에 붙는다.
   //   `listResponses` 는 `userId` 만 주므로 `listCohortMembers` 와 맞춰 이름을 얻는다.
-  const rowsFor = async (wave: 'pre' | 'post') => {
-    const rs = await ctx.listResponses<Answers, unknown>({ instrumentId: 'futurenow', cohortId, wave });
-    return latestPerUser(rs);
-  };
-  const [preRows, postRows, members] = await Promise.all([
-    rowsFor('pre'),
-    rowsFor('post'),
+  const [allPreRows, allPostRows, members] = await Promise.all([
+    ctx.listResponses<Answers, unknown>({ instrumentId: 'futurenow', cohortId, wave: 'pre' }),
+    ctx.listResponses<Answers, unknown>({ instrumentId: 'futurenow', cohortId, wave: 'post' }),
     // 참여자만(운영자·인도자 제외) — 등록 인원과 미완료를 그 기준으로 센다.
     // ★ **세 번째 인자가 마스킹 옵트인이다**(ORDER ② · 2026-08-30).
     //   이름이 없으면 종이 위에서 누구인지 알 수 없어 **연락을 못 한다** — 이 화면의 목적이 무너진다.
     //   **가리는 일은 DB 안에서 끝나고** 이메일 원문은 여기까지 오지 않는다.
     //   호출처 일곱 중 **이 한 곳만** 켠다.
-    ctx.listCohortMembers(cohortId, true, true).catch(() => []),
+    ctx.listCohortMembers(cohortId, true, true),
   ]);
+  const { preRows, postRows, pairedRows } = selectPostcheckGroup({
+    preRows: allPreRows,
+    postRows: allPostRows,
+    currentUserIds: new Set(members.map((member) => member.userId)),
+    instrumentId: 'futurenow',
+    cohortId,
+  });
   const nameOf = new Map(members.map((m) => [m.userId, m.name]));
   const toMembers = (rows: typeof preRows): GroupMember[] =>
     rows
@@ -60,10 +65,18 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
 
   const preMembers = toMembers(preRows);
   const preScores = preMembers.map((m) => m.scores);
-  const postScores = toMembers(postRows).map((m) => m.scores);
-  const hasComparison = postScores.length > 0;
+  const beforeAverage = averageScores(pairedRows.map(({ pre }) =>
+    futurenowScoring.score(pre.answers, { wave: pre.wave }),
+  ));
+  const afterAverage = averageScores(pairedRows.map(({ post }) =>
+    futurenowScoring.score(post.answers, { wave: post.wave }),
+  ));
+  const hasComparison = beforeAverage !== null && afterAverage !== null;
+  const sampleSize = hasComparison ? pairedRows.length : preMembers.length;
+  const smallSample = sampleSize > 0 && sampleSize < 3;
+  const recommendations = collectRecommendations(postRows);
 
-  const empty = preScores.length === 0 && postScores.length === 0;
+  const empty = preScores.length === 0 && postRows.length === 0;
 
   return (
     // **PDF**(ORDER v2 §1) — 인쇄에서 숨길 앱 크롬을 식별 가능한 컨테이너로 감싼다.
@@ -121,8 +134,8 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
               두 벌로 그리면 인도자가 「이제 와서 조를 다시 짜야 하나」로 혼란한다. */}
           <GroupDesign cohortId={cohortId} members={members} done={preMembers} />
 
-          {/* ── 블록 5 · 함께 보는 자료 — 기존 GrowChain·GapRadar 를 여기로 옮겨 유지한다(경계 5).
-              **사후 비교는 여기서만 산다.** */}
+          {/* ── 블록 5 · 함께 보는 자료 — 같은 참여자의 사전·사후 평균을 비교한다.
+              대응 표본이 없을 때만 기존 사전 단독 평균을 유지한다. */}
           <section
             style={{
               background: 'var(--color-surface-2)', border: 'var(--border-hair) solid var(--color-border)',
@@ -140,24 +153,30 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
               >5</span>
               함께 보는 자료 · 평균 지형
             </h2>
-            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 var(--space-4)' }}>
-              1주차 오프닝에서 참여자와 함께 볼 수 있는 유일한 영역입니다. 개인을 특정하지 않고 그룹의 윤곽만 보여줍니다.
-            </p>
+            {hasComparison ? (
+              <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 var(--space-4)' }}>
+                사전 체크와 마무리 체크를 모두 마친 참여자 {pairedRows.length}명 기준입니다. 사전 체크를 마친 참여자는 {preMembers.length}명입니다.
+              </p>
+            ) : null}
+            {smallSample ? (
+              <p className="t-caption" style={{ color: 'var(--color-text)', margin: 'var(--space-2) 0 var(--space-4)' }}>
+                참여자 3명 미만의 평균이라 개인이 드러날 수 있습니다. 함께 보는 자료로 띄우지 마세요.
+              </p>
+            ) : sampleSize >= 3 ? (
+              <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: 'var(--space-2) 0 var(--space-4)' }}>
+                1주차 오프닝에서 참여자와 함께 볼 수 있는 유일한 영역입니다. 개인을 특정하지 않고 그룹의 윤곽만 보여줍니다.
+              </p>
+            ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-              {preScores.length > 0 ? (
-                <div>
-                  {hasComparison ? (
-                    <h3 className="t-h2" style={{ color: 'var(--color-text-secondary)', fontSize: 14, margin: '0 0 var(--space-3)' }}>{TOOL.pre} — 그룹 평균</h3>
-                  ) : null}
-                  <GroupView all={preScores} />
-                </div>
-              ) : null}
               {hasComparison ? (
-                <div>
-                  <h3 className="t-h2" style={{ color: 'var(--color-primary)', fontSize: 14, margin: '0 0 var(--space-3)' }}>{TOOL.post} — 그룹 평균</h3>
-                  <GroupView all={postScores} />
-                </div>
-              ) : null}
+                <GroupComparison before={beforeAverage} after={afterAverage} />
+              ) : preScores.length > 0 ? (
+                <GroupView all={preScores} />
+              ) : (
+                <p className="t-body" style={{ color: 'var(--color-text-secondary)' }}>
+                  아직 제출된 응답이 없어요. 참여자가 {TOOL.pre}를 마치면 그룹 평균이 나타나요.
+                </p>
+              )}
             </div>
             {hasComparison ? (
               <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 'var(--space-4) 0 0' }}>
@@ -165,6 +184,9 @@ export default async function GroupReportPage({ params }: { params: Promise<{ co
               </p>
             ) : null}
           </section>
+          {postRows.length > 0 ? (
+            <RecommendationList items={recommendations.items} unconsentedCount={recommendations.unconsentedCount} />
+          ) : null}
         </div>
       )}
     </div>
