@@ -1,6 +1,8 @@
 // B③ 리포트 시각물(인도자 화면) — design_system §5 v2. 덤벨·레이더·충전막대·띠·돌봄배너.
 // 경계(CLAUDE §1): 인스트루먼트는 코어를 import 하지 않는다. 공유 디자인 토큰(var(--color-*)·--care-*·
 // --*-soft)과 전역 타이포 클래스(t-*)만 사용. **본문 시각물은 네이비·회색 차분 톤, 의미색은 돌봄 배너에만**(§5).
+import type { Wave } from '@/contracts';
+import { waveKey } from '../copy';
 import type { FuturenowScores } from '../scoring';
 import {
   CARE_VAR,
@@ -10,6 +12,7 @@ import {
   GROW_TONE,
   MONO_STACK,
   VITALITY_RANGE,
+  VITALITY_SINGLE_LABELS,
   VITALITY_ZONES,
   careBanner,
   growEmphasis,
@@ -79,8 +82,8 @@ export function CareSignal({ scores }: { scores: FuturenowScores }) {
   );
 }
 
-// ── 활력 = 띠 이동 (구간 띠 시들음/중간/번성 + 사전→사후, 사전 단독 폴백) ─
-export function VitalityBand({ scores, prev }: { scores: FuturenowScores; prev?: FuturenowScores }) {
+// ── 활력 = 띠 이동 (구간 띠 시들음/중간/번성 + 사전→사후, 단독은 해당 wave 표기) ─
+export function VitalityBand({ scores, prev, wave = 'pre' }: { scores: FuturenowScores; prev?: FuturenowScores; wave?: Wave }) {
   const { min, max } = VITALITY_RANGE;
   const post = scores.vitality.score;
   const pre = prev?.vitality.score ?? null;
@@ -109,7 +112,7 @@ export function VitalityBand({ scores, prev }: { scores: FuturenowScores; prev?:
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-1)' }}>
         <span className="t-micro" style={{ color: 'var(--color-text-muted)' }}>{min}</span>
         <span className="t-micro" style={{ color: badgeColor }}>
-          {pre !== null ? `사전 ${pre} → 사후 ${post}` : '구간 게이지(사전 단독)'} · {zone.name} 신호
+          {pre !== null ? `사전 ${pre} → 사후 ${post}` : VITALITY_SINGLE_LABELS[waveKey(wave)]} · {zone.name} 신호
           {zone.tone === 'care' ? ' · 개별 안부 권장' : ''}
         </span>
         <span className="t-micro" style={{ color: 'var(--color-text-muted)' }}>{max}</span>

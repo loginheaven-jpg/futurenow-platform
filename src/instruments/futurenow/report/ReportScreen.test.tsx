@@ -15,6 +15,36 @@ const scores: FuturenowScores = {
   subjective: { E1: '한 문장 성찰', E2: '', E3: '' },
 };
 
+describe('ReportScreen wave 표기 (ADR-204)', () => {
+  const withSubjective: FuturenowScores = {
+    ...scores,
+    subjective: { E1: '바람을 돌아본 글', E2: '변화를 돌아본 글', E3: '이어 갈 실천' },
+  };
+
+  it.each([undefined, null, 'pre'] as const)('wave=%s의 단독 리포트는 사전 표기를 유지한다', (wave) => {
+    const html = renderToStaticMarkup(<ReportScreen scores={withSubjective} wave={wave} />);
+    for (const label of ['기대', '정서', '요청']) expect(html).toContain(`>${label}</div>`);
+    expect(html).toContain('구간 게이지(사전 단독)');
+    expect(html).not.toContain('구간 게이지(사후 단독)');
+  });
+
+  it('사후 단독은 주관식 세 제목과 구간 게이지를 모두 사후로 표시한다', () => {
+    const html = renderToStaticMarkup(<ReportScreen scores={withSubjective} wave="post" />);
+    for (const label of ['그 바람은 지금', '달라진 것 하나', '붙잡을 하나']) expect(html).toContain(`>${label}</div>`);
+    for (const label of ['기대', '정서', '요청']) expect(html).not.toContain(`>${label}</div>`);
+    expect(html).toContain('구간 게이지(사후 단독)');
+    expect(html).not.toContain('구간 게이지(사전 단독)');
+  });
+
+  it('사전 짝이 있는 사후 리포트는 비교 표기를 유지한다', () => {
+    const before: FuturenowScores = { ...scores, vitality: { score: 11, low: false } };
+    const html = renderToStaticMarkup(<ReportScreen scores={withSubjective} prev={before} wave="post" />);
+    expect(html).toContain('사전 11 → 사후 15');
+    expect(html).not.toContain('구간 게이지(');
+    expect(html).toContain('>그 바람은 지금</div>');
+  });
+});
+
 describe('ReportScreen (개인 리포트 — 코치 라우트 렌더 경로)', () => {
   it('scores 로 핵심 패널과 주관식을 렌더한다', () => {
     const html = renderToStaticMarkup(<ReportScreen scores={scores} />);

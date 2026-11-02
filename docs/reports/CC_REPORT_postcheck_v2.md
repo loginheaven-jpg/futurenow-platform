@@ -77,13 +77,130 @@
 
 ### 2.4 검증·배포
 
-관련 단위 검사 사전 점검: 파일 10 통과, 테스트 114 통과·0 스킵. 전체 점검: 파일 157 통과·7 스킵, 테스트 1811 통과·87 스킵·총 1898. 타입 종료 0, 린트 종료 0(기존 경고 3). 이 작업 커밋을 확정한 뒤 네 직접 명령과 verify를 실행하고 실제 종료·전문·운영 신원은 다음 보고 갱신에 기록한다.
+작업 커밋 `9cbc35c666a3c8daf13317d493a0e0e53aac5013`에서 아래 명령을 직접 실행했다. 실행 중 HEAD가 바뀌지 않았고 작업 트리는 깨끗했다. 전체 테스트는 **1811 통과 / 87 스킵 / 총 1898**, 파일은 **157 통과 / 7 스킵 / 총 164**다. 린트는 기존 경고 3개, 오류 0이다.
+
+| 명령 | 실제 종료 코드 | 종료 시각(KST) |
+|---|---:|---|
+| `npx tsc --noEmit` | 0 | 2026-11-02T13:43:08.529107+09:00 |
+| `npx eslint .` | 0 | 2026-11-02T13:43:11.873423+09:00 |
+| `npx vitest run` | 0 | 2026-11-02T13:43:05.261069+09:00 |
+| `npx next build` | 0 | 2026-11-02T13:43:28.392102+09:00 |
+| `node scripts/verify.mjs` | 0 | 2026-11-02T13:44:13.102066+09:00 |
+
+- 작업 커밋: `9cbc35c666a3c8daf13317d493a0e0e53aac5013` · [PR #3](https://github.com/loginheaven-jpg/futurenow-platform/pull/3).
+- 병합 커밋: `5d6ab2b7feb1d3b87f273a468225a19ad8e30116`.
+- 운영 확인: `GET https://future.yebom.org/api/version`에서 `env=production`, `ref=main`, `commit=5d6ab2b7feb1d3b87f273a468225a19ad8e30116`, `deploymentId=dpl_8ncxQTCYrvobsjS5wgamCW6EHt93`. build 시각 `2026-11-02T04:45:00.649Z`.
+- 원격 증거: `git ls-remote origin refs/heads/main refs/heads/feat/postcheck-v2`.
+
+```text
+9cbc35c666a3c8daf13317d493a0e0e53aac5013	refs/heads/feat/postcheck-v2
+5d6ab2b7feb1d3b87f273a468225a19ad8e30116	refs/heads/main
+```
+
+<details>
+<summary>S1 verify.mjs 출력 전문</summary>
+
+```text
+── tsc ──
+오류 0
+
+── eslint ──
+78:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+  23:8  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-html-link-for-pages')
+✖ 3 problems (0 errors, 3 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+── vitest ──
+Test Files  157 passed | 7 skipped (164)
+      Tests  1811 passed | 87 skipped (1898)
+   Duration  6.82s (transform 7.03s, setup 0ms, import 15.56s, tests 4.49s, environment 19ms)
+
+  스킵 사유 — 전부 **의도된 옵트인**이다:
+    tests/membership.integration.test.ts         실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다
+    tests/feed.integration.test.ts               실DB 옵트인 — 같은 스위치
+    tests/rls.integration.test.ts                실DB 옵트인 — 같은 스위치
+    tests/defaultPrivileges.integration.test.ts  실DB 옵트인 — 같은 스위치(pg_default_acl 실측)
+    tests/memberDirectoryMask.integration.test.ts 실DB 옵트인 — 같은 스위치(마스킹 규칙을 함수에 먹인다)
+    tests/workbookPhotos.integration.test.ts     실DB 옵트인 — 같은 스위치 + QA 계정 env(「인도자 열람」 역할별 판정 · 적용 전이면 본문을 트랜잭션 안에서 적용)
+    tests/feedReactionsMulti.migration.test.ts   적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)
+    tests/site.snapshot.test.tsx                 캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다
+
+── next build ──
+성공
+Route (app)                                       Revalidate  Expire
+┌ ○ /                                                     5m      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/approvals
+├ ○ /api/version
+├ ƒ /c/[code]/[session]
+├ ƒ /c/[code]/values
+├ ƒ /coach
+├ ƒ /coach/cohort/[cohortId]
+├ ƒ /coach/cohort/[cohortId]/checkin
+├ ƒ /coach/cohort/[cohortId]/checkin/preview
+├ ƒ /coach/cohort/[cohortId]/group
+├ ƒ /coach/cohort/[cohortId]/matrix
+├ ƒ /coach/cohort/[cohortId]/member/[userId]
+├ ƒ /coach/cohort/[cohortId]/report/[responseId]
+├ ƒ /coach/cohort/[cohortId]/values
+├ ƒ /coach/cohorts
+├ ƒ /coach/new
+├ ƒ /contact
+├ ƒ /feed
+├ ƒ /home
+├ ƒ /home/assessments
+├ ƒ /join
+├ ƒ /library
+├ ƒ /library/[id]
+├ ƒ /library/[id]/file
+├ ƒ /library/[id]/thumb
+├ ƒ /login
+├ ƒ /my/cohorts
+├ ƒ /my/cohorts/[cohortId]
+├ ƒ /my/cohorts/[cohortId]/checkin/[session]
+├ ƒ /my/cohorts/[cohortId]/journey
+├ ƒ /my/cohorts/[cohortId]/report
+├ ƒ /my/cohorts/[cohortId]/values
+├ ƒ /my/values
+├ ƒ /news
+├ ƒ /news/[id]
+├ ƒ /pending
+├ ƒ /preview
+├ ƒ /preview/console
+├ ƒ /preview/entry
+├ ƒ /preview/report
+├ ƒ /preview/site
+├ ○ /recruit                                              5m      1y
+├ ƒ /reset
+├ ƒ /reset/confirm
+└ ƒ /signup
+O 네 지표 전항 통과 — 위 출력 전문을 그대로 보고에 붙인다
+```
+
+</details>
 
 실DB Vitest 별도 실행과 QA 실브라우저 제출은 자격 연결 전까지 **미실행**이다. 기존 사후의 읽기·parse와 구분하며 제출 확인을 했다고 보고하지 않는다.
 
 ## 3. S2 — 짝 고르기와 개인 리포트
 
-미착수. S1 운영 반영 확인 뒤 진행한다.
+### 3.1 구현
+
+S1 production `5d6ab2b` 반영을 확인한 뒤 착수했다. 공용 `pairedPre`는 같은 진단·회기·사람의 전체 pre 이력에서 사후 작성 시각 이하 최신 1건을 고르고, 일반 최신 선택과 같은 createdAt/id 기준을 쓴다. anonymous 응답을 같은 사람으로 합치지 않는 기존 동작은 보존한다. 조회 실패는 throw이며 정상적인 짝 없음만 null이다.
+
+인도자·본인 리포트는 이 공통 함수를 사용한다. 사후가 확인된 뒤 짝 조회에 실패하면 해당 렌더에서만 단독으로 표시하고 원문 없는 서버 로그를 남긴다. 내 리포트의 최초 사후 조회와 사전 단독 조회는 기존 오류 전파를 유지한다. 비교 차트·표제·E1 패널·사후 E 라벨·사후 단독 활력 표시를 연결했다. 인도자 원응답에는 사후 추천 글과 동의 상태를 표시하며 미동의 글의 내부 열람은 유지한다.
+
+### 3.2 잠금과 범위
+
+기존 assertion의 기대값 삭제·완화·교체는 없다. 동률·늦은 사전 재제출·다른 진단/회기/사람/파동 배제·무짝·조회 실패 검사와 페이지 실행형 검사, 표시 부품 경계 검사를 추가한다. 인도자 페이지의 기존 재마운트 신원 잠금 3개도 유지한다. 새 원응답은 post만, `REC_OK === true`만 동의, 빈 추천 글은 절 전체 비표시로 검증한다.
+
+`architecture.md` §9.5와 ADR-204를 동기화했다. React 부품은 props 기반이며 새 상태·효과·데이터 요청을 추가하지 않았다. 계약·DB 스키마·PDF 경로·AI 생성 코드는 변경하지 않는다.
+
+### 3.3 검증·배포
+
+표시 부품 관련 4파일 69개, 코치 페이지 2파일 7개 사전 검사가 통과했다. 작업 커밋 확정 후 동일 커밋의 네 직접 명령·verify 및 운영 신원 증거를 다음 보고 갱신에 붙인다. QA 로그인·브라우저 인쇄 미리보기는 미실행이며 서버 렌더 검사로 대체했다고 보고하지 않는다.
 
 ## 4. S3 — 그룹 리포트와 추천의 말
 
