@@ -53,6 +53,7 @@ describe('체크 문안에 옛 명칭·옛 기간이 없다', () => {
     fnCopy.introBlock,
     fnCopy.blockIntros,
     fnCopy.askPrompts,
+    fnCopy.nextBlock,
     fnCopy.commitLabel,
     fnCopy.careLabel,
     fnCopy.pledgeLabel,

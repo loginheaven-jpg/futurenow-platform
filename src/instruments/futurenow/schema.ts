@@ -43,6 +43,10 @@ export const futurenowAnswersSchema = z.object({
   E1: z.string(),
   E2: z.string(),
   E3: z.string().optional(),
+  // 추천의 말·게재 동의(사후 전용, ADR-203). 기존 응답에는 없는 키라 optional 을 유지한다.
+  // 500자는 앱 저장 경계 검사다. SQL 제약이나 다른 주관식의 새 제한이 아니다.
+  REC: z.string().max(500).optional(),
+  REC_OK: z.boolean().optional(),
   // 부가
   INTRO: z.string().optional(), // 들어가며 조감도 한 문장
   CARE: z.boolean().optional(), // 돌봄 체크

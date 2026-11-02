@@ -55,6 +55,40 @@ describe('futurenowAnswersSchema', () => {
   it('PLEDGE 는 불리언이다 — 체크 값이 문자열로 들어오면 거부', () => {
     expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), PLEDGE: 'true' }).success).toBe(false);
   });
+
+  describe('REC·REC_OK — 기존 응답 호환과 앱 저장 경계(ADR-203)', () => {
+    it('두 키가 없는 기존 응답을 그대로 허용하고 동의를 기본 생성하지 않는다', () => {
+      const parsed = futurenowAnswersSchema.parse(validAnswers());
+      expect(parsed).not.toHaveProperty('REC');
+      expect(parsed).not.toHaveProperty('REC_OK');
+    });
+
+    it('REC 는 빈 문자열과 500자를 허용하고 원문을 보존한다', () => {
+      expect(futurenowAnswersSchema.parse({ ...validAnswers(), REC: '' }).REC).toBe('');
+      const text = '가'.repeat(500);
+      expect(futurenowAnswersSchema.parse({ ...validAnswers(), REC: text }).REC).toBe(text);
+    });
+
+    it('REC 501자와 문자열이 아닌 값은 거부한다', () => {
+      expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), REC: '가'.repeat(501) }).success).toBe(false);
+      expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), REC: 123 }).success).toBe(false);
+    });
+
+    it.each([true, false])('REC_OK=%s 를 변환 없이 보존한다', (consent) => {
+      const parsed = futurenowAnswersSchema.parse({ ...validAnswers(), REC: '다음 참여자에게 건네는 글', REC_OK: consent });
+      expect(parsed.REC).toBe('다음 참여자에게 건네는 글');
+      expect(parsed.REC_OK).toBe(consent);
+    });
+
+    it('REC_OK 문자열을 동의로 바꾸지 않고 거부한다', () => {
+      expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), REC_OK: 'true' }).success).toBe(false);
+    });
+
+    it('새 500자 제한은 기존 E1~E3 에 적용하지 않는다', () => {
+      const text = '가'.repeat(501);
+      expect(futurenowAnswersSchema.safeParse({ ...validAnswers(), E1: text, E2: text, E3: text }).success).toBe(true);
+    });
+  });
 });
 
 describe('futurenowProfileSchema (계정 복사 스냅샷 — birthYear·gender NULL 가능, 관찰 하나)', () => {
