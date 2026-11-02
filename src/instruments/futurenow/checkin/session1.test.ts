@@ -44,14 +44,14 @@ describe('checkinFilledCount — 필수 5칸(문안 v2)', () => {
 // 문안 회귀 — 금지어(§5-7)·순서 핵심 확인.
 describe('1회차 문안 v2 — 금지어·핵심 문자열', () => {
   const flat = JSON.stringify(CHECKIN_SESSION_1);
-  it('금지어 없음(진단은 지정 예외)', () => {
+  it('금지어 없음', () => {
     expect(flat).not.toContain('설문');
     expect(flat).not.toContain('지각');
     expect(flat).not.toContain('미제출');
     expect(flat).not.toContain('워크북');
   });
-  it("'이건 진단이 아닙니다'는 지정 예외로 존재", () => {
-    expect(CHECKIN_SESSION_1.cover.firstVisitOnce).toBe('이건 진단이 아닙니다. 점수도, 정답도 없습니다.');
+  it('첫 방문 안내가 발견과 실천을 잇는 기록의 목적을 말한다', () => {
+    expect(CHECKIN_SESSION_1.cover.firstVisitOnce).toBe('오늘의 발견을 자신의 말로 정리하고, 다음 실천으로 이어 가는 기록입니다.');
   });
   it('desire 쌍·letter_line·질문형 라벨·책 참조', () => {
     expect(CHECKIN_SESSION_1.today.pairText.from.key).toBe('desire_from');

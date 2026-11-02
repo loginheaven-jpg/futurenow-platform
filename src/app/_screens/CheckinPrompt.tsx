@@ -46,8 +46,8 @@ export function CheckinPrompt({
     >
       <div className="t-body" style={{ color: 'var(--color-text)' }}>
         {hasContent
-          ? '쓰시던 자리가 남아 있어요. 몇 칸만 더 채우면 끝납니다.'
-          : `${sessionNo}회차 갈무리가 열렸습니다. 3분이면 됩니다.`}
+          ? '작성 중인 갈무리를 이어서 완성해 주세요. 남은 질문에 자신의 경험과 생각을 구체적으로 정리해 주세요.'
+          : `${sessionNo}회차 갈무리가 열렸습니다. 오늘의 발견과 앞으로의 실천을 정리해 주세요.`}
       </div>
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
         <Link

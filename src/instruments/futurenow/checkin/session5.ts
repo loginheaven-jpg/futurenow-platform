@@ -86,7 +86,7 @@ export const CHECKIN_SESSION_5 = {
       key: 'env_change',
       label: '오늘 바꾸기로 하신 환경 하나를 그대로 옮겨 적어 주세요. (책 210~213쪽)',
       // '하나면 됩니다'는 허락이 아니라 **사실 진술**이다(원칙 §4) — 몇 개를 적어야 하는지를 말한다.
-      help: '가까이 두기로 한 것이든 멀리 두기로 한 것이든, 하나만 적으십시오.',
+      help: '가까이 두거나 멀리할 대상과 어떻게 바꿀지를 구체적으로 적어 주세요.',
       placeholder: '자기 전에 휴대폰을 거실 서랍에 둔다',
       mirror: { label: '지난 시간에 적으신 「못 하게 될 것 같은 때」', keys: ['step_blocker'] },
     },
@@ -167,7 +167,7 @@ export const CHECKIN_SESSION_5 = {
       key: 'last_step_result',
       label: '지난 한 걸음은 어떻게 되었나요?',
       options: ['했습니다', '조금 했습니다', '잊고 지냈습니다', '하려다 막혔습니다', '크기나 내용을 바꿨습니다'],
-      note: { key: 'last_step_note', label: '한 줄만 덧붙여 주세요', help: '여기 정직하게 적는 것이 다음 한 주를 바꿉니다.' },
+      note: { key: 'last_step_note', label: '지난 실천에서 확인한 점과 다음에 보완할 점은 무엇인가요?', help: '실제로 한 행동과 결과를 적어 주세요. 실행하지 못했다면 막힌 이유와 다음에 바꿀 점을 적어 주세요.' },
       mirror: {
         label: '지난 시간의 한 걸음과 첫 도미노',
         keys: ['step_what', 'step_when', 'domino_what'],
@@ -203,7 +203,7 @@ export const CHECKIN_SESSION_5 = {
     confidence: {
       key: 'confidence',
       label: '먼저 해볼 신호와 행동, 다음 시간까지 어느 정도로 해내실까요?',
-      help: '지금 느끼는 그대로 표시해 주세요. 숫자가 낮으면 인도자가 한 걸음을 더 잘게 나눠 드립니다.',
+      help: '현재 계획을 기준으로 실행할 자신감을 솔직하게 표시해 주세요. 실행에 필요한 준비와 도움을 살펴보고 계획을 구체화해 주세요.',
       min: 0,
       max: 10,
       leftLabel: '아직 자신 없음',

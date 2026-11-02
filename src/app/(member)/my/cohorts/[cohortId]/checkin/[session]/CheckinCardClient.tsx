@@ -552,7 +552,7 @@ export function CheckinCardClient({
         <div className="t-caption" style={help}>{copy.cover.subtitle}</div>
         <p className="t-caption" style={{ ...help, marginTop: 'var(--space-2)' }}>{copy.cover.band}</p>
         {copy.cover.firstVisitOnce && !alreadyOpened ? <p className="t-caption" style={gray}>{copy.cover.firstVisitOnce}</p> : null}
-        {closed ? <p className="t-caption" style={help}>마감이 지났지만 지금 적으셔도 됩니다.</p> : null}
+        {closed ? <p className="t-caption" style={help}>마감이 지난 갈무리도 지금 작성할 수 있습니다. 오늘의 발견과 실천 계획을 마무리해 주세요.</p> : null}
       </div>
 
       {/* 워크북 사진(ADR-197) — **모든 회차 맨 위 한 자리.** 세미나 중에 손으로 쓴 쪽을 찍어 올린다.
@@ -733,7 +733,7 @@ export function CheckinCardClient({
             {gate.labels.length > 0 ? '아직 비어 있는 칸이 있습니다' : '선택 항목이 하나 남았습니다'}
           </div>
           <p className="t-caption" style={{ ...help, margin: 'var(--space-1) 0 var(--space-3)' }}>
-            {gate.labels.length > 0 ? '아래 칸을 채우면 갈무리가 끝납니다.' : '지금 저장하거나, 더 적을 수 있습니다.'}
+            {gate.labels.length > 0 ? '아래 칸을 채우면 갈무리가 끝납니다.' : '정한 계획을 다시 살펴보고, 실행할 자신감을 표시해 주세요.'}
           </p>
           <ul style={{ margin: 0, paddingLeft: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
             {gate.labels.map((l) => <li key={l} className="t-caption" style={{ color: 'var(--color-text)' }}>{l}</li>)}

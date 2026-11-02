@@ -192,7 +192,7 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
   it('2회차 — 영역·지난 걸음·편지 첨부', () => {
     const l = koreanLiterals('session2');
     expect(l.has('다섯 중 가장 가슴이 뛴 하나만 고르십시오. 이 선택이 4회차 원씽의 재료가 됩니다.')).toBe(true);
-    expect(l.has('정직한 기록만이 다음 한 주를 바꿉니다.')).toBe(true);
+    expect(l.has('실제로 한 행동과 결과를 적어 주세요. 실행하지 못했다면 막힌 이유와 다음에 바꿀 점을 적어 주세요.')).toBe(true);
     expect(l.has('종이에 쓴 편지도 여기에 촬영해 첨부하십시오.')).toBe(true);
     expect(l.has('만약 종이에 이미 썼다면 그 내용 중 가장 마음에 남는 한 줄만 옮겨 주세요. (책 85~87쪽)')).toBe(true);
     expect([...l].filter((s) => s.includes('촬영해 첨부')), '첨부 안내가 두 곳에 섰다').toHaveLength(1);
@@ -200,8 +200,8 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
 
   it('3회차 — 우당탕탕·오늘의 질문·습관 짝', () => {
     const l = koreanLiterals('session3');
-    expect(l.has('완성이 아니라 시작이 목적입니다. 이름을 붙이는 순간 프로젝트가 됩니다.')).toBe(true);
-    expect(l.has('또는 다른 함정을 찾아서 이름을 붙이셔도 좋습니다. 떠오르는 장면을 함께 적으면 더욱 좋습니다.')).toBe(true);
+    expect(l.has('이루려는 변화와 시작할 행동이 드러나도록 프로젝트 이름을 붙여 주세요.')).toBe(true);
+    expect(l.has('세 가지에 해당하지 않는 걸림돌은 자신의 말로 이름을 붙여 주세요. 그 걸림돌이 드러난 실제 장면을 함께 적어 주세요.')).toBe(true);
     expect(l.has('짝이 맞는 한 쌍만 고르십시오. 없앨 것과 들일 것이 함께 있어야 습관이 바뀝니다.')).toBe(true);
   });
 
@@ -216,15 +216,13 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
     expect(s3).not.toContain('하나면 됩니다');
   });
 
-  // **범위 예시는 남긴다**(원칙 §1 축1 네 번째 갈래). 허락이 아니라 답의 폭을 알려 주는 문장이라
-  //   지우면 '무엇을 적어야 하는가'가 좁아진다. BANNED 에 넣지 않은 이유이기도 하다 —
-  //   어휘로 막으면 이 셋이 즉시 걸리고 예외 목록이 길어져 잠금이 자기 예외로 무너진다.
-  it('범위 예시 셋과 실행 사실 하나는 그대로다', () => {
-    expect(koreanLiterals('session1').has('노트에 찍은 점 하나여도 좋습니다.')).toBe(true);
+  // 2026-11-02 승인: 기록할 경험과 실행 준비를 구체화한다.
+  //   장면의 소재를 알려 주는 2회차 범위 예시는 유지한다.
+  it('경험과 대응을 기록하게 안내하고 장면의 범위 예시는 유지한다', () => {
+    expect(koreanLiterals('session1').has('노트에 표시한 기억을 돌아보며, 무슨 일이 있었는지와 지금 다시 생각하게 되는 이유를 적어 주세요.')).toBe(true);
     expect([...koreanLiterals('session2')].some((s) => s.includes('어떤 소리여도 좋습니다'))).toBe(true);
-    expect([...koreanLiterals('session3')].some((s) => s.includes('다른 함정을 찾아서 이름을 붙이셔도 좋습니다'))).toBe(true);
-    // 실행에 관한 사실 — 한 걸음 뒷문장과 같은 성격이다(위로가 아니라 정보).
-    expect(koreanLiterals('session3').has('흐트러지는 날이 오면, 그날부터 다시 이어 가면 됩니다.')).toBe(true);
+    expect(koreanLiterals('session3').has('세 가지에 해당하지 않는 걸림돌은 자신의 말로 이름을 붙여 주세요. 그 걸림돌이 드러난 실제 장면을 함께 적어 주세요.')).toBe(true);
+    expect(koreanLiterals('session3').has('실천이 어려워질 상황을 예상하고, 그때 어떻게 이어 갈지 함께 적어 주세요.')).toBe(true);
   });
 
   // 압박 어휘·판정어는 진취적 어조와 다른 것이다(원칙 §4).
@@ -232,9 +230,9 @@ describe('진취 전환 Phase 2 가 되돌아가지 않는다 (ADR-102)', () => 
     for (const file of S) {
       const lits = [...koreanLiterals(file)];
       for (const w of ['반드시', '절대', '놓치지', '지각', '미제출', '함정']) {
-        // 확정 질문의 교재 명칭과 다른 답을 허용하는 도움말만 예외다. 사람을 자동 판정하지 않는다.
+        // 확정 질문의 교재 명칭만 예외다. 사람을 자동 판정하지 않는다.
         const checked = file === 'session3' && w === '함정'
-          ? lits.filter((s) => !s.startsWith("'변화를 막는 세가지 함정'") && !s.startsWith('또는 다른 함정을 찾아서'))
+          ? lits.filter((s) => !s.startsWith("'변화를 막는 세가지 함정'"))
           : lits;
         expect(checked.some((s) => s.includes(w)), `${file}: ${w}`).toBe(false);
       }
@@ -276,8 +274,8 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
     expect([...uniq], '회차마다 고지문이 갈렸다 — 여섯을 함께 옮기지 않으면 안 된다').toHaveLength(1);
   });
 
-  it('오해 방지 — 1회차 첫 방문 안내', () => {
-    expect(koreanLiterals('session1').has('이건 진단이 아닙니다. 점수도, 정답도 없습니다.')).toBe(true);
+  it('1회차 첫 방문 안내가 기록의 목적을 말한다', () => {
+    expect(koreanLiterals('session1').has('오늘의 발견을 자신의 말로 정리하고, 다음 실천으로 이어 가는 기록입니다.')).toBe(true);
   });
 
   it('★ 사진 열람 고지를 **걷었다** — 되살아나면 운다 (지휘부 판정 2026-09-02)', () => {
@@ -307,7 +305,8 @@ describe('§3 다섯 자리는 지워지지 않았다 (ADR-102)', () => {
 
   it('결측 안내 패널 — 컴포넌트', () => {
     const s = src('../../../app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient.tsx');
-    expect(s).toContain('지금 저장하거나, 더 적을 수 있습니다.'); // 몰아세우면 이탈한다 — 여기만은 허락을 남긴다
+    expect(s).toContain('정한 계획을 다시 살펴보고, 실행할 자신감을 표시해 주세요.');
+    expect(s).not.toContain('지금 저장하거나, 더 적을 수 있습니다.');
     expect(s).toContain('채우러 가기');
     expect(s).toContain('나중에 이어 쓰기');
   });
@@ -443,13 +442,13 @@ describe('3회차 심화 개정이 되돌아가지 않는다 (ADR-100)', () => {
 
 describe('완충 문구 교체가 되돌아가지 않는다', () => {
   const REPLACED = '솔직하게요. 낮게 답하셔도 아무 일 없습니다.';
-  const NOW = '지금 느끼는 그대로 표시해 주세요. 숫자가 낮으면 인도자가 한 걸음을 더 잘게 나눠 드립니다.';
+  const NOW = '현재 계획을 기준으로 실행할 자신감을 솔직하게 표시해 주세요. 실행에 필요한 준비와 도움을 살펴보고 계획을 구체화해 주세요.';
 
   // ★ **6회차는 넣지 않는다.** 90일 한 걸음이라 보조문구가 다르다
   //   ('낮게 적힌 숫자가 인도자에게는 가장 쓸모 있습니다. 종료 뒤 연락의 우선순위가 됩니다.')
   //   되돌아가지 않았는지는 6회차 자체 잠금(session6.test.ts)이 본다.
   for (const file of ['session1', 'session2', 'session3', 'session4', 'session5'] as const) {
-    it(`${file}: 실행 자신감 보조문구가 용도 문법으로 바뀌었다`, () => {
+    it(`${file}: 실행 자신감과 필요한 준비를 점검한다`, () => {
       const lits = koreanLiterals(file);
       expect(lits.has(REPLACED)).toBe(false);
       expect(lits.has(NOW)).toBe(true);
