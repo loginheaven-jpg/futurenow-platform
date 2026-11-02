@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CheckinCardClient } from '@/app/(member)/my/cohorts/[cohortId]/checkin/[session]/CheckinCardClient';
+import { CheckinPrompt } from '@/app/_screens/CheckinPrompt';
 import { getCheckinSession, WORKBOOK_TITLE } from '@/instruments/futurenow/checkin';
 import { orderedSlots } from '@/instruments/futurenow/checkin/slots';
 import { SAMPLE_BACK1, SAMPLE_BACK2 } from './CheckinPreviewClient';
@@ -46,7 +47,7 @@ describe('5·6회차 신호와 경험 연결 (ADR-200)', () => {
   });
 });
 
-function card(sessionNo: number, withPrior: boolean): string {
+function card(sessionNo: number, withPrior: boolean, options: { closed?: boolean; alreadyOpened?: boolean } = {}): string {
   return renderToStaticMarkup(
     <CheckinCardClient
       cohortId="preview-cohort"
@@ -54,9 +55,9 @@ function card(sessionNo: number, withPrior: boolean): string {
       userId="preview"
       initialAnswers={{}}
       initialFlags={{ suggestionAnon: false, contactRequest: false, deepOpened: false, stepPrivate: false }}
-      alreadyOpened
+      alreadyOpened={options.alreadyOpened ?? true}
       hasContent={false}
-      closed={false}
+      closed={options.closed ?? false}
       priors={withPrior ? { 1: SAMPLE_BACK1, 2: SAMPLE_BACK2 } : {}}
       initialMode="edit"
       photos={[]}
@@ -65,6 +66,42 @@ function card(sessionNo: number, withPrior: boolean): string {
     />,
   );
 }
+
+describe('승인된 갈무리 안내의 실제 화면 표시 (2026-11-02)', () => {
+  it('1~5회차는 발견·실행 결과·준비를 구체화하고 마감 후에도 작성 안내가 나온다', () => {
+    const cards = [1, 2, 3, 4, 5].map((n) => card(n, true, { alreadyOpened: false }));
+    for (const html of cards) {
+      expect(html).toContain('현재 계획을 기준으로 실행할 자신감을 솔직하게 표시해 주세요.');
+      expect(html).not.toContain('숫자가 낮으면 인도자가 한 걸음을 더 잘게 나눠 드립니다.');
+    }
+    for (const html of cards.slice(1)) {
+      expect(html).toContain('지난 실천에서 확인한 점과 다음에 보완할 점은 무엇인가요?');
+      expect(html).toContain('실제로 한 행동과 결과를 적어 주세요.');
+      expect(html).not.toContain('한 줄만 덧붙여 주세요');
+    }
+    expect(cards[0]).toContain('오늘의 발견을 자신의 말로 정리하고, 다음 실천으로 이어 가는 기록입니다.');
+    expect(cards[0]).toContain('무슨 일이 있었는지와 지금 다시 생각하게 되는 이유를 적어 주세요.');
+    expect(cards[2]).toContain('그 걸림돌이 드러난 실제 장면을 함께 적어 주세요.');
+    expect(cards[3]).toContain('이번에는 고른 하나에 집중해, 정한 첫걸음을 실행하자.');
+    expect(cards[4]).toContain('가까이 두거나 멀리할 대상과 어떻게 바꿀지를 구체적으로 적어 주세요.');
+    const closed = card(1, false, { closed: true });
+    expect(closed).toContain('마감이 지난 갈무리도 지금 작성할 수 있습니다. 오늘의 발견과 실천 계획을 마무리해 주세요.');
+    expect(cards[0]).not.toContain('마감이 지난 갈무리도 지금 작성할 수 있습니다.');
+  });
+
+  it('복귀 안내는 미작성과 작성 중 상태에 맞는 문구와 해당 회차 링크를 보여 준다', () => {
+    for (const hasContent of [false, true]) {
+      const html = renderToStaticMarkup(
+        <CheckinPrompt cohortId="preview-cohort" sessionNo={3} hasContent={hasContent} shouldPrompt={false} />,
+      );
+      expect(html).toContain(hasContent
+        ? '작성 중인 갈무리를 이어서 완성해 주세요. 남은 질문에 자신의 경험과 생각을 구체적으로 정리해 주세요.'
+        : '3회차 갈무리가 열렸습니다. 오늘의 발견과 앞으로의 실천을 정리해 주세요.');
+      expect(html).toContain('/my/cohorts/preview-cohort/checkin/3?edit=1');
+      expect(html).not.toContain('3분');
+    }
+  });
+});
 
 /** 그 회차 문안이 되비추는 모든 키(1면 슬롯 · 심화 · 지난 걸음). */
 function mirrorKeys(sessionNo: number): { key: string; back: number }[] {

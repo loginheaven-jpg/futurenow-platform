@@ -141,7 +141,7 @@ export const CHECKIN_SESSION_4 = {
       key: 'last_step_result',
       label: '지난 한 걸음은 어떻게 되었나요?',
       options: ['했습니다', '조금 했습니다', '잊고 지냈습니다', '하려다 막혔습니다'],
-      note: { key: 'last_step_note', label: '한 줄만 덧붙여 주세요', help: '여기 정직하게 적는 것이 다음 한 주를 바꿉니다.' },
+      note: { key: 'last_step_note', label: '지난 실천에서 확인한 점과 다음에 보완할 점은 무엇인가요?', help: '실제로 한 행동과 결과를 적어 주세요. 실행하지 못했다면 막힌 이유와 다음에 바꿀 점을 적어 주세요.' },
       mirror: {
         label: '지난 시간의 한 걸음',
         keys: ['step_what', 'step_when'],
@@ -176,7 +176,7 @@ export const CHECKIN_SESSION_4 = {
     confidence: {
       key: 'confidence',
       label: '이 한 걸음, 다음 시간까지 어느 정도로 해내실까요?',
-      help: '지금 느끼는 그대로 표시해 주세요. 숫자가 낮으면 인도자가 한 걸음을 더 잘게 나눠 드립니다.',
+      help: '현재 계획을 기준으로 실행할 자신감을 솔직하게 표시해 주세요. 실행에 필요한 준비와 도움을 살펴보고 계획을 구체화해 주세요.',
       min: 0,
       max: 10,
       leftLabel: '아직 자신 없음',
@@ -200,7 +200,7 @@ export const CHECKIN_SESSION_4 = {
       key: 'self_note',
       label: '오늘 많은 것을 내려놓고 하나를 고른 나에게, 한마디만 건네주세요.',
       help: '오늘의 나에게 지금 필요한 말을 적으십시오. 이 한 줄이 회차마다 쌓입니다.',
-      placeholder: '다 하려다 아무것도 못 했잖아. 이번엔 하나만 하자',
+      placeholder: '이번에는 고른 하나에 집중해, 정한 첫걸음을 실행하자.',
     },
   },
   // save · done 은 회차 공통.
