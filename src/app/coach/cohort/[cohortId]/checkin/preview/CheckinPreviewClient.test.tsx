@@ -34,6 +34,11 @@ describe('5·6회차 신호와 경험 연결 (ADR-200)', () => {
     expect(html).toContain('아직 그 상황이 오지 않았어요');
     expect(html).not.toContain('지난 시간의 한 걸음');
     expect(html).toContain('앞으로 90일 동안 이어 갈 한 걸음');
+    // 승인된 성찰·실천 안내가 실제 참여자 카드에도 전달되어야 한다.
+    expect(html).toContain('후회로 남기고 싶지 않은 일과 그 이유를 구체적으로 적어 주세요.');
+    expect(html).toContain('그 사람에게 이번 주에 실천할 의미 있는 한 가지');
+    expect(html).toContain('신호를 만난 상황과 그때의 행동을 적어 주세요.');
+    expect(html).not.toContain('무겁게 느껴지시면 비워 두고 넘어가셔도 됩니다.');
   });
 
   it('지난 기록이 없으면 빈 되비추기 대신 기억나는 신호를 선택 입력한다', () => {

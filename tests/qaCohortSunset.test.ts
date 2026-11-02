@@ -15,7 +15,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 
-// 순수한 코드 관문을 검사한다. 도구를 import할 때 관리자 키를 요구하지 않도록 외부 클라이언트만 격리한다.
+// 순수한 코드 관문을 검사한다. 환경 파일과 관리자 키 없이 import할 수 있도록 외부 의존성만 격리한다.
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    readFileSync: (...args: Parameters<typeof actual.readFileSync>) => (
+      args[0] === '.env.local' ? '' : actual.readFileSync(...args)
+    ),
+  };
+});
 vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn(() => ({})) }));
 
 /**
