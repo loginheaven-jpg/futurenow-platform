@@ -165,20 +165,21 @@ describe('★ 문항 교체가 되돌아가지 않는다 (CC_MEMO §4)', () => {
     // 인도자가 즉석에서 두 번 만든 전환이고, 관통 프레임이 실제로 착지하는 유일한 칸이다.
     expect(c.today.question!.label).toContain('오늘로 가져오기로 하신 한 가지');
     expect(c.today.question!.label, '원안이 되살아났다').not.toContain('남은 시간을 헤아려');
-    // ★ **비워 둔 사람이 막히지 않는다** — 옮길 것이 없어도 지금 떠오른 것을 적을 수 있다.
-    expect(c.today.question!.help, '필수 칸인데 옮길 것이 없으면 막힌다').toContain('지금 떠오른 것');
+    // 2026-11-02 승인: 현장 기록을 옮긴 뒤 더 분명해진 생각까지 반영한다.
+    expect(c.today.question!.help).toBe('오늘 기록한 내용을 옮기고, 지금 더 분명해진 생각을 반영해 주세요.');
   });
 
-  it('문항 2 가 **강의 구조를 걷어냈다** — 보조 문구 없음 · 선택 표기 있음', () => {
+  it('문항 2 는 실제 장면과 후회의 이유를 기록하게 한다 — 선택 판정 유지', () => {
     const f = c.today.purpose!.fields[0];
     expect(f.label).toContain('무엇을 가장 후회할 것 같았습니까');
     // 현장 칠판을 전제한 문장이었다. 카드에는 그 그림이 없다.
     expect(f.label, '원안이 되살아났다').not.toContain('두 세계관');
     // ★★ **꺼질 수 있는 활동을 묻지 않는다**(v3 §2) — 세계관 비교는 차수 구성에 따라 생략된다.
     expect(f.label, '꺼질 수 있는 활동이 되살아났다').not.toContain('세계관');
-    // 보조 문구는 v3 가 **붙이라고** 정했다 — 무거운 칸에 비워 둘 권리를 말로 준다.
-    expect(c.today.purpose!.help, '비워 둘 권리를 말하지 않는다').toContain('비워 두고');
-    // 답하기 어려운 사람에게 침묵할 권리를 남긴다.
+    // 2026-11-02 승인: 작성을 생략하는 안내를 구체적인 성찰 지시로 교체한다.
+    expect(c.today.purpose!.help).toBe('오늘 살펴본 장면을 바탕으로, 후회로 남기고 싶지 않은 일과 그 이유를 구체적으로 적어 주세요.');
+    expect(c.today.purpose!.help).not.toContain('비워 두고');
+    // 문안 개편은 기존 선택·필수 판정과 저장된 응답을 바꾸지 않는다.
     expect(c.today.purpose!.badge).toBe('선택');
   });
 });
