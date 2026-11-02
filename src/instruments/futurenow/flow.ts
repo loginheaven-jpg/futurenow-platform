@@ -117,8 +117,7 @@ function buildBlocks(wave: Wave): Block[] {
       ordering: { mode: 'fixed' },
     },
     // 4. 다섯 영역의 간격 — B1~B5 (numeric, fixed).
-    //    종료(post): 화면은 '오늘' 값만 수집한다. '5주 전' 값은 페어링된 사전 응답에서 가져와
-    //    나란히 표시(별도 입력 아님) — 이는 B③ 리포트/비교뷰 사안이므로 여기선 수집 필드만 둔다.
+    //    입력 화면은 지금 값만 수집한다. 사전 기록과 나란히 놓는 일은 B③ 리포트가 한다(ADR-203).
     {
       id: 'gap',
       kind: 'standard',
@@ -141,7 +140,19 @@ function buildBlocks(wave: Wave): Block[] {
       ],
       ordering: { mode: 'fixed' },
     },
-    // 6. 마지막 한 걸음 — 다짐 체크. label 은 wave별.
+    // 6. 다음에 올 분에게 — 사후 전용 추천의 말과 모집 게재 선택 동의(ADR-203).
+    ...(wk === 'post' ? [{
+      id: 'next',
+      kind: 'standard',
+      title: copy.nextBlock.title,
+      intro: copy.nextBlock.intro,
+      items: [
+        textItem('REC', copy.nextBlock.prompt, false, copy.nextBlock.placeholder),
+        checkItem('REC_OK', copy.nextBlock.consentLabel),
+      ],
+      ordering: { mode: 'fixed' },
+    } satisfies Block] : []),
+    // 6(사전) / 7(사후). 마지막 한 걸음 — 다짐 체크. label 은 wave별.
     //    두 줄의 층이 다르다: COMMIT 은 마음의 다짐(이 시간을 끝까지 걷겠다),
     //    PLEDGE 는 그 다짐이 실제로 무엇을 뜻하는지를 행동으로 적은 약속이다.
     //    큰 다짐이 먼저 오고 구체가 뒤따른다 — 순서를 뒤집으면 약속만 하고 이유를 못 읽는다.
