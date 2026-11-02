@@ -32,11 +32,13 @@ export default async function CohortDetailPage({
   const cohort = await requestCohort(cohortId).catch(() => null);
   if (!cohort) notFound(); // 미존재/RLS 차단 → 404
 
-  const [enrollments, responses, alerts, members] = await Promise.all([
+  const [enrollments, responses, alerts, members, participants] = await Promise.all([
     ctx.listEnrollments(cohortId),
     ctx.listResponses<Answers, unknown>({ instrumentId: cohort.instrumentId, cohortId }),
     ctx.listAlerts(cohortId),
     ctx.listCohortMembers(cohortId),
+    // 마무리 진행만 현재 일반 참여자로 센다. 전체 명단·삭제 영향 수는 기존 범위를 유지한다(ADR-207).
+    ctx.listCohortMembers(cohortId, true),
   ]);
 
   // 주 함정 태그(Phase 3·ADR-77): 사용자별 최신 응답을 채점해 trap.primary 라벨. 답안은 이미 로드됨(추가 쿼리 0).
@@ -62,14 +64,16 @@ export default async function CohortDetailPage({
   // ★★ **마무리 체크는 따로 센다**(U-8 · 지휘부 지시 2026-09-03 「여러 방식으로 마무리를 독려」).
   //   `buildCohortRoster` 는 **wave 를 안 가른다** — 사전만 낸 사람도 「응답 완료」로 들어간다.
   //   그래서 마무리가 열려도 **누가 아직 안 했는지 인도자가 볼 길이 없었다**(U-8 실측).
-  //   독려는 그 명단이 없으면 시작조차 못 한다. **추가 조회 0** — 이미 손에 있는 `responses` 를 가른다.
-  const postDoneIds = new Set(responses.filter((r) => r.wave === 'post' && r.userId).map((r) => r.userId!));
+  //   응답은 이미 손에 있는 `responses` 를 가른다. 현재 참여자 명단 조회 실패는 그대로 전파한다.
+  const participantIds = new Set(participants.map((m) => m.userId));
+  const participantEnrollments = enrollments.filter((e) => participantIds.has(e.userId));
+  const postDoneIds = new Set(responses.filter((r) => r.wave === 'post' && r.userId && participantIds.has(r.userId)).map((r) => r.userId!));
   const nameOf = new Map(members.map((m) => [m.userId, m.name] as const));
   const postStatus = {
-    done: enrollments.filter((e) => postDoneIds.has(e.userId)).length,
-    total: enrollments.length,
+    done: participantEnrollments.filter((e) => postDoneIds.has(e.userId)).length,
+    total: participantEnrollments.length,
     // **이름만 낸다** — 리포트로 가는 문이 아니다(마무리 리포트는 응답이 있어야 선다).
-    pending: enrollments.filter((e) => !postDoneIds.has(e.userId)).map((e) => nameOf.get(e.userId) ?? '참여자'),
+    pending: participantEnrollments.filter((e) => !postDoneIds.has(e.userId)).map((e) => nameOf.get(e.userId) ?? '참여자'),
   };
 
   const { roster, responded, waiting, careCount } = buildCohortRoster({ enrollments, responses, alerts, members, trapByUserId });

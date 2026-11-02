@@ -50,10 +50,10 @@ export default async function AssessmentsPage() {
   const state = await ctx.getMyMemberState();
 
   const cohorts = await ctx.listMyCohorts();
-  // 여정은 **활성 회기**에만 붙는다. 마감된 회기는 여정이 끝났고 상시만 남는다.
+  // 사전·가치 카드의 회기 선택은 활성 회기만. 열린 마무리는 마감 뒤에도 이어 작성한다(ADR-207).
   const active = cohorts.filter((c) => c.status === 'active');
   const pre = active.find((c) => !c.preDone) ?? null;
-  const post = active.find((c) => c.postOpened && !c.postDone) ?? null;
+  const post = cohorts.find((c) => c.postOpened && !c.postDone) ?? null;
 
   // 가치 카드는 **소속으로 갈린다** — 회기가 있으면 그 회기 경로, 없으면 개인 경로(S-2).
   //   회기가 여럿이면 첫 활성 회기로 보낸다(회기별 결과가 따로 서므로 임의 선택이 아니라 '지금 그 회기').

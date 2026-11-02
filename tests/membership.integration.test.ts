@@ -808,3 +808,156 @@ describe.skipIf(!ENABLED)('가치 카드 개인 응시 경로 (실DB · S-2)', (
     } finally { await close(client); }
   });
 });
+
+describe.skipIf(!ENABLED)('세미나 회기 마감·재개와 기존 참여 경로 (실DB · ADR-207 · S5)', () => {
+  const postStates = [
+    { label: '사후 미개시', openedAt: null },
+    { label: '사후 개시됨', openedAt: '2026-10-01T00:00:00Z' },
+  ];
+
+  it.each(postStates)('$label — 마감은 코드 진입만 닫고 기록·기존 입력과 회원 저장값을 보존한다', async ({ openedAt }) => {
+    const client = await open();
+    try {
+      // SETUP의 replica는 픽스처 삽입까지만 쓴다. 마감 트리거까지 꺼 놓고 검사하면 폐지를 증명하지 못한다.
+      expect((await client.query('show session_replication_role')).rows[0].session_replication_role).toBe('origin');
+      await client.query(ENROLL_STAFF);
+      await client.query(seed(COACH_A, 'individual', '2030-01-01'));
+      await client.query(seed(ADMIN, 'held', null));
+      await client.query(
+        `update public.cohorts set post_opened_at=$1::timestamptz, expires_at=now()+interval '30 days' where id='${COHORT}'`,
+        [openedAt],
+      );
+      // 두 회기에 모두 실재하는 열린 회차를 둔다. 남의 회기 거부가 일정 부재 탓이어서는 안 된다.
+      await client.query(`insert into public.cohort_sessions (cohort_id,session_no,held_at,opens_at,closes_at) values
+        ('${COHORT}',1,now()-interval '1 day',now()-interval '1 day',now()+interval '1 day'),
+        ('${OTHER_COHORT}',1,now()-interval '1 day',now()-interval '1 day',now()+interval '1 day')`);
+
+      const membershipRows = async () => (await client.query(
+        `select to_jsonb(m) as stored from public.memberships m
+          where user_id in ('${MEMBER}','${COACH_A}','${COACH_B}','${ADMIN}') order by user_id`,
+      )).rows;
+      const membershipCount = async () => Number((await client.query(
+        `select count(*)::int as n from public.memberships
+          where user_id in ('${MEMBER}','${COACH_A}','${COACH_B}','${ADMIN}')`,
+      )).rows[0].n);
+      const memberRowCount = () => countAs(client, MEMBER,
+        `select count(*)::int as count from public.memberships where user_id='${MEMBER}'`);
+      const codeCount = () => countAs(client, MEMBER,
+        `select count(*)::int as count from public.resolve_cohort_by_code('MSTUV')`);
+      const myCohortCount = () => countAs(client, MEMBER,
+        `select count(*)::int as count from public.my_cohorts() where cohort_id='${COHORT}'`);
+      const cohortIdCount = () => countAs(client, MEMBER,
+        `select count(*)::int as count from public.cohorts where id='${COHORT}'`);
+      const toolAccess = () => scalarAs(client, MEMBER, `select public.member_tool_access('${MEMBER}') as s`);
+
+      const membersBefore = await membershipRows();
+      const countBefore = await membershipCount();
+      expect(countBefore, '기존 individual과 held 저장 행이 실제로 있다').toBe(2);
+      expect(await memberRowCount(), '참여자는 저장된 자격이 없어야 마감의 산출 변화가 드러난다').toBe(0);
+      // text로 읽어 pg Date 변환의 밀리초 절삭 없이 실제 저장 시각을 비교한다.
+      const datesBefore = (await client.query(
+        `select post_opened_at::text as post_opened_at, expires_at::text as expires_at,
+                expires_at > now() as future_expiry from public.cohorts where id='${COHORT}'`,
+      )).rows[0];
+      expect(datesBefore.future_expiry).toBe(true);
+      expect(datesBefore.expires_at).not.toBeNull();
+      expect(datesBefore.post_opened_at === null).toBe(openedAt === null);
+
+      // 기존 기록을 먼저 만든다. responses INSERT는 saveResponse가 쓰는 SQL 권한 경로이며 앱 스키마 검사는 아니다.
+      await runAs(client, MEMBER, `insert into public.responses (instrument_id,cohort_id,user_id,wave,answers,subject_profile)
+        values ('__mstest__','${COHORT}','${MEMBER}','pre','{"s5":"before_archive"}'::jsonb,'{}'::jsonb)`);
+      await runAs(client, MEMBER,
+        `select public.checkin_save('${COHORT}',1,'{"s5":"before_archive"}'::jsonb,'{}'::jsonb)`);
+      expect(await stateOf(client, MEMBER)).toBe('cohort');
+      expect(await toolAccess()).toBe('full');
+      expect(await codeCount(), '대조군 · 열려 있고 만료 전인 코드는 조회된다').toBe(1);
+      expect(await cohortIdCount()).toBe(1);
+      expect(await myCohortCount()).toBe(1);
+
+      // 소유자 연결로 마감하지 않는다. 실제 담당 인도자의 UPDATE 권한을 통과해 1행을 바꿔야 한다.
+      expect(await updateCountAs(client, COACH_A,
+        `update public.cohorts set status='archived' where id='${COHORT}'`)).toBe(1);
+      expect(await membershipCount(), '자동 승급 행이 생기지 않는다').toBe(countBefore);
+      expect(await membershipRows(), '기존 자격·기간·결정·감사 필드 전부 불변').toEqual(membersBefore);
+      expect(await memberRowCount()).toBe(0);
+      expect(await stateOf(client, MEMBER)).toBe('pending');
+      expect(await toolAccess()).toBe('read_only');
+      expect(await codeCount(), '동일 코드가 마감 뒤 1→0으로 바뀐다').toBe(0);
+      expect(await cohortIdCount(), '기존 참여자의 회기 id 조회는 유지').toBe(1);
+      expect(await myCohortCount(), '내 회기 목록에도 남는다').toBe(1);
+      expect(await scalarAs(client, MEMBER,
+        `select status from public.my_cohorts() where cohort_id='${COHORT}'`)).toBe('archived');
+      expect(await scalarAs(client, MEMBER,
+        `select answers->>'s5' from public.responses where cohort_id='${COHORT}' and user_id='${MEMBER}' and wave='pre'`)).toBe('before_archive');
+      expect(await scalarAs(client, MEMBER,
+        `select answers->>'s5' from public.checkins where cohort_id='${COHORT}' and user_id='${MEMBER}' and session_no=1`)).toBe('before_archive');
+
+      // 미개시/개시 두 상태 모두 같은 기존 참여자 SQL 권한이다. post_opened_at을 서버 저장 제한이라고 주장하지 않는다.
+      await runAs(client, MEMBER, `insert into public.responses (instrument_id,cohort_id,user_id,wave,answers,subject_profile)
+        values ('__mstest__','${COHORT}','${MEMBER}','post','{"s5":"after_archive"}'::jsonb,'{}'::jsonb)`);
+      expect(await countAs(client, MEMBER,
+        `select count(*)::int as count from public.responses where cohort_id='${COHORT}' and user_id='${MEMBER}' and wave='post'
+          and answers='{"s5":"after_archive"}'::jsonb`)).toBe(1);
+      await runAs(client, MEMBER,
+        `select public.checkin_save('${COHORT}',1,'{"s5":"after_archive"}'::jsonb,'{}'::jsonb)`);
+      await runAs(client, MEMBER, `select public.checkin_submit('${COHORT}',1)`);
+      expect(await countAs(client, MEMBER,
+        `select count(*)::int as count from public.checkins where cohort_id='${COHORT}' and user_id='${MEMBER}' and session_no=1
+          and answers='{"s5":"after_archive"}'::jsonb and has_content and submitted_at is not null and edit_count=0`)).toBe(1);
+
+      await expectRaise(client, MEMBER,
+        `insert into public.checkins (cohort_id,user_id,session_no,answers) values ('${COHORT}','${MEMBER}',1,'{}'::jsonb)`, '42501');
+      await expectRaise(client, MEMBER,
+        `insert into public.responses (instrument_id,cohort_id,user_id,wave,answers)
+          values ('__mstest__','${OTHER_COHORT}','${MEMBER}','post','{}'::jsonb)`, '42501');
+      await expectRaise(client, MEMBER,
+        `select public.checkin_save('${OTHER_COHORT}',1,'{"s5":"forbidden"}'::jsonb,'{}'::jsonb)`, 'P0001');
+      await expectRaise(client, MEMBER, `select public.checkin_submit('${OTHER_COHORT}',1)`, 'P0001');
+      expect(await countAs(client, MEMBER,
+        `select count(*)::int as count from public.checkins where cohort_id='${OTHER_COHORT}' and user_id='${MEMBER}'`)).toBe(0);
+
+      expect(await updateCountAs(client, COACH_A,
+        `update public.cohorts set status='active' where id='${COHORT}'`)).toBe(1);
+      const restored = (await client.query(
+        `select status,
+                post_opened_at is not distinct from $1::timestamptz as same_post_opened,
+                expires_at is not distinct from $2::timestamptz as same_expiry
+           from public.cohorts where id='${COHORT}'`,
+        [datesBefore.post_opened_at, datesBefore.expires_at],
+      )).rows[0];
+      expect(restored).toEqual({ status: 'active', same_post_opened: true, same_expiry: true });
+      expect(await codeCount(), '미래 만료시각을 유지한 재개 뒤 코드는 다시 조회된다').toBe(1);
+      expect(await stateOf(client, MEMBER)).toBe('cohort');
+      expect(await toolAccess()).toBe('full');
+      expect(await membershipRows(), '재개도 저장된 회원자격을 바꾸지 않는다').toEqual(membersBefore);
+      expect(await membershipCount()).toBe(countBefore);
+    } finally { await close(client); }
+  }, 60_000);
+
+  it('다른 진행 중 세미나 회기가 있으면 하나를 마감해도 cohort/full이다', async () => {
+    const client = await open();
+    try {
+      expect((await client.query('show session_replication_role')).rows[0].session_replication_role).toBe('origin');
+      await client.query(`insert into public.enrollments (cohort_id,user_id) values ('${OTHER_COHORT}','${MEMBER}')`);
+      expect(await countAs(client, MEMBER,
+        `select count(*)::int as count from public.memberships where user_id='${MEMBER}'`)).toBe(0); // held/expired 등 저장 상태 없음
+      expect(await scalarAs(client, MEMBER, `select role from public.users where id='${MEMBER}'`)).toBe('user');
+      expect(await countAs(client, MEMBER,
+        `select count(*)::int as count from public.cohorts where id in ('${COHORT}','${OTHER_COHORT}') and kind='seminar' and status='active'`)).toBe(2);
+      expect(await updateCountAs(client, COACH_A,
+        `update public.cohorts set status='archived' where id='${COHORT}'`)).toBe(1);
+      expect(await stateOf(client, MEMBER)).toBe('cohort');
+      expect(await scalarAs(client, MEMBER, `select public.member_tool_access('${MEMBER}')`)).toBe('full');
+      expect(await countAs(client, MEMBER,
+        `select count(*)::int as count from public.my_cohorts() where cohort_id in ('${COHORT}','${OTHER_COHORT}')`)).toBe(2);
+
+      // 대조군: 마지막 진행 회기까지 마감하면 같은 참여자의 산출 자격이 그때 내려간다.
+      expect(await updateCountAs(client, COACH_B,
+        `update public.cohorts set status='archived' where id='${OTHER_COHORT}'`)).toBe(1);
+      expect(await stateOf(client, MEMBER)).toBe('pending');
+      expect(await scalarAs(client, MEMBER, `select public.member_tool_access('${MEMBER}')`)).toBe('read_only');
+      expect(await countAs(client, MEMBER,
+        `select count(*)::int as count from public.memberships where user_id='${MEMBER}'`)).toBe(0);
+    } finally { await close(client); }
+  }, 60_000);
+});

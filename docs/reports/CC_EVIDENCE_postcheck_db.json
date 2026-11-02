@@ -1,0 +1,109 @@
+{
+  "kind": "separate_management_sql_rollback_verification",
+  "vitest_suite_executed": false,
+  "setup": "normal signup trigger, no session_replication_role changes; individual and held fixture users enrolled in closing cohort",
+  "verification": {
+    "status": "passed",
+    "scenarios": [
+      {
+        "checks": {
+          "active_code_rows": 1,
+          "last_close_state": "pending",
+          "coach_reopen_rows": 1,
+          "archived_code_rows": 0,
+          "coach_archive_rows": 1,
+          "pre_record_read_rows": 1,
+          "direct_checkin_blocked": "42501",
+          "last_close_tool_access": "read_only",
+          "my_cohorts_archived_rows": 1,
+          "archived_post_insert_rows": 1,
+          "other_cohort_post_blocked": "42501",
+          "other_checkin_save_blocked": "P0001",
+          "memberships_count_unchanged": true,
+          "archived_checkin_save_submit": true,
+          "archived_cohort_id_read_rows": 1,
+          "other_checkin_submit_blocked": "P0001",
+          "reopen_status_and_dates_preserved": true,
+          "membership_stored_values_unchanged": true
+        },
+        "scenario": "post_unopened"
+      },
+      {
+        "checks": {
+          "active_code_rows": 1,
+          "last_close_state": "pending",
+          "coach_reopen_rows": 1,
+          "archived_code_rows": 0,
+          "coach_archive_rows": 1,
+          "pre_record_read_rows": 1,
+          "direct_checkin_blocked": "42501",
+          "last_close_tool_access": "read_only",
+          "my_cohorts_archived_rows": 1,
+          "archived_post_insert_rows": 1,
+          "other_cohort_post_blocked": "42501",
+          "other_checkin_save_blocked": "P0001",
+          "memberships_count_unchanged": true,
+          "archived_checkin_save_submit": true,
+          "archived_cohort_id_read_rows": 1,
+          "other_checkin_submit_blocked": "P0001",
+          "reopen_status_and_dates_preserved": true,
+          "membership_stored_values_unchanged": true
+        },
+        "scenario": "post_opened"
+      },
+      {
+        "checks": {
+          "after_one_close_state": "cohort",
+          "after_both_close_state": "pending",
+          "after_one_close_tool_access": "full",
+          "after_both_close_tool_access": "read_only",
+          "participant_stored_membership_rows": 0
+        },
+        "scenario": "two_active_seminars"
+      },
+      {
+        "checks": {
+          "own_coach_rows": 1,
+          "other_coach_rows": 0,
+          "participant_rows": 0,
+          "own_coach_clear_rows": 1
+        },
+        "scenario": "interpretation_update_rls"
+      }
+    ],
+    "observed_at": "2026-11-02T05:27:23.200287+00:00",
+    "fixture_user_ids": [
+      "95f78449-48c1-4d5f-a2c4-d6f405ee6e8c",
+      "1e6a7e13-50e4-4e1e-987a-57d30194f52d",
+      "09637fe8-5440-4662-b88b-0fa058f97d64",
+      "214f7586-14f1-428d-bea9-cece478c1c1c"
+    ],
+    "fixture_cohort_ids": [
+      "4cecc794-1549-4fa1-a0d2-8e88afb6d7ea",
+      "7968ebdd-c538-43c6-9f91-66ed92243244"
+    ],
+    "session_replication_role": "origin"
+  },
+  "post_rollback": {
+    "observed_at": "2026-11-02 05:27:30.300483+00",
+    "fixture_residue": {
+      "users": 0,
+      "alerts": 0,
+      "cohorts": 0,
+      "checkins": 0,
+      "contacts": 0,
+      "profiles": 0,
+      "sessions": 0,
+      "responses": 0,
+      "auth_users": 0,
+      "enrollments": 0,
+      "memberships": 0,
+      "interpretations": 0
+    },
+    "qa_cohort": {
+      "status": "active",
+      "expires_at": null,
+      "post_opened_at": "2026-09-05T23:37:04.214791+00:00"
+    }
+  }
+}

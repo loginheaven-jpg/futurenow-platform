@@ -1,6 +1,6 @@
 'use client';
 // §8.3 회기 상세 — 돌봄 우선 명단. 3숫자 요약 + 명단 3묶음(먼저 챙길 분/응답 완료/아직 안 함).
-// 덜 쓰는 관리(마감·정원)는 헤더 메뉴. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
+// 세미나 마무리는 본문, 이름·소개·정원·삭제는 하단 관리에 둔다. 인도자 화면이라 상태 배지에 의미색 허용(참여자 화면 아님).
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button, Disclosure, Stepper } from '@/core/ui';
 import { GENERAL_CODE } from '../entry/general';
@@ -8,6 +8,7 @@ import type { CohortSummary, RosterMember } from '../types';
 import { RosterRow } from './RosterRow';
 import { TOOL } from '@/app/_vocab/tool';
 import { POST_OPEN_HEAD, postJoinHref, postNudgeText } from '@/app/_vocab/postNudge';
+import { SEMINAR_CLOSING_COPY, seminarClosingModel } from '@/app/_vocab/seminarClosing';
 
 const nameInputStyle: CSSProperties = {
   flex: 1,
@@ -77,7 +78,7 @@ export function CohortDetail({
   status?: 'active' | 'archived';
   maxMembers?: number;
   postOpened?: boolean; // 사후 진단 개시 여부(개시 컨트롤 상태). ADR-55
-  /** 마무리 체크 진행(U-8) — 없으면 독려 구획을 그리지 않는다(갤러리·픽스처가 그 자리다). */
+  /** 마무리 체크 진행 — 없으면 진행 수치만 생략한다(갤러리·픽스처). 개시·마감·재개는 유지한다. */
   postStatus?: { done: number; total: number; pending: string[] };
   backHref?: string; // 셸 sub 뒤로 경로(→/coach). X2a 모드 셸 전환
   onOpenMember?: (id: string) => void;
@@ -111,6 +112,7 @@ export function CohortDetail({
   const busyAny = busy || actionPending; // 자체 액션 + 부모 refresh 구간
   const [shared, setShared] = useState<'link' | 'post' | null>(null); // 재공유 피드백(토스트 미의존)
   const archived = status === 'archived';
+  const closing = seminarClosingModel({ postOpened, postStatus });
 
   // 삭제 가능 판정(ADR-67): 예약 general 회기(체험)는 불가(인프라). 운영자=임의 / 코치=빈 회기만(참여·응답 0).
   const isReserved = cohort.code === GENERAL_CODE;
@@ -247,18 +249,28 @@ export function CohortDetail({
         </Button>
       ) : null}
 
-      {/* ★★ **마무리 체크 독려**(U-8 · 지휘부 지시 2026-09-03). 개시된 회기에만 선다.
+      {/* ★★ **세미나 마무리**(A15·A16). 개시·독려·마감·재개를 같은 본문 구획에 둔다.
           **위 3숫자는 wave 를 안 가른다** — 사전만 낸 사람도 「응답 완료」다. 그래서 마무리는 따로 센다.
           **새 부품 0** — 이 화면이 이미 쓰는 `Group`·`Button` 이고, 문구는 참여자 홈의 확정 문안을 읽는다.
-          미완료가 0이면 명단도 버튼도 그리지 않는다(빈 상태 문장을 새로 짓지 않는다). */}
-      {postOpened && postStatus ? (
-        <Group title={TOOL.post}>
-          <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
-            <span className="tnum">{postStatus.done}</span> / <span className="tnum">{postStatus.total}</span> 완료
-          </p>
-          {postStatus.pending.length > 0 ? (
-            <>
-              {/* ★ **「아직 안 함」을 쓰지 않는다**(지휘부 지적 2026-09-03) — 아래 명단 묶음에
+          미완료가 0이면 독려 명단과 안내 보내기 버튼은 그리지 않는다. */}
+      <Group title={SEMINAR_CLOSING_COPY.title}>
+        {!postOpened ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <div style={{ minWidth: 0 }}>
+              <span className="t-body" style={{ color: 'var(--color-text)' }}>{TOOL.post}</span>
+              <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>{SEMINAR_CLOSING_COPY.openCaption}</div>
+            </div>
+            <Button variant="ghost" onClick={doOpenPost} disabled={busyAny}>{SEMINAR_CLOSING_COPY.openAction}</Button>
+          </div>
+        ) : null}
+        {closing.progress ? (
+          <>
+            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', margin: '0 0 var(--space-2)' }}>
+              {closing.progress.label} · <span className="tnum">{closing.progress.done}</span> / <span className="tnum">{closing.progress.total}</span> 완료
+            </p>
+            {closing.progress.showNoticeButton ? (
+              <>
+                {/* ★ **「아직 안 함」을 쓰지 않는다**(지휘부 지적 2026-09-03) — 아래 명단 묶음에
                   같은 낱말이 **다른 뜻**(응답이 0건인 사람)으로 서 있어 한 화면에 두 뜻이 됐다.
                   **새 문안이 아니다** — 갈무리 인도자 화면이 이미 쓰는 어휘다
                   (`checkin/page.tsx:62` — 제출 / 작성 중 / **미작성**).
@@ -266,16 +278,33 @@ export function CohortDetail({
                   `responses` 에 미제출 상태가 없고(제출 = 행 생성), 서버 초안은 **인도자에게 0행**이며
                   (`response_drafts` 정책 넷이 전부 `user_id = auth.uid()`), 자동 저장은 localStorage 뿐이라
                   서버에 닿지도 않는다. 갈무리가 3단계인 것은 `checkin_save` 가 **자동으로 서버에 쓰기** 때문이다. */}
-              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>
-                미작성 — {postStatus.pending.join(' · ')}
-              </p>
-              <Button variant="ghost" onClick={sharePostNudge} style={{ width: '100%' }}>
-                {shared === 'post' ? '링크 복사됨 ✓' : '안내 보내기'}
-              </Button>
-            </>
-          ) : null}
-        </Group>
-      ) : null}
+                <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>
+                  {closing.progress.pendingLine}
+                </p>
+                <Button variant="ghost" onClick={sharePostNudge} style={{ width: '100%' }}>
+                  {shared === 'post' ? SEMINAR_CLOSING_COPY.copied : SEMINAR_CLOSING_COPY.share}
+                </Button>
+              </>
+            ) : null}
+          </>
+        ) : null}
+        {archived ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>{SEMINAR_CLOSING_COPY.archived}</p>
+            <Button variant="ghost" onClick={doReopen} disabled={busyAny} style={{ width: '100%' }}>{SEMINAR_CLOSING_COPY.reopenAction}</Button>
+          </div>
+        ) : !confirmArchive ? (
+          <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busyAny} style={{ width: '100%' }}>{SEMINAR_CLOSING_COPY.archiveAction}</Button>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <p className="t-caption" style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-line', margin: 0 }}>{closing.archiveNotice}</p>
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <Button variant="ghost" onClick={() => setConfirmArchive(false)} style={{ flex: 1 }}>{SEMINAR_CLOSING_COPY.cancel}</Button>
+              <Button onClick={doArchive} disabled={busyAny} style={{ flex: 1 }}>{SEMINAR_CLOSING_COPY.confirm}</Button>
+            </div>
+          </div>
+        )}
+      </Group>
 
       {/* ★ **「회차 갈무리」로 가는 문은 띠의 탭이 든다**(U-6 · 「중복없이, 일관된 위치」).
           바로 위 탭과 같은 목적지를 본문이 또 내면 한 화면에 문이 둘이고, 이름도 둘이 된다
@@ -330,7 +359,7 @@ export function CohortDetail({
       {/* ★ **관리는 맨 아래에 둔다**(U-11 · 지휘부 결재 2026-09-03 ADR-193 권고 ㈎).
           전에는 본문 **머리**에 있어 펼치면 3숫자·명단이 통째로 아래로 밀렸고, 그것이
           「다른 화면으로 갔다」는 오독의 남은 절반이었다(앞 절반은 U-10 이 접힘 부품으로 고쳤다).
-          맨 아래에서는 **열어도 위가 밀리지 않는다.** 그리고 여기 있는 것들(이름·소개·정원·마감·삭제)은
+          맨 아래에서는 **열어도 위가 밀리지 않는다.** 그리고 여기 있는 것들(이름·소개·정원·삭제)은
           **자주 쓰지 않는 설정**이라 대시보드의 주 내용(3숫자·명단) 뒤가 제자리다 —
           바로 위 「참여 코드」 카드와도 성격이 같다(회기 자체를 다루는 것). */}
       {/* ★★ **접힘이라는 사실이 줄 자체에서 읽혀야 한다**(U-10 · 지휘부 지시 2026-09-03
@@ -348,7 +377,7 @@ export function CohortDetail({
           ★ 요약 줄은 **낱말을 새로 짓지 않았다** — 안에 있는 항목 이름을 그대로 잇는다.
           ★ 콘솔에서 `.ui-disc` 를 쓰는 **첫 자리**다(실측 0건). 부품은 인스트루먼트 중립이라 제약이 없다.
           ★ 본문은 접혀도 DOM 에 남는다(CSS 가 감춘다) — 전에는 조건부 마운트라 열 때마다 입력이 초기화됐다. */}
-      <Disclosure title="관리" summary="이름 · 소개 · 정원 · 마감">
+      <Disclosure title="관리" summary={canDelete ? SEMINAR_CLOSING_COPY.managementSummaryWithDelete : SEMINAR_CLOSING_COPY.managementSummary}>
         <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <div>
             <span className="t-body" style={{ color: 'var(--color-text)' }}>이름</span>
@@ -385,34 +414,6 @@ export function CohortDetail({
               <Button variant="ghost" onClick={saveCap} disabled={busyAny || cap === maxMembers}>저장</Button>
             </div>
           </div>
-          {/* 마무리 체크 개시 — 세미나 종료 후 코치가 수동 개시(단방향·멱등). 참여자 홈에 '마무리 체크 하기' 노출(B-2). ADR-55
-              ★★ **개시된 뒤에는 이 줄을 걷는다**(U-9 · 반증자가 잡았다). U-8 이 본문에 독려 구획을 세우면서
-                「마무리 체크」가 **한 화면에 둘**이 됐다 — 위(관리)는 「개시됨」 뱃지, 아래(본문)는 「n/m 완료」.
-                개시는 **단방향**이라 열린 뒤 이 자리에 남는 것은 **아무 동작도 없는 뱃지**뿐이고,
-                「열렸다」는 사실은 본문 구획이 **서 있는 것 자체로** 말한다(지휘부 목표 「중복없이」). */}
-          {!postOpened ? (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
-              <div style={{ minWidth: 0 }}>
-                <span className="t-body" style={{ color: 'var(--color-text)' }}>{TOOL.post}</span>
-                <div className="t-caption" style={{ color: 'var(--color-text-secondary)' }}>세미나를 마친 뒤 열어 주세요</div>
-              </div>
-              <Button variant="ghost" onClick={doOpenPost} disabled={busyAny}>{TOOL.post} 개시</Button>
-            </div>
-          ) : null}
-          {archived ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>이미 마감된 회기예요.</p>
-              <Button variant="ghost" onClick={doReopen} disabled={busyAny} style={{ width: '100%' }}>다시 열기</Button>
-            </div>
-          ) : !confirmArchive ? (
-            <Button variant="ghost" onClick={() => setConfirmArchive(true)} disabled={busyAny} style={{ width: '100%' }}>회기 마감</Button>
-          ) : (
-            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-              <Button variant="ghost" onClick={() => setConfirmArchive(false)} style={{ flex: 1 }}>취소</Button>
-              <Button onClick={doArchive} disabled={busyAny} style={{ flex: 1 }}>마감 확정</Button>
-            </div>
-          )}
-
           {/* 회기 삭제(파괴적·ADR-67) — 예약 체험 회기는 숨김. 코치+데이터 있으면 마감 유도, 운영자 또는 빈 회기면 삭제(위험색·2단계 컨펌·영향 표시). */}
           {isReserved ? null : !canDelete ? (
             <p className="t-caption" style={{ color: 'var(--color-text-muted)', margin: 0 }}>
