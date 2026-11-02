@@ -80,17 +80,16 @@ describe('마무리 체크 독려 구획', () => {
   //   개시는 단방향이라 열린 뒤 관리 패널에 남는 것은 **아무 동작도 없는 뱃지**뿐이었고,
   //   본문 독려 구획과 제목이 같아 한 화면에 같은 이름이 둘이 됐다.
   it('★★ **개시 뒤 관리 패널의 마무리 줄이 걷힌다** — 이름이 한 번만 선다', () => {
-    const src = readFileSync('src/app/_screens/console/CohortDetail.tsx', 'utf8');
-    // 렌더로 재려면 관리 패널을 눌러야 하는데 정적 렌더에는 클릭이 없다 —
-    //   그래서 **조건이 실재하는지**를 잰다(⑦: 물 것이 있는가).
-    expect(src, '개시 뒤에도 관리 패널이 마무리 줄을 그린다').toContain('{!postOpened ? (');
-    // 그리고 본문 구획은 개시 뒤에만 선다 — 둘이 동시에 서는 조합이 없어야 한다.
-    expect(src).toContain('{postOpened && postStatus ? (');
+    const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} postOpened postStatus={open} />);
+    const management = html.slice(html.indexOf('class="ui-disc"'));
+    expect(management, '관리 안에 마무리 체크가 남았다').not.toContain(TOOL.post);
+    expect(html.split(TOOL.post).length - 1, '본문에서 이름이 중복된다').toBe(1);
   });
 
   it('★ **개시 전에는 개시 버튼이 살아 있다** — 걷은 것은 뱃지뿐이다', () => {
-    const src = readFileSync('src/app/_screens/console/CohortDetail.tsx', 'utf8');
-    expect(src, '개시 버튼이 사라졌다').toContain('개시</Button>');
+    const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} />);
+    expect(html, '개시 버튼이 사라졌다').toContain(`${TOOL.post} 개시`);
+    expect(html.indexOf(`${TOOL.post} 개시`)).toBeLessThan(html.indexOf('class="ui-disc"'));
   });
 });
 
@@ -150,7 +149,7 @@ describe('관리 — 자리', () => {
 describe('명단 행 — 여는 문서', () => {
   const row = (wave?: 'pre' | 'post'): RosterMember[] => [{ id: 'r1', userId: 'u1', name: '이응답', status: 'done', wave }];
 
-  // ⑬ **「있는가」로 묻지 않는다** — 관리 패널이 「마무리 체크 개시」를 들고 있어
+  // ⑬ **「있는가」로 묻지 않는다** — 본문 마무리 구획이 「마무리 체크 개시」를 들고 있어
   //   화면 전체에서 낱말을 세면 그것까지 걸린다. **차이로** 잰다.
   const count = (roster: RosterMember[]) =>
     renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} onGroupReport={noop} />).split(TOOL.post).length - 1;
@@ -161,5 +160,59 @@ describe('명단 행 — 여는 문서', () => {
 
   it('★ **사전에는 붙이지 않는다** — 개시 전에는 전부 사전이라 말할 것이 없다', () => {
     expect(count(row('pre')), '없는 구분을 지어냈다').toBe(count(row(undefined)));
+  });
+});
+
+describe('세미나 마무리 — 상태별 본문 배치와 관리 분리', () => {
+  const progressCases = [
+    { done: 0, total: 3, pending: ['가', '나', '다'] },
+    { done: 1, total: 3, pending: ['나', '다'] },
+    { done: 3, total: 3, pending: [] },
+  ];
+  const cases = (['active', 'archived'] as const).flatMap((status) =>
+    [false, true].flatMap((postOpened) => progressCases.map((postStatus) => ({ status, postOpened, postStatus }))),
+  );
+
+  it.each(cases)('$status / opened=$postOpened / done=$postStatus.done — 동작이 본문에만 있다', ({ status, postOpened, postStatus }) => {
+    const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} status={status} postOpened={postOpened} postStatus={postStatus} memberCount={3} responseCount={3} />);
+    const at = html.indexOf('class="ui-disc"');
+    const main = html.slice(0, at);
+    const management = html.slice(at);
+    expect(main).toContain('세미나 마무리');
+    expect(main.includes(`${TOOL.post} 개시`)).toBe(!postOpened);
+    expect(main.includes('세미나를 마친 뒤 열어 주세요')).toBe(!postOpened);
+    expect(main.includes('회기 마감')).toBe(status === 'active');
+    expect(main.includes('이미 마감된 회기예요.')).toBe(status === 'archived');
+    expect(main.includes('다시 열기')).toBe(status === 'archived');
+    expect(main.includes('안내 보내기')).toBe(postOpened && postStatus.pending.length > 0);
+    if (postOpened) {
+      expect(main).toContain(`<span class="tnum">${postStatus.done}</span> / <span class="tnum">3</span> 완료`);
+      expect(main.includes('미작성 —')).toBe(postStatus.pending.length > 0);
+    } else {
+      expect(main).not.toContain('미작성 —');
+    }
+    for (const label of [`${TOOL.post} 개시`, '회기 마감', '다시 열기', '안내 보내기']) {
+      expect(management).not.toContain(label);
+    }
+    expect(management).toContain('이름 · 소개 · 정원');
+    expect(management).not.toContain('이름 · 소개 · 정원 · 마감');
+  });
+
+  it.each(['active', 'archived'] as const)('postStatus 없는 %s fixture도 마무리 동작을 유지한다', (status) => {
+    const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} status={status} postOpened />);
+    expect(html).toContain('세미나 마무리');
+    expect(html).toContain(status === 'active' ? '회기 마감' : '다시 열기');
+    expect(html).not.toContain('안내 보내기');
+    expect(html).not.toContain('미작성 —');
+  });
+
+  it.each([
+    { isAdmin: false, memberCount: 0, responseCount: 0, deletion: true },
+    { isAdmin: false, memberCount: 3, responseCount: 3, deletion: false },
+    { isAdmin: true, memberCount: 3, responseCount: 3, deletion: true },
+  ])('관리 요약의 삭제는 실제 삭제 동작이 있을 때만 보인다: $deletion', ({ deletion, ...props }) => {
+    const html = renderToStaticMarkup(<CohortDetail cohort={cohort} roster={roster} {...props} />);
+    expect(html.includes('이름 · 소개 · 정원 · 삭제')).toBe(deletion);
+    expect(html.includes('>회기 삭제<')).toBe(deletion);
   });
 });

@@ -65,7 +65,7 @@ export function CohortDetailClient({
   status: 'active' | 'archived';
   maxMembers: number;
   postOpened: boolean; // 사후 진단 개시 여부(cohort.post_opened_at != null). ADR-55
-  /** 마무리 체크 진행(U-8) — 서버가 `responses` 를 wave 로 갈라 센다. 추가 조회 0. */
+  /** 마무리 체크 진행 — 서버가 현재 일반 참여자 명단 안에서 사후 응답을 센다(ADR-207). */
   postStatus: { done: number; total: number; pending: string[] };
   backHref: string; // 진입 출처 기반(A′-4) — 서버가 ?from= 로 산출(콘솔/목록)
   isAdmin: boolean; // 운영자면 데이터 있는 회기도 삭제 가능(코치는 빈 회기만). ADR-67

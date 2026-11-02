@@ -530,11 +530,156 @@ QA 접속이 제공되면 이 실행 지시서의 순서로 이어간다. 이 �
 
 ### 5.4 검증·배포
 
-확정 커밋에서 직접 명령과 운영 신원을 확인한 결과를 다음 보고 갱신에 붙인다. 역할별 0행 검사는 모의 DB 응답, 패널 검사는 실제 함수·핸들러·재렌더를 실행하는 Node hook harness다. 실DB RLS·실브라우저 검증이라고 보고하지 않는다.
+작업 커밋 `81d01a8170b6269338a67505e3e292ba749099a9`에서 아래 명령을 직접 실행했다. 실행 중 HEAD는 동일했다. 전체 테스트는 **1977 통과 / 87 스킵 / 총 2064**, 파일은 **169 통과 / 7 스킵 / 총 176**이다. 린트 오류 0, 기존 경고 3개다.
+
+| 명령 | 실제 종료 코드 | 종료 시각(KST) |
+|---|---:|---|
+| `npx tsc --noEmit` | 0 | 2026-11-02T14:15:45.862886+09:00 |
+| `npx eslint .` | 0 | 2026-11-02T14:15:58.681680+09:00 |
+| `npx vitest run` | 0 | 2026-11-02T14:15:52.712940+09:00 |
+| `npx next build` | 0 | 2026-11-02T14:16:15.762660+09:00 |
+| `node scripts/verify.mjs` | 0 | 2026-11-02T14:16:54.563717+09:00 |
+
+- 작업 커밋: `81d01a8170b6269338a67505e3e292ba749099a9` · [PR #6](https://github.com/loginheaven-jpg/futurenow-platform/pull/6).
+- 병합 커밋: `ab7adc6098c0478292f47a8cf192dc968dd72e10`.
+- 운영 확인: `GET https://future.yebom.org/api/version`에서 `env=production`, `ref=main`, `commit=ab7adc6098c0478292f47a8cf192dc968dd72e10`, `deploymentId=dpl_EjVfLVCHRt9FBAastHQ4bgnzDBDX`. build 시각 `2026-11-02T05:17:41.428Z`.
+- 원격 증거: `git ls-remote origin refs/heads/main refs/heads/feat/postcheck-v2`.
+
+```text
+81d01a8170b6269338a67505e3e292ba749099a9	refs/heads/feat/postcheck-v2
+ab7adc6098c0478292f47a8cf192dc968dd72e10	refs/heads/main
+```
+
+<details>
+<summary>S4 verify.mjs 출력 전문</summary>
+
+```text
+── tsc ──
+오류 0
+
+── eslint ──
+78:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+  23:8  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-html-link-for-pages')
+✖ 3 problems (0 errors, 3 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+── vitest ──
+Test Files  169 passed | 7 skipped (176)
+      Tests  1977 passed | 87 skipped (2064)
+   Duration  7.58s (transform 8.01s, setup 0ms, import 17.35s, tests 5.41s, environment 20ms)
+
+  스킵 사유 — 전부 **의도된 옵트인**이다:
+    tests/membership.integration.test.ts         실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다
+    tests/feed.integration.test.ts               실DB 옵트인 — 같은 스위치
+    tests/rls.integration.test.ts                실DB 옵트인 — 같은 스위치
+    tests/defaultPrivileges.integration.test.ts  실DB 옵트인 — 같은 스위치(pg_default_acl 실측)
+    tests/memberDirectoryMask.integration.test.ts 실DB 옵트인 — 같은 스위치(마스킹 규칙을 함수에 먹인다)
+    tests/workbookPhotos.integration.test.ts     실DB 옵트인 — 같은 스위치 + QA 계정 env(「인도자 열람」 역할별 판정 · 적용 전이면 본문을 트랜잭션 안에서 적용)
+    tests/feedReactionsMulti.migration.test.ts   적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)
+    tests/site.snapshot.test.tsx                 캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다
+
+── next build ──
+성공
+Route (app)                                       Revalidate  Expire
+┌ ○ /                                                     5m      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/approvals
+├ ○ /api/version
+├ ƒ /c/[code]/[session]
+├ ƒ /c/[code]/values
+├ ƒ /coach
+├ ƒ /coach/cohort/[cohortId]
+├ ƒ /coach/cohort/[cohortId]/checkin
+├ ƒ /coach/cohort/[cohortId]/checkin/preview
+├ ƒ /coach/cohort/[cohortId]/group
+├ ƒ /coach/cohort/[cohortId]/matrix
+├ ƒ /coach/cohort/[cohortId]/member/[userId]
+├ ƒ /coach/cohort/[cohortId]/report/[responseId]
+├ ƒ /coach/cohort/[cohortId]/values
+├ ƒ /coach/cohorts
+├ ƒ /coach/new
+├ ƒ /contact
+├ ƒ /feed
+├ ƒ /home
+├ ƒ /home/assessments
+├ ƒ /join
+├ ƒ /library
+├ ƒ /library/[id]
+├ ƒ /library/[id]/file
+├ ƒ /library/[id]/thumb
+├ ƒ /login
+├ ƒ /my/cohorts
+├ ƒ /my/cohorts/[cohortId]
+├ ƒ /my/cohorts/[cohortId]/checkin/[session]
+├ ƒ /my/cohorts/[cohortId]/journey
+├ ƒ /my/cohorts/[cohortId]/report
+├ ƒ /my/cohorts/[cohortId]/values
+├ ƒ /my/values
+├ ƒ /news
+├ ƒ /news/[id]
+├ ƒ /pending
+├ ƒ /preview
+├ ƒ /preview/console
+├ ƒ /preview/entry
+├ ƒ /preview/report
+├ ƒ /preview/site
+├ ○ /recruit                                              5m      1y
+├ ƒ /reset
+├ ƒ /reset/confirm
+└ ƒ /signup
+O 네 지표 전항 통과 — 위 출력 전문을 그대로 보고에 붙인다
+```
+
+</details>
+
+코어의 0행 단위 검사는 모의 DB 응답, 패널 검사는 실제 함수·핸들러·재렌더를 실행하는 Node hook harness다. 후속 S5의 별도 실DB 롤백 검사에서는 실제 `UPDATE RETURNING`도 담당 인도자 1행·타 인도자 0행·참여자 0행·담당 인도자 clear 1행임을 확인했다(§6.3). 두 검사를 구별하며 실브라우저 검증은 미실행이다.
 
 ## 6. S5 — 세미나 마무리 구획
 
-미착수. 회원 모델·권한 변경은 범위 밖이다.
+### 6.1 구현
+
+S4 production `ab7adc6098c0478292f47a8cf192dc968dd72e10` 반영을 확인한 뒤 착수했다. 본문의 `세미나 마무리`에 개시·진행·미작성자·안내 공유·마감·재개를 모았다. 하단 관리에는 이름·소개·정원과 허용된 삭제만 남는다. A15·A16과 B12를 `seminarClosing.ts`에 모으고 순수 `seminarClosingModel`이 개시 여부·미작성 수에 따라 확인문을 만든다. 미작성 0명은 해당 줄을 생략하고 미개시는 “마무리 체크를 아직 열지 않았습니다.”로 표시한다. `postStatus` 없는 갤러리에서도 개시·마감·재개는 유지한다.
+
+회기 상세 부모는 `listCohortMembers(cohortId,true)`의 현재 일반 참여자만 `postStatus`에 사용한다. 기존 전체 명단·3숫자·삭제 영향 수는 그대로다. 명단 조회 실패는 정상 0명으로 바꾸지 않는다. 체크 허브의 열린 미완료 사후 검색은 모든 소속 회기를 대상으로 하여 마감 회기도 이어 작성할 수 있다. 사전·가치 카드는 기존 활성 회기 선택과 접근 판정을 유지한다.
+
+기존 `openPostWave`·마감/재개 액션과 busy/finally 처리를 재사용한다. `architecture.md`의 라우트 표·§9.5·ADR-207을 동기화했다. 회원 모델·계약·RLS·RPC·마이그레이션 변경은 없다.
+
+### 6.2 단위 검증과 바뀐 기존 잠금
+
+새 실행형 검사는 active/archived × 개시 전/후 × 미작성 전부/일부/없음의 12조합, `postStatus` 없는 경우, 실제 삭제 허용 여부에 따른 관리 요약, 마감 확인·취소·확정·재개와 busy 복구를 확인한다. 부모 페이지는 스태프·이동자 제외와 명단 오류 전파, 허브는 마감 회기 사후 선택과 기존 사전/가치 경로를 확인한다. 렌더·함수·핸들러 실행이며 실브라우저로 보고하지 않는다.
+
+| 위치(이 슬라이스 기준) | before | after |
+|---|---|---|
+| `src/app/_screens/console/CohortDetail.test.tsx:82` | 소스의 `{!postOpened ? (`와 `{postOpened && postStatus ? (` 존재 | 실제 렌더에서 관리 안 마무리 체크 부재, 본문 라벨 1개 |
+| 같은 파일 `:89` | 소스에 `개시</Button>` 존재 | 실제 개시 버튼 존재, 관리 앞 본문 배치 |
+
+두 기존 테스트의 의도를 유지해 구조 변화에 맞게 실행형 단언으로 바꿨다. 나머지 기존 단언은 삭제·완화하지 않았다. `tests/membership.integration.test.ts`의 원래 810행(50,302바이트)은 그대로 두고 S5 실DB 사례 3개를 끝에 추가했다. 기존 마감 자동승급 폐지 검사도 유지한다.
+
+### 6.3 별도 실DB 롤백 검증
+
+원래 Vitest 실DB 스위트는 `SUPABASE_DB_URL`이 없어 실행하지 못했다. `membership.integration.test.ts` 단독 실행 결과는 **파일 1 skipped / 테스트 38 skipped / 0 passed**다. 아래 결과는 별도 관리 SQL의 실제 실행이며 원래 스위트 성공으로 대체 계산하지 않는다.
+
+`CC_VERIFY_postcheck_closing.sql`은 한 요청의 트랜잭션에서 무작위 합성 계정 4개·세미나 회기 2개만 만든다. 정상 가입 트리거를 켠 채 준비하고 `authenticated` 역할과 해당 합성 계정의 claim을 설정한 뒤 실제 INSERT·RPC·UPDATE RETURNING을 실행했다. 기존 `individual`·`held` 회원도 합성 마감 회기에 등록하여 기존 회원행 보존 검사가 실제 마감 대상자를 포함하도록 교차 검토 후 보강했다.
+
+**최종 실행 2026-11-02 14:27:23 KST: 4개 시나리오, 결과값 45개 모두 통과.** 45는 Vitest 테스트 개수가 아니다.
+
+| 시나리오 | 확인한 실제 결과 |
+|---|---|
+| 사후 미개시 회기의 마감·재개 | 활성 코드 1행→마감 0행, 소속 회기 id·내 회기·기존 사전 열람 1행 유지. 마감 뒤 사후 INSERT와 갈무리 save/submit 성공. 회원행 수와 저장값 유지. 마지막 세미나 마감 시 `pending/read_only`. 재개 1행, `expires_at`·`post_opened_at` NULL 포함 보존. |
+| 사후 개시 회기의 마감·재개 | 위와 동일한 권한·보존 결과. 갈무리 직접 INSERT와 타 회기 사후 INSERT는 `42501`, 타 회기 save/submit은 `P0001`로 거부. 같은 부정 사례는 미개시 시나리오에서도 확인. |
+| 두 진행 중 세미나 | 하나를 마감한 뒤 `cohort/full`, 둘 다 마감한 뒤 `pending/read_only`. 참여자의 저장 회원행 0건 유지. |
+| 해석 수정 RLS | 담당 인도자 UPDATE RETURNING 1행, 타 인도자 0행, 참여자 0행, 담당 인도자 clear 1행. |
+
+**롤백 후 별도 조회 2026-11-02 14:27:30 KST: 관련 12테이블의 합성 잔여 모두 0건.** `[QA] 검증 전용` 회기는 active, `expires_at=null`, `post_opened_at=2026-09-05T23:37:04.214791+00:00` 그대로다. 실제 참여자 계정·응답·해석은 쓰지 않았고 QA 회기도 변경하지 않았다. 기계 판독 결과와 합성 id는 `CC_EVIDENCE_postcheck_db.json`에 남긴다.
+
+초기 검증 SQL의 CASE 괄호 오류는 실행 전 수정했다. 그 다음 시도는 관리 연결의 `session_replication_role` 설정 권한 부족으로 fixture 생성 전에 실패·롤백됐다. 권한을 늘리거나 트리거를 우회하지 않고 정상 가입 트리거를 사용하는 fixture로 바꿔 실행했다. 이 경위 역시 기존 Vitest SETUP이 실행된 것으로 보고하지 않는 이유다.
+
+### 6.4 검증·배포
+
+소스와 위 문서의 동일 커밋을 대상으로 직접 tsc·eslint·vitest·build·verify를 실행한 후 PR을 병합하고 production의 전체 SHA를 확인한다. 완료 영수증은 다음 문서 정합 커밋에 기록한다. 지정 QA 로그인의 실제 화면·인쇄 검증은 미실행이며 S4-5 기존 운영 AI 교체도 계속 미실행이다.
 
 ## 7. S6 — 최종 문서 정합과 관찰
 
