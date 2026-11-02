@@ -964,19 +964,23 @@ class SupabaseCoreContext implements CoreContext {
   async setCoachInterpretation(responseId: string, content: unknown): Promise<void> {
     const me = await this.currentUser();
     if (!me) throw new CoreError('setCoachInterpretation: 로그인이 필요합니다.');
-    const { error } = await this.sb
+    const { data, error } = await this.sb
       .from('report_interpretations')
       .update({ coach_content: content, edited_by: me.id, edited_at: new Date().toISOString() })
-      .eq('response_id', responseId); // RLS(코치·운영자, 자기 회기)만 갱신
+      .eq('response_id', responseId) // RLS(코치·운영자, 자기 회기)만 갱신
+      .select('response_id');
     if (error) throw new CoreError(`setCoachInterpretation 실패: ${error.message}`);
+    if (data?.length !== 1) throw new CoreError('setCoachInterpretation: 수정된 행을 확인할 수 없습니다(권한/응답 확인).');
   }
 
   async clearCoachInterpretation(responseId: string): Promise<void> {
-    const { error } = await this.sb
+    const { data, error } = await this.sb
       .from('report_interpretations')
       .update({ coach_content: null, edited_by: null, edited_at: null }) // AI 원문으로 되돌리기
-      .eq('response_id', responseId);
+      .eq('response_id', responseId)
+      .select('response_id');
     if (error) throw new CoreError(`clearCoachInterpretation 실패: ${error.message}`);
+    if (data?.length !== 1) throw new CoreError('clearCoachInterpretation: 수정된 행을 확인할 수 없습니다(권한/응답 확인).');
   }
 
   // ── 알림 ───────────────────────────────────────────────────
