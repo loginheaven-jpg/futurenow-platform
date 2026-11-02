@@ -3,6 +3,7 @@
 // 응답 저장(B①) 후 채점(B②)→알림(B④) 주입은 **코어 오케스트레이션**이 책임(ADR-19).
 import { after } from 'next/server';
 import type { Answers, CohortPreviewMeta } from '@/contracts';
+import { findPairedPre } from '@/app/_lib/pairedPre';
 import { createServerContext } from '@/core/supabase/server';
 import { futurenowAlerts } from '@/instruments/futurenow/alerts';
 import { generateInterpretation } from '@/instruments/futurenow/report/interpretation';
@@ -84,7 +85,10 @@ export async function finalizeResponse(
       //   실패는 무해 — 코치 첫 열람의 지연 생성(ADR-64)이 폴백. ctx 의 supabase 클라이언트는 캡처된 cookieStore 로 after 에서도 참여자 JWT 유지.
       after(async () => {
         try {
-          await generateInterpretation(c, responseId, scores, cohortId);
+          // 정상적인 짝 부재만 단독 해석으로 진행한다. 조회 실패는 생성·저장 없이 지연 생성에 맡긴다.
+          const pre = resp.wave === 'post' ? await findPairedPre(c, resp) : null;
+          const prev = pre ? futurenowScoring.score(pre.answers, { wave: pre.wave }) : undefined;
+          await generateInterpretation(c, responseId, scores, cohortId, { wave: resp.wave, prev });
         } catch {
           /* 사전생성 실패는 조용히 — 지연 생성이 폴백, 참여자 영향 0 */
         }

@@ -136,7 +136,7 @@ export function InterpretationPanel({ responseId, initial }: { responseId: strin
     try {
       const res = await clearCoachInterpretationAction(responseId);
       if (res.ok) {
-        setVm((prev) => (prev ? { ...prev, effective: prev.ai, coachEdited: false } : prev));
+        setVm(res.vm); // 열린 동안 AI 후보가 바뀔 수 있으므로 서버의 최신 VM 전체를 적용한다(ADR-206).
         toast.success('AI가 쓴 원문으로 되돌렸어요.');
       } else {
         toast.error(res.error ?? '되돌리기에 실패했어요.');

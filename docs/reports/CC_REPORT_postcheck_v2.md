@@ -38,6 +38,8 @@
 | B10 | S6·IA §4.4 | “cohort_sessions 게이팅과 같은 방식”을 결정 5에 맞춰 정정한다. 개시는 참여자 화면의 진입 안내 상태이며 직접 주소 진입·저장의 조건이 아님을 적는다. |
 | B11 | S1부터 ADR 참조, S6의 후보 번호 | 슬라이스별 문서 정합과 연속 번호 잠금을 지키기 위해 실제 구현 순서대로 등록한다. S1=203, S2=204, S3=205, S4=206, S5=207. S6에서 최종 정합을 확인한다. |
 | B12 | A16 둘째 줄; `member_state`의 `kind='seminar'` 및 보류 상태 우선순위 | “다른 진행 중 회기”를 “다른 진행 중 세미나 회기”로, “새로 쓸 수 없게 됩니다”를 “새 이용이 제한됩니다”로 정밀화한다. 이미 제한된 회원에게 새로운 변화가 생긴다고 단정하지 않는다. 사용자 승인 범위의 보완 문안이며 회원 판정은 변경하지 않는다. |
+| B13 | S4 구현 중 대조한 `architecture.md` §9.3 규칙 5 | 기존 “바늘 이동 = 세미나 효과 헤드라인”은 A17의 인과 일반화 금지와 어긋난다. “두 시점의 자기보고 변화이며 세미나 효과의 인과적 증거로 일반화하지 않는다”로 문서 설명을 정정한다. 채점 수식·점수 방향은 바꾸지 않는다. |
+| B14 | S4 합성 게이트웨이 검증, 2026-11-02 14:11:28 KST | A17 원문만 적용한 실제 출력에서 근거 없는 긍정적 원인 추정이 관찰됐다. 참여자의 일반적인 방향·행동 진술을 점수 하락의 원인으로 확대했다. A17과 기본 시스템 프롬프트는 그대로 두고, 짝이 있는 사후의 사용자 입력 마지막에 가능성 표현으로도 이유를 지어내지 말며 headline·axes·growth 모두에 적용한다는 지시를 재강조한다. 실제 출력 재검사 결과는 §5에 기록한다. |
 
 **A16 둘째 줄의 최종 문안**
 
@@ -374,11 +376,161 @@ select now() as observed_at,
 
 새 실행형 페이지 검사는 현재 참여자·스태프·이동자 범위, `pre A → post B → pre C`, 명단 오류, 표본 0/1/2/3명, 미동의 원문의 클라이언트 비전달을 확인한다. 모델·추천 부품 검사는 빈 평균·반올림 전 수치·응답 당시 성별과 나이·클립보드 성공과 실패·화면/인쇄의 동일 목록을 포함한다. `architecture.md` §9.5와 ADR-205를 동기화했다. 계약·DB 스키마 변경은 없다.
 
-작업 커밋 확정 뒤 직접 명령과 운영 신원을 기록한다. 1~2명 경고와 인쇄 영역은 실행형 렌더 검사로 확인하며, 지정 QA 로그인으로 하는 실제 화면·인쇄 검증은 별도 미실행 항목이다.
+작업 커밋 `4724cd45836fb7c244c2e04612c95854205af226`에서 아래 명령을 직접 실행했다. 실행 중 HEAD는 동일했다. 전체 테스트는 **1923 통과 / 87 스킵 / 총 2010**, 파일은 **166 통과 / 7 스킵 / 총 173**이다. 린트 오류 0, 기존 경고 3개다.
+
+| 명령 | 실제 종료 코드 | 종료 시각(KST) |
+|---|---:|---|
+| `npx tsc --noEmit` | 0 | 2026-11-02T14:04:01.735733+09:00 |
+| `npx eslint .` | 0 | 2026-11-02T14:04:14.421248+09:00 |
+| `npx vitest run` | 0 | 2026-11-02T14:04:08.008780+09:00 |
+| `npx next build` | 0 | 2026-11-02T14:04:30.815892+09:00 |
+| `node scripts/verify.mjs` | 0 | 2026-11-02T14:05:13.078751+09:00 |
+
+- 작업 커밋: `4724cd45836fb7c244c2e04612c95854205af226` · [PR #5](https://github.com/loginheaven-jpg/futurenow-platform/pull/5).
+- 병합 커밋: `32deca8c5e66d1e6477d4052fb9eecdbbd629d29`.
+- 운영 확인: `GET https://future.yebom.org/api/version`에서 `env=production`, `ref=main`, `commit=32deca8c5e66d1e6477d4052fb9eecdbbd629d29`, `deploymentId=dpl_6EohPbJTaNib9MFHBe4uXr4fasMm`. build 시각 `2026-11-02T05:06:05.192Z`.
+- 원격 증거: `git ls-remote origin refs/heads/main refs/heads/feat/postcheck-v2`.
+
+```text
+4724cd45836fb7c244c2e04612c95854205af226	refs/heads/feat/postcheck-v2
+32deca8c5e66d1e6477d4052fb9eecdbbd629d29	refs/heads/main
+```
+
+<details>
+<summary>S3 verify.mjs 출력 전문</summary>
+
+```text
+── tsc ──
+오류 0
+
+── eslint ──
+78:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+  23:8  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-html-link-for-pages')
+✖ 3 problems (0 errors, 3 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+── vitest ──
+Test Files  166 passed | 7 skipped (173)
+      Tests  1923 passed | 87 skipped (2010)
+   Duration  8.80s (transform 9.51s, setup 0ms, import 21.11s, tests 5.92s, environment 21ms)
+
+  스킵 사유 — 전부 **의도된 옵트인**이다:
+    tests/membership.integration.test.ts         실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다
+    tests/feed.integration.test.ts               실DB 옵트인 — 같은 스위치
+    tests/rls.integration.test.ts                실DB 옵트인 — 같은 스위치
+    tests/defaultPrivileges.integration.test.ts  실DB 옵트인 — 같은 스위치(pg_default_acl 실측)
+    tests/memberDirectoryMask.integration.test.ts 실DB 옵트인 — 같은 스위치(마스킹 규칙을 함수에 먹인다)
+    tests/workbookPhotos.integration.test.ts     실DB 옵트인 — 같은 스위치 + QA 계정 env(「인도자 열람」 역할별 판정 · 적용 전이면 본문을 트랜잭션 안에서 적용)
+    tests/feedReactionsMulti.migration.test.ts   적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)
+    tests/site.snapshot.test.tsx                 캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다
+
+── next build ──
+성공
+Route (app)                                       Revalidate  Expire
+┌ ○ /                                                     5m      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/approvals
+├ ○ /api/version
+├ ƒ /c/[code]/[session]
+├ ƒ /c/[code]/values
+├ ƒ /coach
+├ ƒ /coach/cohort/[cohortId]
+├ ƒ /coach/cohort/[cohortId]/checkin
+├ ƒ /coach/cohort/[cohortId]/checkin/preview
+├ ƒ /coach/cohort/[cohortId]/group
+├ ƒ /coach/cohort/[cohortId]/matrix
+├ ƒ /coach/cohort/[cohortId]/member/[userId]
+├ ƒ /coach/cohort/[cohortId]/report/[responseId]
+├ ƒ /coach/cohort/[cohortId]/values
+├ ƒ /coach/cohorts
+├ ƒ /coach/new
+├ ƒ /contact
+├ ƒ /feed
+├ ƒ /home
+├ ƒ /home/assessments
+├ ƒ /join
+├ ƒ /library
+├ ƒ /library/[id]
+├ ƒ /library/[id]/file
+├ ƒ /library/[id]/thumb
+├ ƒ /login
+├ ƒ /my/cohorts
+├ ƒ /my/cohorts/[cohortId]
+├ ƒ /my/cohorts/[cohortId]/checkin/[session]
+├ ƒ /my/cohorts/[cohortId]/journey
+├ ƒ /my/cohorts/[cohortId]/report
+├ ƒ /my/cohorts/[cohortId]/values
+├ ƒ /my/values
+├ ƒ /news
+├ ƒ /news/[id]
+├ ƒ /pending
+├ ƒ /preview
+├ ƒ /preview/console
+├ ƒ /preview/entry
+├ ƒ /preview/report
+├ ƒ /preview/site
+├ ○ /recruit                                              5m      1y
+├ ƒ /reset
+├ ƒ /reset/confirm
+└ ƒ /signup
+O 네 지표 전항 통과 — 위 출력 전문을 그대로 보고에 붙인다
+```
+
+</details>
+
+1~2명 경고와 인쇄 영역은 실행형 렌더 검사로 확인했다. 지정 QA 로그인으로 하는 실제 화면·인쇄 검증은 **미실행**이다.
 
 ## 5. S4 — AI 비교와 조건부 기존 해석 교체
 
-미착수. 코드와 운영 데이터 변경의 완료 여부를 별도로 기록한다.
+### 5.1 구현과 재검토 보완
+
+S3 production `32deca8c` 반영을 확인한 뒤 착수했다. 제출 후 사전생성·인도자 지연생성이 같은 `findPairedPre`로 짝을 찾고 앱에서 채점해 `{ wave, prev }`를 전달한다. 정상 무짝은 단독 생성이며 조회 오류는 생성·저장을 막고 이후 재시도로 남긴다. 기존 해석의 우선 반환은 생성 함수에서 유지한다. 호출부의 짝 조회까지 생략한다는 뜻은 아니다.
+
+기본 시스템 프롬프트 SHA-256은 수정 전후 `159813336be97dfce5cb8f4007792e561ed6ac49e71569c72b1deaa3bf4869cb`로 동일하다. 사전 입력은 A21 한 줄 외 동일함을 수정 전 실제 출력 snapshot으로 검사한다. 짝 있는 사후에만 A17을 구조 절 앞에 삽입한다. 비교 입력은 활력·나침반·준비도·각 영역의 사전/지금 현재 위치와 남은 간격, 사전/현재 돌봄 신호를 담는다. E1~E3는 사후 라벨이며 추천 글과 신원은 입력에 넣지 않는다. caution 요구는 현재 신호만 따른다.
+
+B14는 합성 실호출에서 발견한 실제 출력 결함의 보완이다. A17 원문을 바꾸지 않고 짝 있는 사후의 사용자 입력 마지막에 다음을 추가한다.
+
+> 비교 해석에서 점수 변화의 이유는 참여자가 쓴 말에 직접 근거가 있을 때만 적어 주세요. 근거가 없으면 “~일 수 있습니다” 같은 가능성 표현으로도 이유를 추정하지 말고, 관찰된 변화와 인도자가 대화로 확인할 점만 적어 주세요. 이 원칙은 headline·axes·growth 모두에 적용합니다.
+
+인도자 수정·되돌리기의 UPDATE는 `.select('response_id')`로 반환된 행이 정확히 하나인지 확인한다. DB 오류가 없어도 0행/null이면 실패다. 되돌리기는 clear 후 서버의 최신 해석을 재조회·파싱하여 VM을 반환하고 패널은 VM 전체를 적용한다. 옛 `prev.ai`를 다시 표시하지 않는다.
+
+기존 단언 삭제·완화·교체는 없다. 변경한 파일은 두 생성 액션, InterpretationPanel, core context, interpretation 입력/생성기와 해당 검사들이다. `architecture.md` §9.3·§9.5와 ADR-206을 정합화했고 조건부 교체 실행 지시서를 함께 작성했다. 계약·DB 스키마 변경은 없다.
+
+### 5.2 합성 점수의 실제 게이트웨이 검증
+
+실제 프로젝트의 채점기·입력 생성기·프롬프트 선택기·gatewayChat·파서를 Vite로 로드해 합성 응답만 보냈다. 직접 연결의 fetch 오류는 작업 환경의 기존 프록시·CA를 따르는 `NODE_USE_ENV_PROXY=1` 실행으로 해결했다. API 키 부족으로 판정하지 않았다. DB 저장은 하지 않았다.
+
+| 관찰(KST) | 결과 |
+|---|---|
+| 2026-11-02 14:11:28 | 실제 연결·JSON 파싱·현재 caution 부재·추천 미포함은 성공. 내용 검토에서 참여자가 쓰지 않은 “더 정직한 평가” 등의 긍정적 원인 추정 발견. 이 결과를 적합 판정으로 처리하지 않음. |
+| 2026-11-02 14:14:17 | B14 적용 후 동일 반례 재검사. 일의 현재 위치 7→4, 남은 간격 3→6을 설명하고 원인은 참여자의 말에서 확인되지 않아 대화로 확인할 점으로 남김. 근거 없는 원인 추정을 검토한 출력에서 찾지 못함. |
+
+최종 실호출: model `claude-sonnet-5`, provider `claude-sonnet`, `useCache:false`, 입력/출력 토큰 1966/832. 이 값은 해당 호출의 실측이며 기본 모델을 고정한 사양이 아니다.
+
+- 실제 interpretation 소스 SHA-256: `e64f82418aeb44817d7cd2c3dc2cce971d42ba1c9142f35a20975d63d7871055`.
+- 입력 SHA-256: `72772871f40ffd9877b36305f1b23d217d78b72f31cc583b6e39791b54a84ed5`.
+- 비교 시스템 프롬프트 SHA-256: `d2c4df17ba23e18005c401d271a5c49d56454ffe020a279e59c0842705ab35e4`.
+
+이는 **한 합성 반례의 재검사**다. 모든 생성 결과의 적합성을 보장하거나, 지정 QA의 실제 제출·저장·재조회 검증을 대신하지 않는다.
+
+### 5.3 기존 운영 해석 교체 상태
+
+**S4-5 운영 교체는 미실행이다.** 지정 QA 계정으로 실제 제출·생성·저장·재열람하는 선행 조건을 충족하지 못했다. 운영자 세션과 합성 호출을 그 조건의 대체 증거로 삼지 않았다.
+
+- 고정 운영 대상 확정: 미실행. 따라서 n/a/f/s를 임의로 0으로 적지 않는다.
+- 비공개 영속 백업: 미생성. 존재하지 않는 백업 식별자·위치를 보고하지 않는다.
+- 기존 사후 AI UPDATE/DELETE: 실행하지 않음.
+- 기존 사전 AI 재작성: 실행하지 않음.
+- 실행 지시서: `docs/reports/CC_RUNBOOK_postcheck_ai_refresh.md` 작성·교차 검토 완료. QA·동일 소스·고정 짝·영속 백업·후보 내용 검토·조건부 적용·조건부 복구·재시도 제한·원문 비공개를 명시했다.
+
+QA 접속이 제공되면 이 실행 지시서의 순서로 이어간다. 이 미실행 작업과 코드 배포 여부는 구별한다.
+
+### 5.4 검증·배포
+
+확정 커밋에서 직접 명령과 운영 신원을 확인한 결과를 다음 보고 갱신에 붙인다. 역할별 0행 검사는 모의 DB 응답, 패널 검사는 실제 함수·핸들러·재렌더를 실행하는 Node hook harness다. 실DB RLS·실브라우저 검증이라고 보고하지 않는다.
 
 ## 6. S5 — 세미나 마무리 구획
 
