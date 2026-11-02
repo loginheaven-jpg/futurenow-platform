@@ -6,7 +6,7 @@
 
 ## 1. 재검토 판정
 
-**보완수용. 발주 전체를 반려할 설계·권한 쟁점은 없다.** v1 의견서 R1~R11의 주요 사실과 제품 결정이 v2에 반영됐다. 아래 보완은 사용자의 “보완수용의 경우 자네 의견대로 진행” 승인에 따라 구현한다. 문구와 기능의 임의 확대, 회원 모델·계약·DB 스키마 변경은 하지 않는다.
+**보완수용. 발주 전체를 반려할 설계·권한 쟁점은 없다.** v1 의견서 R1~R11의 주요 사실과 제품 결정이 v2에 반영됐다. 아래 보완은 사용자의 “보완수용의 경우 자네 의견대로 진행” 승인에 따라 코드·문서·실행 절차에 반영했다. 기존 운영 AI 교체는 지정 QA 선행 조건을 충족하지 못해 미실행이다. 회원 모델·계약·DB 스키마 변경은 없다.
 
 ### 1.1 수용하는 결정
 
@@ -22,7 +22,7 @@
 | S5 개시·마감 | 개시는 진입 안내 상태이며 별도 저장 접근 통제가 아니라는 결정을 수용한다. 회원 자격을 만들거나 변경하지 않는다. 마감 뒤 기존 참여자의 입력 경로를 유지한다. |
 | 검증·배포 | 슬라이스별 작업·병합·운영 커밋을 구별한다. verify 요약과 직접 명령의 실제 종료 코드를 함께 기록하며 실DB 검사의 건너뜀을 성공으로 세지 않는다. |
 
-### 1.2 보완수용 — 실제 적용할 사항
+### 1.2 보완수용 — 반영 사항과 실행 조건
 
 | 번호 | 위치·근거 | 보완과 판정 |
 |---|---|---|
@@ -367,11 +367,11 @@ select now() as observed_at,
 
 ### 4.3 검증·배포
 
-바뀐 기존 잠금은 승인된 구조 변화 두 곳이다. 나머지 권한·개인 리포트 링크·마스킹·사전 전용 편성·인쇄 구조 단언은 유지한다.
+기존 검사에 반영한 승인 구조 변화는 두 곳이다. 첫째는 블록 6 순서 단언의 추가이며, 둘째는 사후 단독 평균 검사의 대응 평균 검사로의 교체다. 나머지 권한·개인 리포트 링크·마스킹·사전 전용 편성·인쇄 구조 단언은 유지한다.
 
 | 위치(이 슬라이스 기준) | 전 | 후 |
 |---|---|---|
-| `group/group.page.test.ts:25~33` | 블록 0~4 다음 블록 5가 마지막 | 블록 0~4 → 블록 5 → 블록 6 순서 |
+| `group/group.page.test.ts:25~33` | 블록 0~4 → 블록 5 순서 검사 | 기존 순서 검사를 유지하고 블록 5 → 블록 6 단언 추가 |
 | `group/group.page.test.ts:43~50` | 블록 5 뒤 `all={postScores}` 존재 | 블록 5 뒤 대응 평균 `GroupComparison` 존재, 사후 단독 평균 부재 |
 
 새 실행형 페이지 검사는 현재 참여자·스태프·이동자 범위, `pre A → post B → pre C`, 명단 오류, 표본 0/1/2/3명, 미동의 원문의 클라이언트 비전달을 확인한다. 모델·추천 부품 검사는 빈 평균·반올림 전 수치·응답 당시 성별과 나이·클립보드 성공과 실패·화면/인쇄의 동일 목록을 포함한다. `architecture.md` §9.5와 ADR-205를 동기화했다. 계약·DB 스키마 변경은 없다.
@@ -675,15 +675,233 @@ S4 production `ab7adc6098c0478292f47a8cf192dc968dd72e10` 반영을 확인한 뒤
 
 **롤백 후 별도 조회 2026-11-02 14:27:30 KST: 관련 12테이블의 합성 잔여 모두 0건.** `[QA] 검증 전용` 회기는 active, `expires_at=null`, `post_opened_at=2026-09-05T23:37:04.214791+00:00` 그대로다. 실제 참여자 계정·응답·해석은 쓰지 않았고 QA 회기도 변경하지 않았다. 기계 판독 결과와 합성 id는 `CC_EVIDENCE_postcheck_db.json`에 남긴다.
 
-초기 검증 SQL의 CASE 괄호 오류는 실행 전 수정했다. 그 다음 시도는 관리 연결의 `session_replication_role` 설정 권한 부족으로 fixture 생성 전에 실패·롤백됐다. 권한을 늘리거나 트리거를 우회하지 않고 정상 가입 트리거를 사용하는 fixture로 바꿔 실행했다. 이 경위 역시 기존 Vitest SETUP이 실행된 것으로 보고하지 않는 이유다.
+첫 검증 SQL 요청은 CASE 괄호 구문 오류로 실행되지 않았고 이를 수정했다. 그 다음 시도는 관리 연결의 `session_replication_role` 설정 권한 부족으로 fixture 생성 전에 실패·롤백됐다. 권한을 늘리거나 트리거를 우회하지 않고 정상 가입 트리거를 사용하는 fixture로 바꿔 실행했다. 이 경위 역시 기존 Vitest SETUP이 실행된 것으로 보고하지 않는 이유다.
 
 ### 6.4 검증·배포
 
-소스와 위 문서의 동일 커밋을 대상으로 직접 tsc·eslint·vitest·build·verify를 실행한 후 PR을 병합하고 production의 전체 SHA를 확인한다. 완료 영수증은 다음 문서 정합 커밋에 기록한다. 지정 QA 로그인의 실제 화면·인쇄 검증은 미실행이며 S4-5 기존 운영 AI 교체도 계속 미실행이다.
+작업 커밋 `5421e001e01ec06a18e8894a4039487e12cca57f`에서 아래 명령을 직접 실행했다. 실행 중 HEAD는 동일했다. 전체 테스트는 **2024 통과 / 90 스킵 / 총 2114**, 파일은 **173 통과 / 7 스킵 / 총 180**이다. 린트 오류 0, 기존 경고 3개다.
+
+| 명령 | 실제 종료 코드 | 종료 시각(KST) |
+|---|---:|---|
+| `npx tsc --noEmit` | 0 | 2026-11-02T14:29:29.396696+09:00 |
+| `npx eslint .` | 0 | 2026-11-02T14:29:42.214405+09:00 |
+| `npx vitest run` | 0 | 2026-11-02T14:29:36.364451+09:00 |
+| `npx next build` | 0 | 2026-11-02T14:29:59.589736+09:00 |
+| `node scripts/verify.mjs` | 0 | 2026-11-02T14:30:38.818229+09:00 |
+
+- 작업 커밋: `5421e001e01ec06a18e8894a4039487e12cca57f` · [PR #7](https://github.com/loginheaven-jpg/futurenow-platform/pull/7).
+- 병합 커밋: `84e8c072c1ac908811948a2d296800231d84995f`.
+- 운영 확인: `GET https://future.yebom.org/api/version`에서 `env=production`, `ref=main`, `commit=84e8c072c1ac908811948a2d296800231d84995f`, `deploymentId=dpl_5qwdKXrAtXjscGhAFdQW4Qqvnkyx`. build 시각 `2026-11-02T05:31:23.215Z`.
+- 원격 증거: `git ls-remote origin refs/heads/main refs/heads/feat/postcheck-v2`.
+
+```text
+5421e001e01ec06a18e8894a4039487e12cca57f	refs/heads/feat/postcheck-v2
+84e8c072c1ac908811948a2d296800231d84995f	refs/heads/main
+```
+
+<details>
+<summary>S5 verify.mjs 출력 전문</summary>
+
+```text
+
+── tsc ──
+오류 0
+
+── eslint ──
+78:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+  23:8  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-html-link-for-pages')
+✖ 3 problems (0 errors, 3 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+── vitest ──
+Test Files  173 passed | 7 skipped (180)
+      Tests  2024 passed | 90 skipped (2114)
+   Duration  7.94s (transform 7.82s, setup 0ms, import 17.83s, tests 4.87s, environment 21ms)
+
+  스킵 사유 — 전부 **의도된 옵트인**이다:
+    tests/membership.integration.test.ts         실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다
+    tests/feed.integration.test.ts               실DB 옵트인 — 같은 스위치
+    tests/rls.integration.test.ts                실DB 옵트인 — 같은 스위치
+    tests/defaultPrivileges.integration.test.ts  실DB 옵트인 — 같은 스위치(pg_default_acl 실측)
+    tests/memberDirectoryMask.integration.test.ts 실DB 옵트인 — 같은 스위치(마스킹 규칙을 함수에 먹인다)
+    tests/workbookPhotos.integration.test.ts     실DB 옵트인 — 같은 스위치 + QA 계정 env(「인도자 열람」 역할별 판정 · 적용 전이면 본문을 트랜잭션 안에서 적용)
+    tests/feedReactionsMulti.migration.test.ts   적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)
+    tests/site.snapshot.test.tsx                 캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다
+
+── next build ──
+성공
+Route (app)                                       Revalidate  Expire
+┌ ○ /                                                     5m      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/approvals
+├ ○ /api/version
+├ ƒ /c/[code]/[session]
+├ ƒ /c/[code]/values
+├ ƒ /coach
+├ ƒ /coach/cohort/[cohortId]
+├ ƒ /coach/cohort/[cohortId]/checkin
+├ ƒ /coach/cohort/[cohortId]/checkin/preview
+├ ƒ /coach/cohort/[cohortId]/group
+├ ƒ /coach/cohort/[cohortId]/matrix
+├ ƒ /coach/cohort/[cohortId]/member/[userId]
+├ ƒ /coach/cohort/[cohortId]/report/[responseId]
+├ ƒ /coach/cohort/[cohortId]/values
+├ ƒ /coach/cohorts
+├ ƒ /coach/new
+├ ƒ /contact
+├ ƒ /feed
+├ ƒ /home
+├ ƒ /home/assessments
+├ ƒ /join
+├ ƒ /library
+├ ƒ /library/[id]
+├ ƒ /library/[id]/file
+├ ƒ /library/[id]/thumb
+├ ƒ /login
+├ ƒ /my/cohorts
+├ ƒ /my/cohorts/[cohortId]
+├ ƒ /my/cohorts/[cohortId]/checkin/[session]
+├ ƒ /my/cohorts/[cohortId]/journey
+├ ƒ /my/cohorts/[cohortId]/report
+├ ƒ /my/cohorts/[cohortId]/values
+├ ƒ /my/values
+├ ƒ /news
+├ ƒ /news/[id]
+├ ƒ /pending
+├ ƒ /preview
+├ ƒ /preview/console
+├ ƒ /preview/entry
+├ ƒ /preview/report
+├ ƒ /preview/site
+├ ○ /recruit                                              5m      1y
+├ ƒ /reset
+├ ƒ /reset/confirm
+└ ƒ /signup
+O 네 지표 전항 통과 — 위 출력 전문을 그대로 보고에 붙인다
+```
+
+</details>
+
+지정 QA 로그인의 실제 화면·인쇄 검증은 미실행이며 S4-5 기존 운영 AI 교체도 계속 미실행이다.
 
 ## 7. S6 — 최종 문서 정합과 관찰
 
-미착수. 소스·ADR·IA·보고서·최종 운영 신원을 대조한다.
+### 7.1 최종 정합 범위
+
+S5 production `84e8c072c1ac908811948a2d296800231d84995f` 확인 뒤 문서 정합을 수행했다. IA §4.1의 상태와 실제 ADR 번호, §4.4의 개시 의미를 현재 구현과 맞췄다. 기존 “3차 · 10월”은 계획 이력으로 보존하고 실제 반영일 2026-11-02와 구별했다. 6회차 자동 개시를 하지 않는 기존 결정은 유지한다.
+
+개시와 권한을 혼동하지 않도록 다음 설명으로 통일한다.
+
+> 운영자·인도자가 기수 단위로 수동 개시한다. 개시는 참여자 화면에 마무리 체크의 진입 안내를 표시하는 상태이며, 회기 소속 참여자의 직접 주소 진입과 저장을 제한하는 조건은 아니다.
+
+갈무리 화면의 일정 동작은 **개방 시각 전 차단, 마감 시각 뒤 작성 허용**이다. RPC가 동일 창을 검사한다고 설명하지 않고 이 동작도 변경하지 않았다. ADR은 S1=203, S2=204, S3=205, S4=206, S5=207로 이어진다. ADR-203·204 앞의 빈 줄로 표가 끊긴 Markdown 형식도 바로잡았다. 기존 ADR을 재번호하거나 덮어쓰지 않는다.
+
+기존 AI 교체 실행 지시서의 선행 조건도 후속 배포에 맞춰 정밀화했다. S4 기능이 포함된 **현재 운영 SHA**에서 QA를 수행하고, 후보 생성 checkout도 그 SHA와 일치시킨다. 과거 S4 SHA만 요구해 S5·S6 배포 뒤 절차가 모순되지 않도록 고쳤다. QA 이후 운영 버전이 바뀌면 새 버전에서 검증한다. 독립 교차 검토에서도 이 조건 불일치가 M 1건으로 확인됐으며 수정 후 미해결 H/M은 없다. QA 미실행은 별도 완료 조건으로 남는다.
+
+### 7.2 구현·배포와 미실행 구분
+
+| 범위 | 상태 | 근거·잔여 |
+|---|---|---|
+| 이전 요청: 6회차 우선, 나머지 갈무리 안내 | 완료·배포 | 기존 PR #1·#2의 38문구 정비가 착수 기준과 최종 이력에 포함된다. `2026-11-02-checkin-tone-phase1.md`·`phase2.md` 참조. |
+| S1 사후 추천/동의 입력·기존 호환 | 완료·배포 | PR #3. 실제 기존 사후 3건 스키마 통과. |
+| S2 개인 비교·짝 선택 | 완료·배포 | PR #4. 전체 사전 이력과 대상 사후 시각 기준 단일 선택기. |
+| S3 현재 참여자·동일 표본 그룹·추천 목록 | 완료·배포 | PR #5. 실기수 읽기 검산과 렌더/모델/클립보드 검사. |
+| S4 새 AI 비교 생성·수정/되돌리기 | 완료·배포 | PR #6. 기존 프롬프트 보존, 단위 검사, 합성 실제 게이트웨이 반례 재검사. |
+| S5 세미나 마무리·마감 회기 입력 경로 | 완료·배포 | PR #7. 실제 DB 4시나리오·45결과값 및 롤백 잔여 0. |
+| S6 문서 정합 | 이 커밋의 변경 범위 | 문서 안에 아직 생성되지 않은 자기 커밋/배포 SHA를 꾸며 넣지 않는다. 최종 동일 커밋 검사·PR·production SHA는 완료 메시지에 별도로 첨부한다. |
+| 지정 QA 브라우저 제출·저장·재조회·인쇄 | 미실행 | QA 로그인 자격이 제공되지 않았다. 확인한 브라우저 세션은 운영자여서 QA 검증에 사용하지 않았고 실기수 보호 화면도 열지 않았다. |
+| S4-5 기존 운영 사후 AI 교체 | 미실행 | 감리부 지시의 QA 선행 조건 미충족. 운영 대상·짝 확정과 영속 백업부터 아직 시작하지 않았다. 실행 지시서는 준비 완료. |
+| 원래 Vitest DB 통합 스위트 | 미실행·skipped | 직접 연결 환경이 없다. 별도 SQL 통과를 원래 스위트 실행으로 보고하지 않는다. |
+
+기존 AI 교체의 장애는 API 키 부재가 아니다. 실제 게이트웨이 호출은 확인했다. 남은 조건은 **지정 QA의 실제 인증 세션과 검증 경로**이며, 원래 실DB 스위트 실행에는 해당 테스트가 요구하는 연결 환경도 필요하다.
+
+### 7.3 단계별 배포 신원
+
+모든 행은 해당 단계에서 `/api/version`의 production/main과 전체 SHA를 대조한 기록이다. 최종 배포가 다음 단계로 바뀌어도 과거 단계의 영수증을 최신 상태인 것처럼 다시 쓰지 않는다.
+
+| 단계 | 작업 커밋 | 병합·당시 운영 커밋 | PR |
+|---|---|---|---|
+| S1 | `9cbc35c666a3c8daf13317d493a0e0e53aac5013` | `5d6ab2b7feb1d3b87f273a468225a19ad8e30116` | [#3](https://github.com/loginheaven-jpg/futurenow-platform/pull/3) |
+| S2 | `3646e4a90ea2f730ed03482bab24eb1b6d0fedf4` | `d1500868e1742fc0636a81c1ab405b6ea29658ce` | [#4](https://github.com/loginheaven-jpg/futurenow-platform/pull/4) |
+| S3 | `4724cd45836fb7c244c2e04612c95854205af226` | `32deca8c5e66d1e6477d4052fb9eecdbbd629d29` | [#5](https://github.com/loginheaven-jpg/futurenow-platform/pull/5) |
+| S4 | `81d01a8170b6269338a67505e3e292ba749099a9` | `ab7adc6098c0478292f47a8cf192dc968dd72e10` | [#6](https://github.com/loginheaven-jpg/futurenow-platform/pull/6) |
+| S5 | `5421e001e01ec06a18e8894a4039487e12cca57f` | `84e8c072c1ac908811948a2d296800231d84995f` | [#7](https://github.com/loginheaven-jpg/futurenow-platform/pull/7) |
+
+각 단계의 직접 명령 5개는 모두 실제 exit 0이다. 원래 `scripts/verify.mjs`는 변경하지 않았고 그 요약의 “전항 통과”만으로 판정하지 않았다. 스킵과 기존 린트 경고 3개는 각각 명시했다. source freeze 후 동일 커밋을 검사하고 그 커밋을 PR로 병합한 다음 운영 SHA를 확인하는 순서를 지켰다.
+
+### 7.4 변경 파일과 권한 경계
+
+`src/contracts/`, `supabase/migrations/`, `scripts/verify.mjs`는 착수 기준 대비 변경하지 않았다. DB 검증 SQL은 합성 픽스처를 롤백하는 검사이고 배포 마이그레이션이 아니다. 실제 참여자 답변·신원과 결합된 발언·AI 원문·토큰을 보고서나 커밋에 넣지 않았다.
+
+최종 변경 파일 62개는 아래와 같다. 여러 단계에서 고친 파일은 한 번만 적는다.
+
+```text
+architecture.md
+docs/reports/CC_EVIDENCE_postcheck_db.json
+docs/reports/CC_REPORT_postcheck_v2.md
+docs/reports/CC_RUNBOOK_postcheck_ai_refresh.md
+docs/reports/CC_VERIFY_postcheck_closing.sql
+docs/tasks/퓨처나우_통합웹사이트_IA확정본_v2.2.md
+src/app/(member)/home/assessments/page.postcheck.test.tsx
+src/app/(member)/home/assessments/page.tsx
+src/app/(member)/my/cohorts/[cohortId]/report/page.test.tsx
+src/app/(member)/my/cohorts/[cohortId]/report/page.tsx
+src/app/(public)/join/actions.ts
+src/app/_lib/latestPerUser.test.ts
+src/app/_lib/latestPerUser.ts
+src/app/_lib/pairedPre.test.ts
+src/app/_lib/pairedPre.ts
+src/app/_lib/postcheckGroup.test.ts
+src/app/_lib/postcheckGroup.ts
+src/app/_screens/console/CohortDetail.closing.test.tsx
+src/app/_screens/console/CohortDetail.test.tsx
+src/app/_screens/console/CohortDetail.tsx
+src/app/_vocab/seminarClosing.test.ts
+src/app/_vocab/seminarClosing.ts
+src/app/_vocab/tool.test.ts
+src/app/coach/cohort/[cohortId]/CohortDetailClient.tsx
+src/app/coach/cohort/[cohortId]/group/group.page.test.ts
+src/app/coach/cohort/[cohortId]/group/page.postcheck.test.tsx
+src/app/coach/cohort/[cohortId]/group/page.tsx
+src/app/coach/cohort/[cohortId]/page.postcheck.test.tsx
+src/app/coach/cohort/[cohortId]/page.tsx
+src/app/coach/cohort/[cohortId]/report/[responseId]/InterpretationPanel.test.tsx
+src/app/coach/cohort/[cohortId]/report/[responseId]/InterpretationPanel.tsx
+src/app/coach/cohort/[cohortId]/report/[responseId]/actions.ts
+src/app/coach/cohort/[cohortId]/report/[responseId]/page.comparison.test.tsx
+src/app/coach/cohort/[cohortId]/report/[responseId]/page.tsx
+src/core/context.interpretation.test.ts
+src/core/context.ts
+src/instruments/futurenow/copy.ts
+src/instruments/futurenow/flow.test.ts
+src/instruments/futurenow/flow.ts
+src/instruments/futurenow/report/GroupComparison.test.tsx
+src/instruments/futurenow/report/GroupComparison.tsx
+src/instruments/futurenow/report/RawAnswers.test.tsx
+src/instruments/futurenow/report/RawAnswers.tsx
+src/instruments/futurenow/report/RecommendationList.test.tsx
+src/instruments/futurenow/report/RecommendationList.tsx
+src/instruments/futurenow/report/ReportScreen.test.tsx
+src/instruments/futurenow/report/ReportScreen.tsx
+src/instruments/futurenow/report/WishPair.test.tsx
+src/instruments/futurenow/report/WishPair.tsx
+src/instruments/futurenow/report/groupModel.test.ts
+src/instruments/futurenow/report/groupModel.ts
+src/instruments/futurenow/report/interpretation.test.ts
+src/instruments/futurenow/report/interpretation.ts
+src/instruments/futurenow/report/labels.test.ts
+src/instruments/futurenow/report/labels.ts
+src/instruments/futurenow/report/recommendationCopy.test.ts
+src/instruments/futurenow/report/recommendationCopy.ts
+src/instruments/futurenow/report/visuals.tsx
+src/instruments/futurenow/schema.test.ts
+src/instruments/futurenow/schema.ts
+tests/membership.integration.test.ts
+tests/postcheckInterpretationActions.test.ts
+```
 
 ## 8. 근거 파일
 
