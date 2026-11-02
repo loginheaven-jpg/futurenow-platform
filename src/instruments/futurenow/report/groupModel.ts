@@ -7,6 +7,7 @@
 //   새 판정을 만들지 않고 기존 것을 부른다 — `careBanner` · `vitalityZone` · `trap.primary` ·
 //   `TRAP_AXES` · `GAP_AXES`. **지어낸 규칙이 하나도 없다.**
 import type { FuturenowScores } from '../scoring';
+import { GENDERS } from '@/contracts/vocab';
 import { careBanner, vitalityZone, VITALITY_ZONES, TRAP_AXES, GAP_AXES, type CareKind } from './labels';
 
 /** 한 사람 — 이름은 **페이지가 조인해서** 넣는다(코어 조회를 컴포넌트가 하지 않는다). */
@@ -153,4 +154,56 @@ export function gapGroups(done: GroupMember[]): GapGroup[] {
   }
   for (const g of out) g.members.sort((a, b) => a.score - b.score);
   return out;
+}
+
+// ── 사전·사후 대응 표본의 수치 평균(ADR-205) ──────────────────────────────────
+// 개인의 판정·자유서술을 합성하지 않는다. 표본 선택과 채점은 호출부가 끝내서 전달한다.
+export type AverageScores = Pick<FuturenowScores, 'compass' | 'gap'> & {
+  vitality: Pick<FuturenowScores['vitality'], 'score'>;
+  grow: Pick<FuturenowScores['grow'], 'G' | 'R' | 'O' | 'W' | 'F'>;
+};
+
+export function averageScores(all: readonly FuturenowScores[]): AverageScores | null {
+  if (all.length === 0) return null;
+  const mean = (value: (scores: FuturenowScores) => number) =>
+    all.reduce((sum, scores) => sum + value(scores), 0) / all.length;
+
+  return {
+    vitality: { score: mean((scores) => scores.vitality.score) },
+    compass: {
+      NAV1: mean((scores) => scores.compass.NAV1),
+      NAV2: mean((scores) => scores.compass.NAV2),
+      NAV3: mean((scores) => scores.compass.NAV3),
+      NAV4: mean((scores) => scores.compass.NAV4),
+    },
+    gap: {
+      B1: mean((scores) => scores.gap.B1),
+      B2: mean((scores) => scores.gap.B2),
+      B3: mean((scores) => scores.gap.B3),
+      B4: mean((scores) => scores.gap.B4),
+      B5: mean((scores) => scores.gap.B5),
+    },
+    grow: {
+      G: mean((scores) => scores.grow.G),
+      R: mean((scores) => scores.grow.R),
+      O: mean((scores) => scores.grow.O),
+      W: mean((scores) => scores.grow.W),
+      F: mean((scores) => scores.grow.F),
+    },
+  };
+}
+
+export type RecommendationItem = { text: string; attribution: string; createdAt: string };
+
+/** 응답 당시 스냅샷만 사용한다. 현재 계정·현재 연도·이름을 보지 않는다(ADR-205). */
+export function attribution(profile: unknown, respondedAt: string): string {
+  if (profile === null || typeof profile !== 'object' || Array.isArray(profile)) return '참여자';
+  const snapshot = profile as Record<string, unknown>;
+  const gender = typeof snapshot.gender === 'string' && GENDERS.includes(snapshot.gender) ? snapshot.gender : '';
+  const year = new Date(respondedAt).getUTCFullYear();
+  const age = typeof snapshot.birthYear === 'number' && Number.isInteger(snapshot.birthYear)
+    ? year - snapshot.birthYear
+    : NaN;
+  const ageBand = age >= 10 && age <= 100 ? `${Math.floor(age / 10) * 10}대` : '';
+  return [gender, ageBand].filter(Boolean).join('·') || '참여자';
 }

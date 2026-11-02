@@ -119,6 +119,16 @@ export const RECOMMENDATION_CONSENT_LABELS = {
   notConsented: '게재 동의 안 함',
 } as const;
 
+export const RECOMMENDATIONS_COPY = {
+  title: '추천의 말 · 모집 안내용',
+  intro: '게재에 동의한 글만 싣습니다. 표기는 성별·연령대입니다.',
+  excluded: (count: number) => `동의하지 않은 글 ${count}건은 싣지 않았습니다.`,
+  copy: '복사',
+  copyAll: '모두 복사',
+  copied: '복사됨 ✓',
+  review: '싣기 전에 본문에 실명이나 개인 사정이 담겼는지 확인해 주세요. 게재를 거두고 싶다는 요청이 오면 그 글은 쓰지 않습니다.',
+} as const;
+
 // 함정 유형(D1~D3) — 인도자 전용 강의 어휘(소그룹 편성 참고). 참여자 미노출. 최고점=주 함정, 동점 D1>D2>D3. ADR-77
 export const TRAP_AXES = [
   { code: 'D1', label: '관성' },

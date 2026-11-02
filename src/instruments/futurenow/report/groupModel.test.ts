@@ -6,6 +6,7 @@ import { scoreFuturenow, type FuturenowScores } from '../scoring';
 import {
   attendance, careList, vitalityBuckets, vitalityMean, trapGroups, gapGroups,
   CARE_TAG, displayName, type GroupMember,
+  averageScores, attribution,
 } from './groupModel';
 
 /** 점수를 **직접 짓지 않고** 필요한 자리만 덮는다 — 채점 규칙을 흉내 내면 그것을 재게 된다(계열 ⑦). */
@@ -39,6 +40,80 @@ describe('블록 0 — 응답 현황은 **완료 / 미완료 두 단계**다', (
   it('이름이 없어도 한 낱말로 부른다 — 블록마다 다르면 같은 사람이 두 이름이 된다', () => {
     expect(displayName({ name: null })).toBe('이름 없음');
     expect(displayName({ name: '가' })).toBe('가');
+  });
+});
+
+describe('대응 표본 수치 평균 (ADR-205)', () => {
+  const scores = (value: number): FuturenowScores => ({
+    ...scoreFuturenow({} as never),
+    vitality: { score: 5 + value, low: true },
+    compass: { NAV1: value, NAV2: 6 - value, NAV3: value + 1, NAV4: 3 },
+    gap: { B1: value, B2: value + 1, B3: value + 2, B4: value + 3, B5: value + 4 },
+    grow: { G: value, R: 6 - value, O: 3, W: value + 1, F: value, faithAux: { F1: 5, F2: 4 } },
+    subjective: { E1: '첫 사람의 답을 대표 답으로 쓰지 않는다', E2: '원문', E3: '원문' },
+  });
+
+  it('빈 표본은 0점 객체 대신 null이다', () => {
+    expect(averageScores([])).toBeNull();
+  });
+
+  it('모든 수치 축의 산술평균을 반올림하지 않고 계산한다', () => {
+    const result = averageScores([scores(1), scores(2), scores(4)]);
+    expect(result).toEqual({
+      vitality: { score: 22 / 3 },
+      compass: { NAV1: 7 / 3, NAV2: 11 / 3, NAV3: 10 / 3, NAV4: 3 },
+      gap: { B1: 7 / 3, B2: 10 / 3, B3: 13 / 3, B4: 16 / 3, B5: 19 / 3 },
+      grow: { G: 7 / 3, R: 11 / 3, O: 3, W: 10 / 3, F: 7 / 3 },
+    });
+    expect(result?.compass.NAV1).not.toBe(2.3);
+  });
+
+  it('자유서술·돌봄·함정·믿음 보조·구간 판정은 결과에 없다', () => {
+    const result = averageScores([scores(1)])!;
+    expect(Object.keys(result).sort()).toEqual(['compass', 'gap', 'grow', 'vitality']);
+    expect(Object.keys(result.vitality)).toEqual(['score']);
+    expect(Object.keys(result.grow)).toEqual(['G', 'R', 'O', 'W', 'F']);
+    expect(JSON.stringify(result)).not.toContain('원문');
+    expect(JSON.stringify(result)).not.toContain('첫 사람');
+  });
+
+  it('원본 점수를 수정하거나 중첩 객체를 재사용하지 않는다', () => {
+    const all = [scores(1), scores(2)];
+    const original = structuredClone(all);
+    const result = averageScores(all)!;
+    expect(all).toEqual(original);
+    expect(result.compass).not.toBe(all[0].compass);
+    expect(result.gap).not.toBe(all[0].gap);
+    expect(result.grow).not.toBe(all[0].grow);
+  });
+});
+
+describe('추천 글 표기 (ADR-205)', () => {
+  it('응답 스냅샷의 남/여와 당시 연령대만 공백 없는 구분자로 잇는다', () => {
+    expect(attribution({ gender: '남', birthYear: 1996, name: '실명은 제외', phone: '비공개' }, '2026-11-02T00:00:00Z')).toBe('남·30대');
+    expect(attribution({ gender: '여', birthYear: 1985 }, '2020-06-01T00:00:00Z')).toBe('여·30대');
+  });
+
+  it('UTC 작성 연도를 쓰고 현재 연도나 입력 문자열의 현지 연도를 쓰지 않는다', () => {
+    expect(attribution({ birthYear: 1996 }, '2025-12-31T23:30:00-02:00')).toBe('30대');
+    expect(attribution({ birthYear: 1996 }, '2026-01-01T00:30:00+09:00')).toBe('20대');
+  });
+
+  it.each([
+    [2016, '10대'], [1926, '100대'], [2017, '참여자'], [1925, '참여자'],
+    ['1996', '참여자'], [1996.5, '참여자'], [NaN, '참여자'], [Infinity, '참여자'],
+  ])('생년 %s는 정수·나이 10~100 범위로 제한한다', (birthYear, expected) => {
+    expect(attribution({ birthYear }, '2026-11-02T00:00:00Z')).toBe(expected);
+  });
+
+  it('없는 성별·연령대는 각각 생략하고 둘 다 없으면 참여자로 쓴다', () => {
+    expect(attribution({ gender: '여' }, '잘못된 시각')).toBe('여');
+    expect(attribution({ gender: 'male', birthYear: 1986 }, '2026-11-02T00:00:00Z')).toBe('40대');
+    expect(attribution({ gender: '남', birthYear: 1996 }, '잘못된 시각')).toBe('남');
+    expect(attribution({}, '2026-11-02T00:00:00Z')).toBe('참여자');
+    for (const profile of [null, undefined, [], '남', 30]) {
+      expect(attribution(profile, '2026-11-02T00:00:00Z')).toBe('참여자');
+    }
   });
 });
 

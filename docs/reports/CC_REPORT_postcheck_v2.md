@@ -200,11 +200,181 @@ S1 production `5d6ab2b` 반영을 확인한 뒤 착수했다. 공용 `pairedPre`
 
 ### 3.3 검증·배포
 
-표시 부품 관련 4파일 69개, 코치 페이지 2파일 7개 사전 검사가 통과했다. 작업 커밋 확정 후 동일 커밋의 네 직접 명령·verify 및 운영 신원 증거를 다음 보고 갱신에 붙인다. QA 로그인·브라우저 인쇄 미리보기는 미실행이며 서버 렌더 검사로 대체했다고 보고하지 않는다.
+작업 커밋 `3646e4a90ea2f730ed03482bab24eb1b6d0fedf4`에서 아래 명령을 직접 실행했다. 실행 중 HEAD는 동일했다. 전체 테스트는 **1872 통과 / 87 스킵 / 총 1959**, 파일은 **161 통과 / 7 스킵 / 총 168**이다. 린트 오류 0, 기존 경고 3개다.
+
+| 명령 | 실제 종료 코드 | 종료 시각(KST) |
+|---|---:|---|
+| `npx tsc --noEmit` | 0 | 2026-11-02T13:53:25.309402+09:00 |
+| `npx eslint .` | 0 | 2026-11-02T13:53:37.322253+09:00 |
+| `npx vitest run` | 0 | 2026-11-02T13:53:31.566960+09:00 |
+| `npx next build` | 0 | 2026-11-02T13:53:53.267466+09:00 |
+| `node scripts/verify.mjs` | 0 | 2026-11-02T13:54:31.689453+09:00 |
+
+- 작업 커밋: `3646e4a90ea2f730ed03482bab24eb1b6d0fedf4` · [PR #4](https://github.com/loginheaven-jpg/futurenow-platform/pull/4).
+- 병합 커밋: `d1500868e1742fc0636a81c1ab405b6ea29658ce`.
+- 운영 확인: `GET https://future.yebom.org/api/version`에서 `env=production`, `ref=main`, `commit=d1500868e1742fc0636a81c1ab405b6ea29658ce`, `deploymentId=dpl_FT6hHWPuEM7XLjWTD9yHQaYksfUn`. build 시각 `2026-11-02T04:55:29.542Z`.
+- 원격 증거: `git ls-remote origin refs/heads/main refs/heads/feat/postcheck-v2`.
+
+```text
+3646e4a90ea2f730ed03482bab24eb1b6d0fedf4	refs/heads/feat/postcheck-v2
+d1500868e1742fc0636a81c1ab405b6ea29658ce	refs/heads/main
+```
+
+<details>
+<summary>S2 verify.mjs 출력 전문</summary>
+
+```text
+── tsc ──
+오류 0
+
+── eslint ──
+78:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+  23:8  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-html-link-for-pages')
+✖ 3 problems (0 errors, 3 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+── vitest ──
+Test Files  161 passed | 7 skipped (168)
+      Tests  1872 passed | 87 skipped (1959)
+   Duration  6.73s (transform 6.44s, setup 0ms, import 15.13s, tests 4.22s, environment 21ms)
+
+  스킵 사유 — 전부 **의도된 옵트인**이다:
+    tests/membership.integration.test.ts         실DB 옵트인 — RUN_RLS_INTEGRATION=1 일 때만 돈다
+    tests/feed.integration.test.ts               실DB 옵트인 — 같은 스위치
+    tests/rls.integration.test.ts                실DB 옵트인 — 같은 스위치
+    tests/defaultPrivileges.integration.test.ts  실DB 옵트인 — 같은 스위치(pg_default_acl 실측)
+    tests/memberDirectoryMask.integration.test.ts 실DB 옵트인 — 같은 스위치(마스킹 규칙을 함수에 먹인다)
+    tests/workbookPhotos.integration.test.ts     실DB 옵트인 — 같은 스위치 + QA 계정 env(「인도자 열람」 역할별 판정 · 적용 전이면 본문을 트랜잭션 안에서 적용)
+    tests/feedReactionsMulti.migration.test.ts   적용 전 전용 하네스 — 원장을 보고 스스로 건너뛴다(이미 적용됨)
+    tests/site.snapshot.test.tsx                 캡처 산출 옵트인 — 출력 디렉터리가 있을 때만 돈다
+
+── next build ──
+성공
+Route (app)                                       Revalidate  Expire
+┌ ○ /                                                     5m      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/approvals
+├ ○ /api/version
+├ ƒ /c/[code]/[session]
+├ ƒ /c/[code]/values
+├ ƒ /coach
+├ ƒ /coach/cohort/[cohortId]
+├ ƒ /coach/cohort/[cohortId]/checkin
+├ ƒ /coach/cohort/[cohortId]/checkin/preview
+├ ƒ /coach/cohort/[cohortId]/group
+├ ƒ /coach/cohort/[cohortId]/matrix
+├ ƒ /coach/cohort/[cohortId]/member/[userId]
+├ ƒ /coach/cohort/[cohortId]/report/[responseId]
+├ ƒ /coach/cohort/[cohortId]/values
+├ ƒ /coach/cohorts
+├ ƒ /coach/new
+├ ƒ /contact
+├ ƒ /feed
+├ ƒ /home
+├ ƒ /home/assessments
+├ ƒ /join
+├ ƒ /library
+├ ƒ /library/[id]
+├ ƒ /library/[id]/file
+├ ƒ /library/[id]/thumb
+├ ƒ /login
+├ ƒ /my/cohorts
+├ ƒ /my/cohorts/[cohortId]
+├ ƒ /my/cohorts/[cohortId]/checkin/[session]
+├ ƒ /my/cohorts/[cohortId]/journey
+├ ƒ /my/cohorts/[cohortId]/report
+├ ƒ /my/cohorts/[cohortId]/values
+├ ƒ /my/values
+├ ƒ /news
+├ ƒ /news/[id]
+├ ƒ /pending
+├ ƒ /preview
+├ ƒ /preview/console
+├ ƒ /preview/entry
+├ ƒ /preview/report
+├ ƒ /preview/site
+├ ○ /recruit                                              5m      1y
+├ ƒ /reset
+├ ƒ /reset/confirm
+└ ƒ /signup
+O 네 지표 전항 통과 — 위 출력 전문을 그대로 보고에 붙인다
+```
+
+</details>
+
+실브라우저에서 로그인 페이지를 열자 기존 운영자 세션으로 홈에 진입했다. 지정 QA 계정이 아니므로 보호 리포트를 열지 않고 해당 검증 탭을 닫았다. QA 로그인·브라우저 인쇄 미리보기는 **미실행**이며 서버 렌더 검사로 대체했다고 보고하지 않는다.
 
 ## 4. S3 — 그룹 리포트와 추천의 말
 
-미착수. S2 운영 반영 확인 뒤 진행한다.
+### 4.1 구현
+
+S2 production `d1500868` 반영을 확인한 뒤 착수했다. 현재 참여자 명단을 사전·사후 전체 이력에 먼저 적용한다. 최신 사전은 블록 0~4·0쌍 폴백에, 최신 사후와 그 시점의 사전 짝은 대응 평균에 쓴다. 명단 조회 실패를 빈 명단으로 바꾸지 않는다.
+
+대응 평균은 산술 평균이며 차트에 필요한 수치만 가진 좁은 타입이다. 평균에 개인의 돌봄·함정·주관식·구간 판정을 섞지 않는다. 표시 표본 1~2명에는 A18을 화면·인쇄에 남기고 비식별 일반 설명은 함께 표시하지 않는다. 추천 글은 최신 사후의 동의 상태만 따르며 미동의 글의 본문은 추천 클라이언트로 전달하지 않는다. 복사 성공 표시는 Clipboard 쓰기가 성공한 뒤에만 바뀐다.
+
+### 4.2 실기수 읽기 검산
+
+2026-11-02 **13:58:59 KST**, 1기 `c449b22b-dd51-49a0-bd71-fb47e672f2b0`의 읽기 전용 SQL 결과다. 원문·이름은 조회 결과에 포함하지 않았다.
+
+| 집계 | 값 |
+|---|---:|
+| 현재 일반 참여자 | 9 |
+| 블록 0~4 최신 사전 표본 / 사전 완료 N | 9 |
+| 전체 사전 이력 행 | 9 |
+| 최신 대표 사후 | 3 |
+| 대응 표본 n | 3 |
+| 게재 동의 추천 글 | 0 |
+| 미동의 비어 있지 않은 추천 글 k | 0 |
+
+```sql
+with current_people as (
+  select e.user_id from public.enrollments e
+  join public.users u on u.id=e.user_id and u.role='user'
+  where e.cohort_id='c449b22b-dd51-49a0-bd71-fb47e672f2b0'
+), pres as (
+  select r.* from public.responses r join current_people c on c.user_id=r.user_id
+  where r.cohort_id='c449b22b-dd51-49a0-bd71-fb47e672f2b0'
+    and r.instrument_id='futurenow' and r.wave='pre'
+), latest_pres as (
+  select distinct on (user_id) * from pres order by user_id,created_at desc,id desc
+), posts as (
+  select r.* from public.responses r join current_people c on c.user_id=r.user_id
+  where r.cohort_id='c449b22b-dd51-49a0-bd71-fb47e672f2b0'
+    and r.instrument_id='futurenow' and r.wave='post'
+), latest_posts as (
+  select distinct on (user_id) * from posts order by user_id,created_at desc,id desc
+), paired as (
+  select q.id as post_id, p.id as pre_id from latest_posts q
+  join lateral (
+    select p.id from pres p where p.user_id=q.user_id and p.created_at<=q.created_at
+    order by p.created_at desc,p.id desc limit 1
+  ) p on true
+)
+select now() as observed_at,
+ (select count(*) from current_people) as current_participants,
+ (select count(*) from latest_pres) as blocks_0_to_4_and_pre_n,
+ (select count(*) from pres) as pre_history_count,
+ (select count(*) from latest_posts) as representative_post_count,
+ (select count(*) from paired) as paired_n,
+ (select count(*) from latest_posts where answers->'REC_OK'='true'::jsonb and btrim(coalesce(answers->>'REC',''))<>'') as consented,
+ (select count(*) from latest_posts where (answers->'REC_OK') is distinct from 'true'::jsonb and btrim(coalesce(answers->>'REC',''))<>'') as nonconsented_k;
+```
+
+### 4.3 검증·배포
+
+바뀐 기존 잠금은 승인된 구조 변화 두 곳이다. 나머지 권한·개인 리포트 링크·마스킹·사전 전용 편성·인쇄 구조 단언은 유지한다.
+
+| 위치(이 슬라이스 기준) | 전 | 후 |
+|---|---|---|
+| `group/group.page.test.ts:25~33` | 블록 0~4 다음 블록 5가 마지막 | 블록 0~4 → 블록 5 → 블록 6 순서 |
+| `group/group.page.test.ts:43~50` | 블록 5 뒤 `all={postScores}` 존재 | 블록 5 뒤 대응 평균 `GroupComparison` 존재, 사후 단독 평균 부재 |
+
+새 실행형 페이지 검사는 현재 참여자·스태프·이동자 범위, `pre A → post B → pre C`, 명단 오류, 표본 0/1/2/3명, 미동의 원문의 클라이언트 비전달을 확인한다. 모델·추천 부품 검사는 빈 평균·반올림 전 수치·응답 당시 성별과 나이·클립보드 성공과 실패·화면/인쇄의 동일 목록을 포함한다. `architecture.md` §9.5와 ADR-205를 동기화했다. 계약·DB 스키마 변경은 없다.
+
+작업 커밋 확정 뒤 직접 명령과 운영 신원을 기록한다. 1~2명 경고와 인쇄 영역은 실행형 렌더 검사로 확인하며, 지정 QA 로그인으로 하는 실제 화면·인쇄 검증은 별도 미실행 항목이다.
 
 ## 5. S4 — AI 비교와 조건부 기존 해석 교체
 
