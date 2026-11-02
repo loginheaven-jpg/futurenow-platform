@@ -1,12 +1,14 @@
 // 개인 리포트(코치/운영자 전용). getResponse→B② score→기존 ReportScreen 재사용(신규 리포트 0).
 // 접근 제어: responses RLS(회기 코치+운영자+본인만 SELECT). 차단/부재 → 404. 참여자는 이 임상 리포트 UI 경로 없음(§7.5 거울만).
-// wave 비교(prev)는 후속 — MVP 는 단일 wave 로 충분(ReportScreen 이 prev optional 처리).
+// 사후는 그 작성 시점의 사전 짝을 함께 그린다. 짝 부재·조회 실패는 단독 표시(ADR-204).
 import { docTitle } from '@/app/_screens/console/docTitle';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Answers } from '@/contracts';
 import { requestCohort, requestContext, requestUser } from '@/app/_lib/requestScope';
+import { findPairedPre } from '@/app/_lib/pairedPre';
 import { ReportScreen } from '@/instruments/futurenow/report/ReportScreen';
+import { WishPair } from '@/instruments/futurenow/report/WishPair';
 import { RawAnswers } from '@/instruments/futurenow/report/RawAnswers';
 import { futurenowScoring } from '@/instruments/futurenow/scoring';
 import type { InterpretationContent } from '@/instruments/futurenow/report/interpretation';
@@ -14,7 +16,7 @@ import { InterpretationPanel } from './InterpretationPanel';
 import { MemberProfileButton } from './MemberProfileButton';
 import { ReportPrintButton } from './ReportPrintButton';
 import { ReportPrintHeader } from './ReportPrintHeader';
-import { toolName } from '@/app/_vocab/tool';
+import { TOOL, toolName } from '@/app/_vocab/tool';
 
 export const dynamic = 'force-dynamic';
 // 비차단(B③-A): 서버 렌더는 existing 해석(getInterpretation·빠름)만 조회 — aiChat 동기 await 제거(첫 열람 26s 블랭크 회피).
@@ -37,6 +39,18 @@ export default async function CoachReportPage({
   if (!resp) notFound(); // RLS 차단(비소유 코치)·부재 → 404
 
   const scores = futurenowScoring.score(resp.answers, { wave: resp.wave });
+  let pairedPre: typeof resp | null = null;
+  if (resp.wave === 'post') {
+    try {
+      pairedPre = await findPairedPre(ctx, resp);
+    } catch {
+      // 조회 장애를 정상적인 짝 부재와 구별하되 응답 원문·오류 본문은 로그에 남기지 않는다.
+      console.error('[coach-report] paired pre lookup failed', { responseId });
+    }
+  }
+  const prevScores = pairedPre
+    ? futurenowScoring.score(pairedPre.answers, { wave: pairedPre.wave })
+    : undefined;
 
   // PDF 문서 헤더용 메타(대상·회기·회차·날짜). 코치는 소유 회기라 getCohort·listCohortMembers 통과(RLS). 실패는 우아한 폴백.
   const [cohort, members] = await Promise.all([
@@ -45,7 +59,7 @@ export default async function CoachReportPage({
   ]);
   const participantName = members.find((m) => m.userId === resp.userId)?.name ?? '참여자';
   const cohortName = cohort?.name ?? '';
-  const waveLabel = toolName(resp.wave);
+  const waveLabel = pairedPre ? `${TOOL.pre} → ${TOOL.post}` : toolName(resp.wave);
   const [ry, rm, rd] = resp.createdAt.slice(0, 10).split('-');
   const dateStr = `${ry}년 ${Number(rm)}월 ${Number(rd)}일`;
 
@@ -116,7 +130,8 @@ export default async function CoachReportPage({
         <InterpretationPanel key={responseId} responseId={responseId} initial={initialVm} />
       </div>
       <div className="report-charts-block" style={{ marginTop: 'var(--space-4)' }}>
-        <ReportScreen scores={scores} />
+        <ReportScreen scores={scores} prev={prevScores} wave={resp.wave} />
+        {prevScores ? <WishPair before={prevScores.subjective.E1} after={scores.subjective.E1} /> : null}
       </div>
       {/* 3면 — 참여자 원응답(코치/운영자 전용). 화면 접이식·PDF 펼침(order 3·개행). ADR-77 Phase 2 */}
       <div className="report-raw-block" style={{ marginTop: 'var(--space-4)' }}>

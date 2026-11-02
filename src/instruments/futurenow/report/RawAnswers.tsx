@@ -9,8 +9,8 @@
 //   코드는 문항 원문을 대체하지 않는다 — 매칭용 보조 라벨일 뿐이다(ORDER §2.3). 참여자 경로에는 배선하지 않는다(§2.2).
 import { useState, type ReactNode } from 'react';
 import type { Wave } from '@/contracts';
-import { itemPrompts, bipolarLabels, askPrompts, likertLabels, likertCenterLabel, waveKey } from '../copy';
-import { GROW_AXES, MONO_STACK } from './labels';
+import { itemPrompts, bipolarLabels, askPrompts, likertLabels, likertCenterLabel, nextBlock, waveKey } from '../copy';
+import { GROW_AXES, MONO_STACK, RECOMMENDATION_CONSENT_LABELS } from './labels';
 
 // 리커트 1~5 문구화 — copy.ts 앵커(min/center/max) 사용, 2·4는 코치용 중간 표기(참여자 노출 아님).
 const likertText = (v: number): string =>
@@ -81,6 +81,7 @@ export function RawAnswers({ answers, wave }: { answers: Record<string, unknown>
   const num = (k: string): number | null => (typeof answers[k] === 'number' ? (answers[k] as number) : null);
   const str = (k: string): string => (typeof answers[k] === 'string' ? (answers[k] as string) : '');
   const intro = str('INTRO');
+  const recommendation = str('REC');
 
   // 리커트 한 줄(A·C·D·F 공용). 무응답은 흐리게 — F1·F2 는 선택 문항이라 정상적으로 비어 있을 수 있다.
   const likertRow = (c: string) => {
@@ -171,7 +172,19 @@ export function RawAnswers({ answers, wave }: { answers: Record<string, unknown>
           })}
         </Group>
 
-        {/* 7 — 숨은 층. 함정(D)+믿음(F). 점수·유형 판정은 여기 넣지 않는다 — 그것은 인도자 패널(2면) 몫이다. */}
+        {/* 7 — 사후 추천 글. 게재 동의와 내부 열람은 별개이며, 원문을 그대로 보여 준다(ADR-204). */}
+        {wk === 'post' && recommendation.trim() ? (
+          <Group title={nextBlock.title}>
+            <Item code="REC" prompt={nextBlock.prompt}>
+              <span style={{ color: 'var(--color-text)', whiteSpace: 'pre-line' }}>{recommendation}</span>
+              <div style={{ marginTop: 'var(--space-2)' }}>
+                {answers.REC_OK === true ? RECOMMENDATION_CONSENT_LABELS.consented : RECOMMENDATION_CONSENT_LABELS.notConsented}
+              </div>
+            </Item>
+          </Group>
+        ) : null}
+
+        {/* 8 — 숨은 층. 함정(D)+믿음(F). 점수·유형 판정은 여기 넣지 않는다 — 그것은 인도자 패널(2면) 몫이다. */}
         <Group title="숨은 층 · 인도자 참고">{HIDDEN_CODES.map(likertRow)}</Group>
       </div>
     </section>

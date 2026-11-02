@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { vitalityZone, VITALITY_ZONES, GROW_AXES, GAP_AXES, COMPASS_AXES, careBanner, CARE_TONE, CARE_VAR, growEmphasis, GROW_TONE } from './labels';
+import { vitalityZone, VITALITY_ZONES, GROW_AXES, GAP_AXES, COMPASS_AXES, careBanner, CARE_TONE, CARE_VAR, growEmphasis, GROW_TONE, SUBJECTIVE_LABELS, subjectiveLabels } from './labels';
 import type { FuturenowScores } from '../scoring';
+
+describe('subjectiveLabels (ADR-204 — 사전·사후 명명)', () => {
+  it.each(['pre', null] as const)('%s는 기존 사전 별칭과 같은 라벨이다', (wave) => {
+    expect(subjectiveLabels(wave)).toBe(SUBJECTIVE_LABELS);
+    expect(subjectiveLabels(wave)).toEqual({ E1: '기대', E2: '정서', E3: '요청' });
+  });
+
+  it('사후는 승인 문안을 쓰되 PDF용 사전 별칭은 그대로 둔다', () => {
+    expect(subjectiveLabels('post')).toEqual({ E1: '그 바람은 지금', E2: '달라진 것 하나', E3: '붙잡을 하나' });
+    expect(SUBJECTIVE_LABELS).toEqual({ E1: '기대', E2: '정서', E3: '요청' });
+  });
+});
 
 describe('vitalityZone (활력 명명 — 측정→강의는 리포트에서만)', () => {
   it('≤10 → 시들음(care) [확정]', () => {

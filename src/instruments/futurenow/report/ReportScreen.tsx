@@ -2,8 +2,9 @@
 // → 깊이(간격·GROW+F) → 주관식. 데스크톱 2×2 / 모바일 1열(auto-fit), 위계 순서 동일.
 // 코어 import 금지 — 역할 토큰·타이포 클래스만(경계 CLAUDE §1).
 import type { CSSProperties, ReactNode } from 'react';
+import type { Wave } from '@/contracts';
 import type { FuturenowScores } from '../scoring';
-import { SUBJECTIVE_LABELS } from './labels';
+import { subjectiveLabels } from './labels';
 import { CareSignal, CompassDumbbell, GapRadar, GrowBars, VitalityBand } from './visuals';
 import { FacilitatorPanel } from './FacilitatorPanel';
 
@@ -25,15 +26,16 @@ export function Panel({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-export function ReportScreen({ scores, prev }: { scores: FuturenowScores; prev?: FuturenowScores }) {
+export function ReportScreen({ scores, prev, wave = 'pre' }: { scores: FuturenowScores; prev?: FuturenowScores; wave?: Wave }) {
   const subj = scores.subjective;
+  const labels = subjectiveLabels(wave);
   const hasSubjective = !!(subj.E1 || subj.E2 || subj.E3);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <CareSignal scores={scores} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--space-4)' }}>
         <Panel title="활력의 이동">
-          <VitalityBand scores={scores} prev={prev} />
+          <VitalityBand scores={scores} prev={prev} wave={wave} />
         </Panel>
         <Panel title="나침반 — 마음이 향하는 쪽">
           <CompassDumbbell scores={scores} prev={prev} />
@@ -55,7 +57,7 @@ export function ReportScreen({ scores, prev }: { scores: FuturenowScores; prev?:
               subj[k] ? (
                 <div key={k}>
                   <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-1)' }}>
-                    {SUBJECTIVE_LABELS[k]}
+                    {labels[k]}
                   </div>
                   <p className="t-body" style={{ color: 'var(--color-text)', margin: 0, whiteSpace: 'pre-line' }}>
                     {subj[k]}

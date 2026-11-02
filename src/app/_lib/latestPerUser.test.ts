@@ -43,6 +43,19 @@ describe('latestPerUser — 재진단 dedup(user별 최신 1건)', () => {
     expect(latestPerUser([older, newest])[0].id).toBe('new');
   });
 
+  it('같은 작성 시각은 id 큰 쪽 — 입력 순서를 뒤집어도 같다(ADR-204)', () => {
+    const smaller = env('a', 'u1', '2026-06-10T00:00:00Z');
+    const larger = env('z', 'u1', '2026-06-10T00:00:00Z');
+    expect(latestPerUser([smaller, larger])[0]).toBe(larger);
+    expect(latestPerUser([larger, smaller])[0]).toBe(larger);
+  });
+
+  it('id 보다 작성 시각이 우선이고 밀리초 아래 시각도 구분한다', () => {
+    const earlier = env('z', 'u1', '2026-06-10T00:00:00.000001+00:00');
+    const later = env('a', 'u1', '2026-06-10T00:00:00.000002+00:00');
+    expect(latestPerUser([later, earlier])[0]).toBe(later);
+  });
+
   it('userId=null은 접지 않고 각각 보존(서로 다른 사람 가능)', () => {
     const out = latestPerUser([
       env('a', null, '2026-06-01T00:00:00Z'),

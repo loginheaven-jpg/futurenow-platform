@@ -114,3 +114,43 @@ describe('RawAnswers (참여자 원응답 — 문항 원문 렌더)', () => {
     expect(html).not.toContain('주 함정'); // 함정 판정은 인도자 패널(2면) 몫
   });
 });
+
+describe('RawAnswers 사후 추천 글 (ADR-204)', () => {
+  const recommendation = ' 먼저 걸은 길에서 배운 점을\n다음에 올 분에게 전합니다. ';
+
+  it('참여자의 언어 다음·숨은 층 앞에 원문과 게재 동의 상태를 표시한다', () => {
+    const html = renderToStaticMarkup(<RawAnswers answers={{ ...answers, REC: recommendation, REC_OK: true }} wave="post" />);
+    const head = (title: string) => html.indexOf(`>${title}</h4>`);
+    expect(html).toContain('>다음에 올 분에게</h4>');
+    expect(html).toContain('>REC</span>');
+    expect(html).toContain('다음에 이 세미나에 올 분에게, 6주를 지나온 지금의 당신은 무슨 말을 건네고 싶습니까?');
+    expect(html).toContain(recommendation);
+    expect(html).toContain('게재 동의함');
+    expect(html).not.toContain('게재 동의 안 함');
+    expect(head('참여자의 언어')).toBeLessThan(head('다음에 올 분에게'));
+    expect(head('다음에 올 분에게')).toBeLessThan(head('숨은 층 · 인도자 참고'));
+    expect(html.slice(head('숨은 층 · 인도자 참고')).match(/<\/h4>/g)).toHaveLength(1);
+  });
+
+  it.each([false, undefined, 'true', 1])('REC_OK=%s는 게재 미동의로 표시하되 내부 원문은 유지한다', (consent) => {
+    const html = renderToStaticMarkup(<RawAnswers answers={{ ...answers, REC: recommendation, REC_OK: consent }} wave="post" />);
+    expect(html).toContain(recommendation);
+    expect(html).toContain('게재 동의 안 함');
+    expect(html).not.toContain('게재 동의함');
+  });
+
+  it.each(['pre', null] as const)('wave=%s에는 REC가 있어도 추천 절을 표시하지 않는다', (wave) => {
+    const html = renderToStaticMarkup(<RawAnswers answers={{ ...answers, REC: recommendation, REC_OK: true }} wave={wave} />);
+    expect(html).not.toContain('>다음에 올 분에게</h4>');
+    expect(html).not.toContain(recommendation);
+    expect(html).not.toContain('>REC</span>');
+  });
+
+  it.each([undefined, '', ' \n\t ', 42, false])('사후라도 REC=%s가 비어 있거나 문자열이 아니면 추천 절을 숨긴다', (text) => {
+    const html = renderToStaticMarkup(<RawAnswers answers={{ ...answers, REC: text, REC_OK: true }} wave="post" />);
+    expect(html).not.toContain('>다음에 올 분에게</h4>');
+    expect(html).not.toContain('게재 동의');
+    expect(html).not.toContain('>REC</span>');
+    expect(html).toContain('>숨은 층 · 인도자 참고</h4>');
+  });
+});

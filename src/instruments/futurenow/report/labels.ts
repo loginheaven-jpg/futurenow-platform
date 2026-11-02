@@ -1,6 +1,8 @@
 // 리포트(B③) 명명 — 측정→강의 어휘는 **여기서만** 부여(§5/§9.4). 평어체. scoring 출력엔 구인 식별자만.
 // 활력 구간명·경계 확정(directive 2026-06-28): 시들음 5~10 · 중간 11~17 · 번성 18~25.
 // (시들음 ≤10 은 채점 사양 §9.3 규칙1 과 결속, 중간/번성 경계는 지휘부 확정.)
+import type { Wave } from '@/contracts';
+import { waveKey } from '../copy';
 import type { FuturenowScores } from '../scoring';
 
 export const VITALITY_RANGE = { min: 5, max: 25 } as const;
@@ -92,7 +94,30 @@ export const GAP_AXES = [
   { code: 'B5', label: '기여' },
 ] as const;
 
-export const SUBJECTIVE_LABELS = { E1: '기대', E2: '정서', E3: '요청' } as const;
+const SUBJECTIVE_BY_WAVE = {
+  pre: { E1: '기대', E2: '정서', E3: '요청' },
+  post: { E1: '그 바람은 지금', E2: '달라진 것 하나', E3: '붙잡을 하나' },
+} as const;
+
+// 기존 PDF 등 wave를 받지 않는 경로의 사전 별칭은 유지한다(ADR-204).
+export const SUBJECTIVE_LABELS = SUBJECTIVE_BY_WAVE.pre;
+export const subjectiveLabels = (wave: Wave) => SUBJECTIVE_BY_WAVE[waveKey(wave)];
+
+export const VITALITY_SINGLE_LABELS = {
+  pre: '구간 게이지(사전 단독)',
+  post: '구간 게이지(사후 단독)',
+} as const;
+
+export const WISH_PAIR_LABELS = {
+  title: '6주 전의 바람과 지금',
+  before: '세미나 전 · 바란 것',
+  after: '마친 뒤 · 그 바람은 지금',
+} as const;
+
+export const RECOMMENDATION_CONSENT_LABELS = {
+  consented: '게재 동의함',
+  notConsented: '게재 동의 안 함',
+} as const;
 
 // 함정 유형(D1~D3) — 인도자 전용 강의 어휘(소그룹 편성 참고). 참여자 미노출. 최고점=주 함정, 동점 D1>D2>D3. ADR-77
 export const TRAP_AXES = [

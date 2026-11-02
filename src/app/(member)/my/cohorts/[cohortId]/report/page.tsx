@@ -22,16 +22,18 @@
 // **하드룰 중 남은 것**: scores 를 저장하지 않는다(재채점) · 본인 스코프(RLS responses_select user_id=auth.uid()).
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import type { Answers } from '@/contracts';
+import type { Answers, ResponseEnvelope } from '@/contracts';
 import { MirrorView } from '@/app/_screens/MirrorView';
 import { requestContext, requestUser } from '@/app/_lib/requestScope';
 import { participantMirror } from '@/instruments/futurenow/participantMirror';
 import { futurenowScoring, type FuturenowScores } from '@/instruments/futurenow/scoring';
 import { latestPerUser } from '@/app/_lib/latestPerUser';
+import { findPairedPre } from '@/app/_lib/pairedPre';
 import { TOOL, toolName } from '@/app/_vocab/tool';
 import { Panel } from '@/instruments/futurenow/report/ReportScreen';
 import { CompassDumbbell, GapRadar } from '@/instruments/futurenow/report/visuals';
-import { SUBJECTIVE_LABELS } from '@/instruments/futurenow/report/labels';
+import { subjectiveLabels } from '@/instruments/futurenow/report/labels';
+import { WishPair } from '@/instruments/futurenow/report/WishPair';
 import { ReportPrintHeader } from '@/app/coach/cohort/[cohortId]/report/[responseId]/ReportPrintHeader';
 
 export const dynamic = 'force-dynamic';
@@ -48,14 +50,32 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
   const me = await requestUser();
   if (!me) redirect('/login'); // 전 역할 개방(A′-1 정합) — 본인 참여분만. RLS 가 본인 스코프.
 
-  // 본인 사전·사후 각 wave 최신 1건(재진단 dedup). **한 번 채점해 차트와 거울이 같은 산출을 쓴다** —
-  //   두 번 채점하면 언젠가 둘이 갈라지고, 그때 어느 쪽이 맞는지 알 수 없다.
-  const scoredFor = async (wave: 'pre' | 'post') => {
+  // 대표 사후를 먼저 고르고 그 시각의 사전을 짝짓는다(ADR-204).
+  //   사후가 없을 때만 최신 사전 단독이다. 늦은 사전 재제출을 과거 사후의 짝으로 쓰지 않는다.
+  const latestFor = async (wave: 'pre' | 'post') => {
     const rs = await ctx.listResponses<Answers, unknown>({ instrumentId: 'futurenow', cohortId, userId: me.id, wave });
-    const r = latestPerUser(rs)[0] ?? null;
-    return r ? { scores: futurenowScoring.score(r.answers, { wave: r.wave }) as FuturenowScores, at: r.createdAt, wave: r.wave } : null;
+    return latestPerUser(rs)[0] ?? null;
   };
-  const [pre, post] = await Promise.all([scoredFor('pre'), scoredFor('post')]);
+
+  const postResponse = await latestFor('post');
+
+  let preResponse: ResponseEnvelope<Answers, unknown> | null = null;
+  if (postResponse) {
+    try {
+      preResponse = await findPairedPre(ctx, postResponse);
+    } catch {
+      // 조회 실패는 이 렌더에서만 사후 단독으로 낮춘다. 원문·오류 내용은 기록하지 않고 다음 열람에서 다시 읽는다.
+      console.error('[my-report] paired pre lookup failed', { cohortId, responseId: postResponse.id });
+    }
+  } else {
+    preResponse = await latestFor('pre');
+  }
+
+  // **한 번 채점해 차트와 거울이 같은 산출을 쓴다.** 같은 봉투를 표시 위치마다 다시 채점하지 않는다.
+  const scored = (r: ResponseEnvelope<Answers, unknown> | null) =>
+    r ? { scores: futurenowScoring.score(r.answers, { wave: r.wave }) as FuturenowScores, at: r.createdAt, wave: r.wave } : null;
+  const pre = scored(preResponse);
+  const post = scored(postResponse);
   const latest = post ?? pre;                 // 지금 보여 줄 것
   const prevScores = post && pre ? pre.scores : undefined; // 둘 다 있으면 사전→사후를 한 그림에
   const preMirror = pre ? participantMirror(pre.scores) : null;
@@ -78,6 +98,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
 
   const cohort = (await ctx.listMyCohorts().catch(() => [])).find((c) => c.cohortId === cohortId);
   const subj = latest.scores.subjective;
+  const labels = subjectiveLabels(latest.wave);
   const hasSubjective = !!(subj.E1 || subj.E2 || subj.E3);
 
   return (
@@ -102,6 +123,8 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
           </Panel>
         </div>
 
+        {pre && post ? <WishPair before={pre.scores.subjective.E1} after={post.scores.subjective.E1} /> : null}
+
         {/* 내가 적은 글 — 있을 때만 그린다(빈 상자를 두지 않는다). */}
         {hasSubjective && (
           <Panel title="나에게 묻는 시간">
@@ -110,7 +133,7 @@ export default async function MyReportPage({ params }: { params: Promise<{ cohor
                 subj[k] ? (
                   <div key={k}>
                     <div className="t-caption" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-1)' }}>
-                      {SUBJECTIVE_LABELS[k]}
+                      {labels[k]}
                     </div>
                     <p className="t-body" style={{ color: 'var(--color-text)', margin: 0, whiteSpace: 'pre-line' }}>
                       {subj[k]}
